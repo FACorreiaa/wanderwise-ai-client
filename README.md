@@ -31,3 +31,4 @@ By default, `npm run build` will generate a Node app that you can run with `npm 
 
 ## This project was created with the [Solid CLI](https://github.com/solidjs-community/solid-cli)
 # wanderwise-ai-client
+# wanderwise-ai-client
