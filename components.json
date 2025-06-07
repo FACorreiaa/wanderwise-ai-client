@@ -6,11 +6,11 @@
       "path": "src/app.css",
       "variable": true
     },
-    "color": "stone",
+    "color": "zinc",
     "prefix": ""
   },
   "alias": {
-    "component": "@/components",
-    "cn": "@/libs/cn"
+    "component": "src",
+    "cn": "src"
   }
 }

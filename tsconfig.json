@@ -16,11 +16,11 @@
     "isolatedModules": true,
     "paths": {
       "@/*": [
-        "./@/*"
-      ], // Map @ to project root
+        "./src/*" // Changed to point to the project root
+      ],
       "~/*": [
-        "./src/*"
-      ] // Keep ~ for src if needed
+        "./src/*" // Optional, keep if you want a separate alias for src
+      ]
     }
   }
 }

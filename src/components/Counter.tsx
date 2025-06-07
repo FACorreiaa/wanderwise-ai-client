@@ -1,4 +1,4 @@
-import { Button } from "@/components/ui/button";
+import { Button } from "@/ui/button";
 import { createSignal } from "solid-js";
 
 
@@ -6,7 +6,8 @@ export default function Counter() {
   const [count, setCount] = createSignal(0);
   return (
     <Button
-      class="w-[200px] rounded-full bg-gray-100 border-2 border-gray-300 focus:border-gray-400 active:border-gray-400 px-[2rem] py-[1rem]"
+      variant="default"
+      size="lg"
       onClick={() => setCount(count() + 1)}
     >
       Clicks: {count()}
