@@ -11,6 +11,6 @@
   },
   "alias": {
     "component": "src",
-    "cn": "src"
+    "cn": "../cn"
   }
 }

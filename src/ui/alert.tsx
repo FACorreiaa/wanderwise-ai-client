@@ -1,4 +1,4 @@
-import { cn } from "./cn";
+import { cn } from "../cn";
 import type { AlertRootProps } from "@kobalte/core/alert";
 import { Alert as AlertPrimitive } from "@kobalte/core/alert";
 import type { PolymorphicProps } from "@kobalte/core/polymorphic";
