@@ -1,4 +1,4 @@
-import { cn } from "../../styles";
+import { cn } from "./cn";
 import type { ButtonRootProps } from "@kobalte/core/button";
 import { Button as ButtonPrimitive } from "@kobalte/core/button";
 import type { PolymorphicProps } from "@kobalte/core/polymorphic";

@@ -1,4 +1,4 @@
-import { cn } from "../../styles";
+import { cn } from "./cn";
 import type { PolymorphicProps } from "@kobalte/core/polymorphic";
 import type {
 	TextFieldDescriptionProps,

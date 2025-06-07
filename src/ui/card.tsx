@@ -1,4 +1,4 @@
-import { cn } from "../../styles";
+import { cn } from "./cn";
 import type { ComponentProps, ParentComponent } from "solid-js";
 import { splitProps } from "solid-js";
 
