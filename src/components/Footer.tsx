@@ -1,43 +1,51 @@
-import { A } from "@solidjs/router";
+import { Building2 } from 'lucide-solid';
+import { Component } from 'solid-js';
 
 export default function Footer() {
     return (
-        <footer class="border-t bg-background">
-            <div class="container mx-auto py-12 px-4 sm:px-6 lg:px-8">
-                <div class="grid grid-cols-2 md:grid-cols-4 gap-8">
+        <footer class="bg-gray-900 text-white py-12">
+            <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
                     <div>
-                        <h3 class="text-sm font-semibold text-muted-foreground tracking-wider uppercase">Solutions</h3>
-                        <ul role="list" class="mt-4 space-y-2">
-                            <li><A href="#" class="text-base text-foreground/80 hover:text-foreground">Marketing</A></li>
-                            <li><A href="#" class="text-base text-foreground/80 hover:text-foreground">Analytics</A></li>
+                        <div class="flex items-center space-x-2 mb-4">
+                            <Building2 class="w-6 h-6" />
+                            <span class="text-lg font-semibold">crunchbase</span>
+                        </div>
+                        <p class="text-gray-400 text-sm">
+                            The platform for finding business opportunities
+                        </p>
+                    </div>
+
+                    <div>
+                        <h3 class="font-semibold mb-4">Products</h3>
+                        <ul class="space-y-2 text-sm text-gray-400">
+                            <li><a href="#" class="hover:text-white">Platform</a></li>
+                            <li><a href="#" class="hover:text-white">Enterprise</a></li>
+                            <li><a href="#" class="hover:text-white">API</a></li>
                         </ul>
                     </div>
+
                     <div>
-                        <h3 class="text-sm font-semibold text-muted-foreground tracking-wider uppercase">Support</h3>
-                        <ul role="list" class="mt-4 space-y-2">
-                            <li><A href="/pricing" class="text-base text-foreground/80 hover:text-foreground">Pricing</A></li>
-                            <li><A href="#" class="text-base text-foreground/80 hover:text-foreground">Docs</A></li>
+                        <h3 class="font-semibold mb-4">Resources</h3>
+                        <ul class="space-y-2 text-sm text-gray-400">
+                            <li><a href="#" class="hover:text-white">Blog</a></li>
+                            <li><a href="#" class="hover:text-white">Reports</a></li>
+                            <li><a href="#" class="hover:text-white">Help Center</a></li>
                         </ul>
                     </div>
+
                     <div>
-                        <h3 class="text-sm font-semibold text-muted-foreground tracking-wider uppercase">Company</h3>
-                        <ul role="list" class="mt-4 space-y-2">
-                            <li><A href="/about" class="text-base text-foreground/80 hover:text-foreground">About</A></li>
-                            <li><A href="#" class="text-base text-foreground/80 hover:text-foreground">Blog</A></li>
-                        </ul>
-                    </div>
-                    <div>
-                        <h3 class="text-sm font-semibold text-muted-foreground tracking-wider uppercase">Legal</h3>
-                        <ul role="list" class="mt-4 space-y-2">
-                            <li><A href="#" class="text-base text-foreground/80 hover:text-foreground">Privacy</A></li>
-                            <li><A href="/terms" class="text-base text-foreground/80 hover:text-foreground">Terms</A></li>
+                        <h3 class="font-semibold mb-4">Company</h3>
+                        <ul class="space-y-2 text-sm text-gray-400">
+                            <li><a href="#" class="hover:text-white">About</a></li>
+                            <li><a href="#" class="hover:text-white">Careers</a></li>
+                            <li><a href="#" class="hover:text-white">Contact</a></li>
                         </ul>
                     </div>
                 </div>
-                <div class="mt-8 border-t border-border pt-8">
-                    <p class="text-base text-muted-foreground xl:text-center">
-                        © {new Date().getFullYear()} DataSpark, Inc. All rights reserved.
-                    </p>
+
+                <div class="border-t border-gray-800 mt-8 pt-8 text-center text-sm text-gray-400">
+                    © 2025 Crunchbase Inc. All Rights Reserved.
                 </div>
             </div>
         </footer>
