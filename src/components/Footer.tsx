@@ -1,7 +1,7 @@
 import { Building2 } from 'lucide-solid';
 import { Component } from 'solid-js';
 
-const Footer: Component = () => {
+export default function Footer() {
     return (
         <footer class="bg-gray-900 text-white py-12">
             <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -50,8 +50,4 @@ const Footer: Component = () => {
             </div>
         </footer>
     );
-};
-
-
-
-export default Footer;
+}

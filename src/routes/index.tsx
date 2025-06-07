@@ -43,6 +43,4 @@ const CrunchbaseLanding: Component = () => {
 
         </div>
     );
-};
-
-export default CrunchbaseLanding;
+}
