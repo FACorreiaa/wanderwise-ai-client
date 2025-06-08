@@ -50,9 +50,11 @@ export default function Nav() {
 
           {/* Action Buttons */}
           <div class="hidden md:flex items-center space-x-4">
-            <Button variant="ghost" class="text-gray-700">
-              Log In
-            </Button>
+            <A href="/auth/signin">
+              <Button variant="ghost" class="text-gray-700">
+                Log In
+              </Button>
+            </A>
             <Button class="bg-blue-600 hover:bg-blue-700">
               Start Free Trial
             </Button>
