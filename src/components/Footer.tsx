@@ -9,7 +9,7 @@ export default function Footer() {
                     <div>
                         <div class="flex items-center space-x-2 mb-4">
                             <Building2 class="w-6 h-6" />
-                            <span class="text-lg font-semibold">crunchbase</span>
+                            <span class="text-lg font-semibold">Loci</span>
                         </div>
                         <p class="text-gray-400 text-sm">
                             The platform for finding business opportunities
@@ -45,7 +45,7 @@ export default function Footer() {
                 </div>
 
                 <div class="border-t border-gray-800 mt-8 pt-8 text-center text-sm text-gray-400">
-                    © 2025 Crunchbase Inc. All Rights Reserved.
+                    © 2025 Loci Inc. All Rights Reserved.
                 </div>
             </div>
         </footer>

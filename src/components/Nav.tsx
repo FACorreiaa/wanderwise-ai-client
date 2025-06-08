@@ -29,7 +29,7 @@ export default function Nav() {
               <div class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
                 <Building2 class="w-5 h-5 text-white" />
               </div>
-              <span class="text-xl font-bold text-gray-900">crunchbase</span>
+              <span class="text-xl font-bold text-gray-900">Loci</span>
               <Badge variant="secondary" class="ml-2 bg-blue-100 text-blue-800">PRO</Badge>
             </A>
           </div>

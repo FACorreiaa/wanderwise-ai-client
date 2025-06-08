@@ -16,7 +16,7 @@ export default function App() {
         root={props => (
           <div class="min-h-screen flex flex-col">
             <Nav />
-            <main class="flex-grow">
+            <main class="flex-grow min-h-screen bg-gradient-to-b from-blue-50 via-purple-50 to-white">
               <Suspense>{props.children}</Suspense>
             </main>
             <Footer />
