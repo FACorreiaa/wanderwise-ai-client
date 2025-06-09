@@ -1,10 +1,10 @@
 import { Badge } from "@/ui/badge";
 import { Button } from "@/ui/button";
-import { TextField, TextFieldRoot } from "@/ui/textfield";
 import { useLocation } from "@solidjs/router";
 import { A } from '@solidjs/router';
-import { Building2, Menu } from "lucide-solid";
+import { Menu } from "lucide-solid";
 import { createSignal, For } from "solid-js";
+import { ImageRoot, ImageFallback, Image } from "@/ui/image";
 
 const navigationItems = [
   { name: 'Solutions', href: '/solutions' },
@@ -26,9 +26,11 @@ export default function Nav() {
           {/* Logo */}
           <div class="flex items-center">
             <A href="/" class="flex items-center space-x-2">
-              <div class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-                <Building2 class="w-5 h-5 text-white" />
-              </div>
+              <ImageRoot>
+                <Image src="/images/loci.png" />
+                <ImageFallback>HN</ImageFallback>
+              </ImageRoot>
+
               <span class="text-xl font-bold text-gray-900">Loci</span>
               <Badge variant="secondary" class="ml-2 bg-blue-100 text-blue-800">PRO</Badge>
             </A>
@@ -50,9 +52,11 @@ export default function Nav() {
 
           {/* Action Buttons */}
           <div class="hidden md:flex items-center space-x-4">
-            <Button variant="ghost" class="text-gray-700">
-              Log In
-            </Button>
+            <A href="/auth/signin">
+              <Button variant="ghost" class="text-gray-700">
+                Log In
+              </Button>
+            </A>
             <Button class="bg-blue-600 hover:bg-blue-700">
               Start Free Trial
             </Button>

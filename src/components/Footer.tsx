@@ -1,5 +1,4 @@
 import { Building2 } from 'lucide-solid';
-import { Component } from 'solid-js';
 
 export default function Footer() {
     return (
