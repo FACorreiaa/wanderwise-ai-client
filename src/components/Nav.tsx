@@ -28,7 +28,7 @@ export default function Nav() {
             <A href="/" class="flex items-center space-x-2">
               <ImageRoot>
                 <Image src="/images/loci.png" />
-                <ImageFallback>HN</ImageFallback>
+                <ImageFallback>L</ImageFallback>
               </ImageRoot>
 
               <span class="text-xl font-bold text-gray-900">Loci</span>
