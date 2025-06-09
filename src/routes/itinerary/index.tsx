@@ -1,6 +1,6 @@
 import { createSignal, createEffect, For, Show, onMount } from 'solid-js';
 import mapboxgl from 'mapbox-gl';
-import { MapPin, Clock, Star, Filter, Heart, Share2, Download, Edit3, Plus, X, Navigation, Calendar, Users, DollarSign, Camera, Coffee, Utensils, Building, TreePine, ShoppingBag } from 'lucide-solid';
+import { MapPin, Clock, Star, Filter, Heart, Share2, Download, Edit3, Plus, X, Navigation, Calendar, Users, DollarSign, Camera, Coffee, Utensils, Building, TreePine, ShoppingBag, Loader2, MessageCircle, Send } from 'lucide-solid';
 import MapComponent from '@/components/features/Map/Map';
 
 export default function ItineraryResultsPage() {
@@ -9,6 +9,13 @@ export default function ItineraryResultsPage() {
     const [showFilters, setShowFilters] = createSignal(false);
     const [viewMode, setViewMode] = createSignal('split'); // 'map', 'list', 'split'
     const [myTrip, setMyTrip] = createSignal([]); // Track selected POIs for the trip
+
+    // todo chat funcionality
+    const [showChat, setShowChat] = createSignal(false);
+    const [chatMessage, setChatMessage] = createSignal('');
+    const [chatHistory, setChatHistory] = createSignal([]);
+    const [isLoading, setIsLoading] = createSignal(false);
+    const [sessionId, setSessionId] = createSignal('your-session-id');
 
     // Filter states
     const [activeFilters, setActiveFilters] = createSignal({
@@ -128,6 +135,70 @@ export default function ItineraryResultsPage() {
             priority: 1
         }
     ]);
+
+    // chat logic
+    // Chat functionality
+    const sendChatMessage = async () => {
+        if (!chatMessage().trim() || isLoading()) return;
+
+        const userMessage = chatMessage().trim();
+        setChatMessage('');
+        setIsLoading(true);
+
+        // Add user message to chat history
+        setChatHistory(prev => [...prev, { type: 'user', content: userMessage, timestamp: new Date() }]);
+
+        try {
+            // Call your continue session API
+            const response = await fetch('/api/continue-session', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    sessionId: sessionId(),
+                    message: userMessage
+                })
+            });
+
+            const data = await response.json();
+
+            // Add AI response to chat history
+            setChatHistory(prev => [...prev, {
+                type: 'assistant',
+                content: data.response,
+                timestamp: new Date()
+            }]);
+
+            // Update itinerary data if provided
+            if (data.updatedItinerary) {
+                setItinerary(data.updatedItinerary);
+            }
+
+            // Update POIs if provided
+            if (data.updatedPOIs) {
+                setPointsOfInterest(data.updatedPOIs);
+            }
+
+        } catch (error) {
+            console.error('Error sending message:', error);
+            setChatHistory(prev => [...prev, {
+                type: 'error',
+                content: 'Sorry, there was an error processing your request. Please try again.',
+                timestamp: new Date()
+            }]);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleKeyPress = (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            sendChatMessage();
+        }
+    };
+
 
     const filterOptions = {
         categories: [
@@ -271,6 +342,8 @@ export default function ItineraryResultsPage() {
         );
     };
 
+    // chat component
+
     const renderFiltersPanel = () => (
         <Show when={showFilters()}>
             <div class="absolute top-full left-0 right-0 mt-2 bg-white rounded-lg border border-gray-200 shadow-lg p-4 z-10">
@@ -356,6 +429,90 @@ export default function ItineraryResultsPage() {
         setMyTrip(prev => prev.some(item => item.id === poi.id) ? prev : [...prev, poi]);
     };
 
+    // chat component
+    const renderChatInterface = () => (
+        <Show when={showChat()}>
+            <div class="fixed bottom-6 right-6 w-96 h-[500px] bg-white rounded-lg shadow-2xl border border-gray-200 flex flex-col z-50">
+                {/* Chat Header */}
+                <div class="flex items-center justify-between p-4 border-b border-gray-200 bg-blue-600 text-white rounded-t-lg">
+                    <div class="flex items-center gap-2">
+                        <MessageCircle class="w-5 h-5" />
+                        <span class="font-medium">Continue Planning</span>
+                    </div>
+                    <button
+                        onClick={() => setShowChat(false)}
+                        class="p-1 hover:bg-blue-700 rounded"
+                    >
+                        <X class="w-4 h-4" />
+                    </button>
+                </div>
+
+                {/* Chat Messages */}
+                <div class="flex-1 overflow-y-auto p-4 space-y-4">
+                    <Show when={chatHistory().length === 0}>
+                        <div class="text-center text-gray-500 py-8">
+                            <MessageCircle class="w-12 h-12 mx-auto mb-4 text-gray-300" />
+                            <p class="text-sm">Ask me to modify your itinerary!</p>
+                            <p class="text-xs mt-2 text-gray-400">
+                                Try: "Add the Eiffel Tower" or "Remove expensive activities"
+                            </p>
+                        </div>
+                    </Show>
+
+                    <For each={chatHistory()}>
+                        {(message) => (
+                            <div class={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}>
+                                <div class={`max-w-[80%] p-3 rounded-lg text-sm ${message.type === 'user'
+                                    ? 'bg-blue-600 text-white'
+                                    : message.type === 'error'
+                                        ? 'bg-red-100 text-red-800 border border-red-200'
+                                        : 'bg-gray-100 text-gray-800'
+                                    }`}>
+                                    <p class="whitespace-pre-wrap">{message.content}</p>
+                                    <p class={`text-xs mt-1 opacity-70 ${message.type === 'user' ? 'text-blue-100' : 'text-gray-500'
+                                        }`}>
+                                        {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                    </p>
+                                </div>
+                            </div>
+                        )}
+                    </For>
+
+                    <Show when={isLoading()}>
+                        <div class="flex justify-start">
+                            <div class="bg-gray-100 p-3 rounded-lg flex items-center gap-2 text-sm text-gray-600">
+                                <Loader2 class="w-4 h-4 animate-spin" />
+                                <span>Updating your itinerary...</span>
+                            </div>
+                        </div>
+                    </Show>
+                </div>
+
+                {/* Chat Input */}
+                <div class="p-4 border-t border-gray-200">
+                    <div class="flex items-end gap-2">
+                        <textarea
+                            value={chatMessage()}
+                            onInput={(e) => setChatMessage(e.target.value)}
+                            onKeyPress={handleKeyPress}
+                            placeholder="Ask me to modify your itinerary..."
+                            class="flex-1 resize-none border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            rows="2"
+                            disabled={isLoading()}
+                        />
+                        <button
+                            onClick={sendChatMessage}
+                            disabled={!chatMessage().trim() || isLoading()}
+                            class="p-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                        >
+                            <Send class="w-4 h-4" />
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </Show>
+    );
+
     return (
         <div class="min-h-screen bg-gray-50">
             {/* Header */}
@@ -387,6 +544,13 @@ export default function ItineraryResultsPage() {
                                     List
                                 </button>
                             </div>
+                            <button
+                                onClick={() => setShowChat(true)}
+                                class="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all shadow-sm"
+                            >
+                                <MessageCircle class="w-4 h-4" />
+                                <span class="text-sm font-medium">Continue Planning</span>
+                            </button>
                             <button class="flex items-center gap-2 px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
                                 <Heart class="w-4 h-4" />
                                 <span class="text-sm font-medium">Save</span>
@@ -437,7 +601,7 @@ export default function ItineraryResultsPage() {
                             <MapComponent
                                 center={[itinerary().centerLng, itinerary().centerLat]}
                                 zoom={12} // Set a reasonable default; adjust as needed
-                                minZoom={15}
+                                minZoom={10}
                                 maxZoom={22}
                                 pointsOfInterest={filteredPOIs()}
                             />
@@ -463,74 +627,88 @@ export default function ItineraryResultsPage() {
                     </Show>
                 </div>
 
-                {/* Selected POI Details */}
-                <Show when={selectedPOI()}>
-                    <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-                        <div class="bg-white rounded-lg max-w-2xl w-full max-h-[80vh] overflow-y-auto">
-                            <div class="p-6">
-                                <div class="flex items-start justify-between mb-4">
-                                    <div>
-                                        <h3 class="text-xl font-bold text-gray-900">{selectedPOI().name}</h3>
-                                        <p class="text-gray-600">{selectedPOI().category}</p>
-                                    </div>
-                                    <button
-                                        onClick={() => setSelectedPOI(null)}
-                                        class="p-2 hover:bg-gray-100 rounded-lg"
-                                    >
-                                        <X class="w-5 h-5" />
-                                    </button>
+
+            </div>
+            {/* Chat Interface */}
+            {renderChatInterface()}
+            {/* Floating Chat Button (when chat is closed) */}
+            <Show when={!showChat()}>
+                <button
+                    onClick={() => setShowChat(true)}
+                    class="fixed bottom-6 right-6 w-14 h-14 bg-blue-600 text-white rounded-full shadow-lg hover:bg-blue-700 transition-all hover:scale-105 flex items-center justify-center z-40"
+                >
+                    <MessageCircle class="w-6 h-6" />
+                </button>
+            </Show>
+            {/* Selected POI Details */}
+            <Show when={selectedPOI()}>
+                <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+                    <div class="bg-white rounded-lg max-w-2xl w-full max-h-[80vh] overflow-y-auto">
+                        <div class="p-6">
+                            <div class="flex items-start justify-between mb-4">
+                                <div>
+                                    <h3 class="text-xl font-bold text-gray-900">{selectedPOI().name}</h3>
+                                    <p class="text-gray-600">{selectedPOI().category}</p>
                                 </div>
-                                <div class="grid grid-cols-2 gap-4 mb-4 text-sm">
-                                    <div class="flex items-center gap-2">
-                                        <Clock class="w-4 h-4 text-gray-500" />
-                                        <span>{selectedPOI().timeToSpend}</span>
-                                    </div>
-                                    <div class="flex items-center gap-2">
-                                        <DollarSign class="w-4 h-4 text-gray-500" />
-                                        <span class={getBudgetColor(selectedPOI().budget)}>{selectedPOI().budget}</span>
-                                    </div>
-                                    <div class="flex items-center gap-2">
-                                        <MapPin class="w-4 h-4 text-gray-500" />
-                                        <span>{selectedPOI().address}</span>
-                                    </div>
-                                    <div class="flex items-center gap-2">
-                                        <Star class="w-4 h-4 text-yellow-500 fill-current" />
-                                        <span>{selectedPOI().rating}/5</span>
-                                    </div>
+                                <button
+                                    onClick={() => setSelectedPOI(null)}
+                                    class="p-2 hover:bg-gray-100 rounded-lg"
+                                >
+                                    <X class="w-5 h-5" />
+                                </button>
+                            </div>
+                            <div class="grid grid-cols-2 gap-4 mb-4 text-sm">
+                                <div class="flex items-center gap-2">
+                                    <Clock class="w-4 h-4 text-gray-500" />
+                                    <span>{selectedPOI().timeToSpend}</span>
                                 </div>
-                                <p class="text-gray-700 mb-4">{selectedPOI().description}</p>
-                                <div class="flex flex-wrap gap-2 mb-4">
-                                    <For each={selectedPOI().tags}>
-                                        {(tag) => (
-                                            <span class="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs">
-                                                {tag}
-                                            </span>
-                                        )}
-                                    </For>
+                                <div class="flex items-center gap-2">
+                                    <DollarSign class="w-4 h-4 text-gray-500" />
+                                    <span class={getBudgetColor(selectedPOI().budget)}>{selectedPOI().budget}</span>
                                 </div>
-                                <div class="border-t pt-4">
-                                    <div class="flex items-center justify-between">
-                                        <div class="text-sm text-gray-600">
-                                            <p><strong>Hours:</strong> {selectedPOI().openingHours}</p>
-                                        </div>
-                                        <div class="flex gap-2">
-                                            <button
-                                                onClick={() => addToTrip(selectedPOI())}
-                                                class={`px-4 py-2 rounded-lg text-sm ${myTrip().some(item => item.id === selectedPOI().id) ? 'bg-green-600 text-white' : 'bg-blue-600 text-white hover:bg-blue-700'}`}
-                                            >
-                                                {myTrip().some(item => item.id === selectedPOI().id) ? 'Added' : 'Add to My Trip'}
-                                            </button>
-                                            <button class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 text-sm">
-                                                Get Directions
-                                            </button>
-                                        </div>
+                                <div class="flex items-center gap-2">
+                                    <MapPin class="w-4 h-4 text-gray-500" />
+                                    <span>{selectedPOI().address}</span>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <Star class="w-4 h-4 text-yellow-500 fill-current" />
+                                    <span>{selectedPOI().rating}/5</span>
+                                </div>
+                            </div>
+                            <p class="text-gray-700 mb-4">{selectedPOI().description}</p>
+                            <div class="flex flex-wrap gap-2 mb-4">
+                                <For each={selectedPOI().tags}>
+                                    {(tag) => (
+                                        <span class="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs">
+                                            {tag}
+                                        </span>
+                                    )}
+                                </For>
+                            </div>
+                            <div class="border-t pt-4">
+                                <div class="flex items-center justify-between">
+                                    <div class="text-sm text-gray-600">
+                                        <p><strong>Hours:</strong> {selectedPOI().openingHours}</p>
+                                    </div>
+                                    <div class="flex gap-2">
+                                        <button
+                                            onClick={() => addToTrip(selectedPOI())}
+                                            class={`px-4 py-2 rounded-lg text-sm ${myTrip().some(item => item.id === selectedPOI().id) ? 'bg-green-600 text-white' : 'bg-blue-600 text-white hover:bg-blue-700'}`}
+                                        >
+                                            {myTrip().some(item => item.id === selectedPOI().id) ? 'Added' : 'Add to My Trip'}
+                                        </button>
+                                        <button class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 text-sm">
+                                            Get Directions
+                                        </button>
                                     </div>
                                 </div>
                             </div>
+
+
                         </div>
                     </div>
-                </Show>
-            </div>
+                </div>
+            </Show>
         </div>
     );
 }
