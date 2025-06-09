@@ -11,7 +11,6 @@ const queryClient = new QueryClient();
 export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
-
       <Router
         root={props => (
           <div class="min-h-screen flex flex-col">
@@ -26,6 +25,5 @@ export default function App() {
         <FileRoutes />
       </Router>
     </QueryClientProvider>
-
   );
 }
