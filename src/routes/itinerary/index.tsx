@@ -1,6 +1,7 @@
 import { createSignal, createEffect, For, Show, onMount } from 'solid-js';
 import mapboxgl from 'mapbox-gl';
-import { MapPin, Clock, Star, Filter, Heart, Share2, Download, Edit3, Plus, X, Navigation, Calendar, Users, DollarSign, Camera, Coffee, Utensils, Building, Museum, TreePine, ShoppingBag } from 'lucide-solid';
+import { MapPin, Clock, Star, Filter, Heart, Share2, Download, Edit3, Plus, X, Navigation, Calendar, Users, DollarSign, Camera, Coffee, Utensils, Building, TreePine, ShoppingBag } from 'lucide-solid';
+import MapComponent from '@/components/features/Map/Map';
 
 export default function ItineraryResultsPage() {
     const [map, setMap] = createSignal(null);
@@ -30,7 +31,6 @@ export default function ItineraryResultsPage() {
     });
 
     const [pointsOfInterest, setPointsOfInterest] = createSignal([
-        // ... (Your existing pointsOfInterest array remains unchanged)
         {
             id: "64946139-a4c2-42b0-8071-fe83b34596f8",
             name: "Livraria Lello",
@@ -133,7 +133,7 @@ export default function ItineraryResultsPage() {
         categories: [
             { id: 'historic', label: 'Historic Sites', icon: Building },
             { id: 'cuisine', label: 'Local Cuisine', icon: Utensils },
-            { id: 'museums', label: 'Museums', icon: Museum },
+            //{ id: 'museums', label: 'Museums', icon: Museum },
             { id: 'architecture', label: 'Architecture', icon: Building },
             { id: 'nature', label: 'Nature & Parks', icon: TreePine },
             { id: 'shopping', label: 'Shopping', icon: ShoppingBag }
@@ -148,7 +148,7 @@ export default function ItineraryResultsPage() {
             'Bookstore & Architecture': Building,
             'Bridge & Landmark': Navigation,
             'Historical District': Building,
-            'Palace & Museum': Museum,
+            //'Palace & Museum': Museum,
             'Parks & Gardens': TreePine,
             'Wine Tasting': Coffee
         };
@@ -192,53 +192,6 @@ export default function ItineraryResultsPage() {
                 : [...prev[filterType], value]
         }));
     };
-
-    const initializeMap = () => {
-        console.log('import.meta.env.VITE_MAPBOX_API_KEY', import.meta.env.VITE_MAPBOX_API_KEY)
-        mapboxgl.accessToken = import.meta.env.VITE_MAPBOX_API_KEY
-        const newMap = new mapboxgl.Map({
-            container: 'map-container',
-            style: 'mapbox://styles/mapbox/streets-v12',
-            center: [itinerary().centerLng, itinerary().centerLat],
-            zoom: 12,
-            minZoom: 15,
-            maxZoom: 22
-        });
-
-        newMap.on('load', () => {
-            filteredPOIs().forEach((poi, index) => {
-                const marker = new mapboxgl.Marker({
-                    color: poi.priority === 1 ? '#EF4444' : '#3B82F6'
-                })
-                    .setLngLat([poi.longitude, poi.latitude])
-                    .setPopup(new mapboxgl.Popup().setHTML(`<h3>${poi.name}</h3><p>${poi.category}</p>`))
-                    .addTo(newMap);
-            });
-        });
-
-        setMap(newMap);
-    };
-
-    onMount(() => {
-        initializeMap();
-    });
-
-    createEffect(() => {
-        if (map()) {
-            // Update markers when filteredPOIs change
-            map().getCanvas().style.cursor = '';
-            // Remove existing markers (simplified; in production, manage markers more efficiently)
-            document.querySelectorAll('.mapboxgl-marker').forEach(marker => marker.remove());
-            filteredPOIs().forEach((poi, index) => {
-                new mapboxgl.Marker({
-                    color: poi.priority === 1 ? '#EF4444' : '#3B82F6'
-                })
-                    .setLngLat([poi.longitude, poi.latitude])
-                    .setPopup(new mapboxgl.Popup().setHTML(`<h3>${poi.name}</h3><p>${poi.category}</p>`))
-                    .addTo(map());
-            });
-        }
-    });
 
     const movePOI = (poiId, direction) => {
         const currentPOIs = pointsOfInterest();
@@ -481,7 +434,13 @@ export default function ItineraryResultsPage() {
                 <div class={`grid gap-6 ${viewMode() === 'split' ? 'grid-cols-1 lg:grid-cols-2' : 'grid-cols-1'}`}>
                     <Show when={viewMode() === 'map' || viewMode() === 'split'}>
                         <div class={viewMode() === 'map' ? 'col-span-full h-[600px]' : 'h-[500px]'}>
-                            {renderMap()}
+                            <MapComponent
+                                center={[itinerary().centerLng, itinerary().centerLat]}
+                                zoom={12} // Set a reasonable default; adjust as needed
+                                minZoom={15}
+                                maxZoom={22}
+                                pointsOfInterest={filteredPOIs()}
+                            />
                         </div>
                     </Show>
                     <Show when={viewMode() === 'list' || viewMode() === 'split'}>
