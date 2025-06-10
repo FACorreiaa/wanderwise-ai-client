@@ -21,20 +21,20 @@ export default function Hero(props: HeroProps) {
     const [searchQuery, setSearchQuery] = createSignal('');
 
     return (
-        <section class="w-full text-center py-20 md:py-32">
-            <div class="container px-4 md:px-6">
-                <h1 class="text-4xl sm:text-5xl md:text-6xl font-bold tracking-tighter text-gray-900 mb-6">
+        <section class="w-full text-center py-12 sm:py-16 md:py-24 lg:py-32">
+            <div class="container px-4 sm:px-6 lg:px-8">
+                <h1 class="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold tracking-tighter text-gray-900 mb-4 sm:mb-6 leading-tight">
                     {props.title}
                 </h1>
-                <p class="max-w-[700px] mx-auto text-gray-600 md:text-xl mb-12">
+                <p class="max-w-2xl mx-auto text-gray-600 text-base sm:text-lg md:text-xl mb-8 sm:mb-10 md:mb-12 px-4 sm:px-0">
                     {props.subtitle}
                 </p>
 
-                {/* Search Bar */}
-                <div class="max-w-2xl mx-auto mb-8">
+                {/* Search Bar - Mobile First */}
+                <div class="max-w-2xl mx-auto mb-6 sm:mb-8">
                     <div class="relative">
-                        <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4">
-                            <VsSearch class="h-6 w-6 text-gray-400" />
+                        <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 sm:pl-4">
+                            <VsSearch class="h-5 w-5 sm:h-6 sm:w-6 text-gray-400" />
                         </div>
                         <TextFieldRoot>
                             <TextField
@@ -42,28 +42,30 @@ export default function Hero(props: HeroProps) {
                                 placeholder={props.placeholder}
                                 value={searchQuery()}
                                 onInput={(e) => setSearchQuery(e.currentTarget.value)}
-                                class="w-full rounded-full py-6 pl-14 pr-16 text-lg border shadow-lg focus:shadow-xl transition-shadow bg-white/60 backdrop-blur-sm"
+                                class="w-full rounded-full py-4 sm:py-5 md:py-6 pl-11 sm:pl-14 pr-14 sm:pr-16 text-base sm:text-lg border shadow-lg focus:shadow-xl transition-shadow bg-white/60 backdrop-blur-sm"
                             />
                         </TextFieldRoot>
-                        <div class="absolute inset-y-0 right-0 flex items-center pr-3">
-                            <Button type="submit" size="icon" class="rounded-full bg-blue-600 hover:bg-blue-700 h-10 w-10">
-                                <FiArrowUp class="h-5 w-5 text-white" />
+                        <div class="absolute inset-y-0 right-0 flex items-center pr-2 sm:pr-3">
+                            <Button type="submit" size="icon" class="rounded-full bg-blue-600 hover:bg-blue-700 h-9 w-9 sm:h-10 sm:w-10">
+                                <FiArrowUp class="h-4 w-4 sm:h-5 sm:w-5 text-white" />
                             </Button>
                         </div>
                     </div>
                 </div>
 
-                {/* Suggestion Tags */}
-                <div class="flex flex-wrap items-center justify-center gap-2">
+                {/* Suggestion Tags - Mobile Optimized */}
+                <div class="flex flex-wrap items-center justify-center gap-2 sm:gap-3 px-4 sm:px-0">
                     <For each={props.suggestions}>
                         {(suggestion) => (
                             <Badge
                                 variant="outline"
-                                class="px-3 py-1.5 bg-white/60 backdrop-blur-sm shadow-sm hover:bg-accent cursor-pointer transition-colors"
+                                class="px-2.5 py-1.5 sm:px-3 sm:py-2 bg-white/60 backdrop-blur-sm shadow-sm hover:bg-accent cursor-pointer transition-colors text-xs sm:text-sm"
                             >
-                                <div class="flex items-center gap-2">
-                                    {suggestion.icon}
-                                    <span class="text-sm font-medium">{suggestion.text}</span>
+                                <div class="flex items-center gap-1.5 sm:gap-2">
+                                    <div class="w-3 h-3 sm:w-4 sm:h-4 flex items-center justify-center">
+                                        {suggestion.icon}
+                                    </div>
+                                    <span class="font-medium whitespace-nowrap">{suggestion.text}</span>
                                 </div>
                             </Badge>
                         )}

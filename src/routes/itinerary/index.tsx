@@ -515,104 +515,114 @@ export default function ItineraryResultsPage() {
 
     return (
         <div class="min-h-screen bg-gray-50">
-            {/* Header */}
-            <div class="bg-white border-b border-gray-200 px-6 py-4">
+            {/* Header - Mobile First */}
+            <div class="bg-white border-b border-gray-200 px-4 py-3 sm:px-6 sm:py-4">
                 <div class="max-w-7xl mx-auto">
-                    <div class="flex items-center justify-between">
+                    <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                         <div>
-                            <h1 class="text-2xl font-bold text-gray-900">{itinerary().name}</h1>
-                            <p class="text-gray-600 mt-1">{itinerary().city}, {itinerary().country} • {itinerary().duration}</p>
+                            <h1 class="text-xl font-bold text-gray-900 sm:text-2xl">{itinerary().name}</h1>
+                            <p class="text-sm text-gray-600 mt-1 sm:text-base">{itinerary().city}, {itinerary().country} • {itinerary().duration}</p>
                         </div>
-                        <div class="flex items-center gap-3">
-                            <div class="flex bg-gray-100 rounded-lg p-1">
+                        <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
+                            {/* View Mode Toggle - Stack on Mobile */}
+                            <div class="flex bg-gray-100 rounded-lg p-1 w-full sm:w-auto">
                                 <button
                                     onClick={() => setViewMode('map')}
-                                    class={`px-3 py-1 rounded text-sm font-medium transition-colors ${viewMode() === 'map' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-600 hover:text-gray-900'}`}
+                                    class={`flex-1 px-3 py-1 rounded text-sm font-medium transition-colors sm:flex-initial ${viewMode() === 'map' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-600'}`}
                                 >
                                     Map
                                 </button>
                                 <button
                                     onClick={() => setViewMode('split')}
-                                    class={`px-3 py-1 rounded text-sm font-medium transition-colors ${viewMode() === 'split' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-600 hover:text-gray-900'}`}
+                                    class={`flex-1 px-3 py-1 rounded text-sm font-medium transition-colors sm:flex-initial ${viewMode() === 'split' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-600'}`}
                                 >
                                     Split
                                 </button>
                                 <button
                                     onClick={() => setViewMode('list')}
-                                    class={`px-3 py-1 rounded text-sm font-medium transition-colors ${viewMode() === 'list' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-600 hover:text-gray-900'}`}
+                                    class={`flex-1 px-3 py-1 rounded text-sm font-medium transition-colors sm:flex-initial ${viewMode() === 'list' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-600'}`}
                                 >
                                     List
                                 </button>
                             </div>
-                            <button
-                                onClick={() => setShowChat(true)}
-                                class="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all shadow-sm"
-                            >
-                                <MessageCircle class="w-4 h-4" />
-                                <span class="text-sm font-medium">Continue Planning</span>
-                            </button>
-                            <button class="flex items-center gap-2 px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
-                                <Heart class="w-4 h-4" />
-                                <span class="text-sm font-medium">Save</span>
-                            </button>
-                            <button class="flex items-center gap-2 px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
-                                <Share2 class="w-4 h-4" />
-                                <span class="text-sm font-medium">Share</span>
-                            </button>
-                            <button class="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
-                                <Download class="w-4 h-4" />
-                                <span class="text-sm font-medium">Export</span>
-                            </button>
+
+                            {/* Action Buttons - Stack on Mobile */}
+                            <div class="flex flex-col gap-2 sm:flex-row sm:gap-3">
+                                <button
+                                    onClick={() => setShowChat(true)}
+                                    class="flex items-center justify-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all shadow-sm text-sm font-medium"
+                                >
+                                    <MessageCircle class="w-4 h-4" />
+                                    Continue Planning
+                                </button>
+
+                                <div class="flex gap-2">
+                                    <button class="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors text-sm sm:flex-initial">
+                                        <Heart class="w-4 h-4" />
+                                        <span class="hidden sm:inline">Save</span>
+                                    </button>
+                                    <button class="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors text-sm sm:flex-initial">
+                                        <Share2 class="w-4 h-4" />
+                                        <span class="hidden sm:inline">Share</span>
+                                    </button>
+                                    <button class="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm sm:flex-initial">
+                                        <Download class="w-4 h-4" />
+                                        <span class="hidden sm:inline">Export</span>
+                                    </button>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            {/* Filters Bar */}
-            <div class="bg-white border-b border-gray-200 px-6 py-3 relative">
+            {/* Filters Bar - Mobile First */}
+            <div class="bg-white border-b border-gray-200 px-4 py-3 relative sm:px-6">
                 <div class="max-w-7xl mx-auto">
-                    <div class="flex items-center justify-between">
+                    <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                         <div class="flex items-center gap-4">
                             <button
                                 onClick={() => setShowFilters(!showFilters())}
-                                class={`flex items-center gap-2 px-4 py-2 rounded-lg border transition-colors ${showFilters() ? 'bg-blue-50 border-blue-200 text-blue-700' : 'border-gray-200 text-gray-700 hover:bg-gray-50'}`}
+                                class={`flex items-center gap-2 px-4 py-2 rounded-lg border transition-colors text-sm font-medium ${showFilters() ? 'bg-blue-50 border-blue-200 text-blue-700' : 'border-gray-200 text-gray-700 hover:bg-gray-50'}`}
                             >
                                 <Filter class="w-4 h-4" />
-                                <span class="text-sm font-medium">Filters</span>
+                                Filters
                             </button>
                             <div class="text-sm text-gray-600">
-                                Showing {filteredPOIs().length} places
+                                {filteredPOIs().length} places
                             </div>
                         </div>
                         <div class="flex items-center gap-2 text-sm text-gray-600">
                             <Calendar class="w-4 h-4" />
-                            <span>Best visited: May - September</span>
+                            <span class="hidden sm:inline">Best visited: May - September</span>
+                            <span class="sm:hidden">May - Sep</span>
                         </div>
                     </div>
                     {renderFiltersPanel()}
                 </div>
             </div>
 
-            {/* Main Content */}
-            <div class="max-w-7xl mx-auto px-6 py-6">
-                <div class={`grid gap-6 ${viewMode() === 'split' ? 'grid-cols-1 lg:grid-cols-2' : 'grid-cols-1'}`}>
+            {/* Main Content - Mobile First */}
+            <div class="max-w-7xl mx-auto px-4 py-4 sm:px-6 sm:py-6">
+                <div class={`grid gap-4 sm:gap-6 ${viewMode() === 'split' ? 'grid-cols-1 lg:grid-cols-2' : 'grid-cols-1'}`}>
                     <Show when={viewMode() === 'map' || viewMode() === 'split'}>
-                        <div class={viewMode() === 'map' ? 'col-span-full h-[600px]' : 'h-[500px]'}>
+                        <div class={viewMode() === 'map' ? 'col-span-full h-[400px] sm:h-[600px]' : 'h-[300px] sm:h-[500px]'}>
                             <MapComponent
                                 center={[itinerary().centerLng, itinerary().centerLat]}
-                                zoom={12} // Set a reasonable default; adjust as needed
+                                zoom={12}
                                 minZoom={10}
                                 maxZoom={22}
                                 pointsOfInterest={filteredPOIs()}
                             />
                         </div>
                     </Show>
+
                     <Show when={viewMode() === 'list' || viewMode() === 'split'}>
                         <div class={viewMode() === 'list' ? 'col-span-full' : ''}>
                             <div class="space-y-4">
-                                <div class="flex items-center justify-between">
+                                <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                                     <h2 class="text-lg font-semibold text-gray-900">Places to Visit</h2>
-                                    <button class="text-sm text-blue-600 hover:text-blue-700 flex items-center gap-1">
+                                    <button class="text-sm text-blue-600 hover:text-blue-700 flex items-center gap-1 self-start sm:self-auto">
                                         <Edit3 class="w-4 h-4" />
                                         Customize Order
                                     </button>
@@ -626,38 +636,40 @@ export default function ItineraryResultsPage() {
                         </div>
                     </Show>
                 </div>
-
-
             </div>
-            {/* Chat Interface */}
+
+            {/* Chat Interface - Mobile Optimized */}
             {renderChatInterface()}
-            {/* Floating Chat Button (when chat is closed) */}
+
+            {/* Floating Chat Button - Mobile First */}
             <Show when={!showChat()}>
                 <button
                     onClick={() => setShowChat(true)}
-                    class="fixed bottom-6 right-6 w-14 h-14 bg-blue-600 text-white rounded-full shadow-lg hover:bg-blue-700 transition-all hover:scale-105 flex items-center justify-center z-40"
+                    class="fixed bottom-4 right-4 w-12 h-12 bg-blue-600 text-white rounded-full shadow-lg hover:bg-blue-700 transition-all hover:scale-105 flex items-center justify-center z-40 sm:bottom-6 sm:right-6 sm:w-14 sm:h-14"
                 >
-                    <MessageCircle class="w-6 h-6" />
+                    <MessageCircle class="w-5 h-5 sm:w-6 sm:h-6" />
                 </button>
             </Show>
-            {/* Selected POI Details */}
+
+            {/* Selected POI Details - Mobile First Modal */}
             <Show when={selectedPOI()}>
-                <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-                    <div class="bg-white rounded-lg max-w-2xl w-full max-h-[80vh] overflow-y-auto">
-                        <div class="p-6">
+                <div class="fixed inset-0 bg-black bg-opacity-50 flex items-end sm:items-center justify-center p-0 sm:p-4 z-50">
+                    <div class="bg-white rounded-t-lg sm:rounded-lg max-w-2xl w-full max-h-[90vh] sm:max-h-[80vh] overflow-y-auto">
+                        <div class="p-4 sm:p-6">
                             <div class="flex items-start justify-between mb-4">
-                                <div>
-                                    <h3 class="text-xl font-bold text-gray-900">{selectedPOI().name}</h3>
-                                    <p class="text-gray-600">{selectedPOI().category}</p>
+                                <div class="flex-1 min-w-0">
+                                    <h3 class="text-lg font-bold text-gray-900 sm:text-xl pr-2">{selectedPOI().name}</h3>
+                                    <p class="text-gray-600 text-sm sm:text-base">{selectedPOI().category}</p>
                                 </div>
                                 <button
                                     onClick={() => setSelectedPOI(null)}
-                                    class="p-2 hover:bg-gray-100 rounded-lg"
+                                    class="p-2 hover:bg-gray-100 rounded-lg flex-shrink-0"
                                 >
                                     <X class="w-5 h-5" />
                                 </button>
                             </div>
-                            <div class="grid grid-cols-2 gap-4 mb-4 text-sm">
+
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-4 text-sm">
                                 <div class="flex items-center gap-2">
                                     <Clock class="w-4 h-4 text-gray-500" />
                                     <span>{selectedPOI().timeToSpend}</span>
@@ -666,16 +678,18 @@ export default function ItineraryResultsPage() {
                                     <DollarSign class="w-4 h-4 text-gray-500" />
                                     <span class={getBudgetColor(selectedPOI().budget)}>{selectedPOI().budget}</span>
                                 </div>
-                                <div class="flex items-center gap-2">
-                                    <MapPin class="w-4 h-4 text-gray-500" />
-                                    <span>{selectedPOI().address}</span>
+                                <div class="flex items-center gap-2 col-span-1 sm:col-span-2">
+                                    <MapPin class="w-4 h-4 text-gray-500 flex-shrink-0" />
+                                    <span class="text-xs sm:text-sm">{selectedPOI().address}</span>
                                 </div>
                                 <div class="flex items-center gap-2">
                                     <Star class="w-4 h-4 text-yellow-500 fill-current" />
                                     <span>{selectedPOI().rating}/5</span>
                                 </div>
                             </div>
-                            <p class="text-gray-700 mb-4">{selectedPOI().description}</p>
+
+                            <p class="text-gray-700 mb-4 text-sm sm:text-base">{selectedPOI().description}</p>
+
                             <div class="flex flex-wrap gap-2 mb-4">
                                 <For each={selectedPOI().tags}>
                                     {(tag) => (
@@ -685,15 +699,16 @@ export default function ItineraryResultsPage() {
                                     )}
                                 </For>
                             </div>
+
                             <div class="border-t pt-4">
-                                <div class="flex items-center justify-between">
+                                <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                                     <div class="text-sm text-gray-600">
                                         <p><strong>Hours:</strong> {selectedPOI().openingHours}</p>
                                     </div>
-                                    <div class="flex gap-2">
+                                    <div class="flex flex-col gap-2 sm:flex-row">
                                         <button
                                             onClick={() => addToTrip(selectedPOI())}
-                                            class={`px-4 py-2 rounded-lg text-sm ${myTrip().some(item => item.id === selectedPOI().id) ? 'bg-green-600 text-white' : 'bg-blue-600 text-white hover:bg-blue-700'}`}
+                                            class={`px-4 py-2 rounded-lg text-sm font-medium ${myTrip().some(item => item.id === selectedPOI().id) ? 'bg-green-600 text-white' : 'bg-blue-600 text-white hover:bg-blue-700'}`}
                                         >
                                             {myTrip().some(item => item.id === selectedPOI().id) ? 'Added' : 'Add to My Trip'}
                                         </button>
@@ -703,8 +718,6 @@ export default function ItineraryResultsPage() {
                                     </div>
                                 </div>
                             </div>
-
-
                         </div>
                     </div>
                 </div>

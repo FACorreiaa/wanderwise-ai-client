@@ -94,20 +94,20 @@ export default function SettingsPage() {
                 <h2 class="text-2xl font-bold text-gray-900 mb-6">Account Settings</h2>
 
                 {/* Profile Picture */}
-                <div class="bg-white rounded-lg border border-gray-200 p-6 mb-6">
-                    <div class="flex items-center space-x-6">
+                <div class="bg-white rounded-lg border border-gray-200 p-4 sm:p-6 mb-4 sm:mb-6">
+                    <div class="flex flex-col sm:flex-row items-center sm:items-start space-y-4 sm:space-y-0 sm:space-x-6">
                         <div class="relative">
-                            <div class="w-20 h-20 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-2xl font-bold">
+                            <div class="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-xl sm:text-2xl font-bold">
                                 {userProfile().name.split(' ').map(n => n[0]).join('')}
                             </div>
-                            <button class="absolute -bottom-1 -right-1 bg-white border-2 border-gray-200 rounded-full p-1.5 hover:bg-gray-50">
-                                <Camera class="w-4 h-4 text-gray-600" />
+                            <button class="absolute -bottom-1 -right-1 bg-white border-2 border-gray-200 rounded-full p-1 sm:p-1.5 hover:bg-gray-50">
+                                <Camera class="w-3 h-3 sm:w-4 sm:h-4 text-gray-600" />
                             </button>
                         </div>
-                        <div>
-                            <h3 class="text-lg font-semibold text-gray-900">Profile Photo</h3>
-                            <p class="text-sm text-gray-500">Update your profile picture</p>
-                            <button class="mt-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium">
+                        <div class="text-center sm:text-left">
+                            <h3 class="text-base sm:text-lg font-semibold text-gray-900">Profile Photo</h3>
+                            <p class="text-xs sm:text-sm text-gray-500">Update your profile picture</p>
+                            <button class="mt-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-xs sm:text-sm font-medium">
                                 Upload Photo
                             </button>
                         </div>
@@ -115,16 +115,16 @@ export default function SettingsPage() {
                 </div>
 
                 {/* Personal Information */}
-                <div class="bg-white rounded-lg border border-gray-200 p-6">
-                    <h3 class="text-lg font-semibold text-gray-900 mb-4">Personal Information</h3>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="bg-white rounded-lg border border-gray-200 p-4 sm:p-6">
+                    <h3 class="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">Personal Information</h3>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Full Name</label>
+                            <label class="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">Full Name</label>
                             <input
                                 type="text"
                                 value={userProfile().name}
                                 onInput={(e) => updateProfile('name', e.target.value)}
-                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                class="w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
                             />
                         </div>
                         <div>
@@ -135,7 +135,7 @@ export default function SettingsPage() {
                                     type="email"
                                     value={userProfile().email}
                                     onInput={(e) => updateProfile('email', e.target.value)}
-                                    class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    class="w-full pl-8 sm:pl-10 pr-3 sm:pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
                                 />
                             </div>
                         </div>
@@ -174,9 +174,9 @@ export default function SettingsPage() {
                             />
                         </div>
                     </div>
-                    <div class="flex justify-end mt-6">
-                        <button class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium flex items-center gap-2">
-                            <Save class="w-4 h-4" />
+                    <div class="flex justify-end mt-4 sm:mt-6">
+                        <button class="px-4 sm:px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium flex items-center gap-2 text-sm sm:text-base">
+                            <Save class="w-3 h-3 sm:w-4 sm:h-4" />
                             Save Changes
                         </button>
                     </div>
@@ -364,10 +364,35 @@ export default function SettingsPage() {
 
     return (
         <div class="min-h-screen bg-gray-50">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-                <div class="flex gap-8">
-                    {/* Vertical Tab Navigation */}
-                    <div class="w-64 flex-shrink-0">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8">
+                <div class="flex flex-col lg:flex-row gap-4 lg:gap-8">
+                    {/* Mobile Tab Navigation */}
+                    <div class="lg:hidden">
+                        <div class="bg-white rounded-lg border border-gray-200 p-2">
+                            <div class="flex overflow-x-auto space-x-1">
+                                <For each={tabs}>
+                                    {(tab) => {
+                                        const Icon = tab.icon;
+                                        return (
+                                            <button
+                                                onClick={() => setActiveTab(tab.id)}
+                                                class={`flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 whitespace-nowrap ${activeTab() === tab.id
+                                                    ? 'bg-blue-600 text-white shadow-lg'
+                                                    : 'text-gray-700 hover:bg-gray-100'
+                                                    }`}
+                                            >
+                                                <Icon class="w-4 h-4" />
+                                                {tab.label}
+                                            </button>
+                                        );
+                                    }}
+                                </For>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Desktop Tab Navigation */}
+                    <div class="hidden lg:block w-64 flex-shrink-0">
                         <div class="bg-white rounded-lg border border-gray-200 p-2 sticky top-8">
                             <nav class="space-y-1">
                                 <For each={tabs}>
