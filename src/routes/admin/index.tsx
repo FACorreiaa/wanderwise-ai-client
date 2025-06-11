@@ -1,5 +1,5 @@
 import { createSignal, For, Show, createEffect } from 'solid-js';
-import { BarChart3, Users, MapPin, MessageCircle, Star, Settings, Activity, AlertTriangle, TrendingUp, Eye, Search, Filter, Plus, Download, RefreshCw } from 'lucide-solid';
+import { BarChart3, Users, MapPin, MessageCircle, Star, Settings, Activity, AlertTriangle, TrendingUp, Eye, Search, Filter, Plus, Download, RefreshCw, CheckCircle, XCircle, Clock, Shield, Database } from 'lucide-solid';
 
 export default function AdminDashboard() {
     const [activeTab, setActiveTab] = createSignal('overview');

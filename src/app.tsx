@@ -5,25 +5,31 @@ import Nav from "~/components/Nav";
 import Footer from "~/components/Footer"; // Import the new component
 import "./app.css";
 import { QueryClient, QueryClientProvider } from "@tanstack/solid-query";
+import { AuthProvider } from "~/contexts/AuthContext";
+import { ThemeProvider } from "~/contexts/ThemeContext";
 
 const queryClient = new QueryClient();
 
 export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <Router
-        root={props => (
-          <div class="min-h-screen flex flex-col">
-            <Nav />
-            <main class="flex-grow min-h-screen bg-gradient-to-b from-blue-50 via-purple-50 to-white">
-              <Suspense>{props.children}</Suspense>
-            </main>
-            <Footer />
-          </div>
-        )}
-      >
-        <FileRoutes />
-      </Router>
+      <ThemeProvider>
+        <Router
+          root={props => (
+            <AuthProvider>
+              <div class="min-h-screen flex flex-col bg-white dark:bg-gray-900 transition-colors">
+                <Nav />
+                <main class="flex-grow min-h-screen bg-gradient-to-b from-blue-50 via-purple-50 to-white dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 transition-colors">
+                  <Suspense>{props.children}</Suspense>
+                </main>
+                <Footer />
+              </div>
+            </AuthProvider>
+          )}
+        >
+          <FileRoutes />
+        </Router>
+      </ThemeProvider>
     </QueryClientProvider>
   );
 }
