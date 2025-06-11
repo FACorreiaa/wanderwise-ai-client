@@ -3,7 +3,7 @@
 // the query-based functions from './api-queries.ts' which provide better caching,
 // optimistic updates, and error handling with @tanstack/solid-query.
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api/v1';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1';
 
 // Request wrapper with error handling and auth
 async function apiRequest<T>(
@@ -11,7 +11,7 @@ async function apiRequest<T>(
   options: RequestInit = {}
 ): Promise<T> {
   const token = localStorage.getItem('access_token');
-  
+
   const config: RequestInit = {
     headers: {
       'Content-Type': 'application/json',
@@ -21,8 +21,11 @@ async function apiRequest<T>(
     ...options,
   };
 
-  const response = await fetch(`${API_BASE_URL}${endpoint}`, config);
+  // Ensure no double slashes in URL
+  const url = `${API_BASE_URL.replace(/\/$/, '')}/${endpoint.replace(/^\//, '')}`;
+  const response = await fetch(url, config);
 
+  console.log('url', url)
   if (!response.ok) {
     if (response.status === 401) {
       // Handle unauthorized - redirect to login
@@ -30,7 +33,7 @@ async function apiRequest<T>(
       window.location.href = '/auth/signin';
       throw new Error('Unauthorized');
     }
-    
+
     const errorData = await response.json().catch(() => ({ message: 'Request failed' }));
     throw new Error(errorData.message || `HTTP ${response.status}`);
   }
@@ -65,7 +68,7 @@ export const authAPI = {
     if (!token) {
       return { valid: false };
     }
-    
+
     return apiRequest<{ valid: boolean; user_id?: string; username?: string; email?: string }>('/auth/validate-session', {
       method: 'POST',
       body: JSON.stringify({ session_id: token }),
@@ -80,7 +83,16 @@ export const authAPI = {
   },
 
   async getCurrentUser() {
-    return apiRequest<any>('/user/profile');
+    const token = localStorage.getItem('access_token');
+    if (!token) {
+      throw new Error('No authentication token available');
+    }
+
+    return apiRequest<any>('/user/profile', {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
   }
 };
 

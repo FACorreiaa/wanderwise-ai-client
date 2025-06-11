@@ -20,7 +20,9 @@ export async function apiRequest<T>(
     ...options,
   };
 
-  const response = await fetch(`${API_BASE_URL}${endpoint}`, config);
+  // Ensure no double slashes in URL
+  const url = `${API_BASE_URL.replace(/\/$/, '')}/${endpoint.replace(/^\//, '')}`;
+  const response = await fetch(url, config);
 
   if (!response.ok) {
     if (response.status === 401) {
