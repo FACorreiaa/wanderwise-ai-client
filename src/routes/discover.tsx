@@ -1,5 +1,5 @@
 import { createSignal, For, Show, createEffect } from 'solid-js';
-import { Search, Filter, MapPin, Star, Heart, Bookmark, Clock, DollarSign, Users, Wifi, Parking, Camera, Grid, List, SortAsc, SortDesc } from 'lucide-solid';
+import { Search, Filter, MapPin, Star, Heart, Bookmark, Clock, DollarSign, Users, Wifi, Camera, Grid, List, SortAsc, SortDesc } from 'lucide-solid';
 
 export default function DiscoverPage() {
     const [searchQuery, setSearchQuery] = createSignal('');
@@ -303,7 +303,7 @@ export default function DiscoverPage() {
                             <Wifi class="w-4 h-4 text-gray-400" />
                         </Show>
                         <Show when={poi.amenities.includes('Parking')}>
-                            <Parking class="w-4 h-4 text-gray-400" />
+                            <MapPin class="w-4 h-4 text-gray-400" />
                         </Show>
                     </div>
                     <button class="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium text-sm">

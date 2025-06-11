@@ -3,7 +3,7 @@ import { Button } from "@/ui/button";
 import { useLocation } from "@solidjs/router";
 import { A } from '@solidjs/router';
 import { Menu, X, User, Settings, LogOut, MessageCircle, Heart, List, MapPin, Sun, Moon } from "lucide-solid";
-import { createSignal, For, Show } from "solid-js";
+import { createSignal, For, Show, onMount, onCleanup } from "solid-js";
 import { ImageRoot, ImageFallback, Image } from "@/ui/image";
 import { useAuth } from "~/contexts/AuthContext";
 import { useTheme } from "~/contexts/ThemeContext";
@@ -42,8 +42,21 @@ export default function Nav() {
     }
   };
 
+  // Close menus when clicking outside
+  onMount(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      if (!target.closest('.user-menu-container') && showUserMenu()) {
+        setShowUserMenu(false);
+      }
+    };
+
+    document.addEventListener('click', handleClickOutside);
+    onCleanup(() => document.removeEventListener('click', handleClickOutside));
+  });
+
   return (
-    <nav class="bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-700 sticky top-0 z-50 transition-colors">
+    <nav class={`${isMenuOpen() ? 'bg-white dark:bg-gray-900' : 'bg-white/80 dark:bg-gray-900/80 backdrop-blur-md'} border-b border-gray-200 dark:border-gray-700 sticky top-0 z-50 transition-colors`}>
       <div class="px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between items-center h-14 sm:h-16">
           {/* Logo - Mobile First */}
@@ -55,7 +68,7 @@ export default function Nav() {
                   <ImageFallback class="w-full h-full bg-blue-600 text-white rounded flex items-center justify-center text-sm font-bold">L</ImageFallback>
                 </ImageRoot>
               </div>
-              <span class="text-lg sm:text-xl font-bold text-gray-900 dark:text-white transition-colors">Loci</span>
+              <span class="pl-2 text-lg sm:text-xl font-bold text-gray-900 dark:text-white transition-colors">Loci</span>
               <Show when={isAuthenticated()}>
                 <Badge variant="secondary" class="ml-1 sm:ml-2 bg-blue-100 text-blue-800 text-xs px-1.5 py-0.5 sm:px-2 sm:py-1">AI</Badge>
               </Show>
@@ -75,15 +88,15 @@ export default function Nav() {
           </Button>
 
           {/* Desktop Navigation */}
-          <Show 
-            when={isAuthenticated()} 
+          <Show
+            when={isAuthenticated()}
             fallback={
               <div class="hidden md:flex items-center space-x-6 lg:space-x-8">
                 <For each={publicNavigationItems}>
                   {(item) => (
                     <A
                       href={item.href}
-                      class="text-gray-700 hover:text-blue-600 font-medium transition-colors text-sm lg:text-base"
+                      class="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 font-medium transition-colors text-sm lg:text-base"
                     >
                       {item.name}
                     </A>
@@ -99,11 +112,10 @@ export default function Nav() {
                   return (
                     <A
                       href={item.href}
-                      class={`flex items-center gap-2 px-3 py-2 rounded-lg font-medium transition-colors text-sm ${
-                        location.pathname === item.href
-                          ? 'bg-blue-100 text-blue-700'
-                          : 'text-gray-700 hover:text-blue-600 hover:bg-gray-100'
-                      }`}
+                      class={`flex items-center gap-2 px-3 py-2 rounded-lg font-medium transition-colors text-sm ${location.pathname === item.href
+                        ? 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300'
+                        : 'text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-gray-100 dark:hover:bg-gray-800'
+                        }`}
                     >
                       <IconComponent class="w-4 h-4" />
                       {item.name}
@@ -131,7 +143,7 @@ export default function Nav() {
                     <Sun class="w-4 h-4" />
                   </Show>
                 </Button>
-                
+
                 <A href="/auth/signin">
                   <Button variant="ghost" class="text-gray-700 dark:text-gray-300 text-sm lg:text-base px-3 lg:px-4">
                     Log In
@@ -145,7 +157,7 @@ export default function Nav() {
               </div>
             }
           >
-            <div class="hidden md:flex items-center space-x-3 relative">
+            <div class="hidden md:flex items-center space-x-3 relative user-menu-container">
               {/* Theme Toggle */}
               <Button
                 variant="ghost"
@@ -158,7 +170,7 @@ export default function Nav() {
                   <Sun class="w-4 h-4" />
                 </Show>
               </Button>
-              
+
               <Button
                 variant="ghost"
                 size="sm"
@@ -173,10 +185,10 @@ export default function Nav() {
 
               {/* User Dropdown Menu */}
               <Show when={showUserMenu()}>
-                <div class="absolute top-full right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50">
-                  <A 
-                    href="/settings" 
-                    class="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                <div class="absolute top-full right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-1 z-50 transition-colors">
+                  <A
+                    href="/settings"
+                    class="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
                     onClick={() => setShowUserMenu(false)}
                   >
                     <Settings class="w-4 h-4" />
@@ -187,7 +199,7 @@ export default function Nav() {
                       setShowUserMenu(false);
                       handleLogout();
                     }}
-                    class="w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                    class="w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
                   >
                     <LogOut class="w-4 h-4" />
                     Sign Out
@@ -204,7 +216,7 @@ export default function Nav() {
         <div class="md:hidden fixed inset-0 z-50 bg-white dark:bg-gray-900 transition-colors">
           <div class="flex flex-col h-full">
             {/* Mobile Header */}
-            <div class="flex justify-between items-center px-4 py-4 border-b border-gray-200">
+            <div class="flex justify-between items-center px-4 py-4 border-b border-gray-200 dark:border-gray-700">
               <A href="/" class="flex items-center space-x-2" onClick={() => setIsMenuOpen(false)}>
                 <div class="w-6 h-6">
                   <ImageRoot>
@@ -212,9 +224,9 @@ export default function Nav() {
                     <ImageFallback class="w-full h-full bg-blue-600 text-white rounded flex items-center justify-center text-sm font-bold">L</ImageFallback>
                   </ImageRoot>
                 </div>
-                <span class="text-lg font-bold text-gray-900">Loci</span>
+                <span class="text-lg font-bold text-gray-900 dark:text-white">Loci</span>
                 <Show when={isAuthenticated()}>
-                  <Badge variant="secondary" class="ml-1 bg-blue-100 text-blue-800 text-xs px-1.5 py-0.5">AI</Badge>
+                  <Badge variant="secondary" class="ml-1 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-300 text-xs px-1.5 py-0.5">AI</Badge>
                 </Show>
               </A>
               <Button
@@ -229,14 +241,14 @@ export default function Nav() {
 
             {/* Mobile Navigation Links */}
             <div class="flex-1 px-4 py-6 space-y-1">
-              <Show 
-                when={isAuthenticated()} 
+              <Show
+                when={isAuthenticated()}
                 fallback={
                   <For each={publicNavigationItems}>
                     {(item) => (
                       <A
                         href={item.href}
-                        class="block px-4 py-3 text-lg font-medium text-gray-900 hover:bg-gray-50 rounded-lg transition-colors"
+                        class="block px-4 py-3 text-lg font-medium text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg transition-colors"
                         onClick={() => setIsMenuOpen(false)}
                       >
                         {item.name}
@@ -251,7 +263,7 @@ export default function Nav() {
                     return (
                       <A
                         href={item.href}
-                        class="flex items-center gap-3 px-4 py-3 text-lg font-medium text-gray-900 hover:bg-gray-50 rounded-lg transition-colors"
+                        class="flex items-center gap-3 px-4 py-3 text-lg font-medium text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg transition-colors"
                         onClick={() => setIsMenuOpen(false)}
                       >
                         <IconComponent class="w-5 h-5" />
@@ -293,12 +305,12 @@ export default function Nav() {
                       Settings
                     </Button>
                   </A>
-                  <Button 
+                  <Button
                     onClick={() => {
                       setIsMenuOpen(false);
                       handleLogout();
                     }}
-                    variant="outline" 
+                    variant="outline"
                     class="w-full justify-center py-3 text-base text-red-600 border-red-200 hover:bg-red-50"
                   >
                     Sign Out

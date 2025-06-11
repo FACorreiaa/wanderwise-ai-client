@@ -137,7 +137,7 @@ export default function AdminDashboard() {
         setRefreshing(false);
     };
 
-    const getActivityIcon = (type) => {
+    const getActivityIcon = (type: any) => {
         const icons = {
             'user_registration': '👤',
             'poi_flagged': '🚩',
@@ -359,11 +359,10 @@ export default function AdminDashboard() {
                                             <div class="flex items-center gap-4 text-sm text-gray-500">
                                                 <span>{item.reportCount} reports</span>
                                                 <span>Created {formatTimestamp(item.createdAt)}</span>
-                                                <span class={`px-2 py-1 rounded-full text-xs ${
-                                                    item.status === 'pending' ? 'bg-yellow-100 text-yellow-700' :
-                                                    item.status === 'investigating' ? 'bg-blue-100 text-blue-700' :
-                                                    'bg-gray-100 text-gray-700'
-                                                }`}>
+                                                <span class={`px-2 py-1 rounded-full text-xs ${item.status === 'pending' ? 'bg-yellow-100 text-yellow-700' :
+                                                        item.status === 'investigating' ? 'bg-blue-100 text-blue-700' :
+                                                            'bg-gray-100 text-gray-700'
+                                                    }`}>
                                                     {item.status}
                                                 </span>
                                             </div>
@@ -457,11 +456,10 @@ export default function AdminDashboard() {
                                             return (
                                                 <button
                                                     onClick={() => setActiveTab(tab.id)}
-                                                    class={`w-full flex items-center gap-3 px-3 py-2 text-left rounded-lg transition-colors ${
-                                                        activeTab() === tab.id
+                                                    class={`w-full flex items-center gap-3 px-3 py-2 text-left rounded-lg transition-colors ${activeTab() === tab.id
                                                             ? 'bg-blue-600 text-white'
                                                             : 'text-gray-700 hover:bg-gray-100'
-                                                    }`}
+                                                        }`}
                                                 >
                                                     <Icon class="w-5 h-5" />
                                                     {tab.label}

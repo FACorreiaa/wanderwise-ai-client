@@ -8,13 +8,13 @@ import { Component, createSignal, Show } from "solid-js";
 import AuthLayout from '../../layout/Auth'
 import { FiCheck } from "solid-icons/fi";
 import { VsEyeClosed, VsEye } from "solid-icons/vs";
+import { useRegisterMutation } from "@/lib/api/auth";
 
 interface FormData {
     email: string;
     password: string;
     confirmPassword: string;
-    firstName: string;
-    lastName: string;
+    username: string;
     company: string;
 }
 
@@ -23,24 +23,47 @@ type AuthMode = 'signin' | 'signup' | 'forgot';
 const SignUp: Component<{ onSwitchMode?: (mode: AuthMode) => void }> = (props) => {
     const navigate = useNavigate();
     const [formData, setFormData] = createSignal<Partial<FormData>>({
+        username: '',
         email: '',
         password: '',
         confirmPassword: '',
-        firstName: '',
-        lastName: '',
         company: ''
     });
     const [showPassword, setShowPassword] = createSignal(false);
-    const [isLoading, setIsLoading] = createSignal(false);
+    const [error, setError] = createSignal<string>('');
+
+    // Use the register mutation
+    const registerMutation = useRegisterMutation();
 
     const handleSubmit = async (e: Event) => {
         e.preventDefault();
-        setIsLoading(true);
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        setIsLoading(false);
-        console.log('Sign up:', formData());
-        // Redirect after successful signup
-        navigate('/dashboard');
+        setError('');
+
+        const data = formData();
+
+        // Validate form
+        if (!data.username || !data.email || !data.password) {
+            setError('Please fill in all required fields');
+            return;
+        }
+
+        if (data.password !== data.confirmPassword) {
+            setError('Passwords do not match');
+            return;
+        }
+
+        try {
+            await registerMutation.mutateAsync({
+                username: data.username,
+                email: data.email,
+                password: data.password,
+            });
+
+            // Success! Navigate to sign in page
+            navigate('/auth/signin');
+        } catch (err: any) {
+            setError(err?.message || 'Registration failed. Please try again.');
+        }
     };
 
     const handleSwitchToSignIn = () => {
@@ -64,29 +87,14 @@ const SignUp: Component<{ onSwitchMode?: (mode: AuthMode) => void }> = (props) =
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                         <label class="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
-                            First name
+                            Username
                         </label>
                         <TextFieldRoot>
                             <TextField
                                 type="text"
                                 placeholder="John"
-                                value={formData().firstName || ''}
-                                onInput={(e) => setFormData(prev => ({ ...prev, firstName: e.currentTarget.value }))}
-                                class="w-full px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-sm sm:text-base"
-                                required
-                            />
-                        </TextFieldRoot>
-                    </div>
-                    <div>
-                        <label class="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
-                            Last name
-                        </label>
-                        <TextFieldRoot>
-                            <TextField
-                                type="text"
-                                placeholder="Doe"
-                                value={formData().lastName || ''}
-                                onInput={(e) => setFormData(prev => ({ ...prev, lastName: e.currentTarget.value }))}
+                                value={formData().username || ''}
+                                onInput={(e) => setFormData(prev => ({ ...prev, username: e.currentTarget.value }))}
                                 class="w-full px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-sm sm:text-base"
                                 required
                             />
@@ -140,6 +148,7 @@ const SignUp: Component<{ onSwitchMode?: (mode: AuthMode) => void }> = (props) =
                                 required
                             />
                         </TextFieldRoot>
+
                         <button
                             type="button"
                             onClick={() => setShowPassword(!showPassword())}
@@ -148,6 +157,32 @@ const SignUp: Component<{ onSwitchMode?: (mode: AuthMode) => void }> = (props) =
                             {showPassword() ? <VsEyeClosed class="w-4 h-4 sm:w-5 sm:h-5" /> : <VsEye class="w-4 h-4 sm:w-5 sm:h-5" />}
                         </button>
                     </div>
+
+                    <label class="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2 pt-2">
+                        Confirm Password
+                    </label>
+                    <div class="relative">
+                        <TextFieldRoot>
+                            <TextField
+                                type={showPassword() ? "text" : "password"}
+                                placeholder="Create a strong password"
+                                value={formData().confirmPassword || ''}
+                                onInput={(e) => setFormData(prev => ({ ...prev, confirmPassword: e.currentTarget.value }))}
+                                class="w-full px-3 sm:px-4 py-2.5 sm:py-3 pr-10 sm:pr-12 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-sm sm:text-base"
+                                required
+                            />
+                        </TextFieldRoot>
+
+                        <button
+                            type="button"
+                            onClick={() => setShowPassword(!showPassword())}
+                            class="absolute right-2 sm:right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                        >
+                            {showPassword() ? <VsEyeClosed class="w-4 h-4 sm:w-5 sm:h-5" /> : <VsEye class="w-4 h-4 sm:w-5 sm:h-5" />}
+                        </button>
+                    </div>
+
+
 
                     <Show when={formData().password}>
                         <div class="mt-2 space-y-1">
@@ -166,12 +201,19 @@ const SignUp: Component<{ onSwitchMode?: (mode: AuthMode) => void }> = (props) =
                     </Show>
                 </div>
 
+                {/* Error message */}
+                <Show when={error()}>
+                    <div class="p-3 rounded-lg bg-red-50 border border-red-200">
+                        <p class="text-red-600 text-sm">{error()}</p>
+                    </div>
+                </Show>
+
                 <Button
                     type="submit"
-                    disabled={isLoading()}
+                    disabled={registerMutation.isPending}
                     class="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white py-3 rounded-lg font-medium transition-all disabled:opacity-50"
                 >
-                    {isLoading() ? 'Creating account...' : 'Create account'}
+                    {registerMutation.isPending ? 'Creating account...' : 'Create account'}
                 </Button>
 
                 <div class="relative my-6">

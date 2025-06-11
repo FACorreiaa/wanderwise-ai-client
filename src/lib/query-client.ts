@@ -1,6 +1,6 @@
 // Query Client Configuration for @tanstack/solid-query
 import { QueryClient } from '@tanstack/solid-query';
-import { APIError } from './api-queries';
+import { APIError } from './api';
 
 // Default query options for better UX
 const defaultQueryOptions = {

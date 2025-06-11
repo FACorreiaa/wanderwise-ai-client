@@ -2,9 +2,11 @@
 import { Button } from "@/ui/button";
 import { TextField, TextFieldRoot } from "@/ui/textfield";
 import { A, useNavigate } from "@solidjs/router";
-import { Component, createSignal } from "solid-js";
+import { Component, createSignal, Show } from "solid-js";
 import { VsEye, VsEyeClosed } from "solid-icons/vs";
 import AuthLayout from "@/components/layout/Auth";
+import { useLoginMutation } from "@/lib/api/auth";
+import { useAuth } from "@/contexts/AuthContext";
 
 // Define the FormData interface
 interface FormData {
@@ -17,23 +19,43 @@ type AuthMode = 'signin' | 'signup' | 'forgot';
 
 
 const SignIn: Component<{ onSwitchMode?: (mode: AuthMode) => void }> = (props) => {
+    const { login } = useAuth();
     const navigate = useNavigate();
     const [formData, setFormData] = createSignal<Partial<FormData>>({
         email: '',
         password: ''
     });
+    const [error, setError] = createSignal<string>('');
+
     const [showPassword, setShowPassword] = createSignal(false);
     const [isLoading, setIsLoading] = createSignal(false);
+
+    const loginMutation = useLoginMutation();
 
     const handleSubmit = async (e: Event) => {
         e.preventDefault();
         setIsLoading(true);
-        // Simulate API call
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        setIsLoading(false);
-        console.log('Sign in:', formData());
-        // Redirect to dashboard or home after successful login
-        navigate('/dashboard');
+        setError('');
+
+        const data = formData();
+
+        // Validate form
+        if (!data.email || !data.email || !data.password) {
+            setError('Please fill in all required fields');
+            return;
+        }
+
+        try {
+            // await loginMutation.mutateAsync({
+            //     email: data.email,
+            //     password: data.password,
+            // });
+            login(data.email, data.password)
+
+            navigate('/');
+        } catch (err: any) {
+            setError(err?.message || 'Registration failed. Please try again.');
+        }
     };
 
     return (
@@ -44,6 +66,11 @@ const SignIn: Component<{ onSwitchMode?: (mode: AuthMode) => void }> = (props) =
             </div>
 
             <form onSubmit={handleSubmit} class="space-y-3 sm:space-y-4">
+                <Show when={error()}>
+                    <div class="p-3 rounded-lg bg-red-50 border border-red-200">
+                        <p class="text-red-600 text-sm">{error()}</p>
+                    </div>
+                </Show>
                 <div>
                     <label class="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
                         Email address

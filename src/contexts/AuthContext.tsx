@@ -4,10 +4,24 @@ import { authAPI, getAuthToken, setAuthToken, clearAuthToken } from '@/lib/api';
 
 interface User {
   id: string;
-  username: string;
   email: string;
-  role: string;
+  username?: string;
+  firstname?: string;
+  lastname?: string;
+  age?: number;
+  city?: string;
+  country?: string;
+  about_you?: string;
+  display_name?: string;
+  profile_image_url?: string;
+  is_active: boolean;
+  email_verified_at?: string;
+  last_login_at?: string;
+  theme?: string;
+  language?: string;
+  role?: string;
   created_at: string;
+  updated_at: string;
 }
 
 interface AuthContextType {
@@ -44,17 +58,12 @@ export const AuthProvider = (props: AuthProviderProps) => {
     const token = getAuthToken();
     if (token) {
       try {
-        const result = await authAPI.validateSession();
-        if (result.valid) {
-          // If we have a valid session, we'd typically get user info here
-          // For now, we'll set a mock user based on the token
-          setUser({
-            id: 'user-1',
-            username: 'Current User',
-            email: 'user@example.com',
-            role: 'user',
-            created_at: new Date().toISOString()
-          });
+        // Validate session and get user profile data
+        const sessionResult = await authAPI.validateSession();
+        if (sessionResult.valid) {
+          // Fetch complete user profile from server
+          const userProfile = await authAPI.getCurrentUser();
+          setUser(userProfile);
         } else {
           clearAuthToken();
         }
@@ -69,17 +78,13 @@ export const AuthProvider = (props: AuthProviderProps) => {
   const login = async (email: string, password: string): Promise<void> => {
     setIsLoading(true);
     try {
+      // Authenticate with server and get access token
       const response = await authAPI.login(email, password);
       setAuthToken(response.access_token);
       
-      // Set user info (in a real app, this would come from the API response)
-      setUser({
-        id: 'user-1',
-        username: email.split('@')[0],
-        email,
-        role: 'user',
-        created_at: new Date().toISOString()
-      });
+      // Fetch complete user profile after successful login
+      const userProfile = await authAPI.getCurrentUser();
+      setUser(userProfile);
       
       navigate('/');
     } catch (error) {
@@ -92,8 +97,9 @@ export const AuthProvider = (props: AuthProviderProps) => {
   const register = async (username: string, email: string, password: string): Promise<void> => {
     setIsLoading(true);
     try {
+      // Register new user with server
       await authAPI.register(username, email, password);
-      // After successful registration, log in the user
+      // After successful registration, automatically log in the user
       await login(email, password);
     } catch (error) {
       setIsLoading(false);
@@ -104,10 +110,12 @@ export const AuthProvider = (props: AuthProviderProps) => {
   const logout = async (): Promise<void> => {
     setIsLoading(true);
     try {
+      // Call server logout endpoint to invalidate session
       await authAPI.logout();
     } catch (error) {
       console.error('Logout error:', error);
     } finally {
+      // Clear local authentication state
       clearAuthToken();
       setUser(null);
       setIsLoading(false);

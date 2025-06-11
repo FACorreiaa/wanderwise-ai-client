@@ -30,16 +30,38 @@ export const ThemeProvider = (props: ThemeProviderProps) => {
     
     if (saved === 'dark' || (!saved && systemPreference)) {
       setIsDark(true);
+    } else if (saved === 'light') {
+      setIsDark(false);
     }
+    
+    // Listen for system theme changes
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    const handleSystemThemeChange = (e: MediaQueryListEvent) => {
+      // Only update if user hasn't set a preference
+      if (!localStorage.getItem('theme')) {
+        setIsDark(e.matches);
+      }
+    };
+    
+    mediaQuery.addEventListener('change', handleSystemThemeChange);
+    
+    // Cleanup listener on unmount
+    return () => mediaQuery.removeEventListener('change', handleSystemThemeChange);
   });
 
   // Apply theme to document
   createEffect(() => {
     const html = document.documentElement;
+    const body = document.body;
+    
     if (isDark()) {
       html.classList.add('dark');
+      body.classList.add('dark');
+      html.setAttribute('data-kb-theme', 'dark');
     } else {
       html.classList.remove('dark');
+      body.classList.remove('dark');
+      html.setAttribute('data-kb-theme', 'light');
     }
   });
 

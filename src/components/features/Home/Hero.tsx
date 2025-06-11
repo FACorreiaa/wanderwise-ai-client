@@ -2,8 +2,8 @@ import { Badge } from "@/ui/badge";
 import { Button } from "@/ui/button";
 import { TextField, TextFieldRoot } from "@/ui/textfield";
 import { createSignal, For, JSX } from 'solid-js';
-import { FiArrowUp } from 'solid-icons/fi';
-import { VsSearch } from "solid-icons/vs";
+import { FiArrowRight } from 'solid-icons/fi';
+import { ImageRoot, ImageFallback, Image } from "@/ui/image";
 
 interface HeroSuggestion {
     icon: JSX.Element;
@@ -33,8 +33,14 @@ export default function Hero(props: HeroProps) {
                 {/* Search Bar - Mobile First */}
                 <div class="max-w-2xl mx-auto mb-6 sm:mb-8">
                     <div class="relative">
+                        {/* Mascot/Logo on the left */}
                         <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 sm:pl-4">
-                            <VsSearch class="h-5 w-5 sm:h-6 sm:w-6 text-gray-400" />
+                            <div class="w-6 h-6 sm:w-8 sm:h-8 rounded-full overflow-hidden">
+                                <ImageRoot>
+                                    <Image src="/images/loci.png" class="w-full h-full object-cover" />
+                                    <ImageFallback class="w-full h-full bg-blue-600 text-white rounded-full flex items-center justify-center text-xs font-bold">L</ImageFallback>
+                                </ImageRoot>
+                            </div>
                         </div>
                         <TextFieldRoot>
                             <TextField
@@ -42,12 +48,12 @@ export default function Hero(props: HeroProps) {
                                 placeholder={props.placeholder}
                                 value={searchQuery()}
                                 onInput={(e) => setSearchQuery(e.currentTarget.value)}
-                                class="w-full rounded-full py-4 sm:py-5 md:py-6 pl-11 sm:pl-14 pr-14 sm:pr-16 text-base sm:text-lg border shadow-lg focus:shadow-xl transition-shadow bg-white/60 backdrop-blur-sm"
+                                class="w-full rounded-full py-4 sm:py-5 md:py-6 pl-12 sm:pl-16 pr-14 sm:pr-16 text-base sm:text-lg border shadow-lg focus:shadow-xl transition-shadow bg-white/60 backdrop-blur-sm focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                             />
                         </TextFieldRoot>
                         <div class="absolute inset-y-0 right-0 flex items-center pr-2 sm:pr-3">
-                            <Button type="submit" size="icon" class="rounded-full bg-blue-600 hover:bg-blue-700 h-9 w-9 sm:h-10 sm:w-10">
-                                <FiArrowUp class="h-4 w-4 sm:h-5 sm:w-5 text-white" />
+                            <Button type="submit" size="icon" class="rounded-full bg-blue-600 hover:bg-blue-700 h-9 w-9 sm:h-10 sm:w-10 transition-all hover:scale-105">
+                                <FiArrowRight class="h-4 w-4 sm:h-5 sm:w-5 text-white" />
                             </Button>
                         </div>
                     </div>

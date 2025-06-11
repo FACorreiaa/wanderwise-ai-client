@@ -61,7 +61,15 @@ export const authAPI = {
   },
 
   async validateSession() {
-    return apiRequest<{ valid: boolean }>('/auth/validate-session');
+    const token = localStorage.getItem('access_token');
+    if (!token) {
+      return { valid: false };
+    }
+    
+    return apiRequest<{ valid: boolean; user_id?: string; username?: string; email?: string }>('/auth/validate-session', {
+      method: 'POST',
+      body: JSON.stringify({ session_id: token }),
+    });
   },
 
   async updatePassword(oldPassword: string, newPassword: string) {
@@ -69,6 +77,10 @@ export const authAPI = {
       method: 'PUT',
       body: JSON.stringify({ old_password: oldPassword, new_password: newPassword }),
     });
+  },
+
+  async getCurrentUser() {
+    return apiRequest<any>('/user/profile');
   }
 };
 
