@@ -2,6 +2,7 @@ import { createSignal, createEffect, For, Show, onMount } from 'solid-js';
 import mapboxgl from 'mapbox-gl';
 import { MapPin, Clock, Star, Filter, Heart, Share2, Download, Edit3, Plus, X, Navigation, Calendar, Users, DollarSign, Camera, Coffee, Utensils, Building, TreePine, ShoppingBag, Loader2, MessageCircle, Send } from 'lucide-solid';
 import MapComponent from '@/components/features/Map/Map';
+import { useItineraries, useItinerary, useUpdateItineraryMutation, useSaveItineraryMutation } from '@/lib/api/itineraries';
 
 export default function ItineraryResultsPage() {
     const [map, setMap] = createSignal(null);
@@ -9,13 +10,20 @@ export default function ItineraryResultsPage() {
     const [showFilters, setShowFilters] = createSignal(false);
     const [viewMode, setViewMode] = createSignal('split'); // 'map', 'list', 'split'
     const [myTrip, setMyTrip] = createSignal([]); // Track selected POIs for the trip
+    const [currentItineraryId, setCurrentItineraryId] = createSignal(null);
 
-    // todo chat funcionality
+    // Chat functionality
     const [showChat, setShowChat] = createSignal(false);
     const [chatMessage, setChatMessage] = createSignal('');
     const [chatHistory, setChatHistory] = createSignal([]);
     const [isLoading, setIsLoading] = createSignal(false);
     const [sessionId, setSessionId] = createSignal('your-session-id');
+
+    // API hooks
+    const itinerariesQuery = useItineraries();
+    const itineraryQuery = useItinerary(currentItineraryId() || '');
+    const updateItineraryMutation = useUpdateItineraryMutation();
+    const saveItineraryMutation = useSaveItineraryMutation();
 
     // Filter states
     const [activeFilters, setActiveFilters] = createSignal({
@@ -26,115 +34,27 @@ export default function ItineraryResultsPage() {
         dogFriendly: true
     });
 
-    // Sample itinerary data
-    const [itinerary, setItinerary] = createSignal({
-        name: "Porto's Charms: Sightseeing & Local Delights (Dog-Friendly)",
-        description: "This itinerary focuses on showcasing Porto's key landmarks and offering authentic local experiences, all while keeping your furry friend in mind.",
-        city: "Porto",
-        country: "Portugal",
-        duration: "3 days",
-        centerLat: 41.1579,
-        centerLng: -8.6291
-    });
-
-    const [pointsOfInterest, setPointsOfInterest] = createSignal([
-        {
-            id: "64946139-a4c2-42b0-8071-fe83b34596f8",
-            name: "Livraria Lello",
-            category: "Bookstore & Architecture",
-            description: "One of the world's most beautiful bookstores, featuring stunning neo-gothic architecture and an iconic spiral staircase that inspired J.K. Rowling.",
-            latitude: 41.1465,
-            longitude: -8.6144,
-            timeToSpend: "1-2 hours",
-            budget: "€€",
-            rating: 4.2,
-            dogFriendly: false,
-            address: "R. das Carmelitas 144, 4050-161 Porto",
-            openingHours: "Mon-Sun: 9:30-19:00",
-            tags: ["Historic Sites", "Architecture", "Literature"],
-            priority: 1
-        },
-        {
-            id: "63302849-9142-4325-9918-8b8a36a0a8d5",
-            name: "Ponte Luís I",
-            category: "Bridge & Landmark",
-            description: "Iconic double-deck iron bridge offering spectacular views of Porto and Vila Nova de Gaia. Perfect for photography and riverside walks.",
-            latitude: 41.1407,
-            longitude: -8.6111,
-            timeToSpend: "30-60 minutes",
-            budget: "Free",
-            rating: 4.6,
-            dogFriendly: true,
-            address: "Ponte Luís I, Porto",
-            openingHours: "24/7",
-            tags: ["Architecture", "Photography", "Views"],
-            priority: 2
-        },
-        {
-            id: "0b2f5cfa-5331-46fd-8f70-5b0a71e7464b",
-            name: "Cais da Ribeira",
-            category: "Historical District",
-            description: "UNESCO World Heritage waterfront district with colorful buildings, traditional restaurants, and vibrant atmosphere along the Douro River.",
-            latitude: 41.1408,
-            longitude: -8.6146,
-            timeToSpend: "2-3 hours",
-            budget: "€€",
-            rating: 4.5,
-            dogFriendly: true,
-            address: "Cais da Ribeira, 4050 Porto",
-            openingHours: "24/7",
-            tags: ["Historic Sites", "Local Cuisine", "Photography"],
-            priority: 1
-        },
-        {
-            id: "ddcb38fa-e543-414f-ab32-1906b5fa3267",
-            name: "Palácio da Bolsa",
-            category: "Palace & Museum",
-            description: "19th-century neoclassical building featuring the stunning Arabian Room with intricate Moorish-style decorations.",
-            latitude: 41.1421,
-            longitude: -8.6156,
-            timeToSpend: "1-2 hours",
-            budget: "€€€",
-            rating: 4.4,
-            dogFriendly: false,
-            address: "R. de Ferreira Borges, 4050-253 Porto",
-            openingHours: "Mon-Sun: 9:00-18:30",
-            tags: ["Architecture", "Museums", "Historic Sites"],
-            priority: 2
-        },
-        {
-            id: "b2d634fa-bfae-41ee-b3ea-21a52439d84e",
-            name: "Jardins do Palácio de Cristal",
-            category: "Parks & Gardens",
-            description: "Beautiful romantic gardens with panoramic views over the Douro River, perfect for relaxing walks with your furry companion.",
-            latitude: 41.1507,
-            longitude: -8.6279,
-            timeToSpend: "1-2 hours",
-            budget: "Free",
-            rating: 4.3,
-            dogFriendly: true,
-            address: "R. de Dom Manuel II, 4050-346 Porto",
-            openingHours: "Daily: 8:00-21:00",
-            tags: ["Nature", "Photography", "Walking"],
-            priority: 2
-        },
-        {
-            id: "29dd88d4-a642-4e23-95be-49a849a3170a",
-            name: "Vila Nova de Gaia Port Cellars",
-            category: "Wine Tasting",
-            description: "Historic port wine cellars offering tastings and tours with stunning views across the Douro to Porto's skyline.",
-            latitude: 41.1367,
-            longitude: -8.6126,
-            timeToSpend: "2-3 hours",
-            budget: "€€€",
-            rating: 4.7,
-            dogFriendly: false,
-            address: "Vila Nova de Gaia, Portugal",
-            openingHours: "Mon-Sun: 10:00-18:00",
-            tags: ["Wine", "Local Culture", "Views"],
-            priority: 1
+    // Get current itinerary data from API or fallback
+    const itinerary = () => {
+        if (itineraryQuery.data) {
+            return itineraryQuery.data;
         }
-    ]);
+        // Fallback data for demo
+        return {
+            name: "Porto's Charms: Sightseeing & Local Delights (Dog-Friendly)",
+            description: "This itinerary focuses on showcasing Porto's key landmarks and offering authentic local experiences, all while keeping your furry friend in mind.",
+            city: "Porto",
+            country: "Portugal",
+            duration: "3 days",
+            centerLat: 41.1579,
+            centerLng: -8.6291,
+            pois: []
+        };
+    };
+
+    const pointsOfInterest = () => {
+        return itinerary().pois || [];
+    };
 
     // chat logic
     // Chat functionality
@@ -429,6 +349,23 @@ export default function ItineraryResultsPage() {
         setMyTrip(prev => prev.some(item => item.id === poi.id) ? prev : [...prev, poi]);
     };
 
+    const saveItinerary = () => {
+        const itineraryData = {
+            ...itinerary(),
+            pois: pointsOfInterest()
+        };
+        saveItineraryMutation.mutate(itineraryData);
+    };
+
+    const updateItinerary = (updates) => {
+        if (currentItineraryId()) {
+            updateItineraryMutation.mutate({
+                itineraryId: currentItineraryId(),
+                data: updates
+            });
+        }
+    };
+
     // chat component
     const renderChatInterface = () => (
         <Show when={showChat()}>
@@ -557,9 +494,13 @@ export default function ItineraryResultsPage() {
                                 </button>
 
                                 <div class="flex gap-2">
-                                    <button class="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors text-sm sm:flex-initial">
+                                    <button 
+                                        onClick={saveItinerary}
+                                        disabled={saveItineraryMutation.isPending}
+                                        class="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors text-sm sm:flex-initial disabled:opacity-50"
+                                    >
                                         <Heart class="w-4 h-4" />
-                                        <span class="hidden sm:inline">Save</span>
+                                        <span class="hidden sm:inline">{saveItineraryMutation.isPending ? 'Saving...' : 'Save'}</span>
                                     </button>
                                     <button class="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors text-sm sm:flex-initial">
                                         <Share2 class="w-4 h-4" />

@@ -1,0 +1,18 @@
+# wrangler.toml
+
+# This name MUST be all lowercase, with dashes as separators.
+# It will be the name of your Worker service in the Cloudflare dashboard.
+name = "loci-client"
+
+# The main entry point for your worker.
+# For a SolidStart project, Cloudflare's build process usually outputs
+# the final worker file to dist/_worker.js/index.js
+main = "dist/_worker.js/index.js"
+
+# Set the compatibility date to a recent date to enable modern features.
+compatibility_date = "2024-05-01" # Or a more recent date
+
+# This section is crucial for Cloudflare Pages Functions to work correctly.
+# It tells wrangler where your static assets are and how to build the worker.
+[pages_build_output]
+dir = "./dist" # Point to the output directory of your `vinxi build` command

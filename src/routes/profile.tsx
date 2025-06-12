@@ -1,29 +1,42 @@
 import { createSignal, For, Show, createEffect } from 'solid-js';
 import { User, Mail, MapPin, Calendar, Camera, Edit3, Save, X, Plus, Tag, Heart } from 'lucide-solid';
 import { useAuth } from '~/contexts/AuthContext';
+import { useDefaultProfile, useUpdateProfileMutation } from '@/lib/api/user';
 
 export default function ProfilePage() {
     const { user } = useAuth();
     const [isEditing, setIsEditing] = createSignal(false);
     const [activeTab, setActiveTab] = createSignal('overview');
     
-    const [profileData, setProfileData] = createSignal({
-        username: user()?.username || 'Travel Explorer',
-        email: user()?.email || 'explorer@example.com',
-        bio: 'Passionate traveler exploring hidden gems around the world. Love discovering local cuisines and historical sites.',
-        location: 'San Francisco, CA',
-        joinedDate: '2024-01-15',
-        avatar: null,
-        interests: ['Architecture', 'Food & Dining', 'Museums', 'Photography'],
-        badges: ['Early Adopter', 'Review Writer', 'Local Guide'],
-        stats: {
-            places_visited: 47,
-            reviews_written: 23,
-            lists_created: 8,
-            followers: 156,
-            following: 89
+    // API hooks
+    const profileQuery = useDefaultProfile();
+    const updateProfileMutation = useUpdateProfileMutation();
+
+    // Get profile data from API or user auth data as fallback
+    const profileData = () => {
+        if (profileQuery.data) {
+            return profileQuery.data;
         }
-    });
+        // Fallback to user data + defaults
+        return {
+            id: user()?.id,
+            username: user()?.username || 'Travel Explorer',
+            email: user()?.email || 'explorer@example.com',
+            bio: 'Passionate traveler exploring hidden gems around the world. Love discovering local cuisines and historical sites.',
+            location: 'San Francisco, CA',
+            joinedDate: '2024-01-15',
+            avatar: null,
+            interests: ['Architecture', 'Food & Dining', 'Museums', 'Photography'],
+            badges: ['Early Adopter', 'Review Writer', 'Local Guide'],
+            stats: {
+                places_visited: 47,
+                reviews_written: 23,
+                lists_created: 8,
+                followers: 156,
+                following: 89
+            }
+        };
+    };
 
     const [editForm, setEditForm] = createSignal({
         username: '',
@@ -40,12 +53,19 @@ export default function ProfilePage() {
         setIsEditing(true);
     };
 
-    const saveProfile = () => {
-        setProfileData(prev => ({
-            ...prev,
-            ...editForm()
-        }));
-        setIsEditing(false);
+    const saveProfile = async () => {
+        const profileId = profileData().id;
+        if (profileId) {
+            try {
+                await updateProfileMutation.mutateAsync({
+                    profileId,
+                    profileData: editForm()
+                });
+                setIsEditing(false);
+            } catch (error) {
+                console.error('Failed to update profile:', error);
+            }
+        }
     };
 
     const cancelEditing = () => {
@@ -295,10 +315,11 @@ export default function ProfilePage() {
                                         <div class="flex gap-2">
                                             <button
                                                 onClick={saveProfile}
-                                                class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2"
+                                                disabled={updateProfileMutation.isPending}
+                                                class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2 disabled:opacity-50"
                                             >
                                                 <Save class="w-4 h-4" />
-                                                Save
+                                                {updateProfileMutation.isPending ? 'Saving...' : 'Save'}
                                             </button>
                                             <button
                                                 onClick={cancelEditing}

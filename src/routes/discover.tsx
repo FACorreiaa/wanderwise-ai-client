@@ -1,5 +1,6 @@
 import { createSignal, For, Show, createEffect } from 'solid-js';
 import { Search, Filter, MapPin, Star, Heart, Bookmark, Clock, DollarSign, Users, Wifi, Camera, Grid, List, SortAsc, SortDesc } from 'lucide-solid';
+import { useNearbyPOIs, useSearchPOIs, useFavorites, useAddToFavoritesMutation, useRemoveFromFavoritesMutation } from '@/lib/api/pois';
 
 export default function DiscoverPage() {
     const [searchQuery, setSearchQuery] = createSignal('');
@@ -12,85 +13,41 @@ export default function DiscoverPage() {
     const [viewMode, setViewMode] = createSignal('grid'); // 'grid', 'list'
     const [showFilters, setShowFilters] = createSignal(false);
 
-    // Sample POI data
-    const [pois, setPois] = createSignal([
+    // Current location for nearby search (could come from geolocation)
+    const [currentLocation, setCurrentLocation] = createSignal({ lat: 41.1579, lng: -8.6291 });
+
+    // API hooks
+    const favoritesQuery = useFavorites();
+    const addToFavoritesMutation = useAddToFavoritesMutation();
+    const removeFromFavoritesMutation = useRemoveFromFavoritesMutation();
+    
+    const nearbyPOIsQuery = useNearbyPOIs(
+        currentLocation().lat,
+        currentLocation().lng,
+        10000 // 10km radius
+    );
+    
+    const searchPOIsQuery = useSearchPOIs(
+        searchQuery(),
         {
-            id: '1',
-            name: 'Livraria Lello',
-            description: 'One of the world\'s most beautiful bookstores with stunning neo-gothic architecture.',
-            category: 'Cultural',
-            city: 'Porto',
-            country: 'Portugal',
-            rating: 4.2,
-            reviewCount: 1234,
-            price: '€€',
-            distance: '0.5 km',
-            imageUrl: '/images/lello.jpg',
-            tags: ['Architecture', 'Books', 'Historic', 'Photography'],
-            amenities: ['Wifi', 'Accessibility', 'Gift Shop'],
-            openNow: true,
-            featured: true,
-            isFavorite: false,
-            coordinates: { lat: 41.1466, lng: -8.6287 }
-        },
-        {
-            id: '2',
-            name: 'Ponte Luís I',
-            description: 'Iconic double-deck iron bridge offering spectacular views of Porto.',
-            category: 'Landmark',
-            city: 'Porto',
-            country: 'Portugal',
-            rating: 4.6,
-            reviewCount: 2156,
-            price: 'Free',
-            distance: '1.2 km',
-            imageUrl: '/images/ponte-luis.jpg',
-            tags: ['Architecture', 'Views', 'Photography', 'Historic'],
-            amenities: ['Viewpoint', 'Walking Path'],
-            openNow: true,
-            featured: false,
-            isFavorite: true,
-            coordinates: { lat: 41.1408, lng: -8.6109 }
-        },
-        {
-            id: '3',
-            name: 'Mercado do Bolhão',
-            description: 'Traditional market with fresh produce, local specialties, and authentic atmosphere.',
-            category: 'Market',
-            city: 'Porto',
-            country: 'Portugal',
-            rating: 4.0,
-            reviewCount: 892,
-            price: '€',
-            distance: '0.8 km',
-            imageUrl: '/images/bolhao.jpg',
-            tags: ['Food', 'Local Culture', 'Shopping', 'Traditional'],
-            amenities: ['Fresh Produce', 'Local Crafts', 'Food Stalls'],
-            openNow: false,
-            featured: false,
-            isFavorite: false,
-            coordinates: { lat: 41.1496, lng: -8.6074 }
-        },
-        {
-            id: '4',
-            name: 'Casa da Música',
-            description: 'Contemporary concert hall with innovative architecture and world-class performances.',
-            category: 'Entertainment',
-            city: 'Porto',
-            country: 'Portugal',
-            rating: 4.4,
-            reviewCount: 567,
-            price: '€€€',
-            distance: '2.1 km',
-            imageUrl: '/images/casa-musica.jpg',
-            tags: ['Music', 'Architecture', 'Culture', 'Modern'],
-            amenities: ['Concert Hall', 'Guided Tours', 'Cafe'],
-            openNow: true,
-            featured: true,
-            isFavorite: false,
-            coordinates: { lat: 41.1591, lng: -8.6302 }
+            category: selectedCategory() !== 'all' ? selectedCategory() : undefined,
+            price_range: selectedPrice() !== 'all' ? selectedPrice() : undefined,
+            city: selectedCity() !== 'all' ? selectedCity() : undefined
         }
-    ]);
+    );
+
+    // Get POIs from appropriate source
+    const pois = () => {
+        if (searchQuery().trim()) {
+            return searchPOIsQuery.data || [];
+        }
+        return nearbyPOIsQuery.data || [];
+    };
+
+    // Check if POI is in favorites
+    const isFavorite = (poiId: string) => {
+        return favoritesQuery.data?.some(poi => poi.id === poiId) || false;
+    };
 
     const cities = [
         { id: 'all', label: 'All Cities', count: pois().length },
@@ -192,9 +149,11 @@ export default function DiscoverPage() {
     };
 
     const toggleFavorite = (poiId: string) => {
-        setPois(prev => prev.map(poi =>
-            poi.id === poiId ? { ...poi, isFavorite: !poi.isFavorite } : poi
-        ));
+        if (isFavorite(poiId)) {
+            removeFromFavoritesMutation.mutate(poiId);
+        } else {
+            addToFavoritesMutation.mutate(poiId);
+        }
     };
 
     const getPriceColor = (price: string) => {
@@ -234,9 +193,9 @@ export default function DiscoverPage() {
                     <div class="flex flex-col gap-1">
                         <button
                             onClick={() => toggleFavorite(poi.id)}
-                            class={`p-2 rounded-lg ${poi.isFavorite ? 'bg-red-500 text-white' : 'bg-white/90 text-gray-700'} hover:scale-110 transition-transform`}
+                            class={`p-2 rounded-lg ${isFavorite(poi.id) ? 'bg-red-500 text-white' : 'bg-white/90 text-gray-700'} hover:scale-110 transition-transform`}
                         >
-                            <Heart class={`w-4 h-4 ${poi.isFavorite ? 'fill-current' : ''}`} />
+                            <Heart class={`w-4 h-4 ${isFavorite(poi.id) ? 'fill-current' : ''}`} />
                         </button>
                         <button class="p-2 bg-white/90 text-gray-700 rounded-lg hover:scale-110 transition-transform">
                             <Bookmark class="w-4 h-4" />
@@ -355,9 +314,9 @@ export default function DiscoverPage() {
                         <div class="flex items-center gap-2">
                             <button
                                 onClick={() => toggleFavorite(poi.id)}
-                                class={`p-2 rounded-lg ${poi.isFavorite ? 'text-red-600 dark:text-red-400' : 'text-gray-400'} hover:bg-gray-100 dark:hover:bg-gray-700`}
+                                class={`p-2 rounded-lg ${isFavorite(poi.id) ? 'text-red-600 dark:text-red-400' : 'text-gray-400'} hover:bg-gray-100 dark:hover:bg-gray-700`}
                             >
-                                <Heart class={`w-4 h-4 ${poi.isFavorite ? 'fill-current' : ''}`} />
+                                <Heart class={`w-4 h-4 ${isFavorite(poi.id) ? 'fill-current' : ''}`} />
                             </button>
                             <button class="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium text-sm">
                                 View Details →

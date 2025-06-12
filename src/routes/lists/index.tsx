@@ -1,5 +1,6 @@
 import { createSignal, For, Show, createEffect } from 'solid-js';
-import { Folder, Plus, Edit3, Trash2, Share2, Download, Eye, Lock, Globe, Users, MapPin, Calendar, Star, Heart, MoreHorizontal, Copy, ExternalLink } from 'lucide-solid';
+import { Folder, Plus, Edit3, Trash2, Share2, Download, Eye, Lock, Globe, Users, MapPin, Calendar, Star, Heart, MoreHorizontal, Copy, ExternalLink, X } from 'lucide-solid';
+import { useLists, useCreateListMutation, useUpdateListMutation, useDeleteListMutation } from '@/lib/api/lists';
 
 export default function ListsPage() {
     const [viewMode, setViewMode] = createSignal('grid'); // 'grid', 'list'
@@ -18,75 +19,14 @@ export default function ListsPage() {
         tags: []
     });
 
-    // Sample lists data
-    const [lists, setLists] = createSignal([
-        {
-            id: "list-1",
-            name: "European Hidden Gems",
-            description: "My collection of off-the-beaten-path destinations across Europe that most tourists never discover.",
-            itemCount: 15,
-            isPublic: true,
-            allowCollaboration: false,
-            tags: ["Europe", "Hidden Gems", "Culture"],
-            createdAt: "2024-01-15",
-            updatedAt: "2024-01-20",
-            owner: "You",
-            collaborators: [],
-            views: 234,
-            likes: 42,
-            cities: ["Porto", "Ljubljana", "Tallinn"],
-            coverImage: null,
-            recentItems: [
-                { name: "Livraria Lello", city: "Porto" },
-                { name: "Metelkova", city: "Ljubljana" },
-                { name: "Telliskivi", city: "Tallinn" }
-            ]
-        },
-        {
-            id: "list-2",
-            name: "Best Food Markets",
-            description: "Amazing food markets from around the world where locals shop and authentic flavors come alive.",
-            itemCount: 8,
-            isPublic: false,
-            allowCollaboration: true,
-            tags: ["Food", "Markets", "Local"],
-            createdAt: "2024-01-10",
-            updatedAt: "2024-01-18",
-            owner: "You",
-            collaborators: ["Sarah Chen", "Marco Silva"],
-            views: 0,
-            likes: 0,
-            cities: ["Barcelona", "Istanbul", "Tokyo"],
-            coverImage: null,
-            recentItems: [
-                { name: "La Boquería", city: "Barcelona" },
-                { name: "Grand Bazaar", city: "Istanbul" },
-                { name: "Tsukiji Outer Market", city: "Tokyo" }
-            ]
-        },
-        {
-            id: "list-3",
-            name: "Family Adventures",
-            description: "Kid-friendly destinations and activities that keep the whole family engaged and happy.",
-            itemCount: 22,
-            isPublic: true,
-            allowCollaboration: false,
-            tags: ["Family", "Kids", "Activities"],
-            createdAt: "2024-01-05",
-            updatedAt: "2024-01-19",
-            owner: "You",
-            collaborators: [],
-            views: 156,
-            likes: 28,
-            cities: ["London", "Amsterdam", "Copenhagen"],
-            coverImage: null,
-            recentItems: [
-                { name: "Natural History Museum", city: "London" },
-                { name: "Vondelpark", city: "Amsterdam" },
-                { name: "Tivoli Gardens", city: "Copenhagen" }
-            ]
-        }
-    ]);
+    // API hooks
+    const listsQuery = useLists();
+    const createListMutation = useCreateListMutation();
+    const updateListMutation = useUpdateListMutation();
+    const deleteListMutation = useDeleteListMutation();
+
+    // Get lists from API or fallback to empty array
+    const lists = () => listsQuery.data || [];
 
     const [sharedLists] = createSignal([
         {
@@ -139,58 +79,67 @@ export default function ListsPage() {
         { id: 'public', label: 'Public Lists', count: publicLists().length }
     ];
 
-    const createList = () => {
-        const newList = {
-            id: `list-${Date.now()}`,
-            ...listForm(),
-            itemCount: 0,
-            createdAt: new Date().toISOString().split('T')[0],
-            updatedAt: new Date().toISOString().split('T')[0],
-            owner: "You",
-            collaborators: [],
-            views: 0,
-            likes: 0,
-            cities: [],
-            coverImage: null,
-            recentItems: []
-        };
-        setLists(prev => [...prev, newList]);
-        setShowCreateModal(false);
-        resetForm();
+    const createList = async () => {
+        try {
+            await createListMutation.mutateAsync({
+                ...listForm(),
+                itemCount: 0,
+                owner: "You",
+                collaborators: [],
+                views: 0,
+                likes: 0,
+                cities: [],
+                coverImage: null,
+                recentItems: []
+            });
+            setShowCreateModal(false);
+            resetForm();
+        } catch (error) {
+            console.error('Failed to create list:', error);
+        }
     };
 
-    const updateList = () => {
-        setLists(prev => prev.map(list => 
-            list.id === selectedList().id 
-                ? { 
-                    ...list, 
-                    ...listForm(), 
-                    updatedAt: new Date().toISOString().split('T')[0]
-                }
-                : list
-        ));
-        setShowEditModal(false);
-        resetForm();
+    const updateList = async () => {
+        const listId = selectedList()?.id;
+        if (listId) {
+            try {
+                await updateListMutation.mutateAsync({
+                    listId,
+                    listData: listForm()
+                });
+                setShowEditModal(false);
+                resetForm();
+            } catch (error) {
+                console.error('Failed to update list:', error);
+            }
+        }
     };
 
-    const deleteList = () => {
-        setLists(prev => prev.filter(list => list.id !== selectedList().id));
-        setShowDeleteModal(false);
-        setSelectedList(null);
+    const deleteList = async () => {
+        const listId = selectedList()?.id;
+        if (listId) {
+            try {
+                await deleteListMutation.mutateAsync(listId);
+                setShowDeleteModal(false);
+                setSelectedList(null);
+            } catch (error) {
+                console.error('Failed to delete list:', error);
+            }
+        }
     };
 
-    const duplicateList = (list) => {
-        const newList = {
-            ...list,
-            id: `list-${Date.now()}`,
-            name: `${list.name} (Copy)`,
-            createdAt: new Date().toISOString().split('T')[0],
-            updatedAt: new Date().toISOString().split('T')[0],
-            views: 0,
-            likes: 0,
-            isPublic: false
-        };
-        setLists(prev => [...prev, newList]);
+    const duplicateList = async (list) => {
+        try {
+            await createListMutation.mutateAsync({
+                ...list,
+                name: `${list.name} (Copy)`,
+                views: 0,
+                likes: 0,
+                isPublic: false
+            });
+        } catch (error) {
+            console.error('Failed to duplicate list:', error);
+        }
     };
 
     const resetForm = () => {
@@ -563,10 +512,10 @@ export default function ListsPage() {
                             </button>
                             <button
                                 onClick={createList}
-                                disabled={!listForm().name.trim()}
+                                disabled={!listForm().name.trim() || createListMutation.isPending}
                                 class="cb-button cb-button-primary px-4 py-2 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
-                                Create List
+                                {createListMutation.isPending ? 'Creating...' : 'Create List'}
                             </button>
                         </div>
                     </div>
@@ -612,10 +561,10 @@ export default function ListsPage() {
                                 </button>
                                 <button
                                     onClick={updateList}
-                                    disabled={!listForm().name.trim()}
+                                    disabled={!listForm().name.trim() || updateListMutation.isPending}
                                     class="cb-button cb-button-primary px-4 py-2 disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
-                                    Save Changes
+                                    {updateListMutation.isPending ? 'Saving...' : 'Save Changes'}
                                 </button>
                             </div>
                         </div>
@@ -650,9 +599,10 @@ export default function ListsPage() {
                                 </button>
                                 <button
                                     onClick={deleteList}
-                                    class="cb-button bg-red-600 text-white hover:bg-red-700 px-4 py-2"
+                                    disabled={deleteListMutation.isPending}
+                                    class="cb-button bg-red-600 text-white hover:bg-red-700 px-4 py-2 disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
-                                    Delete List
+                                    {deleteListMutation.isPending ? 'Deleting...' : 'Delete List'}
                                 </button>
                             </div>
                         </div>
