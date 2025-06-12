@@ -1,5 +1,6 @@
 import { createSignal, createEffect, For, Show, onMount } from 'solid-js';
 import { Heart, MapPin, Clock, Star, Filter, Search, Grid, List, Share2, Download, Edit3, Trash2, Plus, SortAsc, SortDesc, Tag, Eye } from 'lucide-solid';
+import { useFavorites, useRemoveFromFavoritesMutation } from '@/lib/api/pois';
 
 export default function FavoritesPage() {
     const [viewMode, setViewMode] = createSignal('grid'); // 'grid', 'list'
@@ -10,77 +11,12 @@ export default function FavoritesPage() {
     const [selectedPOIs, setSelectedPOIs] = createSignal([]);
     const [showBulkActions, setShowBulkActions] = createSignal(false);
 
-    // Sample favorites data - this would come from your API
-    const [favorites, setFavorites] = createSignal([
-        {
-            id: "fav-1",
-            poiId: "64946139-a4c2-42b0-8071-fe83b34596f8",
-            name: "Livraria Lello",
-            category: "Bookstore & Architecture",
-            description: "One of the world's most beautiful bookstores, featuring stunning neo-gothic architecture and an iconic spiral staircase.",
-            city: "Porto",
-            country: "Portugal",
-            rating: 4.2,
-            imageUrl: "/images/lello.jpg",
-            tags: ["Architecture", "Literature", "Historic"],
-            dateAdded: "2024-01-15",
-            budget: "€€",
-            timeToSpend: "1-2 hours",
-            isPublic: true,
-            notes: "Must visit early morning to avoid crowds. Amazing photo opportunities!"
-        },
-        {
-            id: "fav-2",
-            poiId: "63302849-9142-4325-9918-8b8a36a0a8d5",
-            name: "Ponte Luís I",
-            category: "Bridge & Landmark",
-            description: "Iconic double-deck iron bridge offering spectacular views of Porto and Vila Nova de Gaia.",
-            city: "Porto",
-            country: "Portugal",
-            rating: 4.6,
-            imageUrl: "/images/ponte-luis.jpg",
-            tags: ["Architecture", "Views", "Photography"],
-            dateAdded: "2024-01-10",
-            budget: "Free",
-            timeToSpend: "30-60 minutes",
-            isPublic: true,
-            notes: "Best sunset views from the upper deck. Very windy!"
-        },
-        {
-            id: "fav-3",
-            poiId: "ddcb38fa-e543-414f-ab32-1906b5fa3267",
-            name: "Palácio da Bolsa",
-            category: "Palace & Museum",
-            description: "19th-century neoclassical building featuring the stunning Arabian Room with intricate Moorish-style decorations.",
-            city: "Porto",
-            country: "Portugal",
-            rating: 4.4,
-            imageUrl: "/images/palacio-bolsa.jpg",
-            tags: ["Architecture", "Museums", "History"],
-            dateAdded: "2024-01-12",
-            budget: "€€€",
-            timeToSpend: "1-2 hours",
-            isPublic: false,
-            notes: "Book guided tour in advance for Arabian Room access."
-        },
-        {
-            id: "fav-4",
-            poiId: "b2d634fa-bfae-41ee-b3ea-21a52439d84e",
-            name: "Jardins do Palácio de Cristal",
-            category: "Parks & Gardens",
-            description: "Beautiful romantic gardens with panoramic views over the Douro River.",
-            city: "Porto",
-            country: "Portugal",
-            rating: 4.3,
-            imageUrl: "/images/jardins-cristal.jpg",
-            tags: ["Nature", "Views", "Walking"],
-            dateAdded: "2024-01-08",
-            budget: "Free",
-            timeToSpend: "1-2 hours",
-            isPublic: true,
-            notes: "Perfect for picnics and peaceful walks. Dog-friendly!"
-        }
-    ]);
+    // API hooks
+    const favoritesQuery = useFavorites();
+    const removeFavoriteMutation = useRemoveFromFavoritesMutation();
+
+    // Get favorites from API or fallback to empty array
+    const favorites = () => favoritesQuery.data || [];
 
     const categories = [
         { id: 'all', label: 'All Categories', count: favorites().length },
@@ -179,8 +115,12 @@ export default function FavoritesPage() {
         return colorMap[budget] || 'text-gray-600 bg-gray-50';
     };
 
-    const removeFavorite = (favoriteId) => {
-        setFavorites(prev => prev.filter(fav => fav.id !== favoriteId));
+    const removeFavorite = async (favoriteId) => {
+        try {
+            await removeFavoriteMutation.mutateAsync(favoriteId);
+        } catch (error) {
+            console.error('Failed to remove favorite:', error);
+        }
     };
 
     const toggleFavoriteVisibility = (favoriteId) => {
