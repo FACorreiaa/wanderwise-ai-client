@@ -2,79 +2,17 @@ import { createSignal, For, Show, createEffect } from 'solid-js';
 import { useParams } from '@solidjs/router';
 import { Star, MapPin, Clock, Phone, Mail, Globe, Heart, Share2, DollarSign, Users, Utensils, Wine, Car, ArrowLeft } from 'lucide-solid';
 import { A } from '@solidjs/router';
+import { useRestaurantDetails } from '@/lib/api/restaurants';
 
 export default function RestaurantDetailPage() {
     const params = useParams();
-    const [restaurant, setRestaurant] = createSignal(null);
     const [selectedTab, setSelectedTab] = createSignal('overview');
     const [isFavorite, setIsFavorite] = createSignal(false);
 
-    // Mock restaurant data - in real app, this would fetch from API using params.id
-    createEffect(() => {
-        const mockRestaurant = {
-            id: params.id,
-            name: 'Casa do Bacalhau',
-            description: 'Traditional Portuguese restaurant specializing in authentic codfish dishes and regional wines. Family-owned for three generations, offering a warm atmosphere and time-honored recipes.',
-            cuisine: 'Portuguese',
-            address: 'Rua do Almada, 456, Porto, Portugal',
-            rating: 4.6,
-            reviewCount: 1234,
-            priceRange: '€€',
-            averagePrice: '€25-40 per person',
-            images: [
-                '/images/restaurant-1.jpg',
-                '/images/restaurant-2.jpg',
-                '/images/restaurant-3.jpg',
-                '/images/restaurant-4.jpg'
-            ],
-            features: [
-                { name: 'Outdoor Seating', icon: Users, available: true },
-                { name: 'Wine Bar', icon: Wine, available: true },
-                { name: 'Parking', icon: Car, available: false },
-                { name: 'Takeaway', icon: Utensils, available: true },
-                { name: 'Live Music', icon: Users, available: true }
-            ],
-            contact: {
-                phone: '+351 22 987 6543',
-                email: 'info@casadobacalhau.pt',
-                website: 'www.casadobacalhau.pt'
-            },
-            hours: {
-                'Monday': '12:00 - 15:00, 19:00 - 23:00',
-                'Tuesday': '12:00 - 15:00, 19:00 - 23:00',
-                'Wednesday': '12:00 - 15:00, 19:00 - 23:00',
-                'Thursday': '12:00 - 15:00, 19:00 - 23:00',
-                'Friday': '12:00 - 15:00, 19:00 - 24:00',
-                'Saturday': '12:00 - 15:00, 19:00 - 24:00',
-                'Sunday': 'Closed'
-            },
-            coordinates: { lat: 41.1496, lng: -8.6109 },
-            isOpen: true,
-            menu: {
-                starters: [
-                    { name: 'Pastéis de Bacalhau', description: 'Traditional codfish fritters with herbs', price: '€8' },
-                    { name: 'Queijo da Serra', description: 'Regional sheep cheese with honey', price: '€12' },
-                    { name: 'Chouriço Assado', description: 'Grilled Portuguese sausage', price: '€10' }
-                ],
-                mains: [
-                    { name: 'Bacalhau à Brás', description: 'Shredded codfish with potatoes and eggs', price: '€18' },
-                    { name: 'Francesinha', description: 'Porto\'s famous sandwich with special sauce', price: '€15' },
-                    { name: 'Bifana no Prato', description: 'Traditional pork cutlet with rice and fries', price: '€14' },
-                    { name: 'Polvo à Lagareiro', description: 'Octopus with olive oil and roasted potatoes', price: '€22' }
-                ],
-                desserts: [
-                    { name: 'Pastel de Nata', description: 'Traditional Portuguese custard tart', price: '€2.50' },
-                    { name: 'Pudim Flan', description: 'Caramel custard dessert', price: '€4' },
-                    { name: 'Bolo de Arroz', description: 'Portuguese rice cake', price: '€3' }
-                ]
-            },
-            specialties: ['Bacalhau dishes', 'Regional wines', 'Traditional desserts', 'Local atmosphere'],
-            reservationRequired: true,
-            acceptsCards: true,
-            languages: ['Portuguese', 'English', 'Spanish']
-        };
-        setRestaurant(mockRestaurant);
-    });
+    // Use API hook to fetch restaurant details
+    const restaurantQuery = useRestaurantDetails(params.id);
+    
+    const restaurant = () => restaurantQuery.data;
 
     const tabs = [
         { id: 'overview', label: 'Overview' },

@@ -46,15 +46,17 @@ const SignIn: Component<{ onSwitchMode?: (mode: AuthMode) => void }> = (props) =
         }
 
         try {
-            // await loginMutation.mutateAsync({
-            //     email: data.email,
-            //     password: data.password,
-            // });
-            login(data.email, data.password)
-
+            await loginMutation.mutateAsync({
+                email: data.email,
+                password: data.password,
+            });
+            
+            login(data.email, data.password);
             navigate('/');
         } catch (err: any) {
-            setError(err?.message || 'Registration failed. Please try again.');
+            setError(err?.message || 'Sign in failed. Please try again.');
+        } finally {
+            setIsLoading(false);
         }
     };
 

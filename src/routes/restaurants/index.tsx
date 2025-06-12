@@ -1,6 +1,7 @@
 import { createSignal, createEffect, For, Show, onMount } from 'solid-js';
 import { MapPin, Clock, Star, Filter, Heart, Share2, Download, Edit3, Plus, X, Navigation, Calendar, Users, DollarSign, Camera, Coffee, Utensils, Wifi, CreditCard, Loader2, MessageCircle, Send, ChefHat, Wine, UtensilsCrossed, Smartphone } from 'lucide-solid';
 import MapComponent from '@/components/features/Map/Map';
+import { useRestaurantsByPreferences, useNearbyRestaurants } from '@/lib/api/restaurants';
 
 export default function RestaurantsPage() {
     const [selectedRestaurant, setSelectedRestaurant] = createSignal(null);
@@ -33,128 +34,27 @@ export default function RestaurantsPage() {
         centerLng: -8.6291
     });
 
-    const [restaurants, setRestaurants] = createSignal([
-        {
-            id: "rest-1",
-            name: "Taberna Real do Fado",
-            cuisine: "Portuguese",
-            description: "Authentic Portuguese cuisine in a traditional fado house atmosphere. Live fado performances every evening.",
-            latitude: 41.1428,
-            longitude: -8.6115,
-            priceRange: "€€€",
-            rating: 4.6,
-            reviewCount: 1247,
-            address: "Rua do Vigário 18-20, 4050-627 Porto",
-            openingHours: "Tue-Sun: 19:00-02:00, Mon: Closed",
-            phone: "+351 22 200 4307",
-            website: "www.tabernarealdefado.com",
-            features: ["Live Music", "Reservations Required", "Romantic", "Historic Setting"],
-            specialties: ["Bacalhau à Brás", "Francesinha", "Vinho Verde"],
-            averagePrice: "45-65€ per person",
-            images: ["/restaurants/taberna-real.jpg"],
-            tags: ["Traditional", "Fado", "Portuguese", "Romantic"]
-        },
-        {
-            id: "rest-2", 
-            name: "Cantinho do Avillez",
-            cuisine: "Contemporary Portuguese",
-            description: "José Avillez's take on modern Portuguese cuisine with creative twists on traditional dishes.",
-            latitude: 41.1496,
-            longitude: -8.6109,
-            priceRange: "€€€€",
-            rating: 4.8,
-            reviewCount: 892,
-            address: "Rua Mouzinho da Silveira 166, 4050-416 Porto",
-            openingHours: "Mon-Sun: 12:00-15:00, 19:30-24:00",
-            phone: "+351 22 322 3947",
-            website: "www.cantinhodoavillez.pt",
-            features: ["Michelin Guide", "Chef's Table", "Wine Pairing", "Reservations Required"],
-            specialties: ["Tasting Menu", "Signature Codfish", "Portuguese Desserts"],
-            averagePrice: "80-120€ per person",
-            images: ["/restaurants/cantinho-avillez.jpg"],
-            tags: ["Fine Dining", "Contemporary", "Michelin", "Celebrity Chef"]
-        },
-        {
-            id: "rest-3",
-            name: "Chez Lapin",
-            cuisine: "Seafood",
-            description: "Waterfront seafood restaurant with stunning views of the Douro River and fresh daily catches.",
-            latitude: 41.1407,
-            longitude: -8.6144,
-            priceRange: "€€",
-            rating: 4.4,
-            reviewCount: 1523,
-            address: "Cais da Ribeira 40-42, 4050-510 Porto",
-            openingHours: "Daily: 12:00-15:00, 18:00-24:00",
-            phone: "+351 22 200 6418",
-            website: "www.chezlapin.pt",
-            features: ["River View", "Fresh Seafood", "Outdoor Seating", "Family Friendly"],
-            specialties: ["Grilled Fish", "Seafood Rice", "Caldeirada"],
-            averagePrice: "25-40€ per person",
-            images: ["/restaurants/chez-lapin.jpg"],
-            tags: ["Seafood", "River View", "Fresh", "Traditional"]
-        },
-        {
-            id: "rest-4",
-            name: "Mesa 325",
-            cuisine: "International",
-            description: "Modern bistro offering international fusion cuisine with local ingredients and craft cocktails.",
-            latitude: 41.1512,
-            longitude: -8.6203,
-            priceRange: "€€",
-            rating: 4.5,
-            reviewCount: 687,
-            address: "Rua do Rosário 325, 4050-521 Porto",
-            openingHours: "Tue-Sat: 18:00-02:00, Sun-Mon: Closed",
-            phone: "+351 22 013 1106",
-            website: "www.mesa325.com",
-            features: ["Craft Cocktails", "Late Night", "Trendy", "Good for Groups"],
-            specialties: ["Fusion Tapas", "Signature Cocktails", "Weekend Brunch"],
-            averagePrice: "30-50€ per person",
-            images: ["/restaurants/mesa-325.jpg"],
-            tags: ["International", "Cocktails", "Modern", "Trendy"]
-        },
-        {
-            id: "rest-5",
-            name: "Casa do Livro",
-            cuisine: "Vegetarian",
-            description: "Charming bookstore café serving organic vegetarian and vegan dishes in a literary atmosphere.",
-            latitude: 41.1467,
-            longitude: -8.6157,
-            priceRange: "€",
-            rating: 4.3,
-            reviewCount: 456,
-            address: "Rua Galeria de Paris 85, 4050-284 Porto",
-            openingHours: "Mon-Sat: 09:00-19:00, Sun: 10:00-18:00",
-            phone: "+351 22 207 4321",
-            website: "www.casadolivro.pt",
-            features: ["Bookstore", "Vegetarian", "Organic", "WiFi", "Quiet"],
-            specialties: ["Buddha Bowl", "Organic Coffee", "Vegan Pastries"],
-            averagePrice: "15-25€ per person",
-            images: ["/restaurants/casa-livro.jpg"],
-            tags: ["Vegetarian", "Bookstore", "Organic", "Cozy"]
-        },
-        {
-            id: "rest-6",
-            name: "Antiqvvm",
-            cuisine: "Fine Dining",
-            description: "Michelin-starred restaurant offering innovative Portuguese cuisine with panoramic city views.",
-            latitude: 41.1521,
-            longitude: -8.6294,
-            priceRange: "€€€€",
-            rating: 4.9,
-            reviewCount: 234,
-            address: "Rua de Entre Quintas 220, 4050-240 Porto",
-            openingHours: "Wed-Sat: 19:30-24:00, Closed Sun-Tue",
-            phone: "+351 22 617 4885",
-            website: "www.antiqvvm.pt",
-            features: ["Michelin Star", "City Views", "Tasting Menu", "Wine Cellar"],
-            specialties: ["Tasting Menu", "Portuguese Gastronomy", "Wine Pairing"],
-            averagePrice: "150-200€ per person",
-            images: ["/restaurants/antiqvvm.jpg"],
-            tags: ["Michelin Star", "Fine Dining", "Views", "Exclusive"]
+    // Use API hooks for restaurant data
+    const nearbyRestaurantsQuery = useNearbyRestaurants(
+        searchParams().centerLat,
+        searchParams().centerLng,
+        5000 // 5km radius
+    );
+    
+    const preferencesQuery = useRestaurantsByPreferences({
+        location: searchParams().location,
+        cuisines: activeFilters().cuisines,
+        priceRange: activeFilters().priceRange,
+        features: activeFilters().features
+    });
+
+    const restaurants = () => {
+        // Prefer preferences-based results if available, otherwise use nearby
+        if (preferencesQuery.data && preferencesQuery.data.length > 0) {
+            return preferencesQuery.data;
         }
-    ]);
+        return nearbyRestaurantsQuery.data || [];
+    };
 
     // Chat logic
     const sendChatMessage = async () => {

@@ -2,88 +2,17 @@ import { createSignal, For, Show, createEffect } from 'solid-js';
 import { useParams } from '@solidjs/router';
 import { Star, MapPin, Wifi, Car, Coffee, Dumbbell, Phone, Mail, Globe, Heart, Share2, Calendar, Users, ArrowLeft } from 'lucide-solid';
 import { A } from '@solidjs/router';
+import { useHotelDetails } from '@/lib/api/hotels';
 
 export default function HotelDetailPage() {
     const params = useParams();
-    const [hotel, setHotel] = createSignal(null);
     const [selectedTab, setSelectedTab] = createSignal('overview');
     const [isFavorite, setIsFavorite] = createSignal(false);
 
-    // Mock hotel data - in real app, this would fetch from API using params.id
-    createEffect(() => {
-        // Simulate API call
-        const mockHotel = {
-            id: params.id,
-            name: 'Porto Heritage Hotel',
-            description: 'A charming boutique hotel in the heart of Porto\'s historic district, featuring elegant rooms with traditional Portuguese décor and modern amenities.',
-            category: 'Boutique Hotel',
-            address: 'Rua das Flores, 123, Porto, Portugal',
-            rating: 4.3,
-            reviewCount: 847,
-            priceRange: '€€€',
-            pricePerNight: '€120-200',
-            images: [
-                '/images/hotel-1.jpg',
-                '/images/hotel-2.jpg',
-                '/images/hotel-3.jpg',
-                '/images/hotel-4.jpg'
-            ],
-            amenities: [
-                { name: 'Free WiFi', icon: Wifi, available: true },
-                { name: 'Parking', icon: Car, available: true },
-                { name: 'Restaurant', icon: Coffee, available: true },
-                { name: 'Fitness Center', icon: Dumbbell, available: false },
-                { name: 'Room Service', icon: Users, available: true }
-            ],
-            contact: {
-                phone: '+351 22 123 4567',
-                email: 'info@portoheritaghotel.com',
-                website: 'www.portoheritagehotel.com'
-            },
-            coordinates: { lat: 41.1496, lng: -8.6109 },
-            checkIn: '15:00',
-            checkOut: '11:00',
-            rooms: [
-                {
-                    type: 'Standard Room',
-                    description: 'Cozy room with city view and traditional Portuguese décor',
-                    size: '25 m²',
-                    capacity: '2 guests',
-                    price: '€120/night',
-                    amenities: ['Free WiFi', 'Air Conditioning', 'Private Bathroom']
-                },
-                {
-                    type: 'Deluxe Room',
-                    description: 'Spacious room with river view and premium amenities',
-                    size: '35 m²',
-                    capacity: '2-3 guests',
-                    price: '€160/night',
-                    amenities: ['Free WiFi', 'Air Conditioning', 'Private Bathroom', 'Mini Bar', 'River View']
-                },
-                {
-                    type: 'Suite',
-                    description: 'Luxurious suite with separate living area and panoramic views',
-                    size: '50 m²',
-                    capacity: '4 guests',
-                    price: '€200/night',
-                    amenities: ['Free WiFi', 'Air Conditioning', 'Private Bathroom', 'Mini Bar', 'Panoramic View', 'Living Area']
-                }
-            ],
-            policies: {
-                cancellation: 'Free cancellation up to 24 hours before check-in',
-                children: 'Children of all ages are welcome',
-                pets: 'Pets are not allowed',
-                smoking: 'Non-smoking property'
-            },
-            nearbyAttractions: [
-                { name: 'Livraria Lello', distance: '300m', type: 'Bookstore' },
-                { name: 'Porto Cathedral', distance: '500m', type: 'Historic Site' },
-                { name: 'Ribeira District', distance: '800m', type: 'Historic District' },
-                { name: 'Dom Luís I Bridge', distance: '1.2km', type: 'Landmark' }
-            ]
-        };
-        setHotel(mockHotel);
-    });
+    // Use API hook to fetch hotel details
+    const hotelQuery = useHotelDetails(params.id);
+    
+    const hotel = () => hotelQuery.data;
 
     const tabs = [
         { id: 'overview', label: 'Overview' },

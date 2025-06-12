@@ -1,6 +1,7 @@
 import { createSignal, createEffect, For, Show, onMount } from 'solid-js';
 import { MapPin, Clock, Star, Filter, Heart, Share2, Download, Edit3, Plus, X, Navigation, Calendar, Users, DollarSign, Camera, Coffee, Utensils, Wifi, CreditCard, Loader2, MessageCircle, Send, Bed, Building2, Car, Waves, Dumbbell, UtensilsCrossed, Shield, Phone } from 'lucide-solid';
 import MapComponent from '@/components/features/Map/Map';
+import { useHotelsByPreferences, useNearbyHotels } from '@/lib/api/hotels';
 
 export default function HotelsPage() {
     const [selectedHotel, setSelectedHotel] = createSignal(null);
@@ -34,147 +35,29 @@ export default function HotelsPage() {
         centerLng: -8.6291
     });
 
-    // Sample hotels data for Porto
-    const [hotels, setHotels] = createSignal([
-        {
-            id: "hotel-1",
-            name: "The Yeatman",
-            type: "Luxury Hotel",
-            description: "Award-winning luxury hotel with panoramic views over Porto and the Douro River. Wine-focused with Michelin-starred dining.",
-            latitude: 41.1366,
-            longitude: -8.6122,
-            priceRange: "€€€€",
-            rating: 4.8,
-            reviewCount: 3421,
-            address: "Rua do Choupelo, 4400-088 Vila Nova de Gaia",
-            phone: "+351 22 013 3100",
-            website: "www.the-yeatman-hotel.com",
-            checkInTime: "15:00",
-            checkOutTime: "12:00",
-            pricePerNight: "€450-€800",
-            amenities: ["Spa", "Pool", "Restaurant", "Wine Cellar", "Gym", "Concierge", "Parking", "WiFi"],
-            roomTypes: ["Deluxe Room", "Junior Suite", "Master Suite", "Presidential Suite"],
-            images: ["/hotels/yeatman.jpg"],
-            tags: ["Luxury", "Wine Hotel", "Views", "Michelin"],
-            cancellationPolicy: "Free cancellation up to 24 hours before arrival",
-            features: ["Michelin Restaurant", "Wine Tours", "River Views", "Luxury Spa"]
-        },
-        {
-            id: "hotel-2",
-            name: "Pestana Vintage Porto",
-            type: "Historic Hotel",
-            description: "Charming historic hotel in restored 16th-century buildings in the heart of Ribeira, UNESCO World Heritage site.",
-            latitude: 41.1411,
-            longitude: -8.6151,
-            priceRange: "€€€",
-            rating: 4.5,
-            reviewCount: 2187,
-            address: "Rua da Ribeira 1, 4050-513 Porto",
-            phone: "+351 22 340 2300",
-            website: "www.pestana.com",
-            checkInTime: "15:00",
-            checkOutTime: "11:00",
-            pricePerNight: "€180-€350",
-            amenities: ["Restaurant", "Bar", "WiFi", "Concierge", "Historic Building", "River Views"],
-            roomTypes: ["Standard Room", "Superior Room", "Deluxe Room", "Suite"],
-            images: ["/hotels/pestana-vintage.jpg"],
-            tags: ["Historic", "UNESCO", "Riverside", "Traditional"],
-            cancellationPolicy: "Free cancellation up to 48 hours before arrival",
-            features: ["Historic Building", "UNESCO Location", "River Views", "Traditional Architecture"]
-        },
-        {
-            id: "hotel-3",
-            name: "Casa da Guitarra",
-            type: "Boutique Hotel",
-            description: "Intimate boutique hotel celebrating Portuguese music and culture, located in a beautifully restored 18th-century building.",
-            latitude: 41.1467,
-            longitude: -8.6089,
-            priceRange: "€€",
-            rating: 4.6,
-            reviewCount: 892,
-            address: "Rua de São Bento da Vitória 87, 4050-543 Porto",
-            phone: "+351 22 207 5199",
-            website: "www.casadaguitarra.com",
-            checkInTime: "14:00",
-            checkOutTime: "12:00",
-            pricePerNight: "€120-€220",
-            amenities: ["Restaurant", "Bar", "WiFi", "Music Room", "Terrace", "Library"],
-            roomTypes: ["Classic Room", "Superior Room", "Junior Suite"],
-            images: ["/hotels/casa-guitarra.jpg"],
-            tags: ["Boutique", "Music Theme", "Cultural", "Intimate"],
-            cancellationPolicy: "Free cancellation up to 72 hours before arrival",
-            features: ["Music Theme", "Cultural Experience", "Historic Building", "Intimate Setting"]
-        },
-        {
-            id: "hotel-4",
-            name: "InterContinental Porto - Palacio das Cardosas",
-            type: "Luxury Hotel",
-            description: "Elegant luxury hotel housed in an 18th-century palace in Porto's historic center, offering sophisticated accommodations.",
-            latitude: 41.1484,
-            longitude: -8.6107,
-            priceRange: "€€€€",
-            rating: 4.7,
-            reviewCount: 1643,
-            address: "Praça da Liberdade 25, 4000-322 Porto",
-            phone: "+351 22 003 5600",
-            website: "www.porto.intercontinental.com",
-            checkInTime: "15:00",
-            checkOutTime: "12:00",
-            pricePerNight: "€350-€650",
-            amenities: ["Spa", "Restaurant", "Bar", "Gym", "Concierge", "Business Center", "WiFi", "Valet Parking"],
-            roomTypes: ["Classic Room", "Premium Room", "Executive Suite", "Presidential Suite"],
-            images: ["/hotels/intercontinental-porto.jpg"],
-            tags: ["Luxury", "Palace", "Historic Center", "Business"],
-            cancellationPolicy: "Free cancellation up to 24 hours before arrival",
-            features: ["Historic Palace", "Central Location", "Luxury Amenities", "Business Facilities"]
-        },
-        {
-            id: "hotel-5",
-            name: "Torel Avantgarde",
-            type: "Design Hotel",
-            description: "Contemporary design hotel featuring avant-garde art and modern luxury in Porto's cultural district.",
-            latitude: 41.1523,
-            longitude: -8.6234,
-            priceRange: "€€€",
-            rating: 4.4,
-            reviewCount: 756,
-            address: "Rua da Restauração 336, 4050-506 Porto",
-            phone: "+351 22 340 4900",
-            website: "www.torelavantgarde.com",
-            checkInTime: "15:00",
-            checkOutTime: "11:00",
-            pricePerNight: "€200-€400",
-            amenities: ["Pool", "Restaurant", "Bar", "Spa", "Gym", "Art Gallery", "WiFi", "Parking"],
-            roomTypes: ["Superior Room", "Deluxe Room", "Junior Suite", "Art Suite"],
-            images: ["/hotels/torel-avantgarde.jpg"],
-            tags: ["Design", "Art", "Modern", "Pool"],
-            cancellationPolicy: "Free cancellation up to 48 hours before arrival",
-            features: ["Contemporary Design", "Art Collection", "Rooftop Pool", "Cultural District"]
-        },
-        {
-            id: "hotel-6",
-            name: "NH Collection Porto Batalha",
-            type: "Business Hotel",
-            description: "Modern business hotel with comfortable accommodations and excellent facilities in Porto's commercial center.",
-            latitude: 41.1501,
-            longitude: -8.6143,
-            priceRange: "€€",
-            rating: 4.3,
-            reviewCount: 2341,
-            address: "Praça da Batalha 116, 4000-101 Porto",
-            phone: "+351 22 330 4400",
-            website: "www.nh-hotels.com",
-            checkInTime: "15:00",
-            checkOutTime: "12:00",
-            pricePerNight: "€100-€180",
-            amenities: ["Restaurant", "Bar", "Gym", "Business Center", "Meeting Rooms", "WiFi", "Parking"],
-            roomTypes: ["Standard Room", "Superior Room", "Premium Room", "Suite"],
-            images: ["/hotels/nh-batalha.jpg"],
-            tags: ["Business", "Central", "Modern", "Value"],
-            cancellationPolicy: "Free cancellation up to 24 hours before arrival",
-            features: ["Business Facilities", "Central Location", "Modern Amenities", "Good Value"]
+    // Use API hooks for hotel data
+    const nearbyHotelsQuery = useNearbyHotels(
+        searchParams().centerLat,
+        searchParams().centerLng,
+        5000 // 5km radius
+    );
+    
+    const preferencesQuery = useHotelsByPreferences({
+        location: searchParams().location,
+        checkIn: searchParams().checkIn,
+        checkOut: searchParams().checkOut,
+        guests: searchParams().guests,
+        types: activeFilters().types,
+        amenities: activeFilters().amenities
+    });
+
+    const hotels = () => {
+        // Prefer preferences-based results if available, otherwise use nearby
+        if (preferencesQuery.data && preferencesQuery.data.length > 0) {
+            return preferencesQuery.data;
         }
-    ]);
+        return nearbyHotelsQuery.data || [];
+    };
 
     // Chat logic
     const sendChatMessage = async () => {
