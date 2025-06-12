@@ -7,6 +7,7 @@ import { createSignal, For, Show, onMount, onCleanup } from "solid-js";
 import { ImageRoot, ImageFallback, Image } from "@/ui/image";
 import { useAuth } from "~/contexts/AuthContext";
 import { useTheme } from "~/contexts/ThemeContext";
+import PWAInstall from "~/components/PWAInstall";
 
 // Public navigation items (for non-authenticated users)
 const publicNavigationItems = [
@@ -131,6 +132,9 @@ export default function Nav() {
             when={isAuthenticated()}
             fallback={
               <div class="hidden md:flex items-center space-x-3 lg:space-x-4">
+                {/* PWA Install Button */}
+                <PWAInstall />
+                
                 {/* Theme Toggle for non-authenticated users */}
                 <Button
                   variant="ghost"
@@ -158,6 +162,9 @@ export default function Nav() {
             }
           >
             <div class="hidden md:flex items-center space-x-3 relative user-menu-container">
+              {/* PWA Install Button */}
+              <PWAInstall />
+              
               {/* Theme Toggle */}
               <Button
                 variant="ghost"

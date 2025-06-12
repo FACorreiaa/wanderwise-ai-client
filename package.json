@@ -20,7 +20,9 @@
     "solid-js": "^1.9.5",
     "tailwind-merge": "^3.3.0",
     "tailwindcss-animate": "^1.0.7",
-    "vinxi": "^0.5.3"
+    "vinxi": "^0.5.3",
+    "vite-plugin-pwa": "^1.0.0",
+    "workbox-window": "^7.3.0"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.1.8",

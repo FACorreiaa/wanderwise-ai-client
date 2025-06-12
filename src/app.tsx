@@ -3,6 +3,7 @@ import { FileRoutes } from "@solidjs/start/router";
 import { Suspense } from "solid-js";
 import Nav from "~/components/Nav";
 import Footer from "~/components/Footer"; // Import the new component
+import PWAInstall from "~/components/PWAInstall";
 import "./app.css";
 import { QueryClient, QueryClientProvider } from "@tanstack/solid-query";
 import { AuthProvider } from "~/contexts/AuthContext";
@@ -23,6 +24,7 @@ export default function App() {
                   <Suspense>{props.children}</Suspense>
                 </main>
                 <Footer />
+                <PWAInstall />
               </div>
             </AuthProvider>
           )}
