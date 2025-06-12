@@ -4,7 +4,11 @@
   "scripts": {
     "dev": "vinxi dev",
     "build": "vinxi build",
-    "start": "vinxi start"
+    "start": "vinxi start",
+    "version": "vinxi version",
+    "preview": "pnpm run build && npx wrangler dev",
+    "deploy": "pnpm run build && wrangler deploy",
+    "cf-typegen": "wrangler types"
   },
   "dependencies": {
     "@kobalte/core": "^0.13.10",
@@ -26,7 +30,10 @@
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.1.8",
-    "tailwindcss": "^4.1.8"
+    "tailwindcss": "^4.1.8",
+    "wrangler": "^4.20.0",
+    "@types/node": "^24.0.1",
+    "nitropack": "^2.11.12"
   },
   "engines": {
     "node": ">=22"

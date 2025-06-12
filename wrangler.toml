@@ -1,8 +1,0 @@
-# wrangler.toml
-
-# This name MUST be all lowercase, with dashes as separators.
-# It will be the name of your Worker service in the Cloudflare dashboard.
-name = "loci-client"
-
-# Set the compatibility date to a recent date to enable modern features.
-compatibility_date = "2024-05-01" # Or a more recent date

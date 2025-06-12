@@ -9,13 +9,12 @@ const __dirname = path.dirname(__filename);
 
 export default defineConfig({
   server: {
-    preset: "cloudflare-pages",
-    rollupConfig: {
-      external: ["node:async_hooks"]
-    }
+    preset: "cloudflare_module",
+    compatibilityDate: "2025-06-12"
   },
   vite: {
     plugins: [
+      //cloudflare(),
       tailwindcss(),
       VitePWA({
         registerType: 'autoUpdate',
