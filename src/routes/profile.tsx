@@ -1,32 +1,73 @@
 import { createSignal, For, Show, createEffect } from 'solid-js';
 import { User, Mail, MapPin, Calendar, Camera, Edit3, Save, X, Plus, Tag, Heart } from 'lucide-solid';
 import { useAuth } from '~/contexts/AuthContext';
-import { useDefaultProfile, useUpdateProfileMutation } from '@/lib/api/user';
+import { useUpdateProfileMutation } from '@/lib/api/user';
+import { useQuery } from '@tanstack/solid-query';
+import { apiRequest } from '@/lib/api/shared';
+
+// Define the actual user profile response type
+interface UserProfileResponse {
+    id?: string;
+    username?: string;
+    email?: string;
+    about_you?: string;
+    location?: string;
+    profile_image_url?: string;
+    created_at?: string;
+    interests?: string[];
+    [key: string]: any; // Allow additional fields
+}
+
+// Define the processed profile data type
+interface ProcessedProfileData {
+    id?: string;
+    username?: string;
+    email?: string;
+    bio?: string;
+    location?: string;
+    joinedDate?: string;
+    avatar?: string;
+    interests: string[];
+    badges: string[];
+    stats: {
+        places_visited: number;
+        reviews_written: number;
+        lists_created: number;
+        followers: number;
+        following: number;
+    };
+}
 
 export default function ProfilePage() {
     const { user } = useAuth();
     const [isEditing, setIsEditing] = createSignal(false);
     const [activeTab, setActiveTab] = createSignal('overview');
-    
-    // API hooks
-    const profileQuery = useDefaultProfile();
+
+    // API hooks - get actual user profile data
+    const profileQuery = useQuery(() => ({
+        queryKey: ['userProfile'],
+        queryFn: () => apiRequest<UserProfileResponse>('/user/profile'),
+        staleTime: 5 * 60 * 1000, // 5 minutes
+    }));
     const updateProfileMutation = useUpdateProfileMutation();
 
-    // Get profile data from API or user auth data as fallback
-    const profileData = () => {
-        if (profileQuery.data) {
-            return profileQuery.data;
-        }
-        // Fallback to user data + defaults
+    // Get profile data from API - no hardcoded fallbacks
+    const profileData = (): ProcessedProfileData | null => {
+        const apiData: UserProfileResponse | undefined = profileQuery.data;
+        const userData = user();
+
+        if (!apiData && !userData) return null;
+
         return {
-            id: user()?.id,
-            username: user()?.username || 'Travel Explorer',
-            email: user()?.email || 'explorer@example.com',
-            bio: 'Passionate traveler exploring hidden gems around the world. Love discovering local cuisines and historical sites.',
-            location: 'San Francisco, CA',
-            joinedDate: '2024-01-15',
-            avatar: null,
-            interests: ['Architecture', 'Food & Dining', 'Museums', 'Photography'],
+            id: apiData?.id || userData?.id,
+            username: apiData?.username || userData?.username,
+            email: userData?.email || apiData?.email,
+            bio: apiData?.about_you || (userData as any)?.about_you,
+            location: apiData?.location || (userData as any)?.location,
+            joinedDate: apiData?.created_at || userData?.created_at,
+            avatar: apiData?.profile_image_url || userData?.profile_image_url,
+            interests: apiData?.interests || ['Architecture', 'Food & Dining', 'Museums', 'Photography'],
+            // Temporary hardcoded data for UI purposes
             badges: ['Early Adopter', 'Review Writer', 'Local Guide'],
             stats: {
                 places_visited: 47,
@@ -45,26 +86,31 @@ export default function ProfilePage() {
     });
 
     const startEditing = () => {
+        const profile = profileData();
         setEditForm({
-            username: profileData().username,
-            bio: profileData().bio,
-            location: profileData().location
+            username: profile?.username || '',
+            bio: profile?.bio || '',
+            location: profile?.location || ''
         });
         setIsEditing(true);
     };
 
     const saveProfile = async () => {
-        const profileId = profileData().id;
-        if (profileId) {
-            try {
-                await updateProfileMutation.mutateAsync({
-                    profileId,
-                    profileData: editForm()
-                });
-                setIsEditing(false);
-            } catch (error) {
-                console.error('Failed to update profile:', error);
-            }
+        try {
+            const formData = editForm();
+            // Map form fields to API expected fields and include location
+            const profileUpdateData = {
+                username: formData.username,
+                about_you: formData.bio,
+                location: formData.location
+            };
+
+            await updateProfileMutation.mutateAsync(profileUpdateData);
+            // Manually refetch the profile data to get updated values
+            await profileQuery.refetch();
+            setIsEditing(false);
+        } catch (error) {
+            console.error('Failed to update profile:', error);
         }
     };
 
@@ -119,96 +165,103 @@ export default function ProfilePage() {
         }
     ];
 
-    const renderOverview = () => (
-        <div class="space-y-6">
-            {/* Stats Grid */}
-            <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                <div class="bg-white dark:bg-gray-800 rounded-lg p-4 text-center border border-gray-200 dark:border-gray-700">
-                    <div class="text-2xl font-bold text-blue-600 dark:text-blue-400">{profileData().stats.places_visited}</div>
-                    <div class="text-sm text-gray-600 dark:text-gray-400">Places Visited</div>
-                </div>
-                <div class="bg-white dark:bg-gray-800 rounded-lg p-4 text-center border border-gray-200 dark:border-gray-700">
-                    <div class="text-2xl font-bold text-green-600 dark:text-green-400">{profileData().stats.reviews_written}</div>
-                    <div class="text-sm text-gray-600 dark:text-gray-400">Reviews</div>
-                </div>
-                <div class="bg-white dark:bg-gray-800 rounded-lg p-4 text-center border border-gray-200 dark:border-gray-700">
-                    <div class="text-2xl font-bold text-purple-600 dark:text-purple-400">{profileData().stats.lists_created}</div>
-                    <div class="text-sm text-gray-600 dark:text-gray-400">Lists Created</div>
-                </div>
-                <div class="bg-white dark:bg-gray-800 rounded-lg p-4 text-center border border-gray-200 dark:border-gray-700">
-                    <div class="text-2xl font-bold text-orange-600 dark:text-orange-400">{profileData().stats.followers}</div>
-                    <div class="text-sm text-gray-600 dark:text-gray-400">Followers</div>
-                </div>
-            </div>
+    const renderOverview = () => {
+        const profile = profileData();
+        if (!profile) return <div>No profile data available</div>;
 
-            {/* Interests */}
-            <div class="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
-                <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Interests</h3>
-                <div class="flex flex-wrap gap-2">
-                    <For each={profileData().interests}>
-                        {(interest) => (
-                            <span class="px-3 py-1 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded-full text-sm font-medium">
-                                {interest}
-                            </span>
-                        )}
-                    </For>
+        return (
+            <div class="space-y-6">
+                {/* Stats Grid */}
+                <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div class="bg-white dark:bg-gray-800 rounded-lg p-4 text-center border border-gray-200 dark:border-gray-700">
+                        <div class="text-2xl font-bold text-blue-600 dark:text-blue-400">{profile.stats.places_visited}</div>
+                        <div class="text-sm text-gray-600 dark:text-gray-400">Places Visited</div>
+                    </div>
+                    <div class="bg-white dark:bg-gray-800 rounded-lg p-4 text-center border border-gray-200 dark:border-gray-700">
+                        <div class="text-2xl font-bold text-green-600 dark:text-green-400">{profile.stats.reviews_written}</div>
+                        <div class="text-sm text-gray-600 dark:text-gray-400">Reviews</div>
+                    </div>
+                    <div class="bg-white dark:bg-gray-800 rounded-lg p-4 text-center border border-gray-200 dark:border-gray-700">
+                        <div class="text-2xl font-bold text-purple-600 dark:text-purple-400">{profile.stats.lists_created}</div>
+                        <div class="text-sm text-gray-600 dark:text-gray-400">Lists Created</div>
+                    </div>
+                    <div class="bg-white dark:bg-gray-800 rounded-lg p-4 text-center border border-gray-200 dark:border-gray-700">
+                        <div class="text-2xl font-bold text-orange-600 dark:text-orange-400">{profile.stats.followers}</div>
+                        <div class="text-sm text-gray-600 dark:text-gray-400">Followers</div>
+                    </div>
                 </div>
-            </div>
 
-            {/* Badges */}
-            <div class="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
-                <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Badges</h3>
-                <div class="flex flex-wrap gap-3">
-                    <For each={profileData().badges}>
-                        {(badge) => (
-                            <div class="flex items-center gap-2 px-3 py-2 bg-gradient-to-r from-yellow-100 to-orange-100 dark:from-yellow-900 dark:to-orange-900 rounded-lg border border-yellow-200 dark:border-yellow-700">
-                                <div class="w-6 h-6 bg-yellow-500 rounded-full"></div>
-                                <span class="text-sm font-medium text-yellow-800 dark:text-yellow-200">{badge}</span>
-                            </div>
-                        )}
-                    </For>
-                </div>
-            </div>
+                {/* Interests */}
+                <Show when={profile.interests && profile.interests.length > 0}>
+                    <div class="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
+                        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Interests</h3>
+                        <div class="flex flex-wrap gap-2">
+                            <For each={profile.interests}>
+                                {(interest) => (
+                                    <span class="px-3 py-1 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded-full text-sm font-medium">
+                                        {interest}
+                                    </span>
+                                )}
+                            </For>
+                        </div>
+                    </div>
+                </Show>
 
-            {/* Recent Activity */}
-            <div class="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
-                <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Recent Activity</h3>
-                <div class="space-y-4">
-                    <For each={recentActivity}>
-                        {(activity) => (
-                            <div class="flex items-start gap-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                                <div class="w-8 h-8 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center flex-shrink-0">
-                                    <Show when={activity.type === 'review'}>
-                                        <User class="w-4 h-4 text-blue-600 dark:text-blue-400" />
-                                    </Show>
-                                    <Show when={activity.type === 'list'}>
-                                        <Tag class="w-4 h-4 text-blue-600 dark:text-blue-400" />
-                                    </Show>
-                                    <Show when={activity.type === 'favorite'}>
-                                        <Heart class="w-4 h-4 text-blue-600 dark:text-blue-400" />
-                                    </Show>
+                {/* Badges */}
+                <div class="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Badges</h3>
+                    <div class="flex flex-wrap gap-3">
+                        <For each={profile.badges}>
+                            {(badge) => (
+                                <div class="flex items-center gap-2 px-3 py-2 bg-gradient-to-r from-yellow-100 to-orange-100 dark:from-yellow-900 dark:to-orange-900 rounded-lg border border-yellow-200 dark:border-yellow-700">
+                                    <div class="w-6 h-6 bg-yellow-500 rounded-full"></div>
+                                    <span class="text-sm font-medium text-yellow-800 dark:text-yellow-200">{badge}</span>
                                 </div>
-                                <div class="flex-1">
-                                    <h4 class="font-medium text-gray-900 dark:text-white">{activity.title}</h4>
-                                    <p class="text-sm text-gray-600 dark:text-gray-400">{activity.description}</p>
-                                    <div class="flex items-center gap-2 mt-1">
-                                        <span class="text-xs text-gray-500 dark:text-gray-500">{activity.date}</span>
-                                        <Show when={activity.rating}>
-                                            <div class="flex items-center gap-1">
-                                                <For each={Array.from({ length: activity.rating }, (_, i) => i)}>
-                                                    {() => <span class="text-yellow-500 text-xs">★</span>}
-                                                </For>
-                                            </div>
+                            )}
+                        </For>
+                    </div>
+                </div>
+
+                {/* Recent Activity */}
+                <div class="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Recent Activity</h3>
+                    <div class="space-y-4">
+                        <For each={recentActivity}>
+                            {(activity) => (
+                                <div class="flex items-start gap-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                                    <div class="w-8 h-8 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center flex-shrink-0">
+                                        <Show when={activity.type === 'review'}>
+                                            <User class="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                                        </Show>
+                                        <Show when={activity.type === 'list'}>
+                                            <Tag class="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                                        </Show>
+                                        <Show when={activity.type === 'favorite'}>
+                                            <Heart class="w-4 h-4 text-blue-600 dark:text-blue-400" />
                                         </Show>
                                     </div>
+                                    <div class="flex-1">
+                                        <h4 class="font-medium text-gray-900 dark:text-white">{activity.title}</h4>
+                                        <p class="text-sm text-gray-600 dark:text-gray-400">{activity.description}</p>
+                                        <div class="flex items-center gap-2 mt-1">
+                                            <span class="text-xs text-gray-500 dark:text-gray-500">{activity.date}</span>
+                                            <Show when={activity.rating}>
+                                                <div class="flex items-center gap-1">
+                                                    <For each={Array.from({ length: activity.rating }, (_, i) => i)}>
+                                                        {() => <span class="text-yellow-500 text-xs">★</span>}
+                                                    </For>
+                                                </div>
+                                            </Show>
+                                        </div>
+                                    </div>
                                 </div>
-                            </div>
-                        )}
-                    </For>
+                            )}
+                        </For>
+                    </div>
                 </div>
             </div>
-        </div>
-    );
+        );
+    };
 
     const renderActivity = () => (
         <div class="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
@@ -261,6 +314,33 @@ export default function ProfilePage() {
         </div>
     );
 
+    // Show loading state while fetching profile data
+    if (profileQuery.isLoading) {
+        return (
+            <div class="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors flex items-center justify-center">
+                <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+            </div>
+        );
+    }
+
+    // Show error state if profile fetch failed
+    if (profileQuery.isError) {
+        return (
+            <div class="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors flex items-center justify-center">
+                <div class="text-center">
+                    <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-2">Error Loading Profile</h2>
+                    <p class="text-gray-600 dark:text-gray-400">Unable to load profile data. Please try again.</p>
+                    <button
+                        onClick={() => profileQuery.refetch()}
+                        class="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                    >
+                        Retry
+                    </button>
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div class="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors">
             <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -271,7 +351,7 @@ export default function ProfilePage() {
                         <div class="flex flex-col items-center md:items-start">
                             <div class="relative">
                                 <div class="w-24 h-24 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-2xl font-bold">
-                                    {profileData().username.charAt(0).toUpperCase()}
+                                    {profileData()?.username?.charAt(0)?.toUpperCase() || 'T'}
                                 </div>
                                 <button class="absolute -bottom-1 -right-1 bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-600 rounded-full p-2 hover:bg-gray-50 dark:hover:bg-gray-700">
                                     <Camera class="w-4 h-4 text-gray-600 dark:text-gray-400" />
@@ -334,22 +414,32 @@ export default function ProfilePage() {
                             >
                                 <div class="flex items-start justify-between">
                                     <div class="flex-1">
-                                        <h1 class="text-2xl font-bold text-gray-900 dark:text-white">{profileData().username}</h1>
+                                        <h1 class="text-2xl font-bold text-gray-900 dark:text-white">{profileData()?.username || 'User'}</h1>
                                         <div class="flex items-center gap-4 mt-2 text-gray-600 dark:text-gray-400">
-                                            <div class="flex items-center gap-1">
-                                                <Mail class="w-4 h-4" />
-                                                <span class="text-sm">{profileData().email}</span>
-                                            </div>
-                                            <div class="flex items-center gap-1">
-                                                <MapPin class="w-4 h-4" />
-                                                <span class="text-sm">{profileData().location}</span>
-                                            </div>
-                                            <div class="flex items-center gap-1">
-                                                <Calendar class="w-4 h-4" />
-                                                <span class="text-sm">Joined {new Date(profileData().joinedDate).toLocaleDateString()}</span>
-                                            </div>
+                                            <Show when={profileData()?.email}>
+                                                <div class="flex items-center gap-1">
+                                                    <Mail class="w-4 h-4" />
+                                                    <span class="text-sm">{profileData()?.email}</span>
+                                                </div>
+                                            </Show>
+                                            <Show when={profileData()?.location}>
+                                                <div class="flex items-center gap-1">
+                                                    <MapPin class="w-4 h-4" />
+                                                    <span class="text-sm">{profileData()?.location}</span>
+                                                </div>
+                                            </Show>
+                                            <Show when={profileData()?.joinedDate}>
+                                                {(joinedDate) => (
+                                                    <div class="flex items-center gap-1">
+                                                        <Calendar class="w-4 h-4" />
+                                                        <span class="text-sm">Joined {new Date(joinedDate).toLocaleDateString()}</span>
+                                                    </div>
+                                                )}
+                                            </Show>
                                         </div>
-                                        <p class="text-gray-700 dark:text-gray-300 mt-3">{profileData().bio}</p>
+                                        <Show when={profileData()?.bio}>
+                                            <p class="text-gray-700 dark:text-gray-300 mt-3">{profileData()?.bio}</p>
+                                        </Show>
                                     </div>
                                     <button
                                         onClick={startEditing}
@@ -372,11 +462,10 @@ export default function ProfilePage() {
                                 {(tab) => (
                                     <button
                                         onClick={() => setActiveTab(tab.id)}
-                                        class={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
-                                            activeTab() === tab.id
-                                                ? 'border-blue-500 text-blue-600 dark:text-blue-400'
-                                                : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
-                                        }`}
+                                        class={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${activeTab() === tab.id
+                                            ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                                            : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+                                            }`}
                                     >
                                         {tab.label}
                                     </button>

@@ -28,7 +28,7 @@ interface AuthContextType {
   user: () => User | null;
   isAuthenticated: () => boolean;
   isLoading: () => boolean;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string, rememberMe?: boolean) => Promise<void>;
   register: (username: string, email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   updatePassword: (oldPassword: string, newPassword: string) => Promise<void>;
@@ -75,12 +75,12 @@ export const AuthProvider = (props: AuthProviderProps) => {
     setIsLoading(false);
   });
 
-  const login = async (email: string, password: string): Promise<void> => {
+  const login = async (email: string, password: string, rememberMe: boolean = false): Promise<void> => {
     setIsLoading(true);
     try {
       // Authenticate with server and get access token
       const response = await authAPI.login(email, password);
-      setAuthToken(response.access_token);
+      setAuthToken(response.access_token, rememberMe);
       
       // Fetch complete user profile after successful login
       const userProfile = await authAPI.getCurrentUser();

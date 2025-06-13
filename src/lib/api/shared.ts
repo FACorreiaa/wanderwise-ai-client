@@ -9,7 +9,8 @@ export async function apiRequest<T>(
   endpoint: string,
   options: RequestInit = {}
 ): Promise<T> {
-  const token = localStorage.getItem('access_token');
+  // Check both localStorage (persistent) and sessionStorage (temporary) for token
+  const token = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
 
   const config: RequestInit = {
     headers: {
@@ -26,7 +27,9 @@ export async function apiRequest<T>(
 
   if (!response.ok) {
     if (response.status === 401) {
+      // Clear both storage types on unauthorized
       localStorage.removeItem('access_token');
+      sessionStorage.removeItem('access_token');
       window.location.href = '/auth/signin';
       throw new Error('Unauthorized');
     }

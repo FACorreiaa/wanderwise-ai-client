@@ -10,7 +10,7 @@ async function apiRequest<T>(
   endpoint: string,
   options: RequestInit = {}
 ): Promise<T> {
-  const token = localStorage.getItem('access_token');
+  const token = getAuthToken();
 
   const config: RequestInit = {
     headers: {
@@ -29,7 +29,7 @@ async function apiRequest<T>(
   if (!response.ok) {
     if (response.status === 401) {
       // Handle unauthorized - redirect to login
-      localStorage.removeItem('access_token');
+      clearAuthToken();
       window.location.href = '/auth/signin';
       throw new Error('Unauthorized');
     }
@@ -64,7 +64,7 @@ export const authAPI = {
   },
 
   async validateSession() {
-    const token = localStorage.getItem('access_token');
+    const token = getAuthToken();
     if (!token) {
       return { valid: false };
     }
@@ -83,16 +83,12 @@ export const authAPI = {
   },
 
   async getCurrentUser() {
-    const token = localStorage.getItem('access_token');
+    const token = getAuthToken();
     if (!token) {
       throw new Error('No authentication token available');
     }
 
-    return apiRequest<any>('/user/profile', {
-      headers: {
-        'Authorization': `Bearer ${token}`
-      }
-    });
+    return apiRequest<any>('/user/profile');
   }
 };
 
@@ -520,15 +516,27 @@ export const uploadFile = async (file: File, endpoint: string): Promise<string> 
 };
 
 export const getAuthToken = (): string | null => {
-  return localStorage.getItem('access_token');
+  // Check localStorage first (persistent), then sessionStorage (temporary)
+  return localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
 };
 
-export const setAuthToken = (token: string): void => {
-  localStorage.setItem('access_token', token);
+export const setAuthToken = (token: string, rememberMe: boolean = false): void => {
+  if (rememberMe) {
+    // Persistent storage - survives browser restart
+    localStorage.setItem('access_token', token);
+    // Remove from session storage if it exists
+    sessionStorage.removeItem('access_token');
+  } else {
+    // Session storage - cleared when browser/tab is closed
+    sessionStorage.setItem('access_token', token);
+    // Remove from local storage if it exists
+    localStorage.removeItem('access_token');
+  }
 };
 
 export const clearAuthToken = (): void => {
   localStorage.removeItem('access_token');
+  sessionStorage.removeItem('access_token');
 };
 
 export const isAuthenticated = (): boolean => {

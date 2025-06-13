@@ -84,22 +84,20 @@ const SignUp: Component<{ onSwitchMode?: (mode: AuthMode) => void }> = (props) =
             </div>
 
             <form onSubmit={handleSubmit} class="space-y-3 sm:space-y-4">
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div>
-                        <label class="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
-                            Username
-                        </label>
-                        <TextFieldRoot>
-                            <TextField
-                                type="text"
-                                placeholder="John"
-                                value={formData().username || ''}
-                                onInput={(e) => setFormData(prev => ({ ...prev, username: e.currentTarget.value }))}
-                                class="w-full px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-sm sm:text-base"
-                                required
-                            />
-                        </TextFieldRoot>
-                    </div>
+                <div>
+                    <label class="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">
+                        Username
+                    </label>
+                    <TextFieldRoot>
+                        <TextField
+                            type="text"
+                            placeholder="John"
+                            value={formData().username || ''}
+                            onInput={(e) => setFormData(prev => ({ ...prev, username: e.currentTarget.value }))}
+                            class="w-full px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-sm sm:text-base"
+                            required
+                        />
+                    </TextFieldRoot>
                 </div>
 
                 <div>

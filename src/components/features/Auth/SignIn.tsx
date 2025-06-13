@@ -5,13 +5,13 @@ import { A, useNavigate } from "@solidjs/router";
 import { Component, createSignal, Show } from "solid-js";
 import { VsEye, VsEyeClosed } from "solid-icons/vs";
 import AuthLayout from "@/components/layout/Auth";
-import { useLoginMutation } from "@/lib/api/auth";
 import { useAuth } from "@/contexts/AuthContext";
 
 // Define the FormData interface
 interface FormData {
     email: string;
     password: string;
+    rememberMe: boolean;
 }
 
 type AuthMode = 'signin' | 'signup' | 'forgot';
@@ -23,14 +23,14 @@ const SignIn: Component<{ onSwitchMode?: (mode: AuthMode) => void }> = (props) =
     const navigate = useNavigate();
     const [formData, setFormData] = createSignal<Partial<FormData>>({
         email: '',
-        password: ''
+        password: '',
+        rememberMe: false
     });
     const [error, setError] = createSignal<string>('');
 
     const [showPassword, setShowPassword] = createSignal(false);
     const [isLoading, setIsLoading] = createSignal(false);
 
-    const loginMutation = useLoginMutation();
 
     const handleSubmit = async (e: Event) => {
         e.preventDefault();
@@ -46,13 +46,7 @@ const SignIn: Component<{ onSwitchMode?: (mode: AuthMode) => void }> = (props) =
         }
 
         try {
-            await loginMutation.mutateAsync({
-                email: data.email,
-                password: data.password,
-            });
-            
-            login(data.email, data.password);
-            navigate('/');
+            await login(data.email, data.password, data.rememberMe || false);
         } catch (err: any) {
             setError(err?.message || 'Sign in failed. Please try again.');
         } finally {
@@ -116,7 +110,12 @@ const SignIn: Component<{ onSwitchMode?: (mode: AuthMode) => void }> = (props) =
 
                 <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-0 text-xs sm:text-sm">
                     <label class="flex items-center gap-2 cursor-pointer">
-                        <input type="checkbox" class="rounded border-gray-300" />
+                        <input 
+                            type="checkbox" 
+                            class="rounded border-gray-300" 
+                            checked={formData().rememberMe || false}
+                            onInput={(e) => setFormData(prev => ({ ...prev, rememberMe: e.currentTarget.checked }))}
+                        />
                         <span class="text-gray-600">Remember me</span>
                     </label>
                     <A href="/auth/forgot-password" class="text-blue-600 hover:underline">

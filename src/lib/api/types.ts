@@ -2,7 +2,7 @@
 
 export interface UserProfile {
   id: string;
-  name: string;
+  username: string;
   description: string;
   is_default: boolean;
   search_radius: number;
@@ -10,6 +10,7 @@ export interface UserProfile {
   budget_level: string;
   pace: string;
   accessibility_needs: string[];
+  about_you: string;
   interests: string[];
   created_at: string;
 }

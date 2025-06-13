@@ -19,13 +19,20 @@ export const useLoginMutation = () => {
   const queryClient = useQueryClient();
 
   return useMutation(() => ({
-    mutationFn: ({ email, password }: { email: string; password: string }) =>
+    mutationFn: ({ email, password, rememberMe = false }: { email: string; password: string; rememberMe?: boolean }) =>
       apiRequest<{ access_token: string; message: string }>('auth/login', {
         method: 'POST',
         body: JSON.stringify({ email, password }),
       }),
-    onSuccess: (data) => {
-      localStorage.setItem('access_token', data.access_token);
+    onSuccess: (data, variables) => {
+      // Store token based on rememberMe preference
+      if (variables.rememberMe) {
+        localStorage.setItem('access_token', data.access_token);
+        sessionStorage.removeItem('access_token');
+      } else {
+        sessionStorage.setItem('access_token', data.access_token);
+        localStorage.removeItem('access_token');
+      }
       queryClient.invalidateQueries({ queryKey: queryKeys.session });
     },
   }));

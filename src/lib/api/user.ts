@@ -51,16 +51,16 @@ export const useUpdateProfileMutation = () => {
   const queryClient = useQueryClient();
 
   return useMutation(() => ({
-    mutationFn: ({ profileId, profileData }: { profileId: string; profileData: Partial<UserProfile> }) =>
-      apiRequest<UserProfile>(`/user/search-profile/${profileId}`, {
+    mutationFn: (profileData: Partial<UserProfile>) =>
+      apiRequest<UserProfile>('/user/profile', {
         method: 'PUT',
         body: JSON.stringify(profileData),
       }),
-    onSuccess: (updatedProfile, { profileId }) => {
-      // Optimistically update both the individual profile and profiles list
-      queryClient.setQueryData(queryKeys.profile(profileId), updatedProfile);
+    onSuccess: (updatedProfile) => {
+      // Optimistically update the default profile query
+      queryClient.setQueryData(queryKeys.defaultProfile, updatedProfile);
       queryClient.setQueryData(queryKeys.profiles, (old: UserProfile[] = []) =>
-        old.map(profile => profile.id === profileId ? updatedProfile : profile)
+        old.map(profile => profile.is_default ? updatedProfile : profile)
       );
     },
   }));
