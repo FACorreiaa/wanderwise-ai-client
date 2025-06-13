@@ -10,7 +10,7 @@ const heroData = {
     title: (
         <>
             Discover your next adventure,{' '}
-            <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600">
+            <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-400 dark:to-purple-400">
                 smarter
             </span>
         </>
@@ -64,7 +64,7 @@ const contentData = [
 
 const LandingPage: Component = () => {
     return (
-        <div class="min-h-screen bg-gradient-to-b from-blue-50 via-purple-50 to-white">
+        <div class="min-h-screen bg-gradient-to-b from-blue-50 via-purple-50 to-white dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 transition-colors">
             <Hero
                 title={heroData.title}
                 subtitle={heroData.subtitle}

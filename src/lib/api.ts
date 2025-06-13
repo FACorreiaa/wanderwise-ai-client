@@ -34,7 +34,7 @@ async function apiRequest<T>(
       throw new Error('Unauthorized');
     }
 
-    const errorData = await response.json().catch(() => ({ message: 'Request failed' }));
+    const errorData: any = await response.json().catch(() => ({ message: 'Request failed' }));
     throw new Error(errorData.message || `HTTP ${response.status}`);
   }
 
@@ -515,7 +515,7 @@ export const uploadFile = async (file: File, endpoint: string): Promise<string> 
     throw new APIError(`Upload failed: ${response.statusText}`, response.status);
   }
 
-  const result = await response.json();
+  const result: any = await response.json();
   return result.url || result.path;
 };
 
