@@ -1,8 +1,8 @@
 import { createSignal, createEffect, For, Show, onMount } from 'solid-js';
 import mapboxgl from 'mapbox-gl';
 import { MapPin, Clock, Star, Filter, Heart, Share2, Download, Edit3, Plus, X, Navigation, Calendar, Users, DollarSign, Camera, Coffee, Utensils, Building, TreePine, ShoppingBag, Loader2, MessageCircle, Send } from 'lucide-solid';
-import MapComponent from '@/components/features/Map/Map';
-import { useItineraries, useItinerary, useUpdateItineraryMutation, useSaveItineraryMutation } from '@/lib/api/itineraries';
+import MapComponent from '~/components/features/Map/Map';
+import { useItineraries, useItinerary, useUpdateItineraryMutation, useSaveItineraryMutation } from '~/lib/api/itineraries';
 
 export default function ItineraryResultsPage() {
     const [map, setMap] = createSignal(null);

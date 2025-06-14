@@ -5,6 +5,37 @@
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1';
 
+// Token management functions - moved to top to avoid circular dependency
+export const getAuthToken = (): string | null => {
+  // Check localStorage first (persistent), then sessionStorage (temporary)
+  return localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
+};
+
+export const setAuthToken = (token: string, rememberMe: boolean = false): void => {
+  // TEMPORARY FIX: Always use localStorage to survive page refresh
+  // TODO: Restore sessionStorage logic after fixing auth flow
+  localStorage.setItem('access_token', token);
+  sessionStorage.removeItem('access_token');
+  
+  // Original logic (commented out for debugging):
+  // if (rememberMe) {
+  //   localStorage.setItem('access_token', token);
+  //   sessionStorage.removeItem('access_token');
+  // } else {
+  //   sessionStorage.setItem('access_token', token);
+  //   localStorage.removeItem('access_token');
+  // }
+};
+
+export const clearAuthToken = (): void => {
+  localStorage.removeItem('access_token');
+  sessionStorage.removeItem('access_token');
+};
+
+export const isAuthenticated = (): boolean => {
+  return !!getAuthToken();
+};
+
 // Request wrapper with error handling and auth
 async function apiRequest<T>(
   endpoint: string,
@@ -65,14 +96,24 @@ export const authAPI = {
 
   async validateSession() {
     const token = getAuthToken();
+    console.log('validateSession: Token available?', !!token);
     if (!token) {
+      console.log('validateSession: No token, returning invalid');
       return { valid: false };
     }
 
-    return apiRequest<{ valid: boolean; user_id?: string; username?: string; email?: string }>('/auth/validate-session', {
-      method: 'POST',
-      body: JSON.stringify({ session_id: token }),
-    });
+    console.log('validateSession: Making API request...');
+    try {
+      const result = await apiRequest<{ valid: boolean; user_id?: string; username?: string; email?: string }>('/auth/validate-session', {
+        method: 'POST',
+        body: JSON.stringify({}), // Token is sent in Authorization header by apiRequest
+      });
+      console.log('validateSession: API response:', result);
+      return result;
+    } catch (error) {
+      console.error('validateSession: API error:', error);
+      throw error;
+    }
   },
 
   async updatePassword(oldPassword: string, newPassword: string) {
@@ -513,32 +554,4 @@ export const uploadFile = async (file: File, endpoint: string): Promise<string> 
 
   const result: any = await response.json();
   return result.url || result.path;
-};
-
-export const getAuthToken = (): string | null => {
-  // Check localStorage first (persistent), then sessionStorage (temporary)
-  return localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
-};
-
-export const setAuthToken = (token: string, rememberMe: boolean = false): void => {
-  if (rememberMe) {
-    // Persistent storage - survives browser restart
-    localStorage.setItem('access_token', token);
-    // Remove from session storage if it exists
-    sessionStorage.removeItem('access_token');
-  } else {
-    // Session storage - cleared when browser/tab is closed
-    sessionStorage.setItem('access_token', token);
-    // Remove from local storage if it exists
-    localStorage.removeItem('access_token');
-  }
-};
-
-export const clearAuthToken = (): void => {
-  localStorage.removeItem('access_token');
-  sessionStorage.removeItem('access_token');
-};
-
-export const isAuthenticated = (): boolean => {
-  return !!getAuthToken();
 };

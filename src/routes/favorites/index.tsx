@@ -1,6 +1,6 @@
 import { createSignal, createEffect, For, Show, onMount } from 'solid-js';
 import { Heart, MapPin, Clock, Star, Filter, Search, Grid, List, Share2, Download, Edit3, Trash2, Plus, SortAsc, SortDesc, Tag, Eye } from 'lucide-solid';
-import { useFavorites, useRemoveFromFavoritesMutation } from '@/lib/api/pois';
+import { useFavorites, useRemoveFromFavoritesMutation } from '~/lib/api/pois';
 
 export default function FavoritesPage() {
     const [viewMode, setViewMode] = createSignal('grid'); // 'grid', 'list'

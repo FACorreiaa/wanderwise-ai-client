@@ -1,8 +1,14 @@
 import { A } from "@solidjs/router";
-import { Brain, MapPin, Filter, Heart, List, Clock, Smartphone, Zap, Globe, Users } from "lucide-solid";
+import { Brain, MapPin, Filter, Heart, List, Clock, Smartphone, Zap, Globe, Users, Search, Database } from "lucide-solid";
 
 export default function Features() {
   const features = [
+    {
+      icon: Search,
+      title: "Intelligent Semantic Search",
+      description: "Experience the power of natural language understanding with our state-of-the-art semantic search that comprehends your intent and delivers contextually relevant recommendations.",
+      details: ["Understands natural language queries", "Provides contextually relevant results", "Powered by pgvector embeddings", "Delivers intelligent recommendations beyond keyword matching"]
+    },
     {
       icon: Brain,
       title: "AI-Powered Personalization",
@@ -38,6 +44,12 @@ export default function Features() {
       title: "Time-Aware Recommendations",
       description: "Get suggestions based on your available time, whether you have 30 minutes or a full day to explore.",
       details: ["Duration-based filtering", "Quick activities for short breaks", "Full-day itinerary planning", "Real-time availability updates"]
+    },
+    {
+      icon: Database,
+      title: "Smart Memory System",
+      description: "Our AI remembers your conversations and preferences, building a personalized knowledge base that gets smarter over time.",
+      details: ["Remembers your chat history and preferences", "Learns from your interactions", "Provides contextual recommendations", "Builds a personalized travel profile"]
     }
   ];
 
@@ -174,6 +186,82 @@ export default function Features() {
           </div>
         </section>
 
+        {/* Smart Memory & RAG Section */}
+        <section class="bg-muted/30 rounded-lg p-8 mb-20" aria-labelledby="smart-memory">
+          <div class="text-center mb-8">
+            <h2 id="smart-memory" class="text-3xl font-bold text-foreground mb-4">Smart Memory & Contextual Understanding</h2>
+            <p class="text-lg text-muted-foreground max-w-4xl mx-auto">
+              Our AI doesn't just answer your questions - it remembers your conversations and builds a personalized 
+              knowledge base that gets smarter with every interaction.
+            </p>
+          </div>
+          <div class="grid md:grid-cols-2 gap-8" role="list">
+            <div class="bg-card rounded-lg p-6 border border-border" role="listitem">
+              <div class="flex items-center mb-4">
+                <div class="bg-purple-100 dark:bg-purple-900/50 p-3 rounded-lg mr-4" aria-hidden="true">
+                  <Database class="w-6 h-6 text-purple-600 dark:text-purple-400" />
+                </div>
+                <h3 class="text-xl font-semibold text-card-foreground">Conversation Memory</h3>
+              </div>
+              <p class="text-muted-foreground mb-4">
+                Unlike traditional chatbots that forget your previous messages, Loci remembers your entire conversation history. 
+                Ask follow-up questions, reference earlier discussions, and build on previous recommendations naturally.
+              </p>
+              <ul class="space-y-2" role="list">
+                <li class="flex items-center text-sm text-muted-foreground">
+                  <div class="w-1.5 h-1.5 bg-purple-500 rounded-full mr-2" aria-hidden="true"></div>
+                  Remembers your preferences from past conversations
+                </li>
+                <li class="flex items-center text-sm text-muted-foreground">
+                  <div class="w-1.5 h-1.5 bg-purple-500 rounded-full mr-2" aria-hidden="true"></div>
+                  Understands context from previous interactions
+                </li>
+                <li class="flex items-center text-sm text-muted-foreground">
+                  <div class="w-1.5 h-1.5 bg-purple-500 rounded-full mr-2" aria-hidden="true"></div>
+                  Builds a personalized knowledge base over time
+                </li>
+              </ul>
+            </div>
+            <div class="bg-card rounded-lg p-6 border border-border" role="listitem">
+              <div class="flex items-center mb-4">
+                <div class="bg-emerald-100 dark:bg-emerald-900/50 p-3 rounded-lg mr-4" aria-hidden="true">
+                  <Search class="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
+                </div>
+                <h3 class="text-xl font-semibold text-card-foreground">Intelligent Retrieval</h3>
+              </div>
+              <p class="text-muted-foreground mb-4">
+                When you ask a question, our AI doesn't just generate a generic response. It searches through your 
+                conversation history and preferences to provide personalized, contextually relevant recommendations.
+              </p>
+              <ul class="space-y-2" role="list">
+                <li class="flex items-center text-sm text-muted-foreground">
+                  <div class="w-1.5 h-1.5 bg-emerald-500 rounded-full mr-2" aria-hidden="true"></div>
+                  Finds relevant information from your past interactions
+                </li>
+                <li class="flex items-center text-sm text-muted-foreground">
+                  <div class="w-1.5 h-1.5 bg-emerald-500 rounded-full mr-2" aria-hidden="true"></div>
+                  Combines your preferences with real-time data
+                </li>
+                <li class="flex items-center text-sm text-muted-foreground">
+                  <div class="w-1.5 h-1.5 bg-emerald-500 rounded-full mr-2" aria-hidden="true"></div>
+                  Provides contextual recommendations that improve over time
+                </li>
+              </ul>
+            </div>
+          </div>
+          <div class="mt-8 text-center">
+            <div class="bg-gradient-to-r from-purple-50 to-emerald-50 dark:from-purple-950/30 dark:to-emerald-950/30 rounded-lg p-6 border border-purple-200/50 dark:border-purple-800/50">
+              <h4 class="text-lg font-semibold text-foreground mb-2">Example in Action</h4>
+              <p class="text-sm text-muted-foreground">
+                <strong>You:</strong> "Show me some good restaurants in downtown."<br/>
+                <strong>Later:</strong> "What about something similar but vegetarian?"<br/>
+                <strong>Loci:</strong> Remembers your downtown preference and suggests vegetarian restaurants in the same area, 
+                taking into account your conversation history to provide exactly what you're looking for.
+              </p>
+            </div>
+          </div>
+        </section>
+
         {/* Coming Soon */}
         <section class="bg-muted/50 rounded-lg p-8 mb-12" aria-labelledby="coming-soon">
           <h2 id="coming-soon" class="text-2xl font-bold text-foreground text-center mb-6">Coming Soon</h2>
@@ -210,8 +298,8 @@ export default function Features() {
                 <Globe class="w-5 h-5 text-green-600 dark:text-green-400" />
               </div>
               <div>
-                <h3 class="font-semibold text-foreground">Multi-City Support</h3>
-                <p class="text-sm text-muted-foreground">Expand beyond your current city</p>
+                <h3 class="font-semibold text-foreground">Advanced Memory Features</h3>
+                <p class="text-sm text-muted-foreground">Cross-conversation learning and deeper personalization</p>
               </div>
             </div>
           </div>

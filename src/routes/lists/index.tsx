@@ -1,6 +1,6 @@
 import { createSignal, For, Show, createEffect } from 'solid-js';
 import { Folder, Plus, Edit3, Trash2, Share2, Download, Eye, Lock, Globe, Users, MapPin, Calendar, Star, Heart, MoreHorizontal, Copy, ExternalLink, X } from 'lucide-solid';
-import { useLists, useCreateListMutation, useUpdateListMutation, useDeleteListMutation } from '@/lib/api/lists';
+import { useLists, useCreateListMutation, useUpdateListMutation, useDeleteListMutation } from '~/lib/api/lists';
 
 export default function ListsPage() {
     const [viewMode, setViewMode] = createSignal('grid'); // 'grid', 'list'

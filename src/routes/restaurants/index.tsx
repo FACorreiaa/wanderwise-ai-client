@@ -1,7 +1,7 @@
 import { createSignal, createEffect, For, Show, onMount } from 'solid-js';
 import { MapPin, Clock, Star, Filter, Heart, Share2, Download, Edit3, Plus, X, Navigation, Calendar, Users, DollarSign, Camera, Coffee, Utensils, Wifi, CreditCard, Loader2, MessageCircle, Send, ChefHat, Wine, UtensilsCrossed, Smartphone } from 'lucide-solid';
-import MapComponent from '@/components/features/Map/Map';
-import { useRestaurantsByPreferences, useNearbyRestaurants } from '@/lib/api/restaurants';
+import MapComponent from '~/components/features/Map/Map';
+import { useRestaurantsByPreferences, useNearbyRestaurants } from '~/lib/api/restaurants';
 
 export default function RestaurantsPage() {
     const [selectedRestaurant, setSelectedRestaurant] = createSignal(null);

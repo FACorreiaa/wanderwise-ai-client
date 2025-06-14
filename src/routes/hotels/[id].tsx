@@ -2,7 +2,7 @@ import { createSignal, For, Show, createEffect } from 'solid-js';
 import { useParams } from '@solidjs/router';
 import { Star, MapPin, Wifi, Car, Coffee, Dumbbell, Phone, Mail, Globe, Heart, Share2, Calendar, Users, ArrowLeft } from 'lucide-solid';
 import { A } from '@solidjs/router';
-import { useHotelDetails } from '@/lib/api/hotels';
+import { useHotelDetails } from '~/lib/api/hotels';
 
 export default function HotelDetailPage() {
     const params = useParams();

@@ -1,55 +1,24 @@
 import { createSignal, For, Show, createEffect } from 'solid-js';
 import { User, Mail, MapPin, Calendar, Camera, Edit3, Save, X, Plus, Tag, Heart } from 'lucide-solid';
 import { useAuth } from '~/contexts/AuthContext';
-import { useUpdateProfileMutation } from '@/lib/api/user';
+import { useUpdateProfileMutation, useUserProfileQuery } from '~/lib/api/user';
 import { useQuery } from '@tanstack/solid-query';
-import { apiRequest } from '@/lib/api/shared';
+import { apiRequest } from '~/lib/api/shared';
+import { ProcessedProfileData, UserProfileResponse } from '~/lib/api/types';
+import { useNavigate } from '@solidjs/router';
+import { ProtectedRoute } from '~/contexts/AuthContext';
 
-// Define the actual user profile response type
-interface UserProfileResponse {
-    id?: string;
-    username?: string;
-    email?: string;
-    about_you?: string;
-    location?: string;
-    profile_image_url?: string;
-    created_at?: string;
-    interests?: string[];
-    [key: string]: any; // Allow additional fields
-}
-
-// Define the processed profile data type
-interface ProcessedProfileData {
-    id?: string;
-    username?: string;
-    email?: string;
-    bio?: string;
-    location?: string;
-    joinedDate?: string;
-    avatar?: string;
-    interests: string[];
-    badges: string[];
-    stats: {
-        places_visited: number;
-        reviews_written: number;
-        lists_created: number;
-        followers: number;
-        following: number;
-    };
-}
-
-export default function ProfilePage() {
+function ProfilePageContent() {
     const { user } = useAuth();
     const [isEditing, setIsEditing] = createSignal(false);
     const [activeTab, setActiveTab] = createSignal('overview');
+    const [notification, setNotification] = createSignal<{message: string, type: 'success' | 'error'} | null>(null);
 
     // API hooks - get actual user profile data
-    const profileQuery = useQuery(() => ({
-        queryKey: ['userProfile'],
-        queryFn: () => apiRequest<UserProfileResponse>('/user/profile'),
-        staleTime: 5 * 60 * 1000, // 5 minutes
-    }));
+    const profileQuery = useUserProfileQuery();
     const updateProfileMutation = useUpdateProfileMutation();
+
+    console.log('Profile page - User data:', user());
 
     // Get profile data from API - no hardcoded fallbacks
     const profileData = (): ProcessedProfileData | null => {
@@ -109,8 +78,18 @@ export default function ProfilePage() {
             // Manually refetch the profile data to get updated values
             await profileQuery.refetch();
             setIsEditing(false);
+            
+            // Show success notification
+            setNotification({ message: 'Profile updated successfully!', type: 'success' });
+            setTimeout(() => setNotification(null), 3000);
         } catch (error) {
             console.error('Failed to update profile:', error);
+            // Show error notification
+            setNotification({ 
+                message: error?.message || 'Failed to update profile. Please try again.', 
+                type: 'error' 
+            });
+            setTimeout(() => setNotification(null), 5000);
         }
     };
 
@@ -325,6 +304,9 @@ export default function ProfilePage() {
 
     // Show error state if profile fetch failed
     if (profileQuery.isError) {
+        const error = profileQuery.error as any;
+        console.log('Profile query error:', error);
+        
         return (
             <div class="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors flex items-center justify-center">
                 <div class="text-center">
@@ -343,6 +325,25 @@ export default function ProfilePage() {
 
     return (
         <div class="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors">
+            {/* Mobile-friendly notification */}
+            <Show when={notification()}>
+                <div class={`fixed top-4 left-4 right-4 sm:left-auto sm:right-4 sm:w-96 z-50 p-4 rounded-lg shadow-lg border ${
+                    notification()?.type === 'success' 
+                        ? 'bg-green-50 dark:bg-green-900 text-green-800 dark:text-green-200 border-green-200 dark:border-green-700' 
+                        : 'bg-red-50 dark:bg-red-900 text-red-800 dark:text-red-200 border-red-200 dark:border-red-700'
+                } animate-in slide-in-from-top-2 duration-300`}>
+                    <div class="flex items-center justify-between">
+                        <span class="text-sm font-medium">{notification()?.message}</span>
+                        <button
+                            onClick={() => setNotification(null)}
+                            class="ml-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                        >
+                            <X class="w-4 h-4" />
+                        </button>
+                    </div>
+                </div>
+            </Show>
+            
             <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
                 {/* Profile Header */}
                 <div class="bg-white dark:bg-gray-800 rounded-lg p-6 mb-6 border border-gray-200 dark:border-gray-700">
@@ -487,5 +488,13 @@ export default function ProfilePage() {
                 </Show>
             </div>
         </div>
+    );
+}
+
+export default function ProfilePage() {
+    return (
+        <ProtectedRoute>
+            <ProfilePageContent />
+        </ProtectedRoute>
     );
 }

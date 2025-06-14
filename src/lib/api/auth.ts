@@ -24,15 +24,10 @@ export const useLoginMutation = () => {
         method: 'POST',
         body: JSON.stringify({ email, password }),
       }),
-    onSuccess: (data, variables) => {
-      // Store token based on rememberMe preference
-      if (variables.rememberMe) {
-        localStorage.setItem('access_token', data.access_token);
-        sessionStorage.removeItem('access_token');
-      } else {
-        sessionStorage.setItem('access_token', data.access_token);
-        localStorage.removeItem('access_token');
-      }
+    onSuccess: async (data, variables) => {
+      // Store token based on rememberMe preference using shared utility
+      const { setAuthToken } = await import('../api');
+      setAuthToken(data.access_token, variables.rememberMe || false);
       queryClient.invalidateQueries({ queryKey: queryKeys.session });
     },
   }));
@@ -63,8 +58,9 @@ export const useLogoutMutation = () => {
 
   return useMutation(() => ({
     mutationFn: () => apiRequest<{ message: string }>('auth/logout', { method: 'POST' }),
-    onSettled: () => {
-      localStorage.removeItem('access_token');
+    onSettled: async () => {
+      const { clearAuthToken } = await import('../api');
+      clearAuthToken();
       queryClient.clear(); // Clear all cached data on logout
     },
   }));

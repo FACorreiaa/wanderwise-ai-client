@@ -15,6 +15,43 @@ export interface UserProfile {
   created_at: string;
 }
 
+// Define the actual user profile response type
+export interface UserProfileResponse {
+  id?: string;
+  username?: string;
+  email?: string;
+  about_you?: string;
+  location?: string;
+  profile_image_url?: string;
+  created_at?: string;
+  interests?: string[];
+  [key: string]: any;
+}
+
+
+
+// Define the processed profile data type
+export interface ProcessedProfileData {
+  id?: string;
+  username?: string;
+  email?: string;
+  bio?: string;
+  location?: string;
+  joinedDate?: string;
+  avatar?: string;
+  interests: string[];
+  badges: string[];
+  stats: {
+    places_visited: number;
+    reviews_written: number;
+    lists_created: number;
+    followers: number;
+    following: number;
+  };
+}
+
+
+
 export interface Interest {
   id: string;
   name: string;

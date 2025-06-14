@@ -60,8 +60,8 @@ export default function Pricing() {
         "Offline access & sync",
         "Exclusive curated content",
         "Advanced AI with semantic search",
-        "24/7 personalized AI agent (coming soon)",
-        "Speech-to-text capabilities (coming soon)",
+        "24/7 personalized AI agent",
+        "Speech-to-text capabilities",
         "Itinerary export (PDF/Markdown)",
         "Multi-city trip planning",
         "Premium partnerships & exclusive deals",
@@ -69,8 +69,9 @@ export default function Pricing() {
         "Dedicated account manager"
       ],
       limitations: [],
-      cta: "Go Pro",
-      popular: false
+      cta: "Coming Soon",
+      popular: false,
+      disabled: true
     }
   ];
 
@@ -145,15 +146,27 @@ export default function Pricing() {
           {plans.map((plan, index) => {
             const IconComponent = plan.icon;
             return (
-              <article class={`relative bg-card border-2 rounded-2xl shadow-lg transition-all duration-300 hover:shadow-xl focus-within:ring-2 focus-within:ring-blue-500 focus-within:ring-offset-2 ${plan.popular
-                ? 'border-blue-500 dark:border-blue-400 scale-105'
-                : 'border-border hover:border-blue-300 dark:hover:border-blue-600'
+              <article class={`relative bg-card border-2 rounded-2xl shadow-lg transition-all duration-300 focus-within:ring-2 focus-within:ring-blue-500 focus-within:ring-offset-2 ${
+                plan.disabled 
+                  ? 'border-gray-300 dark:border-gray-600 opacity-75' 
+                  : plan.popular
+                    ? 'border-blue-500 dark:border-blue-400 scale-105 hover:shadow-xl'
+                    : 'border-border hover:border-blue-300 dark:hover:border-blue-600 hover:shadow-xl'
                 }`} aria-labelledby={`plan-${index}`}>
-                {plan.popular && (
+                {plan.popular && !plan.disabled && (
                   <div class="absolute -top-4 left-1/2 transform -translate-x-1/2">
                     <div class="bg-blue-500 dark:bg-blue-600 text-white px-4 py-1 rounded-full text-sm font-medium flex items-center">
                       <Zap class="w-4 h-4 mr-1" aria-hidden="true" />
                       Most Popular
+                    </div>
+                  </div>
+                )}
+                
+                {plan.disabled && (
+                  <div class="absolute -top-4 left-1/2 transform -translate-x-1/2">
+                    <div class="bg-orange-500 dark:bg-orange-600 text-white px-4 py-1 rounded-full text-sm font-medium flex items-center">
+                      <Clock class="w-4 h-4 mr-1" aria-hidden="true" />
+                      Coming Soon
                     </div>
                   </div>
                 )}
@@ -167,29 +180,48 @@ export default function Pricing() {
                   </div>
 
                   <div class="mb-4">
-                    <span class="text-4xl font-bold text-card-foreground">{plan.price}</span>
-                    <span class="text-muted-foreground ml-2">/{plan.period}</span>
+                    <span class={`text-4xl font-bold ${plan.disabled ? 'text-gray-500 dark:text-gray-400' : 'text-card-foreground'}`}>{plan.price}</span>
+                    <span class={`ml-2 ${plan.disabled ? 'text-gray-500 dark:text-gray-400' : 'text-muted-foreground'}`}>/{plan.period}</span>
                   </div>
 
                   <p class="text-muted-foreground mb-6">{plan.description}</p>
 
                   <button
-                    class={`w-full py-3 px-6 rounded-lg font-semibold transition-colors mb-6 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${plan.popular
-                      ? 'bg-blue-600 hover:bg-blue-700 focus:bg-blue-700 text-white'
-                      : 'border border-border text-card-foreground hover:bg-muted focus:bg-muted'
+                    class={`w-full py-3 px-6 rounded-lg font-semibold transition-colors mb-6 focus:outline-none ${
+                      plan.disabled
+                        ? 'bg-gray-300 dark:bg-gray-700 text-gray-500 dark:text-gray-400 cursor-not-allowed'
+                        : plan.popular
+                          ? 'bg-blue-600 hover:bg-blue-700 focus:bg-blue-700 text-white focus:ring-2 focus:ring-blue-500 focus:ring-offset-2'
+                          : 'border border-border text-card-foreground hover:bg-muted focus:bg-muted focus:ring-2 focus:ring-blue-500 focus:ring-offset-2'
                       }`}
-                    aria-label={`Choose ${plan.name} plan for ${plan.price} ${plan.period}`}
+                    disabled={plan.disabled}
+                    aria-label={plan.disabled ? `${plan.name} plan coming soon` : `Choose ${plan.name} plan for ${plan.price} ${plan.period}`}
                   >
-                    {plan.cta}
+                    {plan.disabled ? (
+                      <div class="flex items-center justify-center gap-2">
+                        <Clock class="w-4 h-4" aria-hidden="true" />
+                        {plan.cta}
+                      </div>
+                    ) : (
+                      plan.cta
+                    )}
                   </button>
 
                   <div class="space-y-3">
-                    <h4 class="font-semibold text-card-foreground">Includes:</h4>
+                    <h4 class={`font-semibold ${plan.disabled ? 'text-gray-500 dark:text-gray-400' : 'text-card-foreground'}`}>Includes:</h4>
                     <ul class="space-y-2" role="list">
                       {plan.features.map((feature) => (
                         <li class="flex items-start" role="listitem">
-                          <Check class="w-5 h-5 text-green-500 dark:text-green-400 mr-3 mt-0.5 flex-shrink-0" aria-hidden="true" />
-                          <span class="text-muted-foreground text-sm">{feature}</span>
+                          <Check class={`w-5 h-5 mr-3 mt-0.5 flex-shrink-0 ${
+                            plan.disabled 
+                              ? 'text-gray-400 dark:text-gray-500' 
+                              : 'text-green-500 dark:text-green-400'
+                          }`} aria-hidden="true" />
+                          <span class={`text-sm ${
+                            plan.disabled 
+                              ? 'text-gray-500 dark:text-gray-400' 
+                              : 'text-muted-foreground'
+                          }`}>{feature}</span>
                         </li>
                       ))}
                     </ul>

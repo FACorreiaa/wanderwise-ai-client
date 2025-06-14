@@ -4,8 +4,8 @@ import { TextField, TextFieldRoot } from "@/ui/textfield";
 import { A, useNavigate } from "@solidjs/router";
 import { Component, createSignal, Show } from "solid-js";
 import { VsEye, VsEyeClosed } from "solid-icons/vs";
-import AuthLayout from "@/components/layout/Auth";
-import { useAuth } from "@/contexts/AuthContext";
+import AuthLayout from "~/components/layout/Auth";
+import { useAuth } from "~/contexts/AuthContext";
 
 // Define the FormData interface
 interface FormData {

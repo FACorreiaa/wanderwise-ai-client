@@ -1,4 +1,4 @@
-import ForgotPassword from '@/components/features/Auth/ForgotPassword';
+import ForgotPassword from '~/components/features/Auth/ForgotPassword';
 import { Component } from 'solid-js';
 
 const ForgotPasswordPage: Component = () => {

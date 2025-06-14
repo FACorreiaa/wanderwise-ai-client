@@ -8,7 +8,7 @@ import { Component, createSignal, Show } from "solid-js";
 import AuthLayout from '../../layout/Auth'
 import { FiCheck } from "solid-icons/fi";
 import { VsEyeClosed, VsEye } from "solid-icons/vs";
-import { useRegisterMutation } from "@/lib/api/auth";
+import { useRegisterMutation } from "~/lib/api/auth";
 
 interface FormData {
     email: string;

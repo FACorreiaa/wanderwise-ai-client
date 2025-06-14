@@ -1,7 +1,7 @@
 // User profile queries and mutations
 import { useQuery, useMutation, useQueryClient } from '@tanstack/solid-query';
 import { apiRequest, queryKeys } from './shared';
-import type { UserProfile } from './types';
+import type { UserProfile, UserProfileResponse } from './types';
 
 // ===================
 // PROFILE QUERIES
@@ -46,6 +46,14 @@ export const useCreateProfileMutation = () => {
     },
   }));
 };
+
+export const useUserProfileQuery = () => {
+  return useQuery(() => ({
+    queryKey: ['userProfile'],
+    queryFn: () => apiRequest<UserProfileResponse>('/user/profile'),
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  }));
+}
 
 export const useUpdateProfileMutation = () => {
   const queryClient = useQueryClient();
@@ -92,6 +100,34 @@ export const useSetDefaultProfileMutation = () => {
       // Update all profiles to reflect new default
       queryClient.setQueryData(queryKeys.profiles, (old: UserProfile[] = []) =>
         old.map(profile => ({ ...profile, is_default: profile.id === profileId }))
+      );
+      queryClient.invalidateQueries({ queryKey: queryKeys.defaultProfile });
+    },
+  }));
+};
+
+export const useUploadAvatarMutation = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation(() => ({
+    mutationFn: (file: File) => {
+      const formData = new FormData();
+      formData.append('avatar', file);
+
+      return fetch('/api/user/avatar', {
+        method: 'POST',
+        body: formData,
+      }).then(async (response) => {
+        if (!response.ok) {
+          throw new Error('Upload failed');
+        }
+        return response.json();
+      });
+    },
+    onSuccess: (result) => {
+      // Update the default profile with new avatar
+      queryClient.setQueryData(queryKeys.defaultProfile, (old: UserProfile) =>
+        old ? { ...old, avatar: result.avatar_url } : old
       );
       queryClient.invalidateQueries({ queryKey: queryKeys.defaultProfile });
     },

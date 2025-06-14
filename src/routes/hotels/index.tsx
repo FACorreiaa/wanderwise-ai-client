@@ -1,7 +1,7 @@
 import { createSignal, createEffect, For, Show, onMount } from 'solid-js';
 import { MapPin, Clock, Star, Filter, Heart, Share2, Download, Edit3, Plus, X, Navigation, Calendar, Users, DollarSign, Camera, Coffee, Utensils, Wifi, CreditCard, Loader2, MessageCircle, Send, Bed, Building2, Car, Waves, Dumbbell, UtensilsCrossed, Shield, Phone } from 'lucide-solid';
-import MapComponent from '@/components/features/Map/Map';
-import { useHotelsByPreferences, useNearbyHotels } from '@/lib/api/hotels';
+import MapComponent from '~/components/features/Map/Map';
+import { useHotelsByPreferences, useNearbyHotels } from '~/lib/api/hotels';
 
 export default function HotelsPage() {
     const [selectedHotel, setSelectedHotel] = createSignal(null);

@@ -1,6 +1,6 @@
 import { createContext, useContext, createSignal, createEffect, onMount, JSX } from 'solid-js';
 import { useNavigate } from '@solidjs/router';
-import { authAPI, getAuthToken, setAuthToken, clearAuthToken } from '@/lib/api';
+import { authAPI, getAuthToken, setAuthToken, clearAuthToken } from '~/lib/api';
 
 interface User {
   id: string;
@@ -52,45 +52,120 @@ export const AuthProvider = (props: AuthProviderProps) => {
   const navigate = useNavigate();
   const [user, setUser] = createSignal<User | null>(null);
   const [isLoading, setIsLoading] = createSignal(true);
+  
+  // Add a retry function for auth restoration
+  const retryAuth = async () => {
+    const token = getAuthToken();
+    if (!token || user()) return;
+    
+    try {
+      const sessionResult = await authAPI.validateSession();
+      if (sessionResult.valid) {
+        const userProfile = await authAPI.getCurrentUser();
+        setUser(userProfile);
+      }
+    } catch (error) {
+      console.error('Auth retry failed:', error);
+    }
+  };
 
   // Check authentication status on mount
   onMount(async () => {
+    console.log('AuthProvider: Initializing authentication state...');
     const token = getAuthToken();
+    console.log('AuthProvider: Token found?', !!token);
+    
     if (token) {
       try {
+        console.log('AuthProvider: Validating session...');
         // Validate session and get user profile data
         const sessionResult = await authAPI.validateSession();
+        console.log('AuthProvider: Session validation result:', sessionResult);
+        
         if (sessionResult.valid) {
+          console.log('AuthProvider: Session valid, fetching user profile...');
           // Fetch complete user profile from server
           const userProfile = await authAPI.getCurrentUser();
+          console.log('AuthProvider: User profile fetched:', userProfile);
           setUser(userProfile);
         } else {
+          console.log('AuthProvider: Session invalid, clearing token');
           clearAuthToken();
+          setUser(null);
         }
       } catch (error) {
-        console.error('Session validation failed:', error);
-        clearAuthToken();
+        console.error('AuthProvider: Session validation failed:', error);
+        // Don't clear token on network errors - could be temporary
+        if (error.message === 'Unauthorized') {
+          clearAuthToken();
+          setUser(null);
+        } else {
+          // Keep token but set user as null for retry
+          setUser(null);
+        }
       }
+    } else {
+      console.log('AuthProvider: No token found');
+      setUser(null);
     }
     setIsLoading(false);
+    console.log('AuthProvider: Initialization complete');
+  });
+
+  // Listen for token changes to handle cross-tab authentication
+  createEffect(() => {
+    const handleStorageChange = async (e: StorageEvent) => {
+      if (e.key === 'access_token' || e.key === null) {
+        const token = getAuthToken();
+        if (!token && user()) {
+          // Token was cleared in another tab
+          setUser(null);
+          navigate('/auth/signin');
+        } else if (token && !user()) {
+          // Token was set in another tab
+          try {
+            const sessionResult = await authAPI.validateSession();
+            if (sessionResult.valid) {
+              const userProfile = await authAPI.getCurrentUser();
+              setUser(userProfile);
+            }
+          } catch (error) {
+            console.error('Cross-tab session validation failed:', error);
+          }
+        }
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
   });
 
   const login = async (email: string, password: string, rememberMe: boolean = false): Promise<void> => {
     setIsLoading(true);
     try {
+      console.log('AuthProvider: Login attempt for:', email, 'Remember me:', rememberMe);
       // Authenticate with server and get access token
       const response = await authAPI.login(email, password);
+      console.log('AuthProvider: Login successful, got token');
+      
       setAuthToken(response.access_token, rememberMe);
+      console.log('AuthProvider: Token stored, verifying...');
+      
+      // Verify token was stored correctly
+      const storedToken = getAuthToken();
+      console.log('AuthProvider: Token verification:', !!storedToken);
       
       // Fetch complete user profile after successful login
       const userProfile = await authAPI.getCurrentUser();
+      console.log('AuthProvider: User profile fetched:', userProfile);
       setUser(userProfile);
       
+      setIsLoading(false);
       navigate('/');
     } catch (error) {
-      throw error;
-    } finally {
+      console.error('AuthProvider: Login failed:', error);
       setIsLoading(false);
+      throw error;
     }
   };
 
@@ -162,7 +237,7 @@ export const ProtectedRoute = (props: ProtectedRouteProps) => {
 
   createEffect(() => {
     if (!isLoading() && !isAuthenticated()) {
-      navigate('/auth/signin');
+      navigate('/auth/signin', { replace: true });
     }
   });
 

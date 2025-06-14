@@ -1,6 +1,6 @@
 import { createSignal, For, Show, createEffect } from 'solid-js';
 import { Search, Filter, MapPin, Star, Heart, Bookmark, Clock, DollarSign, Users, Wifi, Camera, Grid, List, SortAsc, SortDesc } from 'lucide-solid';
-import { useNearbyPOIs, useSearchPOIs, useFavorites, useAddToFavoritesMutation, useRemoveFromFavoritesMutation } from '@/lib/api/pois';
+import { useNearbyPOIs, useSearchPOIs, useFavorites, useAddToFavoritesMutation, useRemoveFromFavoritesMutation } from '~/lib/api/pois';
 
 export default function DiscoverPage() {
     const [searchQuery, setSearchQuery] = createSignal('');
