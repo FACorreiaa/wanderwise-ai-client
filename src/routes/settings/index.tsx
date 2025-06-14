@@ -21,7 +21,7 @@ export default function SettingsPage() {
     const updateTagMutation = useUpdateTagMutation();
     const deleteTagMutation = useDeleteTagMutation();
     const toggleTagActiveMutation = useToggleTagActiveMutation();
-    
+
     // Interests API hooks  
     const interestsQuery = useInterests();
     const createInterestMutation = useCreateInterestMutation();
@@ -208,7 +208,7 @@ export default function SettingsPage() {
 
     // Get tags from API
     const tags = () => tagsQuery.data || [];
-    
+
     // Get interests from API
     const interests = () => interestsQuery.data || [];
     const activeInterests = () => interests().filter(interest => interest.active ?? false);
@@ -1297,10 +1297,11 @@ export default function SettingsPage() {
                                 </Show>
                             </div>
                         </Show>
+                    </div>
                 </div>
             </div>
-        </div>
-    );
+        );
+    };
 
     const renderProfiles = () => (
         <div class="space-y-8">
@@ -1383,83 +1384,83 @@ export default function SettingsPage() {
     };
 
     return (
-        <div class="min-h-screen bg-gray-50">
-            {/* Mobile-friendly notification */}
-            <Show when={notification()}>
-                <div class={`fixed top-4 left-4 right-4 sm:left-auto sm:right-4 sm:w-96 z-50 p-4 rounded-lg shadow-lg border ${notification()?.type === 'success'
-                    ? 'bg-green-50 dark:bg-green-900 text-green-800 dark:text-green-200 border-green-200 dark:border-green-700'
-                    : 'bg-red-50 dark:bg-red-900 text-red-800 dark:text-red-200 border-red-200 dark:border-red-700'
-                    } animate-in slide-in-from-top-2 duration-300`}>
-                    <div class="flex items-center justify-between">
-                        <span class="text-sm font-medium">{notification()?.message}</span>
-                        <button
-                            onClick={() => setNotification(null)}
-                            class="ml-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-                        >
-                            <X class="w-4 h-4" />
-                        </button>
+            <div class="min-h-screen bg-gray-50">
+                {/* Mobile-friendly notification */}
+                <Show when={notification()}>
+                    <div class={`fixed top-4 left-4 right-4 sm:left-auto sm:right-4 sm:w-96 z-50 p-4 rounded-lg shadow-lg border ${notification()?.type === 'success'
+                        ? 'bg-green-50 dark:bg-green-900 text-green-800 dark:text-green-200 border-green-200 dark:border-green-700'
+                        : 'bg-red-50 dark:bg-red-900 text-red-800 dark:text-red-200 border-red-200 dark:border-red-700'
+                        } animate-in slide-in-from-top-2 duration-300`}>
+                        <div class="flex items-center justify-between">
+                            <span class="text-sm font-medium">{notification()?.message}</span>
+                            <button
+                                onClick={() => setNotification(null)}
+                                class="ml-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                            >
+                                <X class="w-4 h-4" />
+                            </button>
+                        </div>
                     </div>
-                </div>
-            </Show>
+                </Show>
 
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8">
-                <div class="flex flex-col lg:flex-row gap-4 lg:gap-8">
-                    {/* Mobile Tab Navigation */}
-                    <div class="lg:hidden">
-                        <div class="bg-white rounded-lg border border-gray-200 p-2">
-                            <div class="flex overflow-x-auto space-x-1">
-                                <For each={tabs}>
-                                    {(tab) => {
-                                        const Icon = tab.icon;
-                                        return (
-                                            <button
-                                                onClick={() => setActiveTab(tab.id)}
-                                                class={`flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 whitespace-nowrap ${activeTab() === tab.id
-                                                    ? 'bg-blue-600 text-white shadow-lg'
-                                                    : 'text-gray-700 hover:bg-gray-100'
-                                                    }`}
-                                            >
-                                                <Icon class="w-4 h-4" />
-                                                {tab.label}
-                                            </button>
-                                        );
-                                    }}
-                                </For>
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8">
+                    <div class="flex flex-col lg:flex-row gap-4 lg:gap-8">
+                        {/* Mobile Tab Navigation */}
+                        <div class="lg:hidden">
+                            <div class="bg-white rounded-lg border border-gray-200 p-2">
+                                <div class="flex overflow-x-auto space-x-1">
+                                    <For each={tabs}>
+                                        {(tab) => {
+                                            const Icon = tab.icon;
+                                            return (
+                                                <button
+                                                    onClick={() => setActiveTab(tab.id)}
+                                                    class={`flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 whitespace-nowrap ${activeTab() === tab.id
+                                                        ? 'bg-blue-600 text-white shadow-lg'
+                                                        : 'text-gray-700 hover:bg-gray-100'
+                                                        }`}
+                                                >
+                                                    <Icon class="w-4 h-4" />
+                                                    {tab.label}
+                                                </button>
+                                            );
+                                        }}
+                                    </For>
+                                </div>
                             </div>
                         </div>
-                    </div>
 
-                    {/* Desktop Tab Navigation */}
-                    <div class="hidden lg:block w-64 flex-shrink-0">
-                        <div class="bg-white rounded-lg border border-gray-200 p-2 sticky top-8">
-                            <nav class="space-y-1">
-                                <For each={tabs}>
-                                    {(tab) => {
-                                        const Icon = tab.icon;
-                                        return (
-                                            <button
-                                                onClick={() => setActiveTab(tab.id)}
-                                                class={`w-full flex items-center gap-3 px-4 py-3 text-left rounded-lg transition-all duration-200 font-medium ${activeTab() === tab.id
-                                                    ? 'bg-blue-600 text-white shadow-lg'
-                                                    : 'text-gray-700 hover:bg-gray-100'
-                                                    }`}
-                                            >
-                                                <Icon class="w-5 h-5" />
-                                                {tab.label}
-                                            </button>
-                                        );
-                                    }}
-                                </For>
-                            </nav>
+                        {/* Desktop Tab Navigation */}
+                        <div class="hidden lg:block w-64 flex-shrink-0">
+                            <div class="bg-white rounded-lg border border-gray-200 p-2 sticky top-8">
+                                <nav class="space-y-1">
+                                    <For each={tabs}>
+                                        {(tab) => {
+                                            const Icon = tab.icon;
+                                            return (
+                                                <button
+                                                    onClick={() => setActiveTab(tab.id)}
+                                                    class={`w-full flex items-center gap-3 px-4 py-3 text-left rounded-lg transition-all duration-200 font-medium ${activeTab() === tab.id
+                                                        ? 'bg-blue-600 text-white shadow-lg'
+                                                        : 'text-gray-700 hover:bg-gray-100'
+                                                        }`}
+                                                >
+                                                    <Icon class="w-5 h-5" />
+                                                    {tab.label}
+                                                </button>
+                                            );
+                                        }}
+                                    </For>
+                                </nav>
+                            </div>
                         </div>
-                    </div>
 
-                    {/* Main Content */}
-                    <div class="flex-1">
-                        {renderTabContent()}
+                        {/* Main Content */}
+                        <div class="flex-1">
+                            {renderTabContent()}
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
-    );
+        );
 }

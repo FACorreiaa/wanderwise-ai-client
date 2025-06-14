@@ -35,6 +35,15 @@ async function apiRequest<T>(
   endpoint: string,
   options: RequestInit = {}
 ): Promise<T> {
+  return makeRequest<T>(endpoint, options);
+}
+
+// Internal request function with retry logic
+async function makeRequest<T>(
+  endpoint: string,
+  options: RequestInit = {},
+  isRetry: boolean = false
+): Promise<T> {
   const token = getAuthToken();
 
   const config: RequestInit = {
@@ -43,6 +52,7 @@ async function apiRequest<T>(
       ...(token && { Authorization: `Bearer ${token}` }),
       ...options.headers,
     },
+    credentials: 'include', // Include HttpOnly cookies in requests
     ...options,
   };
 
@@ -52,8 +62,22 @@ async function apiRequest<T>(
 
   console.log('url', url)
   if (!response.ok) {
-    if (response.status === 401) {
-      // Handle unauthorized - redirect to login
+    if (response.status === 401 && !isRetry) {
+      // Try to refresh token before giving up
+      console.log('apiRequest: 401 error, attempting token refresh...');
+      try {
+        const refreshResult = await authAPI.refreshToken();
+        if (refreshResult.access_token) {
+          setAuthToken(refreshResult.access_token, false);
+          console.log('apiRequest: Token refreshed, retrying original request...');
+          // Retry the original request with new token
+          return makeRequest<T>(endpoint, options, true);
+        }
+      } catch (refreshError) {
+        console.error('apiRequest: Token refresh failed:', refreshError);
+      }
+      
+      // If refresh failed or no new token, clear auth and redirect
       clearAuthToken();
       window.location.href = '/auth/signin';
       throw new Error('Unauthorized');
@@ -96,7 +120,7 @@ export const authAPI = {
       return { valid: false };
     }
 
-    console.log('validateSession: Making API request...');
+    console.log('validateSession: Making API request to validate JWT...');
     try {
       const result = await apiRequest<{ valid: boolean; user_id?: string; username?: string; email?: string }>('/auth/validate-session', {
         method: 'POST',
@@ -106,6 +130,25 @@ export const authAPI = {
       return result;
     } catch (error) {
       console.error('validateSession: API error:', error);
+      // If it's unauthorized, the apiRequest will handle token refresh automatically
+      if (error?.message === 'Unauthorized') {
+        return { valid: false };
+      }
+      throw error;
+    }
+  },
+
+  async refreshToken() {
+    console.log('refreshToken: Attempting to refresh token using HttpOnly cookie...');
+    try {
+      const result = await apiRequest<{ access_token: string }>('/auth/refresh', {
+        method: 'POST',
+        body: JSON.stringify({}), // Refresh token comes from HttpOnly cookie
+      });
+      console.log('refreshToken: Refresh successful');
+      return result;
+    } catch (error) {
+      console.error('refreshToken: Refresh failed:', error);
       throw error;
     }
   },
@@ -253,8 +296,9 @@ export const chatAPI = {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${localStorage.getItem('access_token')}`,
+        Authorization: `Bearer ${getAuthToken()}`,
       },
+      credentials: 'include', // Include HttpOnly cookies
       body: JSON.stringify({ message }),
     });
   },
@@ -533,12 +577,13 @@ export const uploadFile = async (file: File, endpoint: string): Promise<string> 
   const formData = new FormData();
   formData.append('file', file);
 
-  const token = localStorage.getItem('access_token');
+  const token = getAuthToken();
   const response = await fetch(`${API_BASE_URL}${endpoint}`, {
     method: 'POST',
     headers: {
       ...(token && { Authorization: `Bearer ${token}` }),
     },
+    credentials: 'include', // Include HttpOnly cookies
     body: formData,
   });
 
