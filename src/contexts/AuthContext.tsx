@@ -32,6 +32,7 @@ interface AuthContextType {
   register: (username: string, email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   updatePassword: (oldPassword: string, newPassword: string) => Promise<void>;
+  retryAuth: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType>();
@@ -95,12 +96,20 @@ export const AuthProvider = (props: AuthProviderProps) => {
         }
       } catch (error) {
         console.error('AuthProvider: Session validation failed:', error);
+        console.error('AuthProvider: Error details:', {
+          message: error?.message,
+          status: error?.status,
+          name: error?.name
+        });
+        
         // Don't clear token on network errors - could be temporary
-        if (error.message === 'Unauthorized') {
+        if (error?.message === 'Unauthorized' || error?.status === 401) {
+          console.log('AuthProvider: Unauthorized error, clearing token');
           clearAuthToken();
           setUser(null);
         } else {
           // Keep token but set user as null for retry
+          console.log('AuthProvider: Network/other error, keeping token for retry');
           setUser(null);
         }
       }
@@ -216,6 +225,7 @@ export const AuthProvider = (props: AuthProviderProps) => {
     register,
     logout,
     updatePassword,
+    retryAuth,
   };
 
   return (

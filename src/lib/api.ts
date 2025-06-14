@@ -12,19 +12,13 @@ export const getAuthToken = (): string | null => {
 };
 
 export const setAuthToken = (token: string, rememberMe: boolean = false): void => {
-  // TEMPORARY FIX: Always use localStorage to survive page refresh
-  // TODO: Restore sessionStorage logic after fixing auth flow
-  localStorage.setItem('access_token', token);
-  sessionStorage.removeItem('access_token');
-  
-  // Original logic (commented out for debugging):
-  // if (rememberMe) {
-  //   localStorage.setItem('access_token', token);
-  //   sessionStorage.removeItem('access_token');
-  // } else {
-  //   sessionStorage.setItem('access_token', token);
-  //   localStorage.removeItem('access_token');
-  // }
+  if (rememberMe) {
+    localStorage.setItem('access_token', token);
+    sessionStorage.removeItem('access_token');
+  } else {
+    sessionStorage.setItem('access_token', token);
+    localStorage.removeItem('access_token');
+  }
 };
 
 export const clearAuthToken = (): void => {

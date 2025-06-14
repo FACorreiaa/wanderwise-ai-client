@@ -24,7 +24,7 @@ const SignIn: Component<{ onSwitchMode?: (mode: AuthMode) => void }> = (props) =
     const [formData, setFormData] = createSignal<Partial<FormData>>({
         email: '',
         password: '',
-        rememberMe: false
+        rememberMe: true // Default to true for better UX during testing
     });
     const [error, setError] = createSignal<string>('');
 
@@ -113,7 +113,7 @@ const SignIn: Component<{ onSwitchMode?: (mode: AuthMode) => void }> = (props) =
                         <input 
                             type="checkbox" 
                             class="rounded border-gray-300" 
-                            checked={formData().rememberMe || false}
+                            checked={formData().rememberMe || true}
                             onInput={(e) => setFormData(prev => ({ ...prev, rememberMe: e.currentTarget.checked }))}
                         />
                         <span class="text-gray-600">Remember me</span>

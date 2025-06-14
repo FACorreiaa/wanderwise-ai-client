@@ -19,6 +19,12 @@ function ProfilePageContent() {
     const updateProfileMutation = useUpdateProfileMutation();
 
     console.log('Profile page - User data:', user());
+    console.log('Profile query status:', {
+        isLoading: profileQuery.isLoading,
+        isError: profileQuery.isError,
+        error: profileQuery.error,
+        data: profileQuery.data
+    });
 
     // Get profile data from API - no hardcoded fallbacks
     const profileData = (): ProcessedProfileData | null => {
@@ -293,8 +299,8 @@ function ProfilePageContent() {
         </div>
     );
 
-    // Show loading state while fetching profile data
-    if (profileQuery.isLoading) {
+    // Show loading state while fetching profile data, but only if we don't have user data from auth
+    if (profileQuery.isLoading && !user()) {
         return (
             <div class="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors flex items-center justify-center">
                 <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
@@ -302,16 +308,23 @@ function ProfilePageContent() {
         );
     }
 
-    // Show error state if profile fetch failed
-    if (profileQuery.isError) {
+    // Show error state if profile fetch failed AND we don't have user data
+    if (profileQuery.isError && !user()) {
         const error = profileQuery.error as any;
         console.log('Profile query error:', error);
+        console.log('Profile query error message:', error?.message);
+        console.log('Profile query error status:', error?.status);
         
         return (
             <div class="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors flex items-center justify-center">
-                <div class="text-center">
+                <div class="text-center max-w-md mx-auto p-6">
                     <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-2">Error Loading Profile</h2>
-                    <p class="text-gray-600 dark:text-gray-400">Unable to load profile data. Please try again.</p>
+                    <p class="text-gray-600 dark:text-gray-400 mb-4">
+                        {error?.message || 'Unable to load profile data. Please try again.'}
+                    </p>
+                    <div class="text-sm text-gray-500 dark:text-gray-400 mb-4">
+                        Status: {error?.status || 'Unknown'}
+                    </div>
                     <button
                         onClick={() => profileQuery.refetch()}
                         class="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
@@ -325,9 +338,24 @@ function ProfilePageContent() {
 
     return (
         <div class="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors">
+            {/* API Error notification - show if profile query failed but continue with auth data */}
+            <Show when={profileQuery.isError && user()}>
+                <div class="fixed top-4 left-4 right-4 sm:left-auto sm:right-4 sm:w-96 z-50 p-4 rounded-lg shadow-lg border bg-yellow-50 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200 border-yellow-200 dark:border-yellow-700 animate-in slide-in-from-top-2 duration-300">
+                    <div class="flex items-center justify-between">
+                        <span class="text-sm font-medium">Profile API unavailable - showing basic info</span>
+                        <button
+                            onClick={() => profileQuery.refetch()}
+                            class="ml-2 text-yellow-600 hover:text-yellow-700 dark:hover:text-yellow-300 text-sm underline"
+                        >
+                            Retry
+                        </button>
+                    </div>
+                </div>
+            </Show>
+
             {/* Mobile-friendly notification */}
             <Show when={notification()}>
-                <div class={`fixed top-4 left-4 right-4 sm:left-auto sm:right-4 sm:w-96 z-50 p-4 rounded-lg shadow-lg border ${
+                <div class={`fixed top-16 left-4 right-4 sm:left-auto sm:right-4 sm:w-96 z-50 p-4 rounded-lg shadow-lg border ${
                     notification()?.type === 'success' 
                         ? 'bg-green-50 dark:bg-green-900 text-green-800 dark:text-green-200 border-green-200 dark:border-green-700' 
                         : 'bg-red-50 dark:bg-red-900 text-red-800 dark:text-red-200 border-red-200 dark:border-red-700'

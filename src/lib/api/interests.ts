@@ -10,7 +10,7 @@ import type { Interest } from './types';
 export const useInterests = () => {
   return useQuery(() => ({
     queryKey: queryKeys.interests,
-    queryFn: () => apiRequest<Interest[]>('/user/interests/'),
+    queryFn: () => apiRequest<Interest[]>('/user/interests'),
     staleTime: 15 * 60 * 1000, // 15 minutes - interests don't change often
   }));
 };
@@ -34,15 +34,42 @@ export const useUpdateInterestMutation = () => {
   const queryClient = useQueryClient();
 
   return useMutation(() => ({
-    mutationFn: ({ interestId, data }: { interestId: string; data: Partial<Interest> }) =>
-      apiRequest<Interest>(`/user/interests/${interestId}`, {
+    mutationFn: ({ id, name, description, active }: { 
+      id: string; 
+      name?: string; 
+      description?: string; 
+      active?: boolean 
+    }) => {
+      const updateData: any = {};
+      if (name !== undefined) updateData.name = name;
+      if (description !== undefined) updateData.description = description;
+      if (active !== undefined) updateData.active = active;
+
+      return apiRequest(`/user/interests/${id}`, {
         method: 'PUT',
-        body: JSON.stringify(data),
-      }),
-    onSuccess: (updatedInterest, { interestId }) => {
-      queryClient.setQueryData(queryKeys.interests, (old: Interest[] = []) =>
-        old.map(interest => interest.id === interestId ? updatedInterest : interest)
-      );
+        body: JSON.stringify(updateData),
+      });
+    },
+    onSuccess: () => {
+      // Refetch all interests to get updated data
+      queryClient.invalidateQueries({ queryKey: queryKeys.interests });
+    },
+  }));
+};
+
+export const useToggleInterestActiveMutation = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation(() => ({
+    mutationFn: ({ id, active }: { id: string; active: boolean }) => {
+      return apiRequest(`/user/interests/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify({ active }),
+      });
+    },
+    onSuccess: () => {
+      // Refetch all interests to get updated data
+      queryClient.invalidateQueries({ queryKey: queryKeys.interests });
     },
   }));
 };
@@ -53,10 +80,9 @@ export const useDeleteInterestMutation = () => {
   return useMutation(() => ({
     mutationFn: (interestId: string) =>
       apiRequest<{ message: string }>(`/user/interests/${interestId}`, { method: 'DELETE' }),
-    onSuccess: (_, interestId) => {
-      queryClient.setQueryData(queryKeys.interests, (old: Interest[] = []) =>
-        old.filter(interest => interest.id !== interestId)
-      );
+    onSuccess: () => {
+      // Refetch all interests to get updated data
+      queryClient.invalidateQueries({ queryKey: queryKeys.interests });
     },
   }));
 };

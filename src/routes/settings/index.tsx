@@ -1,38 +1,33 @@
 import { createEffect, createSignal, For, Show } from 'solid-js';
 import { User, Tag, Heart, Users, Camera, MapPin, Calendar, Globe, Bell, Lock, CreditCard, Trash2, Plus, X, Edit3, Save, Mail, Phone, Upload, Image as ImageIcon } from 'lucide-solid';
 import { useUpdateProfileMutation, useUploadAvatarMutation, useUserProfileQuery } from '../../lib/api/user';
-import { ProcessedProfileData, UserProfileResponse } from '~/lib/api/types';
+import { useTags, useCreateTagMutation, useUpdateTagMutation, useDeleteTagMutation, useToggleTagActiveMutation } from '../../lib/api/tags';
+import { useInterests, useCreateInterestMutation, useUpdateInterestMutation, useDeleteInterestMutation, useToggleInterestActiveMutation } from '../../lib/api/interests';
+import { ProcessedProfileData, UserProfileResponse, PersonalTag, Interest } from '~/lib/api/types';
 import { useAuth } from '~/contexts/AuthContext';
-
-interface UserSettingsResponse {
-    id?: string;
-    fullname?: string;
-    email?: string;
-    about_you?: string;
-    phone?: string;
-    profile_image_url?: string;
-    [key: string]: any;
-}
-
-interface ProcessedSettingsData {
-    id?: string;
-    firstname?: string;
-    lastname?: string;
-    city?: string;
-    country?: string;
-    phone?: string;
-    email?: string;
-    about_you?: string;
-}
 
 export default function SettingsPage() {
     const { user } = useAuth();
     const [isEditing, setIsEditing] = createSignal(false);
-    const [notification, setNotification] = createSignal<{message: string, type: 'success' | 'error'} | null>(null);
+    const [notification, setNotification] = createSignal<{ message: string, type: 'success' | 'error' } | null>(null);
     const [activeTab, setActiveTab] = createSignal('settings');
     const uploadAvatarMutation = useUploadAvatarMutation();
     const profileQuery = useUserProfileQuery();
     const updateProfileMutation = useUpdateProfileMutation();
+
+    // Tags API hooks
+    const tagsQuery = useTags();
+    const createTagMutation = useCreateTagMutation();
+    const updateTagMutation = useUpdateTagMutation();
+    const deleteTagMutation = useDeleteTagMutation();
+    const toggleTagActiveMutation = useToggleTagActiveMutation();
+    
+    // Interests API hooks  
+    const interestsQuery = useInterests();
+    const createInterestMutation = useCreateInterestMutation();
+    const updateInterestMutation = useUpdateInterestMutation();
+    const deleteInterestMutation = useDeleteInterestMutation();
+    const toggleInterestActiveMutation = useToggleInterestActiveMutation();
     const [userProfile, setUserProfile] = createSignal({
         username: '',
         firstname: '',
@@ -85,16 +80,16 @@ export default function SettingsPage() {
 
             await updateProfileMutation.mutateAsync(profileUpdateData);
             await profileQuery.refetch(); // Sync UI with backend
-            
+
             // Show success notification
             setNotification({ message: 'Settings saved successfully!', type: 'success' });
             setTimeout(() => setNotification(null), 3000);
         } catch (error) {
             console.error('Failed to update profile:', error);
             // Show error notification
-            setNotification({ 
-                message: error?.message || 'Failed to save settings. Please try again.', 
-                type: 'error' 
+            setNotification({
+                message: error?.message || 'Failed to save settings. Please try again.',
+                type: 'error'
             });
             setTimeout(() => setNotification(null), 5000);
         }
@@ -151,20 +146,28 @@ export default function SettingsPage() {
     const [photoPreview, setPhotoPreview] = createSignal<string | null>(null);
     const [isUploading, setIsUploading] = createSignal(false);
 
-    // Tag and Interest management
-    const [newTag, setNewTag] = createSignal('');
-    const [newInterest, setNewInterest] = createSignal('');
-    const [editingTag, setEditingTag] = createSignal<string | null>(null);
-    const [editingInterest, setEditingInterest] = createSignal<string | null>(null);
-    const [editTagValue, setEditTagValue] = createSignal('');
-    const [editInterestValue, setEditInterestValue] = createSignal('');
+    // Tag management
+    const [newTagName, setNewTagName] = createSignal('');
+    const [newTagDescription, setNewTagDescription] = createSignal('');
+    const [newTagType, setNewTagType] = createSignal('');
+    const [editingTag, setEditingTag] = createSignal<PersonalTag | null>(null);
+    const [editTagName, setEditTagName] = createSignal('');
+    const [editTagDescription, setEditTagDescription] = createSignal('');
+    const [editTagType, setEditTagType] = createSignal('');
     const [showAddTagForm, setShowAddTagForm] = createSignal(false);
+
+    // Interest management
+    const [newInterest, setNewInterest] = createSignal('');
+    const [newInterestDescription, setNewInterestDescription] = createSignal('');
+    const [editingInterest, setEditingInterest] = createSignal<Interest | null>(null);
+    const [editInterestName, setEditInterestName] = createSignal('');
+    const [editInterestDescription, setEditInterestDescription] = createSignal('');
     const [showAddInterestForm, setShowAddInterestForm] = createSignal(false);
-    
+
     // Mobile UX: Track which tag/interest is actively selected for actions
     const [activeTagForActions, setActiveTagForActions] = createSignal<string | null>(null);
     const [activeInterestForActions, setActiveInterestForActions] = createSignal<string | null>(null);
-    
+
     // Close action menus when clicking outside
     createEffect(() => {
         const handleClickOutside = (e: MouseEvent) => {
@@ -174,18 +177,10 @@ export default function SettingsPage() {
                 setActiveInterestForActions(null);
             }
         };
-        
+
         document.addEventListener('click', handleClickOutside);
         return () => document.removeEventListener('click', handleClickOutside);
     });
-
-    const [selectedTags, setSelectedTags] = createSignal([
-        'Historic Sites', 'Local Cuisine', 'Museums', 'Photography', 'Walking Tours'
-    ]);
-
-    const [selectedInterests, setSelectedInterests] = createSignal([
-        'Art & Culture', 'Food & Dining', 'History', 'Photography', 'Architecture'
-    ]);
 
     const [travelProfiles, setTravelProfiles] = createSignal([
         {
@@ -204,18 +199,6 @@ export default function SettingsPage() {
         }
     ]);
 
-    const [availableTags, setAvailableTags] = createSignal([
-        'Historic Sites', 'Local Cuisine', 'Museums', 'Photography', 'Walking Tours',
-        'Nightlife', 'Shopping', 'Parks', 'Architecture', 'Street Art', 'Markets',
-        'Beaches', 'Adventure Sports', 'Cultural Events', 'Religious Sites'
-    ]);
-
-    const [availableInterests, setAvailableInterests] = createSignal([
-        'Art & Culture', 'Food & Dining', 'History', 'Photography', 'Architecture',
-        'Music & Entertainment', 'Outdoor Activities', 'Shopping', 'Nightlife',
-        'Nature & Parks', 'Sports', 'Technology', 'Literature', 'Fashion'
-    ]);
-
     const tabs = [
         { id: 'settings', label: 'Settings', icon: User },
         { id: 'tags', label: 'Tags', icon: Tag },
@@ -223,20 +206,57 @@ export default function SettingsPage() {
         { id: 'profiles', label: 'Profiles', icon: Users }
     ];
 
-    const toggleTag = (tag: any) => {
-        setSelectedTags(prev =>
-            prev.includes(tag)
-                ? prev.filter(t => t !== tag)
-                : [...prev, tag]
-        );
+    // Get tags from API
+    const tags = () => tagsQuery.data || [];
+    
+    // Get interests from API
+    const interests = () => interestsQuery.data || [];
+    const activeInterests = () => interests().filter(interest => interest.active ?? false);
+
+    // Toggle tag active status
+    const toggleTagActive = async (tag: PersonalTag) => {
+        try {
+            const currentActive = tag.active ?? false;
+            await toggleTagActiveMutation.mutateAsync({
+                id: tag.id,
+                active: !currentActive
+            });
+            setNotification({
+                message: `Tag ${!currentActive ? 'activated' : 'deactivated'} successfully!`,
+                type: 'success'
+            });
+            setTimeout(() => setNotification(null), 3000);
+        } catch (error: any) {
+            console.error('Failed to toggle tag:', error);
+            setNotification({
+                message: error?.message || 'Failed to update tag. Please try again.',
+                type: 'error'
+            });
+            setTimeout(() => setNotification(null), 5000);
+        }
     };
 
-    const toggleInterest = (interest: any) => {
-        setSelectedInterests(prev =>
-            prev.includes(interest)
-                ? prev.filter(i => i !== interest)
-                : [...prev, interest]
-        );
+    // Toggle interest active status
+    const toggleInterestActive = async (interest: Interest) => {
+        try {
+            const currentActive = interest.active ?? false;
+            await toggleInterestActiveMutation.mutateAsync({
+                id: interest.id,
+                active: !currentActive
+            });
+            setNotification({
+                message: `Interest ${!currentActive ? 'activated' : 'deactivated'} successfully!`,
+                type: 'success'
+            });
+            setTimeout(() => setNotification(null), 3000);
+        } catch (error: any) {
+            console.error('Failed to toggle interest:', error);
+            setNotification({
+                message: error?.message || 'Failed to update interest. Please try again.',
+                type: 'error'
+            });
+            setTimeout(() => setNotification(null), 5000);
+        }
     };
 
     const toggleProfile = (profileId: any) => {
@@ -276,15 +296,15 @@ export default function SettingsPage() {
             //updateProfile('avatar', result.avatar_url);
             setUserProfile(prev => ({ ...prev, avatar: result.avatar_url }));
             await profileQuery.refetch();
-            
+
             // Show success notification
             setNotification({ message: 'Profile photo updated successfully!', type: 'success' });
             setTimeout(() => setNotification(null), 3000);
         } catch (error) {
             console.error('Photo upload failed:', error);
-            setNotification({ 
-                message: error?.message || 'Photo upload failed. Please try again.', 
-                type: 'error' 
+            setNotification({
+                message: error?.message || 'Photo upload failed. Please try again.',
+                type: 'error'
             });
             setTimeout(() => setNotification(null), 5000);
             setPhotoPreview(null);
@@ -299,72 +319,184 @@ export default function SettingsPage() {
     };
 
     // Tag management functions
-    const addNewTag = () => {
-        const tag = newTag().trim();
-        if (tag && !availableTags().includes(tag)) {
-            setAvailableTags(prev => [...prev, tag]);
-            setNewTag('');
-            setShowAddTagForm(false);
+    const addNewTag = async () => {
+        const name = newTagName().trim();
+        const description = newTagDescription().trim();
+        const tag_type = newTagType().trim();
+
+        if (name && description && tag_type) {
+            try {
+                await createTagMutation.mutateAsync({
+                    name,
+                    description,
+                    tag_type
+                });
+                setNewTagName('');
+                setNewTagDescription('');
+                setNewTagType('');
+                setShowAddTagForm(false);
+                setNotification({ message: 'Tag created successfully!', type: 'success' });
+                setTimeout(() => setNotification(null), 3000);
+            } catch (error) {
+                console.error('Failed to create tag:', error);
+                setNotification({
+                    message: error?.message || 'Failed to create tag. Please try again.',
+                    type: 'error'
+                });
+                setTimeout(() => setNotification(null), 5000);
+            }
         }
     };
 
-    const startEditingTag = (tag: string) => {
+    const startEditingTag = (tag: PersonalTag) => {
         setEditingTag(tag);
-        setEditTagValue(tag);
+        setEditTagName(tag.name);
+        setEditTagDescription(tag.description || '');
+        setEditTagType(tag.tag_type);
     };
 
-    const saveEditedTag = () => {
-        const oldTag = editingTag();
-        const newTagValue = editTagValue().trim();
+    const saveEditedTag = async () => {
+        const tag = editingTag();
+        const name = editTagName().trim();
+        const description = editTagDescription().trim();
+        const tag_type = editTagType().trim();
 
-        if (oldTag && newTagValue && newTagValue !== oldTag) {
-            setAvailableTags(prev => prev.map(tag => tag === oldTag ? newTagValue : tag));
-            setSelectedTags(prev => prev.map(tag => tag === oldTag ? newTagValue : tag));
+        if (tag && name && description && tag_type) {
+            try {
+                await updateTagMutation.mutateAsync({
+                    id: tag.id,
+                    name,
+                    description,
+                    tag_type
+                });
+                setEditingTag(null);
+                setEditTagName('');
+                setEditTagDescription('');
+                setEditTagType('');
+                setNotification({ message: 'Tag updated successfully!', type: 'success' });
+                setTimeout(() => setNotification(null), 3000);
+            } catch (error) {
+                console.error('Failed to update tag:', error);
+                setNotification({
+                    message: error?.message || 'Failed to update tag. Please try again.',
+                    type: 'error'
+                });
+                setTimeout(() => setNotification(null), 5000);
+            }
+        }
+    };
+
+    const deleteTag = async (tag: PersonalTag) => {
+        if (tag.source === 'global') {
+            setNotification({
+                message: 'Global tags cannot be deleted.',
+                type: 'error'
+            });
+            setTimeout(() => setNotification(null), 3000);
+            return;
         }
 
-        setEditingTag(null);
-        setEditTagValue('');
-    };
-
-    const deleteTag = (tagToDelete: string) => {
-        if (confirm(`Are you sure you want to delete the tag "${tagToDelete}"?`)) {
-            setAvailableTags(prev => prev.filter(tag => tag !== tagToDelete));
-            setSelectedTags(prev => prev.filter(tag => tag !== tagToDelete));
+        if (confirm(`Are you sure you want to delete the tag "${tag.name}"?`)) {
+            try {
+                await deleteTagMutation.mutateAsync(tag.id);
+                setNotification({ message: 'Tag deleted successfully!', type: 'success' });
+                setTimeout(() => setNotification(null), 3000);
+            } catch (error) {
+                console.error('Failed to delete tag:', error);
+                setNotification({
+                    message: error?.message || 'Failed to delete tag. Please try again.',
+                    type: 'error'
+                });
+                setTimeout(() => setNotification(null), 5000);
+            }
         }
     };
 
     // Interest management functions
-    const addNewInterest = () => {
-        const interest = newInterest().trim();
-        if (interest && !availableInterests().includes(interest)) {
-            setAvailableInterests(prev => [...prev, interest]);
-            setNewInterest('');
-            setShowAddInterestForm(false);
+    const addNewInterest = async () => {
+        const name = newInterest().trim();
+        const description = newInterestDescription().trim();
+
+        if (name) {
+            try {
+                await createInterestMutation.mutateAsync({
+                    name,
+                    description,
+                    active: true
+                });
+                setNewInterest('');
+                setNewInterestDescription('');
+                setShowAddInterestForm(false);
+                setNotification({ message: 'Interest created successfully!', type: 'success' });
+                setTimeout(() => setNotification(null), 3000);
+            } catch (error: any) {
+                console.error('Failed to create interest:', error);
+                setNotification({
+                    message: error?.message || 'Failed to create interest. Please try again.',
+                    type: 'error'
+                });
+                setTimeout(() => setNotification(null), 5000);
+            }
         }
     };
 
-    const startEditingInterest = (interest: string) => {
+    const startEditingInterest = (interest: Interest) => {
         setEditingInterest(interest);
-        setEditInterestValue(interest);
+        setEditInterestName(interest.name);
+        setEditInterestDescription(interest.description || '');
     };
 
-    const saveEditedInterest = () => {
-        const oldInterest = editingInterest();
-        const newInterestValue = editInterestValue().trim();
+    const saveEditedInterest = async () => {
+        const interest = editingInterest();
+        const name = editInterestName().trim();
+        const description = editInterestDescription().trim();
 
-        if (oldInterest && newInterestValue && newInterestValue !== oldInterest) {
-            setAvailableInterests(prev => prev.map(interest => interest === oldInterest ? newInterestValue : interest));
-            setSelectedInterests(prev => prev.map(interest => interest === oldInterest ? newInterestValue : interest));
+        if (interest && name) {
+            try {
+                await updateInterestMutation.mutateAsync({
+                    id: interest.id,
+                    name,
+                    description
+                });
+                setEditingInterest(null);
+                setEditInterestName('');
+                setEditInterestDescription('');
+                setNotification({ message: 'Interest updated successfully!', type: 'success' });
+                setTimeout(() => setNotification(null), 3000);
+            } catch (error: any) {
+                console.error('Failed to update interest:', error);
+                setNotification({
+                    message: error?.message || 'Failed to update interest. Please try again.',
+                    type: 'error'
+                });
+                setTimeout(() => setNotification(null), 5000);
+            }
+        }
+    };
+
+    const deleteInterest = async (interest: Interest) => {
+        if (interest.source === 'global') {
+            setNotification({
+                message: 'Global interests cannot be deleted.',
+                type: 'error'
+            });
+            setTimeout(() => setNotification(null), 3000);
+            return;
         }
 
-        setEditingInterest(null);
-        setEditInterestValue('');
-    };
-
-    const deleteInterest = (interestToDelete: string) => {
-        if (confirm(`Are you sure you want to delete the interest "${interestToDelete}"?`)) {
-            setAvailableInterests(prev => prev.filter(interest => interest !== interestToDelete));
-            setSelectedInterests(prev => prev.filter(interest => interest !== interestToDelete));
+        if (confirm(`Are you sure you want to delete the interest "${interest.name}"?`)) {
+            try {
+                await deleteInterestMutation.mutateAsync(interest.id);
+                setNotification({ message: 'Interest deleted successfully!', type: 'success' });
+                setTimeout(() => setNotification(null), 3000);
+            } catch (error: any) {
+                console.error('Failed to delete interest:', error);
+                setNotification({
+                    message: error?.message || 'Failed to delete interest. Please try again.',
+                    type: 'error'
+                });
+                setTimeout(() => setNotification(null), 5000);
+            }
         }
     };
 
@@ -547,401 +679,624 @@ export default function SettingsPage() {
         </div>
     );
 
-    const renderTags = () => (
-        <div class="space-y-8">
-            <div>
-                <h2 class="text-2xl font-bold text-gray-900 mb-2">Travel Tags</h2>
-                <p class="text-gray-600 mb-6">Select tags that best describe your travel preferences. These help us personalize your recommendations.</p>
+    const renderTags = () => {
+        // Show loading state while fetching tags
+        if (tagsQuery.isLoading) {
+            return (
+                <div class="space-y-8">
+                    <div class="flex items-center justify-center py-12">
+                        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                    </div>
+                </div>
+            );
+        }
 
-                <div class="bg-white rounded-lg border border-gray-200 p-6">
-                    {/* Add New Tag Form */}
-                    <div class="mb-6 pb-6 border-b border-gray-200">
-                        <div class="flex items-center justify-between mb-3">
-                            <h4 class="font-semibold text-gray-900">Manage Tags</h4>
-                            <Show when={!showAddTagForm()} fallback={
-                                <button
-                                    onClick={() => {
-                                        setShowAddTagForm(false);
-                                        setNewTag('');
-                                    }}
-                                    class="px-3 py-1 text-sm text-gray-600 hover:text-gray-800"
-                                >
-                                    Cancel
-                                </button>
-                            }>
-                                <button
-                                    onClick={() => setShowAddTagForm(true)}
-                                    class="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm font-medium"
-                                >
-                                    <Plus class="w-4 h-4" />
-                                    Add New Tag
-                                </button>
+        // Show error state if tags fetch failed
+        if (tagsQuery.isError) {
+            return (
+                <div class="space-y-8">
+                    <div class="text-center py-12">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-2">Error Loading Tags</h3>
+                        <p class="text-gray-600 mb-4">Unable to load tags. Please try again.</p>
+                        <button
+                            onClick={() => tagsQuery.refetch()}
+                            class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                        >
+                            Retry
+                        </button>
+                    </div>
+                </div>
+            );
+        }
+
+        return (
+            <div class="space-y-8">
+                <div>
+                    <h2 class="text-2xl font-bold text-gray-900 mb-2">Travel Tags</h2>
+                    <p class="text-gray-600 mb-6">Manage your personal tags and activate/deactivate both global and personal tags to personalize your travel recommendations.</p>
+
+                    <div class="bg-white rounded-lg border border-gray-200 p-6">
+                        {/* Add New Tag Form */}
+                        <div class="mb-6 pb-6 border-b border-gray-200">
+                            <div class="flex items-center justify-between mb-3">
+                                <h4 class="font-semibold text-gray-900">Manage Tags</h4>
+                                <Show when={!showAddTagForm()} fallback={
+                                    <button
+                                        onClick={() => {
+                                            setShowAddTagForm(false);
+                                            setNewTagName('');
+                                            setNewTagDescription('');
+                                            setNewTagType('');
+                                        }}
+                                        class="px-3 py-1 text-sm text-gray-600 hover:text-gray-800"
+                                    >
+                                        Cancel
+                                    </button>
+                                }>
+                                    <button
+                                        onClick={() => setShowAddTagForm(true)}
+                                        class="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm font-medium"
+                                    >
+                                        <Plus class="w-4 h-4" />
+                                        Add New Tag
+                                    </button>
+                                </Show>
+                            </div>
+
+                            <Show when={showAddTagForm()}>
+                                <div class="space-y-3">
+                                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                                        <input
+                                            type="text"
+                                            value={newTagName()}
+                                            onInput={(e) => setNewTagName(e.target.value)}
+                                            placeholder="Tag name..."
+                                            class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm"
+                                        />
+                                        <input
+                                            type="text"
+                                            value={newTagType()}
+                                            onInput={(e) => setNewTagType(e.target.value)}
+                                            placeholder="Tag type (e.g., atmosphere, cuisine)..."
+                                            class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm"
+                                        />
+                                        <button
+                                            onClick={addNewTag}
+                                            disabled={!newTagName().trim() || !newTagDescription().trim() || !newTagType().trim() || createTagMutation.isPending}
+                                            class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium"
+                                        >
+                                            {createTagMutation.isPending ? 'Adding...' : 'Add'}
+                                        </button>
+                                    </div>
+                                    <textarea
+                                        value={newTagDescription()}
+                                        onInput={(e) => setNewTagDescription(e.target.value)}
+                                        placeholder="Tag description..."
+                                        rows={2}
+                                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm"
+                                    />
+                                </div>
                             </Show>
                         </div>
 
-                        <Show when={showAddTagForm()}>
-                            <div class="flex gap-2">
-                                <input
-                                    type="text"
-                                    value={newTag()}
-                                    onInput={(e) => setNewTag(e.target.value)}
-                                    onKeyPress={(e) => e.key === 'Enter' && addNewTag()}
-                                    placeholder="Enter new tag name..."
-                                    class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm"
-                                />
-                                <button
-                                    onClick={addNewTag}
-                                    disabled={!newTag().trim()}
-                                    class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium"
-                                >
-                                    Add
-                                </button>
-                            </div>
-                        </Show>
-                    </div>
-
-                    <div class="flex flex-wrap gap-3">
-                        <For each={availableTags()}>
-                            {(tag) => (
-                                <Show when={editingTag() === tag} fallback={
-                                    <div class="group relative tag-action-container">
-                                        <button
-                                            onClick={() => {
-                                                // On mobile, first tap activates actions, second tap toggles tag
-                                                const isMobile = window.innerWidth < 640;
-                                                if (isMobile && activeTagForActions() !== tag) {
-                                                    setActiveTagForActions(tag);
-                                                } else {
-                                                    toggleTag(tag);
-                                                    setActiveTagForActions(null);
-                                                }
-                                            }}
-                                            class={`px-4 py-2 rounded-full border-2 transition-all duration-200 font-medium relative ${selectedTags().includes(tag)
-                                                ? 'bg-blue-600 text-white border-blue-600 shadow-lg scale-105'
-                                                : 'bg-white text-gray-700 border-gray-200 hover:border-blue-300 hover:bg-blue-50'
-                                                } ${activeTagForActions() === tag ? 'ring-2 ring-blue-300' : ''}`}
-                                        >
-                                            {tag}
-                                        </button>
-                                        
-                                        {/* Desktop: Show on hover */}
-                                        <div class="hidden sm:block absolute -top-2 -right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                            <div class="flex gap-1">
-                                                <button
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        startEditingTag(tag);
-                                                    }}
-                                                    class="w-6 h-6 bg-yellow-500 text-white rounded-full flex items-center justify-center hover:bg-yellow-600 text-xs"
-                                                    title="Edit tag"
-                                                >
-                                                    <Edit3 class="w-3 h-3" />
-                                                </button>
-                                                <button
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        deleteTag(tag);
-                                                    }}
-                                                    class="w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 text-xs"
-                                                    title="Delete tag"
-                                                >
-                                                    <Trash2 class="w-3 h-3" />
-                                                </button>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                            <For each={tags()}>
+                                {(tag) => (
+                                    <Show when={editingTag()?.id === tag.id} fallback={
+                                        <div class="group relative tag-action-container">
+                                            <div
+                                                onClick={() => {
+                                                    // On mobile, tap to activate actions for personal tags
+                                                    if (tag.source === 'personal' && window.innerWidth < 640) {
+                                                        setActiveTagForActions(activeTagForActions() === tag.id ? null : tag.id);
+                                                    }
+                                                }}
+                                                class={`p-4 rounded-lg border-2 transition-all duration-200 ${(tag.active ?? false)
+                                                    ? (tag.source === 'global')
+                                                        ? 'bg-blue-50 border-blue-200'
+                                                        : 'bg-green-50 border-green-200'
+                                                    : 'bg-gray-50 border-gray-200 opacity-60'
+                                                    } ${tag.source === 'personal' ? 'hover:border-blue-300 cursor-pointer' : ''} ${activeTagForActions() === tag.id ? 'ring-2 ring-blue-300' : ''}`}>
+                                                <div class="flex items-start justify-between mb-2">
+                                                    <div class="flex items-center gap-2">
+                                                        <h4 class="font-medium text-gray-900">{tag.name}</h4>
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                toggleTagActive(tag);
+                                                            }}
+                                                            disabled={toggleTagActiveMutation.isPending}
+                                                            class={`w-10 h-5 rounded-full relative transition-colors duration-200 ${(tag.active ?? false) ? 'bg-green-500' : 'bg-gray-300'
+                                                                } ${toggleTagActiveMutation.isPending ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+                                                            title={`${(tag.active ?? false) ? 'Deactivate' : 'Activate'} tag`}
+                                                        >
+                                                            <div class={`w-4 h-4 bg-white rounded-full absolute top-0.5 transition-transform duration-200 ${(tag.active ?? false) ? 'translate-x-5' : 'translate-x-0.5'
+                                                                }`} />
+                                                        </button>
+                                                    </div>
+                                                    <div class="flex items-center gap-2">
+                                                        <Show when={tag.source === 'global'}>
+                                                            <span class="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-medium">Global</span>
+                                                        </Show>
+                                                        <span class={`px-2 py-1 rounded-full text-xs font-medium ${(tag.active ?? false)
+                                                            ? 'bg-green-100 text-green-800'
+                                                            : 'bg-gray-100 text-gray-800'
+                                                            }`}>
+                                                            {(tag.active ?? false) ? 'Active' : 'Inactive'}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                                <p class="text-sm text-gray-600 mb-2">{tag.description || 'No description'}</p>
+                                                <div class="text-xs text-gray-500">
+                                                    Type: <span class="font-medium">{tag.tag_type}</span>
+                                                </div>
                                             </div>
+
+                                            {/* Actions for personal tags only */}
+                                            <Show when={tag.source === 'personal'}>
+                                                {/* Desktop: Show on hover */}
+                                                <div class="hidden sm:block absolute -top-2 -right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                    <div class="flex gap-1">
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                startEditingTag(tag);
+                                                            }}
+                                                            class="w-6 h-6 bg-yellow-500 text-white rounded-full flex items-center justify-center hover:bg-yellow-600 text-xs"
+                                                            title="Edit tag"
+                                                        >
+                                                            <Edit3 class="w-3 h-3" />
+                                                        </button>
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                deleteTag(tag);
+                                                            }}
+                                                            class="w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 text-xs"
+                                                            title="Delete tag"
+                                                        >
+                                                            <Trash2 class="w-3 h-3" />
+                                                        </button>
+                                                    </div>
+                                                </div>
+
+                                                {/* Mobile: Show action buttons below when active */}
+                                                <Show when={activeTagForActions() === tag.id}>
+                                                    <div class="sm:hidden absolute top-full left-0 right-0 mt-2 z-10">
+                                                        <div class="bg-white border border-gray-200 rounded-lg shadow-lg p-2 space-y-2">
+                                                            <div class="flex gap-2">
+                                                                <button
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        toggleTagActive(tag);
+                                                                        setActiveTagForActions(null);
+                                                                    }}
+                                                                    disabled={toggleTagActiveMutation.isPending}
+                                                                    class={`flex-1 px-3 py-2 rounded text-sm font-medium ${(tag.active ?? false)
+                                                                        ? 'bg-red-100 text-red-700 hover:bg-red-200'
+                                                                        : 'bg-green-100 text-green-700 hover:bg-green-200'
+                                                                        } ${toggleTagActiveMutation.isPending ? 'opacity-50' : ''}`}
+                                                                >
+                                                                    {(tag.active ?? false) ? 'Deactivate' : 'Activate'}
+                                                                </button>
+                                                            </div>
+                                                            <Show when={tag.source === 'personal'}>
+                                                                <div class="flex gap-2">
+                                                                    <button
+                                                                        onClick={(e) => {
+                                                                            e.stopPropagation();
+                                                                            startEditingTag(tag);
+                                                                            setActiveTagForActions(null);
+                                                                        }}
+                                                                        class="px-3 py-2 bg-yellow-100 text-yellow-700 rounded text-sm font-medium hover:bg-yellow-200"
+                                                                    >
+                                                                        Edit
+                                                                    </button>
+                                                                    <button
+                                                                        onClick={(e) => {
+                                                                            e.stopPropagation();
+                                                                            deleteTag(tag);
+                                                                            setActiveTagForActions(null);
+                                                                        }}
+                                                                        class="px-3 py-2 bg-red-100 text-red-700 rounded text-sm font-medium hover:bg-red-200"
+                                                                    >
+                                                                        Delete
+                                                                    </button>
+                                                                </div>
+                                                            </Show>
+                                                        </div>
+                                                    </div>
+                                                </Show>
+                                            </Show>
                                         </div>
-                                        
-                                        {/* Mobile: Show action buttons below when active */}
-                                        <Show when={activeTagForActions() === tag}>
-                                            <div class="sm:hidden absolute top-full left-0 right-0 mt-2 z-10">
-                                                <div class="bg-white border border-gray-200 rounded-lg shadow-lg p-2 flex gap-2">
+                                    }>
+                                        <div class="p-4 bg-gray-50 rounded-lg border-2 border-gray-300">
+                                            <div class="space-y-3">
+                                                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                                    <input
+                                                        type="text"
+                                                        value={editTagName()}
+                                                        onInput={(e) => setEditTagName(e.target.value)}
+                                                        placeholder="Tag name..."
+                                                        class="px-3 py-2 border border-gray-300 rounded text-sm"
+                                                    />
+                                                    <input
+                                                        type="text"
+                                                        value={editTagType()}
+                                                        onInput={(e) => setEditTagType(e.target.value)}
+                                                        placeholder="Tag type..."
+                                                        class="px-3 py-2 border border-gray-300 rounded text-sm"
+                                                    />
+                                                </div>
+                                                <textarea
+                                                    value={editTagDescription()}
+                                                    onInput={(e) => setEditTagDescription(e.target.value)}
+                                                    placeholder="Tag description..."
+                                                    rows={2}
+                                                    class="w-full px-3 py-2 border border-gray-300 rounded text-sm"
+                                                />
+                                                <div class="flex gap-2">
                                                     <button
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            toggleTag(tag);
-                                                            setActiveTagForActions(null);
-                                                        }}
-                                                        class={`flex-1 px-3 py-2 rounded text-sm font-medium ${selectedTags().includes(tag)
-                                                            ? 'bg-red-100 text-red-700 hover:bg-red-200'
-                                                            : 'bg-blue-100 text-blue-700 hover:bg-blue-200'
-                                                        }`}
+                                                        onClick={saveEditedTag}
+                                                        disabled={updateTagMutation.isPending}
+                                                        class="px-3 py-2 bg-green-600 text-white rounded text-sm hover:bg-green-700 flex items-center gap-1 disabled:opacity-50"
                                                     >
-                                                        {selectedTags().includes(tag) ? 'Remove' : 'Select'}
+                                                        <Save class="w-3 h-3" />
+                                                        {updateTagMutation.isPending ? 'Saving...' : 'Save'}
                                                     </button>
                                                     <button
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            startEditingTag(tag);
-                                                            setActiveTagForActions(null);
+                                                        onClick={() => {
+                                                            setEditingTag(null);
+                                                            setEditTagName('');
+                                                            setEditTagDescription('');
+                                                            setEditTagType('');
                                                         }}
-                                                        class="px-3 py-2 bg-yellow-100 text-yellow-700 rounded text-sm font-medium hover:bg-yellow-200"
+                                                        class="px-3 py-2 bg-gray-500 text-white rounded text-sm hover:bg-gray-600 flex items-center gap-1"
                                                     >
-                                                        Edit
-                                                    </button>
-                                                    <button
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            deleteTag(tag);
-                                                            setActiveTagForActions(null);
-                                                        }}
-                                                        class="px-3 py-2 bg-red-100 text-red-700 rounded text-sm font-medium hover:bg-red-200"
-                                                    >
-                                                        Delete
+                                                        <X class="w-3 h-3" />
+                                                        Cancel
                                                     </button>
                                                 </div>
                                             </div>
-                                        </Show>
-                                    </div>
-                                }>
-                                    <div class="flex items-center gap-2">
-                                        <input
-                                            type="text"
-                                            value={editTagValue()}
-                                            onInput={(e) => setEditTagValue(e.target.value)}
-                                            onKeyPress={(e) => e.key === 'Enter' && saveEditedTag()}
-                                            class="px-3 py-1 border border-gray-300 rounded text-sm"
-                                        />
-                                        <button
-                                            onClick={saveEditedTag}
-                                            class="px-2 py-1 bg-green-600 text-white rounded text-xs hover:bg-green-700"
-                                        >
-                                            <Save class="w-3 h-3" />
-                                        </button>
-                                        <button
-                                            onClick={() => {
-                                                setEditingTag(null);
-                                                setEditTagValue('');
-                                            }}
-                                            class="px-2 py-1 bg-gray-500 text-white rounded text-xs hover:bg-gray-600"
-                                        >
-                                            <X class="w-3 h-3" />
-                                        </button>
-                                    </div>
-                                </Show>
-                            )}
-                        </For>
-                    </div>
-
-                    <div class="mt-6 pt-6 border-t border-gray-200">
-                        <h4 class="font-semibold text-gray-900 mb-3">Selected Tags ({selectedTags().length})</h4>
-                        <div class="flex flex-wrap gap-2">
-                            <For each={selectedTags()}>
-                                {(tag) => (
-                                    <span class="inline-flex items-center gap-1 px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium">
-                                        {tag}
-                                        <button
-                                            onClick={() => toggleTag(tag)}
-                                            class="ml-1 hover:bg-blue-200 rounded-full p-0.5"
-                                        >
-                                            <X class="w-3 h-3" />
-                                        </button>
-                                    </span>
+                                        </div>
+                                    </Show>
                                 )}
                             </For>
                         </div>
+
+                        <Show when={tags().length === 0}>
+                            <div class="text-center py-8">
+                                <p class="text-gray-500">No tags found. Create your first tag above!</p>
+                            </div>
+                        </Show>
+
+                        {/* Active Tags Summary */}
+                        <Show when={tags().length > 0}>
+                            <div class="mt-8 pt-6 border-t border-gray-200">
+                                <h4 class="font-semibold text-gray-900 mb-4">Active Tags ({tags().filter(tag => tag.active ?? false).length})</h4>
+                                <Show when={tags().filter(tag => tag.active ?? false).length === 0}>
+                                    <p class="text-gray-500 text-sm">No active tags. Activate some tags above to see them here.</p>
+                                </Show>
+                                <Show when={tags().filter(tag => tag.active ?? false).length > 0}>
+                                    <div class="flex flex-wrap gap-2">
+                                        <For each={tags().filter(tag => tag.active ?? false)}>
+                                            {(tag) => (
+                                                <span class={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium ${tag.source === 'global'
+                                                    ? 'bg-blue-100 text-blue-800'
+                                                    : 'bg-green-100 text-green-800'
+                                                    }`}>
+                                                    {tag.name}
+                                                    <span class="text-xs opacity-75">({tag.tag_type})</span>
+                                                </span>
+                                            )}
+                                        </For>
+                                    </div>
+                                </Show>
+                            </div>
+                        </Show>
                     </div>
                 </div>
             </div>
-        </div>
-    );
+        );
+    };
 
-    const renderInterests = () => (
-        <div class="space-y-8">
-            <div>
-                <h2 class="text-2xl font-bold text-gray-900 mb-2">Interests</h2>
-                <p class="text-gray-600 mb-6">Choose your interests to get more targeted recommendations and discover places that match your passions.</p>
+    const renderInterests = () => {
+        // Show loading state while fetching interests
+        if (interestsQuery.isLoading) {
+            return (
+                <div class="space-y-8">
+                    <div class="flex items-center justify-center py-12">
+                        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
+                    </div>
+                </div>
+            );
+        }
 
-                <div class="bg-white rounded-lg border border-gray-200 p-6">
-                    {/* Add New Interest Form */}
-                    <div class="mb-6 pb-6 border-b border-gray-200">
-                        <div class="flex items-center justify-between mb-3">
-                            <h4 class="font-semibold text-gray-900">Manage Interests</h4>
-                            <Show when={!showAddInterestForm()} fallback={
-                                <button
-                                    onClick={() => {
-                                        setShowAddInterestForm(false);
-                                        setNewInterest('');
-                                    }}
-                                    class="px-3 py-1 text-sm text-gray-600 hover:text-gray-800"
-                                >
-                                    Cancel
-                                </button>
-                            }>
-                                <button
-                                    onClick={() => setShowAddInterestForm(true)}
-                                    class="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 text-sm font-medium"
-                                >
-                                    <Plus class="w-4 h-4" />
-                                    Add New Interest
-                                </button>
+        // Show error state if interests fetch failed
+        if (interestsQuery.isError) {
+            return (
+                <div class="space-y-8">
+                    <div class="text-center py-12">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-2">Error Loading Interests</h3>
+                        <p class="text-gray-600 mb-4">Unable to load interests. Please try again.</p>
+                        <button
+                            onClick={() => interestsQuery.refetch()}
+                            class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
+                        >
+                            Retry
+                        </button>
+                    </div>
+                </div>
+            );
+        }
+
+        return (
+            <div class="space-y-8">
+                <div>
+                    <h2 class="text-2xl font-bold text-gray-900 mb-2">Travel Interests</h2>
+                    <p class="text-gray-600 mb-6">Manage your personal interests and activate/deactivate both global and custom interests to personalize your travel recommendations.</p>
+
+                    <div class="bg-white rounded-lg border border-gray-200 p-6">
+                        {/* Add New Interest Form */}
+                        <div class="mb-6 pb-6 border-b border-gray-200">
+                            <div class="flex items-center justify-between mb-3">
+                                <h4 class="font-semibold text-gray-900">Manage Interests</h4>
+                                <Show when={!showAddInterestForm()} fallback={
+                                    <button
+                                        onClick={() => {
+                                            setShowAddInterestForm(false);
+                                            setNewInterest('');
+                                            setNewInterestDescription('');
+                                        }}
+                                        class="px-3 py-1 text-sm text-gray-600 hover:text-gray-800"
+                                    >
+                                        Cancel
+                                    </button>
+                                }>
+                                    <button
+                                        onClick={() => setShowAddInterestForm(true)}
+                                        class="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 text-sm font-medium"
+                                    >
+                                        <Plus class="w-4 h-4" />
+                                        Add New Interest
+                                    </button>
+                                </Show>
+                            </div>
+
+                            <Show when={showAddInterestForm()}>
+                                <div class="space-y-3">
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                        <input
+                                            type="text"
+                                            value={newInterest()}
+                                            onInput={(e) => setNewInterest(e.target.value)}
+                                            placeholder="Interest name..."
+                                            class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm"
+                                        />
+                                        <button
+                                            onClick={addNewInterest}
+                                            disabled={!newInterest().trim() || createInterestMutation.isPending}
+                                            class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium"
+                                        >
+                                            {createInterestMutation.isPending ? 'Adding...' : 'Add'}
+                                        </button>
+                                    </div>
+                                    <textarea
+                                        value={newInterestDescription()}
+                                        onInput={(e) => setNewInterestDescription(e.target.value)}
+                                        placeholder="Interest description (optional)..."
+                                        rows={2}
+                                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm"
+                                    />
+                                </div>
                             </Show>
                         </div>
 
-                        <Show when={showAddInterestForm()}>
-                            <div class="flex gap-2">
-                                <input
-                                    type="text"
-                                    value={newInterest()}
-                                    onInput={(e) => setNewInterest(e.target.value)}
-                                    onKeyPress={(e) => e.key === 'Enter' && addNewInterest()}
-                                    placeholder="Enter new interest name..."
-                                    class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm"
-                                />
-                                <button
-                                    onClick={addNewInterest}
-                                    disabled={!newInterest().trim()}
-                                    class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium"
-                                >
-                                    Add
-                                </button>
-                            </div>
-                        </Show>
-                    </div>
-
-                    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                        <For each={availableInterests()}>
-                            {(interest) => (
-                                <Show when={editingInterest() === interest} fallback={
-                                    <div class="group relative interest-action-container">
-                                        <button
-                                            onClick={() => {
-                                                // On mobile, first tap activates actions, second tap toggles interest
-                                                const isMobile = window.innerWidth < 640;
-                                                if (isMobile && activeInterestForActions() !== interest) {
-                                                    setActiveInterestForActions(interest);
-                                                } else {
-                                                    toggleInterest(interest);
-                                                    setActiveInterestForActions(null);
-                                                }
-                                            }}
-                                            class={`w-full p-4 rounded-lg border-2 transition-all duration-200 text-left ${selectedInterests().includes(interest)
-                                                ? 'bg-purple-50 border-purple-500 shadow-md'
-                                                : 'bg-white border-gray-200 hover:border-purple-300 hover:bg-purple-25'
-                                                } ${activeInterestForActions() === interest ? 'ring-2 ring-purple-300' : ''}`}
-                                        >
-                                            <div class="flex items-center justify-between">
-                                                <span class="font-medium text-gray-900 text-sm">{interest}</span>
-                                                <Show when={selectedInterests().includes(interest)}>
-                                                    <Heart class="w-4 h-4 text-purple-600 fill-current" />
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                            <For each={interests()}>
+                                {(interest) => (
+                                    <Show when={editingInterest()?.id === interest.id} fallback={
+                                        <div class="group relative interest-action-container">
+                                            <div
+                                                onClick={() => {
+                                                    // On mobile, tap to activate actions for custom interests
+                                                    if (interest.source === 'custom' && window.innerWidth < 640) {
+                                                        setActiveInterestForActions(activeInterestForActions() === interest.id ? null : interest.id);
+                                                    }
+                                                }}
+                                                class={`p-4 rounded-lg border-2 transition-all duration-200 ${(interest.active ?? false)
+                                                    ? (interest.source === 'global')
+                                                        ? 'bg-blue-50 border-blue-200'
+                                                        : 'bg-purple-50 border-purple-200'
+                                                    : 'bg-gray-50 border-gray-200 opacity-60'
+                                                    } ${interest.source === 'custom' ? 'hover:border-purple-300 cursor-pointer' : ''} ${activeInterestForActions() === interest.id ? 'ring-2 ring-purple-300' : ''}`}
+                                            >
+                                                <div class="flex items-start justify-between mb-2">
+                                                    <div class="flex items-center gap-2">
+                                                        <h4 class="font-medium text-gray-900">{interest.name}</h4>
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                toggleInterestActive(interest);
+                                                            }}
+                                                            disabled={toggleInterestActiveMutation.isPending}
+                                                            class={`w-10 h-5 rounded-full relative transition-colors duration-200 ${(interest.active ?? false) ? 'bg-purple-500' : 'bg-gray-300'
+                                                                } ${toggleInterestActiveMutation.isPending ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+                                                            title={`${(interest.active ?? false) ? 'Deactivate' : 'Activate'} interest`}
+                                                        >
+                                                            <div class={`w-4 h-4 bg-white rounded-full absolute top-0.5 transition-transform duration-200 ${(interest.active ?? false) ? 'translate-x-5' : 'translate-x-0.5'
+                                                                }`} />
+                                                        </button>
+                                                    </div>
+                                                    <div class="flex items-center gap-2">
+                                                        <Show when={interest.source === 'global'}>
+                                                            <span class="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-medium">Global</span>
+                                                        </Show>
+                                                        <span class={`px-2 py-1 rounded-full text-xs font-medium ${(interest.active ?? false)
+                                                            ? 'bg-purple-100 text-purple-800'
+                                                            : 'bg-gray-100 text-gray-800'
+                                                            }`}>
+                                                            {(interest.active ?? false) ? 'Active' : 'Inactive'}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                                <Show when={interest.description}>
+                                                    <p class="text-sm text-gray-600 mb-2">{interest.description || 'No description'}</p>
                                                 </Show>
                                             </div>
-                                        </button>
-                                        
-                                        {/* Desktop: Show on hover */}
-                                        <div class="hidden sm:block absolute -top-2 -right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                            <div class="flex gap-1">
-                                                <button
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        startEditingInterest(interest);
-                                                    }}
-                                                    class="w-6 h-6 bg-yellow-500 text-white rounded-full flex items-center justify-center hover:bg-yellow-600 text-xs"
-                                                    title="Edit interest"
-                                                >
-                                                    <Edit3 class="w-3 h-3" />
-                                                </button>
-                                                <button
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        deleteInterest(interest);
-                                                    }}
-                                                    class="w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 text-xs"
-                                                    title="Delete interest"
-                                                >
-                                                    <Trash2 class="w-3 h-3" />
-                                                </button>
-                                            </div>
+
+                                            {/* Actions for custom interests only */}
+                                            <Show when={interest.source === 'custom'}>
+                                                {/* Desktop: Show on hover */}
+                                                <div class="hidden sm:block absolute -top-2 -right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                    <div class="flex gap-1">
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                startEditingInterest(interest);
+                                                            }}
+                                                            class="w-6 h-6 bg-yellow-500 text-white rounded-full flex items-center justify-center hover:bg-yellow-600 text-xs"
+                                                            title="Edit interest"
+                                                        >
+                                                            <Edit3 class="w-3 h-3" />
+                                                        </button>
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                deleteInterest(interest);
+                                                            }}
+                                                            class="w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 text-xs"
+                                                            title="Delete interest"
+                                                        >
+                                                            <Trash2 class="w-3 h-3" />
+                                                        </button>
+                                                    </div>
+                                                </div>
+
+                                                {/* Mobile: Show action buttons below when active */}
+                                                <Show when={activeInterestForActions() === interest.id}>
+                                                    <div class="sm:hidden absolute top-full left-0 right-0 mt-2 z-10">
+                                                        <div class="bg-white border border-gray-200 rounded-lg shadow-lg p-2 space-y-2">
+                                                            <div class="flex gap-2">
+                                                                <button
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        toggleInterestActive(interest);
+                                                                        setActiveInterestForActions(null);
+                                                                    }}
+                                                                    disabled={toggleInterestActiveMutation.isPending}
+                                                                    class={`flex-1 px-3 py-2 rounded text-sm font-medium ${(interest.active ?? false)
+                                                                        ? 'bg-red-100 text-red-700 hover:bg-red-200'
+                                                                        : 'bg-purple-100 text-purple-700 hover:bg-purple-200'
+                                                                        } ${toggleInterestActiveMutation.isPending ? 'opacity-50' : ''}`}
+                                                                >
+                                                                    {(interest.active ?? false) ? 'Deactivate' : 'Activate'}
+                                                                </button>
+                                                            </div>
+                                                            <Show when={interest.source === 'custom'}>
+                                                                <div class="flex gap-2">
+                                                                    <button
+                                                                        onClick={(e) => {
+                                                                            e.stopPropagation();
+                                                                            startEditingInterest(interest);
+                                                                            setActiveInterestForActions(null);
+                                                                        }}
+                                                                        class="px-3 py-2 bg-yellow-100 text-yellow-700 rounded text-sm font-medium hover:bg-yellow-200"
+                                                                    >
+                                                                        Edit
+                                                                    </button>
+                                                                    <button
+                                                                        onClick={(e) => {
+                                                                            e.stopPropagation();
+                                                                            deleteInterest(interest);
+                                                                            setActiveInterestForActions(null);
+                                                                        }}
+                                                                        class="px-3 py-2 bg-red-100 text-red-700 rounded text-sm font-medium hover:bg-red-200"
+                                                                    >
+                                                                        Delete
+                                                                    </button>
+                                                                </div>
+                                                            </Show>
+                                                        </div>
+                                                    </div>
+                                                </Show>
+                                            </Show>
                                         </div>
-                                        
-                                        {/* Mobile: Show action buttons below when active */}
-                                        <Show when={activeInterestForActions() === interest}>
-                                            <div class="sm:hidden absolute top-full left-0 right-0 mt-2 z-10">
-                                                <div class="bg-white border border-gray-200 rounded-lg shadow-lg p-2 flex gap-2">
+                                    }>
+                                        <div class="p-4 bg-gray-50 rounded-lg border-2 border-gray-300">
+                                            <div class="space-y-3">
+                                                <input
+                                                    type="text"
+                                                    value={editInterestName()}
+                                                    onInput={(e) => setEditInterestName(e.target.value)}
+                                                    placeholder="Interest name..."
+                                                    class="w-full px-3 py-2 border border-gray-300 rounded text-sm"
+                                                />
+                                                <textarea
+                                                    value={editInterestDescription()}
+                                                    onInput={(e) => setEditInterestDescription(e.target.value)}
+                                                    placeholder="Interest description..."
+                                                    rows={2}
+                                                    class="w-full px-3 py-2 border border-gray-300 rounded text-sm"
+                                                />
+                                                <div class="flex gap-2">
                                                     <button
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            toggleInterest(interest);
-                                                            setActiveInterestForActions(null);
-                                                        }}
-                                                        class={`flex-1 px-3 py-2 rounded text-sm font-medium ${selectedInterests().includes(interest)
-                                                            ? 'bg-red-100 text-red-700 hover:bg-red-200'
-                                                            : 'bg-purple-100 text-purple-700 hover:bg-purple-200'
-                                                        }`}
+                                                        onClick={saveEditedInterest}
+                                                        disabled={updateInterestMutation.isPending}
+                                                        class="px-3 py-2 bg-purple-600 text-white rounded text-sm hover:bg-purple-700 flex items-center gap-1 disabled:opacity-50"
                                                     >
-                                                        {selectedInterests().includes(interest) ? 'Remove' : 'Select'}
+                                                        <Save class="w-3 h-3" />
+                                                        {updateInterestMutation.isPending ? 'Saving...' : 'Save'}
                                                     </button>
                                                     <button
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            startEditingInterest(interest);
-                                                            setActiveInterestForActions(null);
+                                                        onClick={() => {
+                                                            setEditingInterest(null);
+                                                            setEditInterestName('');
+                                                            setEditInterestDescription('');
                                                         }}
-                                                        class="px-3 py-2 bg-yellow-100 text-yellow-700 rounded text-sm font-medium hover:bg-yellow-200"
+                                                        class="px-3 py-2 bg-gray-500 text-white rounded text-sm hover:bg-gray-600 flex items-center gap-1"
                                                     >
-                                                        Edit
-                                                    </button>
-                                                    <button
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            deleteInterest(interest);
-                                                            setActiveInterestForActions(null);
-                                                        }}
-                                                        class="px-3 py-2 bg-red-100 text-red-700 rounded text-sm font-medium hover:bg-red-200"
-                                                    >
-                                                        Delete
+                                                        <X class="w-3 h-3" />
+                                                        Cancel
                                                     </button>
                                                 </div>
                                             </div>
-                                        </Show>
-                                    </div>
-                                }>
-                                    <div class="p-4 bg-gray-50 rounded-lg border-2 border-gray-300">
-                                        <div class="flex items-center gap-2 mb-2">
-                                            <input
-                                                type="text"
-                                                value={editInterestValue()}
-                                                onInput={(e) => setEditInterestValue(e.target.value)}
-                                                onKeyPress={(e) => e.key === 'Enter' && saveEditedInterest()}
-                                                class="flex-1 px-2 py-1 border border-gray-300 rounded text-sm"
-                                            />
                                         </div>
-                                        <div class="flex gap-2">
-                                            <button
-                                                onClick={saveEditedInterest}
-                                                class="px-2 py-1 bg-green-600 text-white rounded text-xs hover:bg-green-700 flex items-center gap-1"
-                                            >
-                                                <Save class="w-3 h-3" />
-                                                Save
-                                            </button>
-                                            <button
-                                                onClick={() => {
-                                                    setEditingInterest(null);
-                                                    setEditInterestValue('');
-                                                }}
-                                                class="px-2 py-1 bg-gray-500 text-white rounded text-xs hover:bg-gray-600 flex items-center gap-1"
-                                            >
-                                                <X class="w-3 h-3" />
-                                                Cancel
-                                            </button>
-                                        </div>
-                                    </div>
-                                </Show>
-                            )}
-                        </For>
-                    </div>
-
-                    <div class="mt-6 pt-6 border-t border-gray-200">
-                        <h4 class="font-semibold text-gray-900 mb-3">Your Interests ({selectedInterests().length})</h4>
-                        <div class="flex flex-wrap gap-2">
-                            <For each={selectedInterests()}>
-                                {(interest) => (
-                                    <span class="inline-flex items-center gap-1 px-3 py-1 bg-purple-100 text-purple-800 rounded-full text-sm font-medium">
-                                        <Heart class="w-3 h-3 fill-current" />
-                                        {interest}
-                                    </span>
+                                    </Show>
                                 )}
                             </For>
                         </div>
-                    </div>
+
+                        <Show when={interests().length === 0}>
+                            <div class="text-center py-8">
+                                <p class="text-gray-500">No interests found. Create your first interest above!</p>
+                            </div>
+                        </Show>
+
+                        {/* Active Interests Summary */}
+                        <Show when={interests().length > 0}>
+                            <div class="mt-8 pt-6 border-t border-gray-200">
+                                <h4 class="font-semibold text-gray-900 mb-4">Active Interests ({activeInterests().length})</h4>
+                                <Show when={activeInterests().length === 0}>
+                                    <p class="text-gray-500 text-sm">No active interests. Activate some interests above to see them here.</p>
+                                </Show>
+                                <Show when={activeInterests().length > 0}>
+                                    <div class="flex flex-wrap gap-2">
+                                        <For each={activeInterests()}>
+                                            {(interest) => (
+                                                <span class={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium ${interest.source === 'global'
+                                                    ? 'bg-blue-100 text-blue-800'
+                                                    : 'bg-purple-100 text-purple-800'
+                                                    }`}>
+                                                    <Heart class="w-3 h-3 fill-current" />
+                                                    {interest.name}
+                                                </span>
+                                            )}
+                                        </For>
+                                    </div>
+                                </Show>
+                            </div>
+                        </Show>
                 </div>
             </div>
         </div>
@@ -1031,11 +1386,10 @@ export default function SettingsPage() {
         <div class="min-h-screen bg-gray-50">
             {/* Mobile-friendly notification */}
             <Show when={notification()}>
-                <div class={`fixed top-4 left-4 right-4 sm:left-auto sm:right-4 sm:w-96 z-50 p-4 rounded-lg shadow-lg border ${
-                    notification()?.type === 'success' 
-                        ? 'bg-green-50 dark:bg-green-900 text-green-800 dark:text-green-200 border-green-200 dark:border-green-700' 
-                        : 'bg-red-50 dark:bg-red-900 text-red-800 dark:text-red-200 border-red-200 dark:border-red-700'
-                } animate-in slide-in-from-top-2 duration-300`}>
+                <div class={`fixed top-4 left-4 right-4 sm:left-auto sm:right-4 sm:w-96 z-50 p-4 rounded-lg shadow-lg border ${notification()?.type === 'success'
+                    ? 'bg-green-50 dark:bg-green-900 text-green-800 dark:text-green-200 border-green-200 dark:border-green-700'
+                    : 'bg-red-50 dark:bg-red-900 text-red-800 dark:text-red-200 border-red-200 dark:border-red-700'
+                    } animate-in slide-in-from-top-2 duration-300`}>
                     <div class="flex items-center justify-between">
                         <span class="text-sm font-medium">{notification()?.message}</span>
                         <button
@@ -1047,7 +1401,7 @@ export default function SettingsPage() {
                     </div>
                 </div>
             </Show>
-            
+
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8">
                 <div class="flex flex-col lg:flex-row gap-4 lg:gap-8">
                     {/* Mobile Tab Navigation */}
