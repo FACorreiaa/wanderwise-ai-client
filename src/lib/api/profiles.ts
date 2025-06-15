@@ -144,6 +144,22 @@ export const useDeleteSearchProfileMutation = () => {
   }));
 };
 
+// Set a search profile as default
+export const useSetDefaultProfileMutation = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation(() => ({
+    mutationFn: (profileId: string) =>
+      apiRequest(`/user/search-profile/default/${profileId}`, {
+        method: 'PUT',
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.profiles });
+      queryClient.invalidateQueries({ queryKey: queryKeys.defaultProfile });
+    },
+  }));
+};
+
 // ==================
 // DOMAIN-SPECIFIC PREFERENCE MUTATIONS
 // ==================

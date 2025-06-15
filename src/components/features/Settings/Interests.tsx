@@ -1,5 +1,5 @@
 import { createSignal, For, Show } from 'solid-js';
-import { Plus, X, Edit3, Save, Trash2, Heart } from 'lucide-solid';
+import { Plus, X, Edit3, Save, Trash2, Heart, Power } from 'lucide-solid';
 import type { Interest } from '~/lib/api/types';
 
 interface InterestsUIProps {
@@ -214,11 +214,11 @@ export default function InterestsComponent(props: InterestsUIProps) {
                               props.onToggleActive(interest);
                             }}
                             disabled={props.isToggling}
-                            class={`w-10 h-5 rounded-full relative transition-colors duration-200 ${(interest.active ?? false) ? 'bg-purple-500' : 'bg-gray-300'
+                            class={`w-8 h-4 rounded-full relative transition-colors duration-200 ${(interest.active ?? false) ? 'bg-purple-500' : 'bg-gray-300'
                               } ${props.isToggling ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
                             title={`${(interest.active ?? false) ? 'Deactivate' : 'Activate'} interest`}
                           >
-                            <div class={`w-4 h-4 bg-white rounded-full absolute top-0.5 transition-transform duration-200 ${(interest.active ?? false) ? 'translate-x-5' : 'translate-x-0.5'
+                            <div class={`w-3 h-3 bg-white rounded-full absolute top-0.5 transition-transform duration-200 ${(interest.active ?? false) ? 'translate-x-4' : 'translate-x-0.5'
                               }`} />
                           </button>
                         </div>
@@ -249,20 +249,20 @@ export default function InterestsComponent(props: InterestsUIProps) {
                               e.stopPropagation();
                               startEditingInterest(interest);
                             }}
-                            class="w-6 h-6 bg-yellow-500 text-white rounded-full flex items-center justify-center hover:bg-yellow-600 text-xs"
+                            class="p-2 text-gray-400 hover:text-gray-600 rounded-lg"
                             title="Edit interest"
                           >
-                            <Edit3 class="w-3 h-3" />
+                            <Edit3 class="w-4 h-4" />
                           </button>
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
                               props.onDeleteInterest(interest);
                             }}
-                            class="w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 text-xs"
+                            class="p-2 text-red-400 hover:text-red-600 rounded-lg"
                             title="Delete interest"
                           >
-                            <Trash2 class="w-3 h-3" />
+                            <Trash2 class="w-4 h-4" />
                           </button>
                         </div>
                       </div>

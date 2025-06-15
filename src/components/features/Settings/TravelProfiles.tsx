@@ -1,10 +1,11 @@
 import { createSignal, createEffect, For, Show } from 'solid-js';
-import { Plus, Edit3, Trash2, Save, X, Check, MapPin, Clock, DollarSign, Zap, Settings, Users, UtensilsCrossed, Bed, Calendar, Activity } from 'lucide-solid';
+import { Plus, Edit3, Trash2, Save, X, Check, MapPin, Clock, DollarSign, Zap, Settings, Users, UtensilsCrossed, Bed, Calendar, Activity, Power } from 'lucide-solid';
 import { 
   useSearchProfiles, 
   useCreateSearchProfileMutation, 
   useUpdateSearchProfileMutation, 
-  useDeleteSearchProfileMutation
+  useDeleteSearchProfileMutation,
+  useSetDefaultProfileMutation
 } from '~/lib/api/profiles';
 import { useTags } from '~/lib/api/tags';
 import { useInterests } from '~/lib/api/interests';
@@ -22,6 +23,7 @@ export default function TravelProfiles(props: TravelProfilesProps) {
   const createProfileMutation = useCreateSearchProfileMutation();
   const updateProfileMutation = useUpdateSearchProfileMutation();
   const deleteProfileMutation = useDeleteSearchProfileMutation();
+  const setDefaultProfileMutation = useSetDefaultProfileMutation();
 
   const [editingProfile, setEditingProfile] = createSignal<string | null>(null);
   const [isCreating, setIsCreating] = createSignal(false);
@@ -275,6 +277,18 @@ export default function TravelProfiles(props: TravelProfilesProps) {
           type: 'error' 
         });
       }
+    }
+  };
+
+  const setDefaultProfile = async (profileId: string, profileName: string) => {
+    try {
+      await setDefaultProfileMutation.mutateAsync(profileId);
+      props.onNotification({ message: `"${profileName}" set as default profile!`, type: 'success' });
+    } catch (error) {
+      props.onNotification({ 
+        message: error?.message || 'Failed to set default profile', 
+        type: 'error' 
+      });
     }
   };
 
@@ -920,6 +934,14 @@ export default function TravelProfiles(props: TravelProfilesProps) {
                       </Show>
                     </div>
                     <div class="flex items-center gap-2 ml-4">
+                      <button
+                        onClick={() => setDefaultProfile(profile.id, profile.profile_name)}
+                        disabled={profile.is_default || setDefaultProfileMutation.isPending}
+                        class={`p-2 rounded-lg ${profile.is_default ? 'text-green-500' : 'text-gray-400 hover:text-gray-600'} ${setDefaultProfileMutation.isPending ? 'opacity-50 cursor-not-allowed' : ''}`}
+                        title={profile.is_default ? 'This is the default profile' : 'Set as default profile'}
+                      >
+                        <Power class="w-4 h-4" />
+                      </button>
                       <button
                         onClick={() => startEditing(profile)}
                         class="p-2 text-gray-400 hover:text-gray-600 rounded-lg"

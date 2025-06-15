@@ -4,6 +4,7 @@ import { TextField, TextFieldRoot } from "@/ui/textfield";
 import { createSignal, For, JSX } from 'solid-js';
 import { FiArrowRight } from 'solid-icons/fi';
 import { ImageRoot, ImageFallback, Image } from "@/ui/image";
+import { Route, Coffee, Bed, MapPin } from 'lucide-solid';
 
 interface HeroSuggestion {
     icon: JSX.Element;
@@ -19,6 +20,13 @@ interface HeroProps {
 
 export default function Hero(props: HeroProps) {
     const [searchQuery, setSearchQuery] = createSignal('');
+    const [selectedContext, setSelectedContext] = createSignal('traveling');
+
+    const contextOptions = [
+        { id: 'traveling', label: 'Traveling', icon: <MapPin class="w-4 h-4" />, description: 'Complete itineraries' },
+        { id: 'rest', label: 'Rest', icon: <Bed class="w-4 h-4" />, description: 'Hotels & accommodation' },
+        { id: 'food', label: 'Food', icon: <Coffee class="w-4 h-4" />, description: 'Restaurants & dining' }
+    ];
 
     return (
         <section class="w-full text-center py-12 sm:py-16 md:py-24 lg:py-32">
@@ -56,6 +64,51 @@ export default function Hero(props: HeroProps) {
                                 <FiArrowRight class="h-4 w-4 sm:h-5 sm:w-5 text-white" />
                             </Button>
                         </div>
+                    </div>
+                </div>
+
+                {/* Context Selection */}
+                <div class="max-w-2xl mx-auto mb-6 sm:mb-8">
+                    <p class="text-sm text-muted-foreground mb-4">What are you looking for?</p>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <For each={contextOptions}>
+                            {(option) => (
+                                <button
+                                    type="button"
+                                    onClick={() => setSelectedContext(option.id)}
+                                    class={`group relative p-4 rounded-xl border transition-all duration-200 hover:shadow-md ${
+                                        selectedContext() === option.id
+                                            ? 'border-blue-500 bg-blue-50 dark:bg-blue-950/20'
+                                            : 'border-border bg-background/60 backdrop-blur-sm hover:bg-accent'
+                                    }`}
+                                >
+                                    <div class="flex flex-col items-center text-center space-y-2">
+                                        <div class={`p-2 rounded-lg transition-colors ${
+                                            selectedContext() === option.id
+                                                ? 'bg-blue-500 text-white'
+                                                : 'bg-muted text-muted-foreground group-hover:bg-blue-500 group-hover:text-white'
+                                        }`}>
+                                            {option.icon}
+                                        </div>
+                                        <div>
+                                            <h3 class={`font-semibold text-sm ${
+                                                selectedContext() === option.id
+                                                    ? 'text-blue-700 dark:text-blue-300'
+                                                    : 'text-foreground'
+                                            }`}>
+                                                {option.label}
+                                            </h3>
+                                            <p class="text-xs text-muted-foreground mt-1">
+                                                {option.description}
+                                            </p>
+                                        </div>
+                                    </div>
+                                    {selectedContext() === option.id && (
+                                        <div class="absolute inset-0 rounded-xl ring-2 ring-blue-500/20 ring-offset-2 ring-offset-background"></div>
+                                    )}
+                                </button>
+                            )}
+                        </For>
                     </div>
                 </div>
 
