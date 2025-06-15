@@ -3,6 +3,7 @@ import CTA from '~/components/features/Home/CTA';
 import ContentGrid from '~/components/features/Home/ContentGrid';
 import Hero from '~/components/features/Home/Hero';
 import Stats from '~/components/features/Home/Stats';
+import MobileAppAnnouncement from '~/components/features/Home/MobileAppAnnouncement';
 import { Landmark, Utensils, Sparkles, Map } from 'lucide-solid';
 
 // Data for the WanderWiseAI landing page
@@ -73,6 +74,7 @@ const LandingPage: Component = () => {
             />
             <Stats badgeText={statsData.badgeText} items={statsData.items} />
             <ContentGrid items={contentData} />
+            <MobileAppAnnouncement />
             <CTA />
         </div>
     );

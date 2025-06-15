@@ -59,11 +59,9 @@ export const useUpdateTagMutation = () => {
         body: JSON.stringify(updateData),
       });
     },
-    onSuccess: (updatedTag) => {
-      // Update in tags list
-      queryClient.setQueryData(queryKeys.tags, (old: PersonalTag[] = []) =>
-        old.map(tag => tag.id === updatedTag.id ? updatedTag : tag)
-      );
+    onSuccess: () => {
+      // API returns response object, not updated tag, so refetch
+      queryClient.invalidateQueries({ queryKey: queryKeys.tags });
     },
   }));
 };
@@ -79,11 +77,9 @@ export const useToggleTagActiveMutation = () => {
         body: JSON.stringify({ active }),
       });
     },
-    onSuccess: (updatedTag) => {
-      // Update the specific tag in the cache
-      queryClient.setQueryData(queryKeys.tags, (old: PersonalTag[] = []) =>
-        old.map(tag => tag.id === updatedTag.id ? updatedTag : tag)
-      );
+    onSuccess: () => {
+      // API returns response object, not updated tag, so refetch
+      queryClient.invalidateQueries({ queryKey: queryKeys.tags });
     },
   }));
 };

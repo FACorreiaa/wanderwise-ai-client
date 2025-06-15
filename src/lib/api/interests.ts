@@ -51,7 +51,7 @@ export const useUpdateInterestMutation = () => {
       });
     },
     onSuccess: () => {
-      // Refetch all interests to get updated data
+      // API returns response object, not updated interest, so refetch
       queryClient.invalidateQueries({ queryKey: queryKeys.interests });
     },
   }));
@@ -68,7 +68,7 @@ export const useToggleInterestActiveMutation = () => {
       });
     },
     onSuccess: () => {
-      // Refetch all interests to get updated data
+      // API returns response object, not updated interest, so refetch
       queryClient.invalidateQueries({ queryKey: queryKeys.interests });
     },
   }));
@@ -80,9 +80,11 @@ export const useDeleteInterestMutation = () => {
   return useMutation(() => ({
     mutationFn: (interestId: string) =>
       apiRequest<{ message: string }>(`/user/interests/${interestId}`, { method: 'DELETE' }),
-    onSuccess: () => {
-      // Refetch all interests to get updated data
-      queryClient.invalidateQueries({ queryKey: queryKeys.interests });
+    onSuccess: (_, interestId) => {
+      // Remove from interests list
+      queryClient.setQueryData(queryKeys.interests, (old: Interest[] = []) =>
+        old.filter(interest => interest?.id !== interestId)
+      );
     },
   }));
 };
