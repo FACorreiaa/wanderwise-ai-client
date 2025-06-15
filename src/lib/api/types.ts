@@ -165,3 +165,99 @@ export interface Restaurant {
   features: string[];
   specialties: string[];
 }
+
+// Search Profile Types
+export interface SearchProfile {
+  id: string;
+  user_id: string;
+  profile_name: string;
+  is_default: boolean;
+  search_radius_km: number;
+  preferred_time: string;
+  budget_level: number;
+  preferred_pace: string;
+  prefer_accessible_pois: boolean;
+  prefer_outdoor_seating: boolean;
+  prefer_dog_friendly: boolean;
+  preferred_vibes: string[];
+  preferred_transport: string;
+  dietary_needs: string[];
+  interests: string[] | null;
+  tags: string[] | null;
+  user_latitude: number | null;
+  user_longitude: number | null;
+  created_at: string;
+  updated_at: string;
+}
+
+// Domain-specific preference types based on SEARCH_FILTERS_SUGGESTIONS.md
+export interface AccommodationPreferences {
+  accommodation_type: string[];
+  star_rating: { min: number; max: number };
+  price_range_per_night: { min: number; max: number };
+  amenities: string[];
+  room_type: string[];
+  chain_preference: string;
+  cancellation_policy: string[];
+  booking_flexibility: string;
+}
+
+export interface DiningPreferences {
+  cuisine_types: string[];
+  meal_types: string[];
+  service_style: string[];
+  price_range_per_person: { min: number; max: number };
+  dietary_needs: string[];
+  allergen_free: string[];
+  michelin_rated: boolean;
+  local_recommendations: boolean;
+  chain_vs_local: string;
+  organic_preference: boolean;
+  outdoor_seating_preferred: boolean;
+}
+
+export interface ActivityPreferences {
+  activity_categories: string[];
+  physical_activity_level: string;
+  indoor_outdoor_preference: string;
+  cultural_immersion_level: string;
+  must_see_vs_hidden_gems: string;
+  educational_preference: boolean;
+  photography_opportunities: boolean;
+  season_specific_activities: string[];
+  avoid_crowds: boolean;
+  local_events_interest: string[];
+}
+
+export interface ItineraryPreferences {
+  planning_style: string;
+  preferred_pace: string;
+  time_flexibility: string;
+  morning_vs_evening: string;
+  weekend_vs_weekday: string;
+  preferred_seasons: string[];
+  avoid_peak_season: boolean;
+  adventure_vs_relaxation: string;
+  spontaneous_vs_planned: string;
+}
+
+export interface TravelProfileFormData {
+  profile_name: string;
+  is_default: boolean;
+  search_radius_km: number;
+  preferred_time: string;
+  budget_level: number;
+  preferred_pace: string;
+  prefer_accessible_pois: boolean;
+  prefer_outdoor_seating: boolean;
+  prefer_dog_friendly: boolean;
+  preferred_vibes: string[];
+  preferred_transport: string;
+  dietary_needs: string[];
+  interests: string[];
+  tags: string[];
+  accommodation_preferences?: AccommodationPreferences;
+  dining_preferences?: DiningPreferences;
+  activity_preferences?: ActivityPreferences;
+  itinerary_preferences?: ItineraryPreferences;
+}

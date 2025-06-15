@@ -7,6 +7,7 @@ import { ProcessedProfileData, UserProfileResponse, PersonalTag, Interest } from
 import { useAuth } from '~/contexts/AuthContext';
 import TagsComponent from '@/components/features/Settings/Tags';
 import InterestsComponent from '@/components/features/Settings/Interests';
+import TravelProfiles from '@/components/features/Settings/TravelProfiles';
 
 export default function SettingsPage() {
     const { user } = useAuth();
@@ -149,28 +150,12 @@ export default function SettingsPage() {
     const [isUploading, setIsUploading] = createSignal(false);
 
 
-    const [travelProfiles, setTravelProfiles] = createSignal([
-        {
-            id: 1,
-            name: 'Solo Explorer',
-            description: 'Perfect for independent travel and self-discovery',
-            preferences: ['Museums', 'Cafes', 'Walking Tours', 'Photography'],
-            isActive: true
-        },
-        {
-            id: 2,
-            name: 'Foodie Adventure',
-            description: 'Focused on culinary experiences and local cuisine',
-            preferences: ['Restaurants', 'Food Markets', 'Cooking Classes', 'Wine Tasting'],
-            isActive: false
-        }
-    ]);
 
     const tabs = [
         { id: 'settings', label: 'Settings', icon: User },
         { id: 'tags', label: 'Tags', icon: Tag },
         { id: 'interests', label: 'Interests', icon: Heart },
-        { id: 'profiles', label: 'Profiles', icon: Users }
+        { id: 'profiles', label: 'Travel Profiles', icon: Users }
     ];
 
     // Get tags from API
@@ -179,15 +164,6 @@ export default function SettingsPage() {
     // Get interests from API
     const interests = () => interestsQuery.data || [];
 
-    const toggleProfile = (profileId: any) => {
-        setTravelProfiles(prev =>
-            prev.map(profile =>
-                profile.id === profileId
-                    ? { ...profile, isActive: !profile.isActive }
-                    : profile
-            )
-        );
-    };
 
     const updateProfile = (field: any, value: any) => {
         setUserProfile(prev => ({ ...prev, [field]: value }));
@@ -525,68 +501,12 @@ export default function SettingsPage() {
     };
 
     const renderProfiles = () => (
-        <div class="space-y-8">
-            <div>
-                <h2 class="text-2xl font-bold text-gray-900 mb-2">Travel Profiles</h2>
-                <p class="text-gray-600 mb-6">Create and manage different travel profiles for various types of trips. Each profile can have its own preferences and recommendations.</p>
-
-                <div class="space-y-4">
-                    <For each={travelProfiles()}>
-                        {(profile) => (
-                            <div class="bg-white rounded-lg border border-gray-200 p-6">
-                                <div class="flex items-start justify-between">
-                                    <div class="flex-1">
-                                        <div class="flex items-center gap-3 mb-2">
-                                            <h3 class="text-lg font-semibold text-gray-900">{profile.name}</h3>
-                                            <span class={`px-2 py-1 rounded-full text-xs font-medium ${profile.isActive
-                                                ? 'bg-green-100 text-green-800'
-                                                : 'bg-gray-100 text-gray-600'
-                                                }`}>
-                                                {profile.isActive ? 'Active' : 'Inactive'}
-                                            </span>
-                                        </div>
-                                        <p class="text-gray-600 mb-4">{profile.description}</p>
-                                        <div class="flex flex-wrap gap-2">
-                                            <For each={profile.preferences}>
-                                                {(pref) => (
-                                                    <span class="px-2 py-1 bg-gray-100 text-gray-700 rounded-md text-sm">
-                                                        {pref}
-                                                    </span>
-                                                )}
-                                            </For>
-                                        </div>
-                                    </div>
-                                    <div class="flex items-center gap-2 ml-4">
-                                        <button
-                                            onClick={() => toggleProfile(profile.id)}
-                                            class={`px-4 py-2 rounded-lg font-medium transition-colors ${profile.isActive
-                                                ? 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                                                : 'bg-blue-600 text-white hover:bg-blue-700'
-                                                }`}
-                                        >
-                                            {profile.isActive ? 'Deactivate' : 'Activate'}
-                                        </button>
-                                        <button class="p-2 text-gray-400 hover:text-gray-600 rounded-lg">
-                                            <Edit3 class="w-4 h-4" />
-                                        </button>
-                                        <button class="p-2 text-red-400 hover:text-red-600 rounded-lg">
-                                            <Trash2 class="w-4 h-4" />
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-                    </For>
-
-                    <button class="w-full p-6 border-2 border-dashed border-gray-300 rounded-lg hover:border-blue-400 hover:bg-blue-50 transition-colors group">
-                        <div class="flex items-center justify-center gap-2 text-gray-600 group-hover:text-blue-600">
-                            <Plus class="w-5 h-5" />
-                            <span class="font-medium">Create New Travel Profile</span>
-                        </div>
-                    </button>
-                </div>
-            </div>
-        </div>
+        <TravelProfiles 
+            onNotification={(notification) => {
+                setNotification(notification);
+                setTimeout(() => setNotification(null), 3000);
+            }}
+        />
     );
 
     const renderTabContent = () => {
