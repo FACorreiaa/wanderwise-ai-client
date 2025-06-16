@@ -56,12 +56,16 @@ export default function Hero(props: HeroProps) {
                                 placeholder={props.placeholder}
                                 value={searchQuery()}
                                 onInput={(e) => setSearchQuery(e.currentTarget.value)}
-                                class="w-full rounded-full py-4 sm:py-5 md:py-6 pl-12 sm:pl-16 pr-14 sm:pr-16 text-base sm:text-lg border border-border shadow-lg focus:shadow-xl transition-shadow bg-background/60 backdrop-blur-sm focus:bg-background focus:outline-none focus:ring-2 focus:ring-blue-500 text-foreground placeholder:text-muted-foreground"
+                                class="w-full rounded-full py-4 sm:py-5 md:py-6 pl-12 sm:pl-16 pr-14 sm:pr-16 text-base sm:text-lg border border-border shadow-lg focus:shadow-xl transition-shadow bg-background/60 backdrop-blur-sm focus:bg-background focus:outline-none focus:ring-2 focus:ring-primary text-foreground placeholder:text-muted-foreground
+                                       [&[data-theme='vt-news']]:bg-gray-800/80 [&[data-theme='vt-news']]:border-gray-600 [&[data-theme='vt-news']]:focus:ring-yellow-500
+                                       [&[data-theme='valuetainment']]:focus:ring-red-500"
                             />
                         </TextFieldRoot>
                         <div class="absolute inset-y-0 right-0 flex items-center pr-2 sm:pr-3">
-                            <Button type="submit" size="icon" class="rounded-full bg-blue-600 hover:bg-blue-700 h-9 w-9 sm:h-10 sm:w-10 transition-all hover:scale-105">
-                                <FiArrowRight class="h-4 w-4 sm:h-5 sm:w-5 text-white" />
+                            <Button type="submit" size="icon" class="rounded-full bg-primary hover:bg-primary/90 h-9 w-9 sm:h-10 sm:w-10 transition-all hover:scale-105
+                                                                     [&[data-theme='vt-news']]:bg-yellow-600 [&[data-theme='vt-news']]:hover:bg-yellow-700 [&[data-theme='vt-news']]:text-black
+                                                                     [&[data-theme='valuetainment']]:bg-red-600 [&[data-theme='valuetainment']]:hover:bg-red-700">
+                                <FiArrowRight class="h-4 w-4 sm:h-5 sm:w-5 text-primary-foreground" />
                             </Button>
                         </div>
                     </div>
@@ -78,22 +82,22 @@ export default function Hero(props: HeroProps) {
                                     onClick={() => setSelectedContext(option.id)}
                                     class={`group relative p-4 rounded-xl border transition-all duration-200 hover:shadow-md ${
                                         selectedContext() === option.id
-                                            ? 'border-blue-500 bg-blue-50 dark:bg-blue-950/20'
+                                            ? 'border-primary bg-primary/10 [&[data-theme="vt-news"]]:border-yellow-500 [&[data-theme="vt-news"]]:bg-yellow-500/10 [&[data-theme="valuetainment"]]:border-red-500 [&[data-theme="valuetainment"]]:bg-red-500/10'
                                             : 'border-border bg-background/60 backdrop-blur-sm hover:bg-accent'
                                     }`}
                                 >
                                     <div class="flex flex-col items-center text-center space-y-2">
                                         <div class={`p-2 rounded-lg transition-colors ${
                                             selectedContext() === option.id
-                                                ? 'bg-blue-500 text-white'
-                                                : 'bg-muted text-muted-foreground group-hover:bg-blue-500 group-hover:text-white'
+                                                ? 'bg-primary text-primary-foreground [&[data-theme="vt-news"]]:bg-yellow-500 [&[data-theme="vt-news"]]:text-black [&[data-theme="valuetainment"]]:bg-red-500'
+                                                : 'bg-muted text-muted-foreground group-hover:bg-primary group-hover:text-primary-foreground [&[data-theme="vt-news"]]:group-hover:bg-yellow-500 [&[data-theme="vt-news"]]:group-hover:text-black [&[data-theme="valuetainment"]]:group-hover:bg-red-500'
                                         }`}>
                                             {option.icon}
                                         </div>
                                         <div>
                                             <h3 class={`font-semibold text-sm ${
                                                 selectedContext() === option.id
-                                                    ? 'text-blue-700 dark:text-blue-300'
+                                                    ? 'text-primary [&[data-theme="vt-news"]]:text-yellow-600 [&[data-theme="valuetainment"]]:text-red-600'
                                                     : 'text-foreground'
                                             }`}>
                                                 {option.label}
@@ -104,7 +108,8 @@ export default function Hero(props: HeroProps) {
                                         </div>
                                     </div>
                                     {selectedContext() === option.id && (
-                                        <div class="absolute inset-0 rounded-xl ring-2 ring-blue-500/20 ring-offset-2 ring-offset-background"></div>
+                                        <div class="absolute inset-0 rounded-xl ring-2 ring-primary/20 ring-offset-2 ring-offset-background 
+                                                    [&[data-theme='vt-news']]:ring-yellow-500/20 [&[data-theme='valuetainment']]:ring-red-500/20"></div>
                                     )}
                                 </button>
                             )}

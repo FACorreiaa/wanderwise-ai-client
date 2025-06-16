@@ -65,7 +65,10 @@ const contentData = [
 
 const LandingPage: Component = () => {
     return (
-        <div class="min-h-screen bg-gradient-to-b from-blue-50 via-purple-50 to-white dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 transition-colors">
+        <div class="min-h-screen bg-gradient-to-b from-blue-50 via-purple-50 to-white dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 
+                   [&[data-theme='vt-news']]:from-gray-900 [&[data-theme='vt-news']]:via-gray-800 [&[data-theme='vt-news']]:to-gray-900
+                   [&[data-theme='valuetainment']]:from-gray-50 [&[data-theme='valuetainment']]:via-red-50 [&[data-theme='valuetainment']]:to-white
+                   transition-colors">
             <Hero
                 title={heroData.title}
                 subtitle={heroData.subtitle}

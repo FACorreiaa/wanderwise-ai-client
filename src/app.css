@@ -8,6 +8,35 @@
     line-height: 1.5;
   }
 
+  /* VT News Typography */
+  [data-theme="vt-news"] body {
+    font-family: 'Inter', 'Segoe UI', sans-serif;
+    font-weight: 400;
+  }
+
+  [data-theme="vt-news"] h1,
+  [data-theme="vt-news"] h2,
+  [data-theme="vt-news"] h3,
+  [data-theme="vt-news"] h4 {
+    font-weight: 600;
+    letter-spacing: -0.025em;
+  }
+
+  /* Valuetainment Typography */
+  [data-theme="valuetainment"] body {
+    font-family: 'Barlow', 'Arial', sans-serif;
+    font-weight: 400;
+  }
+
+  [data-theme="valuetainment"] h1,
+  [data-theme="valuetainment"] h2,
+  [data-theme="valuetainment"] h3,
+  [data-theme="valuetainment"] h4 {
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
   @media (min-width: 640px) {
     body {
       font-size: 16px;
@@ -30,49 +59,66 @@
     @apply px-4 sm:px-6 lg:px-8;
   }
 
-  /* Crunchbase-inspired styling */
-  .cb-primary {
-    color: #146AFF;
+  /* VT News inspired styling */
+  .vt-primary {
+    color: #1a1a1a;
   }
   
-  .cb-text-dark {
-    color: #282828;
+  .vt-accent {
+    color: #d4af37;
   }
   
-  .cb-text-medium {
+  .vt-text-light {
+    color: #888;
+  }
+  
+  .vt-card {
+    @apply rounded-xl shadow-sm border border-gray-800 bg-gray-900 text-white;
+  }
+  
+  .vt-button {
+    @apply rounded-lg font-medium transition-all duration-200 hover:shadow-lg;
+  }
+  
+  .vt-button-primary {
+    @apply bg-gray-800 text-white hover:bg-gray-700 border border-gray-700;
+  }
+  
+  .vt-gradient {
+    background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+  }
+
+  /* Valuetainment inspired styling */
+  .val-primary {
+    color: #ea2127;
+  }
+  
+  .val-text-dark {
+    color: #111111;
+  }
+  
+  .val-text-medium {
     color: #666;
   }
   
-  .cb-text-light {
-    color: #737373;
+  .val-card {
+    @apply rounded-lg shadow-md border border-gray-200 bg-white;
   }
   
-  .cb-accent-dark {
-    color: #183444;
+  .val-button {
+    @apply rounded-lg font-bold transition-all duration-200 hover:shadow-lg;
   }
   
-  .cb-card {
-    @apply rounded-2xl shadow-sm border border-gray-100 bg-white;
+  .val-button-primary {
+    @apply bg-red-600 text-white hover:bg-red-700;
   }
   
-  .cb-button {
-    @apply rounded-lg font-medium transition-all duration-200 hover:shadow-md;
+  .val-button-secondary {
+    @apply bg-gray-100 text-gray-900 hover:bg-gray-200 border border-gray-300;
   }
   
-  .cb-button-primary {
-    @apply bg-blue-600 text-white hover:bg-blue-700;
-  }
-  
-  .cb-button-secondary {
-    @apply bg-gray-100 text-gray-700 hover:bg-gray-200;
-  }
-  
-  .cb-gradient {
-    background: linear-gradient(135deg, #146AFF 0%, #183444 100%);
-  }
-  
-  .cb-gradient-subtle {
-    background: linear-gradient(135deg, #f8faff 0%, #f1f5f9 100%);
+  .val-gradient {
+    background: linear-gradient(135deg, #ea2127 0%, #c41e3a 100%);
   }
 
   :root {
@@ -105,6 +151,68 @@
     --ring: 240 10% 3.9%;
 
     --radius: 0.5rem;
+  }
+
+  /* VT News Theme */
+  [data-theme="vt-news"] {
+    --background: 215 28% 17%;
+    --foreground: 0 0% 98%;
+
+    --card: 215 28% 17%;
+    --card-foreground: 0 0% 98%;
+
+    --popover: 215 28% 17%;
+    --popover-foreground: 0 0% 98%;
+
+    --primary: 45 100% 51%;
+    --primary-foreground: 0 0% 9%;
+
+    --secondary: 215 13% 25%;
+    --secondary-foreground: 0 0% 98%;
+
+    --muted: 215 13% 25%;
+    --muted-foreground: 215 20% 65%;
+
+    --accent: 215 13% 25%;
+    --accent-foreground: 0 0% 98%;
+
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 215 13% 25%;
+    --input: 215 13% 25%;
+    --ring: 45 100% 51%;
+  }
+
+  /* Valuetainment Theme */
+  [data-theme="valuetainment"] {
+    --background: 0 0% 100%;
+    --foreground: 0 0% 7%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 7%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 7%;
+
+    --primary: 354 70% 54%;
+    --primary-foreground: 0 0% 98%;
+
+    --secondary: 0 0% 94%;
+    --secondary-foreground: 0 0% 7%;
+
+    --muted: 0 0% 94%;
+    --muted-foreground: 0 0% 40%;
+
+    --accent: 0 0% 94%;
+    --accent-foreground: 0 0% 7%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 0 0% 90%;
+    --input: 0 0% 90%;
+    --ring: 354 70% 54%;
   }
 
   .dark {

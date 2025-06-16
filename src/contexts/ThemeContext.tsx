@@ -1,9 +1,14 @@
 import { createContext, useContext, createSignal, createEffect, onMount, JSX } from 'solid-js';
 
+type DesignTheme = 'default' | 'vt-news' | 'valuetainment';
+type ColorTheme = 'light' | 'dark';
+
 interface ThemeContextType {
   isDark: () => boolean;
   toggleTheme: () => void;
-  setTheme: (theme: 'light' | 'dark') => void;
+  setTheme: (theme: ColorTheme) => void;
+  designTheme: () => DesignTheme;
+  setDesignTheme: (theme: DesignTheme) => void;
 }
 
 const ThemeContext = createContext<ThemeContextType>();
@@ -22,10 +27,12 @@ interface ThemeProviderProps {
 
 export const ThemeProvider = (props: ThemeProviderProps) => {
   const [isDark, setIsDark] = createSignal(false);
+  const [designTheme, setDesignThemeSignal] = createSignal<DesignTheme>('default');
 
   // Initialize theme from localStorage or system preference
   onMount(() => {
     const saved = localStorage.getItem('theme');
+    const savedDesignTheme = localStorage.getItem('designTheme') as DesignTheme || 'default';
     const systemPreference = window.matchMedia('(prefers-color-scheme: dark)').matches;
     
     if (saved === 'dark' || (!saved && systemPreference)) {
@@ -33,6 +40,8 @@ export const ThemeProvider = (props: ThemeProviderProps) => {
     } else if (saved === 'light') {
       setIsDark(false);
     }
+
+    setDesignThemeSignal(savedDesignTheme);
     
     // Listen for system theme changes
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
@@ -54,14 +63,22 @@ export const ThemeProvider = (props: ThemeProviderProps) => {
     const html = document.documentElement;
     const body = document.body;
     
+    // Clear existing theme classes
+    html.classList.remove('dark');
+    body.classList.remove('dark');
+    html.removeAttribute('data-theme');
+    
     if (isDark()) {
       html.classList.add('dark');
       body.classList.add('dark');
       html.setAttribute('data-kb-theme', 'dark');
     } else {
-      html.classList.remove('dark');
-      body.classList.remove('dark');
       html.setAttribute('data-kb-theme', 'light');
+    }
+
+    // Apply design theme
+    if (designTheme() !== 'default') {
+      html.setAttribute('data-theme', designTheme());
     }
   });
 
@@ -71,15 +88,22 @@ export const ThemeProvider = (props: ThemeProviderProps) => {
     localStorage.setItem('theme', newTheme ? 'dark' : 'light');
   };
 
-  const setTheme = (theme: 'light' | 'dark') => {
+  const setTheme = (theme: ColorTheme) => {
     setIsDark(theme === 'dark');
     localStorage.setItem('theme', theme);
+  };
+
+  const setDesignTheme = (theme: DesignTheme) => {
+    setDesignThemeSignal(theme);
+    localStorage.setItem('designTheme', theme);
   };
 
   const themeValue: ThemeContextType = {
     isDark,
     toggleTheme,
     setTheme,
+    designTheme,
+    setDesignTheme,
   };
 
   return (
