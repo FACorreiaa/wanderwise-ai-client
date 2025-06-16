@@ -1,7 +1,12 @@
 import { createSignal, createEffect, For, Show, onMount } from 'solid-js';
+import { useNavigate } from '@solidjs/router';
 import { MessageCircle, Send, Bot, User, MapPin, Clock, Star, Heart, Download, Share2, Copy, Trash2, Plus, Loader2, Sparkles, Globe, Calendar, Users } from 'lucide-solid';
+import { sendUnifiedChatMessageStream, detectDomain } from '~/lib/api/llm';
+import { streamingService, createStreamingSession, getDomainRoute } from '~/lib/streaming-service';
+import type { StreamingSession, DomainType, UnifiedChatResponse } from '~/lib/api/types';
 
 export default function ChatPage() {
+    const navigate = useNavigate();
     const [messages, setMessages] = createSignal([]);
     const [currentMessage, setCurrentMessage] = createSignal('');
     const [isLoading, setIsLoading] = createSignal(false);
@@ -11,6 +16,8 @@ export default function ChatPage() {
     const [generatedItinerary, setGeneratedItinerary] = createSignal(null);
     const [chatSessions, setChatSessions] = createSignal([]);
     const [selectedSession, setSelectedSession] = createSignal(null);
+    const [streamingSession, setStreamingSession] = createSignal(null);
+    const [streamProgress, setStreamProgress] = createSignal('');
 
     // Sample chat sessions
     const [sessions] = createSignal([
@@ -105,33 +112,110 @@ export default function ChatPage() {
         };
 
         setMessages(prev => [...prev, userMessage]);
+        const messageContent = currentMessage().trim();
         setCurrentMessage('');
         setIsLoading(true);
+        setStreamProgress('Analyzing your request...');
 
         try {
-            // Simulate API call
-            await new Promise(resolve => setTimeout(resolve, 2000));
+            // Detect domain from the message
+            const domain = detectDomain(messageContent);
+            console.log('Detected domain:', domain);
 
-            // Generate response based on message content
-            const response = generateResponse(userMessage.content);
-            
-            const assistantMessage = {
-                id: `msg-${Date.now()}-response`,
-                type: 'assistant',
-                content: response.text,
-                timestamp: new Date(),
-                hasItinerary: response.hasItinerary,
-                itinerary: response.itinerary
-            };
+            // Create streaming session
+            const session = createStreamingSession(domain);
+            setStreamingSession(session);
 
-            setMessages(prev => [...prev, assistantMessage]);
+            // Store session in localStorage for persistence
+            sessionStorage.setItem('currentStreamingSession', JSON.stringify(session));
 
-            if (response.hasItinerary) {
-                setGeneratedItinerary(response.itinerary);
+            // Start streaming request
+            const response = await sendUnifiedChatMessageStream({
+                profileId: '6ee5dc90-dd72-4dc8-b064-4ecbdd35d845', // TODO: Get from auth context
+                message: messageContent,
+                userLocation: {
+                    userLat: 38.7223, // Default Lisbon coords
+                    userLon: -9.1393
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
             }
+
+            // Set up streaming manager
+            streamingService.startStream(response, {
+                session,
+                onProgress: (updatedSession) => {
+                    setStreamingSession(updatedSession);
+
+                    // Update progress message based on domain and progress
+                    const domain = updatedSession.domain;
+                    if (updatedSession.data.general_city_data) {
+                        setStreamProgress(`Found information about ${updatedSession.data.general_city_data.city}...`);
+                    } else if (domain === 'accommodation') {
+                        setStreamProgress('Finding hotels...');
+                    } else if (domain === 'dining') {
+                        setStreamProgress('Searching restaurants...');
+                    } else if (domain === 'activities') {
+                        setStreamProgress('Discovering activities...');
+                    } else {
+                        setStreamProgress('Creating your itinerary...');
+                    }
+
+                    // Update session storage
+                    sessionStorage.setItem('currentStreamingSession', JSON.stringify(updatedSession));
+                },
+                onComplete: (completedSession) => {
+                    setStreamingSession(completedSession);
+                    setIsLoading(false);
+                    setStreamProgress('');
+
+                    // Add assistant message
+                    const assistantMessage = {
+                        id: `msg-${Date.now()}-response`,
+                        type: 'assistant',
+                        content: getCompletionMessage(completedSession.domain, completedSession.city),
+                        timestamp: new Date(),
+                        hasItinerary: true,
+                        streamingData: completedSession.data
+                    };
+
+                    setMessages(prev => [...prev, assistantMessage]);
+
+                    // Store completed session
+                    sessionStorage.setItem('completedStreamingSession', JSON.stringify(completedSession));
+
+                    // Navigate to appropriate page after a short delay
+                    setTimeout(() => {
+                        const route = getDomainRoute(completedSession.domain);
+                        navigate(route, { state: { streamingData: completedSession.data, fromChat: true } });
+                    }, 2000);
+                },
+                onError: (error) => {
+                    console.error('Streaming error:', error);
+                    setIsLoading(false);
+                    setStreamProgress('');
+
+                    const errorMessage = {
+                        id: `msg-${Date.now()}-error`,
+                        type: 'error',
+                        content: `Sorry, there was an error processing your request: ${error}`,
+                        timestamp: new Date()
+                    };
+                    setMessages(prev => [...prev, errorMessage]);
+                },
+                onRedirect: (domain, data) => {
+                    // This will be called when streaming completes
+                    console.log('Streaming complete, redirecting to:', domain, data);
+                }
+            });
 
         } catch (error) {
             console.error('Error sending message:', error);
+            setIsLoading(false);
+            setStreamProgress('');
+
             const errorMessage = {
                 id: `msg-${Date.now()}-error`,
                 type: 'error',
@@ -139,14 +223,29 @@ export default function ChatPage() {
                 timestamp: new Date()
             };
             setMessages(prev => [...prev, errorMessage]);
-        } finally {
-            setIsLoading(false);
+        }
+    };
+
+    const getCompletionMessage = (domain: DomainType, city?: string) => {
+        const cityText = city ? `for ${city}` : '';
+
+        switch (domain) {
+            case 'accommodation':
+                return `Great! I've found some excellent hotel options ${cityText}. Click below to view all recommendations and book your stay.`;
+            case 'dining':
+                return `Perfect! I've discovered amazing restaurants ${cityText} that match your preferences. Explore the full list to find your next dining experience.`;
+            case 'activities':
+                return `Wonderful! I've curated exciting activities and attractions ${cityText}. Check out all the options to plan your perfect day.`;
+            case 'itinerary':
+            case 'general':
+            default:
+                return `Excellent! I've created a personalized itinerary ${cityText} based on your preferences. View the complete plan with all the details, maps, and recommendations.`;
         }
     };
 
     const generateResponse = (userInput) => {
         const input = userInput.toLowerCase();
-        
+
         if (input.includes('porto') || input.includes('portugal')) {
             return {
                 text: `Great choice! Porto is a fantastic destination. Based on your "${activeProfile()}" profile, I've created a personalized itinerary focusing on cultural experiences and local favorites.\n\nHere's what I recommend for your Porto adventure:`,
@@ -187,14 +286,14 @@ export default function ChatPage() {
                 }
             };
         }
-        
+
         if (input.includes('food') || input.includes('restaurant') || input.includes('eat')) {
             return {
                 text: `I love helping food enthusiasts! Based on your preferences, here are some amazing culinary experiences I recommend. These places offer authentic local flavors and memorable dining experiences.\n\nWould you like me to create a detailed food tour itinerary for any specific city?`,
                 hasItinerary: false
             };
         }
-        
+
         if (input.includes('family') || input.includes('kids') || input.includes('children')) {
             return {
                 text: `Perfect! Family travel requires special considerations. I'll focus on kid-friendly activities, accessible locations, and places that keep everyone entertained.\n\nWhich destination are you considering for your family trip? I can create an itinerary with activities suitable for all ages.`,
@@ -284,80 +383,224 @@ export default function ChatPage() {
                     <Bot class="w-4 h-4 text-white" />
                 </div>
             )}
-            
+
             <div class={`max-w-[70%] ${message.type === 'user' ? 'order-1' : ''}`}>
-                <div class={`rounded-2xl px-4 py-3 ${
-                    message.type === 'user' 
-                        ? 'bg-blue-600 text-white' 
+                <div class={`rounded-2xl px-4 py-3 ${message.type === 'user'
+                        ? 'bg-blue-600 text-white'
                         : message.type === 'error'
-                        ? 'bg-red-50 text-red-800 border border-red-200'
-                        : 'bg-gray-100 text-gray-800'
-                }`}>
+                            ? 'bg-red-50 text-red-800 border border-red-200'
+                            : 'bg-gray-100 text-gray-800'
+                    }`}>
                     <p class="text-sm whitespace-pre-wrap">{message.content}</p>
                 </div>
-                
-                {/* Itinerary preview */}
-                <Show when={message.hasItinerary && message.itinerary}>
+
+                {/* Streaming data preview */}
+                <Show when={message.hasItinerary && (message.itinerary || message.streamingData)}>
                     <div class="mt-3 bg-white border border-gray-200 rounded-lg p-4">
-                        <div class="flex items-center justify-between mb-3">
+                        <Show when={message.streamingData} fallback={
+                            // Legacy itinerary display
                             <div>
-                                <h4 class="font-semibold text-gray-900">{message.itinerary.title}</h4>
-                                <p class="text-sm text-gray-600">{message.itinerary.duration} • {message.itinerary.places.length} places</p>
+                                <div class="flex items-center justify-between mb-3">
+                                    <div>
+                                        <h4 class="font-semibold text-gray-900">{message.itinerary?.title}</h4>
+                                        <p class="text-sm text-gray-600">{message.itinerary?.duration} • {message.itinerary?.places?.length} places</p>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <button
+                                            onClick={saveItinerary}
+                                            class="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg"
+                                            title="Save itinerary"
+                                        >
+                                            <Heart class="w-4 h-4" />
+                                        </button>
+                                        <button
+                                            onClick={shareItinerary}
+                                            class="p-2 text-gray-600 hover:text-green-600 hover:bg-green-50 rounded-lg"
+                                            title="Share itinerary"
+                                        >
+                                            <Share2 class="w-4 h-4" />
+                                        </button>
+                                        <button
+                                            onClick={downloadItinerary}
+                                            class="p-2 text-gray-600 hover:text-purple-600 hover:bg-purple-50 rounded-lg"
+                                            title="Download itinerary"
+                                        >
+                                            <Download class="w-4 h-4" />
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div class="space-y-2">
+                                    <For each={message.itinerary?.places?.slice(0, 3)}>
+                                        {(place) => (
+                                            <div class="flex items-center gap-3 p-2 bg-gray-50 rounded-lg">
+                                                <div class={`w-6 h-6 rounded-full ${place.priority === 1 ? 'bg-red-500' : 'bg-blue-500'} flex items-center justify-center text-white text-xs`}>
+                                                    {place.priority}
+                                                </div>
+                                                <div class="flex-1 min-w-0">
+                                                    <p class="text-sm font-medium text-gray-900 truncate">{place.name}</p>
+                                                    <p class="text-xs text-gray-500">{place.category} • {place.timeToSpend}</p>
+                                                </div>
+                                                <div class="flex items-center gap-1 text-xs text-gray-500">
+                                                    <Star class="w-3 h-3 text-yellow-500 fill-current" />
+                                                    <span>{place.rating}</span>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </For>
+
+                                    <Show when={message.itinerary?.places?.length > 3}>
+                                        <p class="text-xs text-gray-500 text-center py-2">
+                                            +{message.itinerary.places.length - 3} more places
+                                        </p>
+                                    </Show>
+                                </div>
+
+                                <button class="w-full mt-3 cb-button cb-button-primary py-2 text-sm">
+                                    View Full Itinerary
+                                </button>
                             </div>
-                            <div class="flex items-center gap-2">
-                                <button
-                                    onClick={saveItinerary}
-                                    class="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg"
-                                    title="Save itinerary"
-                                >
-                                    <Heart class="w-4 h-4" />
-                                </button>
-                                <button
-                                    onClick={shareItinerary}
-                                    class="p-2 text-gray-600 hover:text-green-600 hover:bg-green-50 rounded-lg"
-                                    title="Share itinerary"
-                                >
-                                    <Share2 class="w-4 h-4" />
-                                </button>
-                                <button
-                                    onClick={downloadItinerary}
-                                    class="p-2 text-gray-600 hover:text-purple-600 hover:bg-purple-50 rounded-lg"
-                                    title="Download itinerary"
-                                >
-                                    <Download class="w-4 h-4" />
-                                </button>
-                            </div>
-                        </div>
-                        
-                        <div class="space-y-2">
-                            <For each={message.itinerary.places.slice(0, 3)}>
-                                {(place) => (
-                                    <div class="flex items-center gap-3 p-2 bg-gray-50 rounded-lg">
-                                        <div class={`w-6 h-6 rounded-full ${place.priority === 1 ? 'bg-red-500' : 'bg-blue-500'} flex items-center justify-center text-white text-xs`}>
-                                            {place.priority}
+                        }>
+                            {/* New streaming data display */}
+                            <div>
+                                <Show when={message.streamingData.general_city_data}>
+                                    <div class="flex items-center justify-between mb-3">
+                                        <div>
+                                            <h4 class="font-semibold text-gray-900">
+                                                {message.streamingData.itinerary_response?.itinerary_name || `${message.streamingData.general_city_data.city} Guide`}
+                                            </h4>
+                                            <p class="text-sm text-gray-600">
+                                                {message.streamingData.general_city_data.city}, {message.streamingData.general_city_data.country}
+                                                {message.streamingData.points_of_interest && ` • ${message.streamingData.points_of_interest.length} places`}
+                                            </p>
                                         </div>
-                                        <div class="flex-1 min-w-0">
-                                            <p class="text-sm font-medium text-gray-900 truncate">{place.name}</p>
-                                            <p class="text-xs text-gray-500">{place.category} • {place.timeToSpend}</p>
-                                        </div>
-                                        <div class="flex items-center gap-1 text-xs text-gray-500">
-                                            <Star class="w-3 h-3 text-yellow-500 fill-current" />
-                                            <span>{place.rating}</span>
+                                        <div class="flex items-center gap-2">
+                                            <button class="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg" title="Save">
+                                                <Heart class="w-4 h-4" />
+                                            </button>
+                                            <button class="p-2 text-gray-600 hover:text-green-600 hover:bg-green-50 rounded-lg" title="Share">
+                                                <Share2 class="w-4 h-4" />
+                                            </button>
                                         </div>
                                     </div>
-                                )}
-                            </For>
-                            
-                            <Show when={message.itinerary.places.length > 3}>
-                                <p class="text-xs text-gray-500 text-center py-2">
-                                    +{message.itinerary.places.length - 3} more places
-                                </p>
-                            </Show>
-                        </div>
-                        
-                        <button class="w-full mt-3 cb-button cb-button-primary py-2 text-sm">
-                            View Full Itinerary
-                        </button>
+
+                                    {/* Preview of POIs */}
+                                    <Show when={message.streamingData.points_of_interest || message.streamingData.itinerary_response?.points_of_interest}>
+                                        <div class="space-y-2 mb-3">
+                                            <For each={(message.streamingData.itinerary_response?.points_of_interest || message.streamingData.points_of_interest)?.slice(0, 3)}>
+                                                {(poi) => (
+                                                    <div class="flex items-center gap-3 p-2 bg-gray-50 rounded-lg">
+                                                        <div class="w-6 h-6 rounded-full bg-blue-500 flex items-center justify-center text-white text-xs">
+                                                            <MapPin class="w-3 h-3" />
+                                                        </div>
+                                                        <div class="flex-1 min-w-0">
+                                                            <p class="text-sm font-medium text-gray-900 truncate">{poi.name}</p>
+                                                            <p class="text-xs text-gray-500">{poi.category}</p>
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </For>
+
+                                            <Show when={(message.streamingData.itinerary_response?.points_of_interest || message.streamingData.points_of_interest)?.length > 3}>
+                                                <p class="text-xs text-gray-500 text-center py-2">
+                                                    +{(message.streamingData.itinerary_response?.points_of_interest || message.streamingData.points_of_interest).length - 3} more places
+                                                </p>
+                                            </Show>
+                                        </div>
+                                    </Show>
+                                </Show>
+
+                                {/* Domain-specific previews */}
+                                <Show when={message.streamingData.hotels}>
+                                    <div class="mb-3">
+                                        <h4 class="font-semibold text-gray-900 mb-2">Hotel Recommendations</h4>
+                                        <div class="space-y-2">
+                                            <For each={message.streamingData.hotels.slice(0, 3)}>
+                                                {(hotel) => (
+                                                    <div class="flex items-center gap-3 p-2 bg-gray-50 rounded-lg">
+                                                        <div class="w-6 h-6 rounded-full bg-purple-500 flex items-center justify-center text-white text-xs">
+                                                            🏨
+                                                        </div>
+                                                        <div class="flex-1 min-w-0">
+                                                            <p class="text-sm font-medium text-gray-900 truncate">{hotel.name}</p>
+                                                            <p class="text-xs text-gray-500">{hotel.category} • {hotel.price_range}</p>
+                                                        </div>
+                                                        <div class="flex items-center gap-1 text-xs text-gray-500">
+                                                            <Star class="w-3 h-3 text-yellow-500 fill-current" />
+                                                            <span>{hotel.rating}</span>
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </For>
+                                        </div>
+                                    </div>
+                                </Show>
+
+                                <Show when={message.streamingData.restaurants}>
+                                    <div class="mb-3">
+                                        <h4 class="font-semibold text-gray-900 mb-2">Restaurant Recommendations</h4>
+                                        <div class="space-y-2">
+                                            <For each={message.streamingData.restaurants.slice(0, 3)}>
+                                                {(restaurant) => (
+                                                    <div class="flex items-center gap-3 p-2 bg-gray-50 rounded-lg">
+                                                        <div class="w-6 h-6 rounded-full bg-orange-500 flex items-center justify-center text-white text-xs">
+                                                            🍽️
+                                                        </div>
+                                                        <div class="flex-1 min-w-0">
+                                                            <p class="text-sm font-medium text-gray-900 truncate">{restaurant.name}</p>
+                                                            <p class="text-xs text-gray-500">{restaurant.cuisine_type} • {restaurant.price_range}</p>
+                                                        </div>
+                                                        <div class="flex items-center gap-1 text-xs text-gray-500">
+                                                            <Star class="w-3 h-3 text-yellow-500 fill-current" />
+                                                            <span>{restaurant.rating}</span>
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </For>
+                                        </div>
+                                    </div>
+                                </Show>
+
+                                <Show when={message.streamingData.activities}>
+                                    <div class="mb-3">
+                                        <h4 class="font-semibold text-gray-900 mb-2">Activity Recommendations</h4>
+                                        <div class="space-y-2">
+                                            <For each={message.streamingData.activities.slice(0, 3)}>
+                                                {(activity) => (
+                                                    <div class="flex items-center gap-3 p-2 bg-gray-50 rounded-lg">
+                                                        <div class="w-6 h-6 rounded-full bg-green-500 flex items-center justify-center text-white text-xs">
+                                                            🎯
+                                                        </div>
+                                                        <div class="flex-1 min-w-0">
+                                                            <p class="text-sm font-medium text-gray-900 truncate">{activity.name}</p>
+                                                            <p class="text-xs text-gray-500">{activity.category} • {activity.budget}</p>
+                                                        </div>
+                                                        <div class="flex items-center gap-1 text-xs text-gray-500">
+                                                            <Star class="w-3 h-3 text-yellow-500 fill-current" />
+                                                            <span>{activity.rating}</span>
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </For>
+                                        </div>
+                                    </div>
+                                </Show>
+
+                                <button
+                                    class="w-full mt-3 cb-button cb-button-primary py-2 text-sm"
+                                    onClick={() => {
+                                        // Navigate to appropriate page with streaming data
+                                        const session = JSON.parse(sessionStorage.getItem('completedStreamingSession') || '{}');
+                                        if (session.data) {
+                                            const route = getDomainRoute(session.domain);
+                                            navigate(route, { state: { streamingData: session.data, fromChat: true } });
+                                        }
+                                    }}
+                                >
+                                    View Full Results →
+                                </button>
+                            </div>
+                        </Show>
                     </div>
                 </Show>
 
@@ -415,9 +658,8 @@ export default function ChatPage() {
                                                 setActiveProfile(profile.name);
                                                 setShowProfileSelector(false);
                                             }}
-                                            class={`w-full flex items-center gap-3 p-3 hover:bg-gray-50 transition-colors first:rounded-t-lg last:rounded-b-lg ${
-                                                activeProfile() === profile.name ? 'bg-blue-50 text-blue-700' : 'text-gray-700'
-                                            }`}
+                                            class={`w-full flex items-center gap-3 p-3 hover:bg-gray-50 transition-colors first:rounded-t-lg last:rounded-b-lg ${activeProfile() === profile.name ? 'bg-blue-50 text-blue-700' : 'text-gray-700'
+                                                }`}
                                         >
                                             <span class="text-lg">{profile.icon}</span>
                                             <div class="flex-1 text-left">
@@ -441,9 +683,8 @@ export default function ChatPage() {
                                 {(session) => (
                                     <button
                                         onClick={() => loadSession(session)}
-                                        class={`w-full text-left p-3 rounded-lg hover:bg-gray-100 transition-colors ${
-                                            selectedSession()?.id === session.id ? 'bg-blue-50 border border-blue-200' : 'border border-transparent'
-                                        }`}
+                                        class={`w-full text-left p-3 rounded-lg hover:bg-gray-100 transition-colors ${selectedSession()?.id === session.id ? 'bg-blue-50 border border-blue-200' : 'border border-transparent'
+                                            }`}
                                     >
                                         <div class="flex items-start justify-between mb-1">
                                             <h4 class="text-sm font-medium text-gray-900 truncate">{session.title}</h4>
@@ -478,7 +719,7 @@ export default function ChatPage() {
                                 <p class="text-sm text-gray-600">Get personalized travel recommendations</p>
                             </div>
                         </div>
-                        
+
                         <div class="flex items-center gap-2">
                             <span class="text-xs text-gray-500">Using:</span>
                             <span class="text-xs font-medium text-blue-600">{activeProfile()}</span>
@@ -492,17 +733,41 @@ export default function ChatPage() {
                         {(message) => renderMessage(message)}
                     </For>
 
-                    {/* Loading indicator */}
+                    {/* Loading indicator with streaming progress */}
                     <Show when={isLoading()}>
                         <div class="flex gap-3 justify-start">
                             <div class="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center flex-shrink-0">
                                 <Bot class="w-4 h-4 text-white" />
                             </div>
-                            <div class="bg-gray-100 rounded-2xl px-4 py-3">
-                                <div class="flex items-center gap-2 text-gray-600">
+                            <div class="bg-gray-100 rounded-2xl px-4 py-3 max-w-md">
+                                <div class="flex items-center gap-2 text-gray-600 mb-2">
                                     <Loader2 class="w-4 h-4 animate-spin" />
-                                    <span class="text-sm">Thinking...</span>
+                                    <span class="text-sm">
+                                        {streamProgress() || 'Processing your request...'}
+                                    </span>
                                 </div>
+
+                                {/* Streaming session progress */}
+                                <Show when={streamingSession()}>
+                                    <div class="text-xs text-gray-500 space-y-1">
+                                        <div class="flex items-center gap-2">
+                                            <span class="inline-block w-2 h-2 bg-blue-500 rounded-full"></span>
+                                            <span>Domain: {streamingSession()?.domain}</span>
+                                        </div>
+                                        <Show when={streamingSession()?.city}>
+                                            <div class="flex items-center gap-2">
+                                                <MapPin class="w-3 h-3" />
+                                                <span>City: {streamingSession()?.city}</span>
+                                            </div>
+                                        </Show>
+                                        <Show when={streamingSession()?.sessionId}>
+                                            <div class="flex items-center gap-2">
+                                                <span class="inline-block w-2 h-2 bg-green-500 rounded-full"></span>
+                                                <span>Session: Active</span>
+                                            </div>
+                                        </Show>
+                                    </div>
+                                </Show>
                             </div>
                         </div>
                     </Show>

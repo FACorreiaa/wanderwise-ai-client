@@ -1,16 +1,21 @@
 import { createSignal, createEffect, For, Show, onMount } from 'solid-js';
+import { useLocation } from '@solidjs/router';
 import mapboxgl from 'mapbox-gl';
 import { MapPin, Clock, Star, Filter, Heart, Share2, Download, Edit3, Plus, X, Navigation, Calendar, Users, DollarSign, Camera, Coffee, Utensils, Building, TreePine, ShoppingBag, Loader2, MessageCircle, Send } from 'lucide-solid';
 import MapComponent from '~/components/features/Map/Map';
 import { useItineraries, useItinerary, useUpdateItineraryMutation, useSaveItineraryMutation } from '~/lib/api/itineraries';
+import type { AiCityResponse, POIDetail } from '~/lib/api/types';
 
 export default function ItineraryResultsPage() {
+    const location = useLocation();
     const [map, setMap] = createSignal(null);
     const [selectedPOI, setSelectedPOI] = createSignal(null);
     const [showFilters, setShowFilters] = createSignal(false);
     const [viewMode, setViewMode] = createSignal('split'); // 'map', 'list', 'split'
     const [myTrip, setMyTrip] = createSignal([]); // Track selected POIs for the trip
     const [currentItineraryId, setCurrentItineraryId] = createSignal(null);
+    const [streamingData, setStreamingData] = createSignal(null);
+    const [fromChat, setFromChat] = createSignal(false);
 
     // Chat functionality
     const [showChat, setShowChat] = createSignal(false);
@@ -25,20 +30,67 @@ export default function ItineraryResultsPage() {
     const updateItineraryMutation = useUpdateItineraryMutation();
     const saveItineraryMutation = useSaveItineraryMutation();
 
-    // Filter states
+    // Filter states - more inclusive when we have streaming data
     const [activeFilters, setActiveFilters] = createSignal({
-        categories: ['Historic Sites', 'Local Cuisine', 'Museums', 'Architecture'],
+        categories: [], // Start with empty categories to show all streaming POIs
         timeToSpend: [],
         budget: [],
         accessibility: [],
         dogFriendly: true
     });
 
-    // Get current itinerary data from API or fallback
+    // Initialize with streaming data on mount
+    onMount(() => {
+        // Check for streaming data from route state
+        if (location.state?.streamingData) {
+            setStreamingData(location.state.streamingData);
+            setFromChat(true);
+            console.log('Received streaming data from chat:', location.state.streamingData);
+            console.log('Points of interest:', location.state.streamingData.points_of_interest);
+            console.log('Itinerary POIs:', location.state.streamingData.itinerary_response?.points_of_interest);
+        } else {
+            // Try to get data from session storage
+            const storedSession = sessionStorage.getItem('completedStreamingSession');
+            if (storedSession) {
+                try {
+                    const session = JSON.parse(storedSession);
+                    if (session.data) {
+                        setStreamingData(session.data);
+                        setFromChat(true);
+                        console.log('Loaded streaming data from session storage:', session.data);
+                        console.log('Points of interest:', session.data.points_of_interest);
+                        console.log('Itinerary POIs:', session.data.itinerary_response?.points_of_interest);
+                    }
+                } catch (error) {
+                    console.error('Error parsing stored session:', error);
+                }
+            }
+        }
+    });
+
+    // Get current itinerary data from streaming data, API, or fallback
     const itinerary = () => {
+        const streaming = streamingData();
+        
+        if (streaming && streaming.general_city_data) {
+            // Map streaming data to itinerary format
+            return {
+                name: streaming.itinerary_response?.itinerary_name || `${streaming.general_city_data.city} Adventure`,
+                description: streaming.itinerary_response?.overall_description || streaming.general_city_data.description,
+                city: streaming.general_city_data.city,
+                country: streaming.general_city_data.country,
+                duration: "Personalized", // TODO: Extract from data
+                centerLat: streaming.general_city_data.center_latitude,
+                centerLng: streaming.general_city_data.center_longitude,
+                pois: [],
+                streamingData: streaming
+            };
+        }
+        
         if (itineraryQuery.data) {
             return itineraryQuery.data;
         }
+        
         // Fallback data for demo
         return {
             name: "Porto's Charms: Sightseeing & Local Delights (Dog-Friendly)",
@@ -52,9 +104,139 @@ export default function ItineraryResultsPage() {
         };
     };
 
-    const pointsOfInterest = () => {
+    // Convert streaming POI data to itinerary format
+    const convertPOIToItineraryFormat = (poi: POIDetail) => {
+        // Infer time to spend based on category
+        const getTimeToSpend = (category: string) => {
+            const lowerCategory = category.toLowerCase();
+            if (lowerCategory.includes('museum') || lowerCategory.includes('palace')) return '2-3 hours';
+            if (lowerCategory.includes('market') || lowerCategory.includes('restaurant')) return '1-2 hours';
+            if (lowerCategory.includes('viewpoint') || lowerCategory.includes('plaza')) return '30-60 minutes';
+            if (lowerCategory.includes('park') || lowerCategory.includes('garden')) return '1-2 hours';
+            return '1-2 hours'; // Default
+        };
+
+        // Infer budget based on category
+        const getBudget = (category: string) => {
+            const lowerCategory = category.toLowerCase();
+            if (lowerCategory.includes('free') || lowerCategory.includes('park') || lowerCategory.includes('plaza')) return 'Free';
+            if (lowerCategory.includes('museum') || lowerCategory.includes('palace')) return '€€';
+            if (lowerCategory.includes('restaurant') || lowerCategory.includes('market')) return '€€€';
+            return '€€'; // Default
+        };
+
+        // Generate a reasonable rating based on category
+        const getRating = (category: string) => {
+            // Most tourist attractions have good ratings
+            return 4.2 + (Math.random() * 0.6); // Random between 4.2 and 4.8
+        };
+
+        return {
+            id: poi.id || `poi-${Math.random().toString(36).substr(2, 9)}`,
+            name: poi.name || 'Unknown Location',
+            category: poi.category || 'Attraction',
+            description: poi.description_poi || 'No description available',
+            latitude: poi.latitude,
+            longitude: poi.longitude,
+            timeToSpend: getTimeToSpend(poi.category || ''),
+            budget: getBudget(poi.category || ''),
+            rating: Number(getRating(poi.category || '').toFixed(1)),
+            tags: [poi.category || 'Attraction'],
+            priority: 1,
+            dogFriendly: true, // Default to true
+            address: poi.address || 'Address not available',
+            website: poi.website || '',
+            openingHours: poi.opening_hours || 'Hours not available'
+        };
+    };
+
+    // POIs for the MAP - these should be the curated itinerary POIs
+    const mapPointsOfInterest = () => {
+        const streaming = streamingData();
+        
+        console.log('=== MAP POIs DEBUG ===');
+        console.log('Streaming data:', streaming);
+        
+        if (streaming) {
+            // Use ITINERARY POIs for the map (these are the curated selection)
+            const itineraryPois = streaming.itinerary_response?.points_of_interest;
+            
+            console.log('Raw itinerary POIs:', itineraryPois);
+            console.log('Itinerary POIs type:', typeof itineraryPois);
+            console.log('Itinerary POIs is array:', Array.isArray(itineraryPois));
+            console.log('Itinerary POIs length:', itineraryPois?.length);
+            
+            if (itineraryPois && Array.isArray(itineraryPois) && itineraryPois.length > 0) {
+                console.log('Processing each POI for map:');
+                const convertedPOIs = itineraryPois.map((poi, index) => {
+                    console.log(`POI ${index}:`, poi);
+                    console.log(`  - Name: ${poi.name}`);
+                    console.log(`  - Lat: ${poi.latitude} (${typeof poi.latitude})`);
+                    console.log(`  - Lng: ${poi.longitude} (${typeof poi.longitude})`);
+                    const converted = convertPOIToItineraryFormat(poi);
+                    console.log(`  - Converted:`, converted);
+                    return converted;
+                });
+                console.log('Final converted POIs for MAP:', convertedPOIs);
+                return convertedPOIs;
+            }
+            
+            console.log('No itinerary POIs found for map - checking fallbacks');
+            const generalPois = streaming.points_of_interest;
+            console.log('General POIs as fallback:', generalPois);
+            
+            if (generalPois && Array.isArray(generalPois) && generalPois.length > 0) {
+                const convertedPOIs = generalPois.map(convertPOIToItineraryFormat);
+                console.log('Using GENERAL POIs as fallback for MAP:', convertedPOIs);
+                return convertedPOIs;
+            }
+        }
+        
+        console.log('Returning empty array for map POIs');
+        return [];
+    };
+
+    // POIs for the CARDS - these should be the general POIs for context
+    const cardPointsOfInterest = () => {
+        const streaming = streamingData();
+        
+        if (streaming) {
+            // Use GENERAL POIs for the cards (these provide more context)
+            const generalPois = streaming.points_of_interest;
+            const itineraryPois = streaming.itinerary_response?.points_of_interest;
+            
+            console.log('Cards - General POIs:', generalPois);
+            console.log('Cards - Itinerary POIs:', itineraryPois);
+            
+            // Combine both general and itinerary POIs for cards, but prioritize itinerary
+            let allPois = [];
+            
+            if (itineraryPois && Array.isArray(itineraryPois)) {
+                allPois = [...itineraryPois];
+            }
+            
+            if (generalPois && Array.isArray(generalPois)) {
+                // Add general POIs that aren't already in itinerary
+                const itineraryNames = new Set(allPois.map(poi => poi.name));
+                const additionalPois = generalPois.filter(poi => !itineraryNames.has(poi.name));
+                allPois = [...allPois, ...additionalPois];
+            }
+            
+            if (allPois.length > 0) {
+                const convertedPOIs = allPois.map(convertPOIToItineraryFormat);
+                console.log('Using COMBINED POIs for CARDS:', convertedPOIs);
+                return convertedPOIs;
+            }
+            
+            console.log('No POIs found for cards');
+        }
+        
+        console.log('Returning fallback POIs for cards');
         return itinerary().pois || [];
     };
+
+    // Legacy function for backwards compatibility - now uses card POIs
+    const pointsOfInterest = () => cardPointsOfInterest();
 
     // chat logic
     // Chat functionality
@@ -160,20 +342,68 @@ export default function ItineraryResultsPage() {
         return priority === 1 ? 'bg-red-500' : 'bg-blue-500';
     };
 
-    const filteredPOIs = () => {
-        return pointsOfInterest().filter(poi => {
+    // Filtered POIs for CARDS (applies filters to card POIs)
+    const filteredCardPOIs = () => {
+        const pois = cardPointsOfInterest();
+        console.log('Filtering Card POIs:', pois);
+        
+        const filtered = pois.filter(poi => {
             const filters = activeFilters();
+            
             // Dog-friendly filter
             if (filters.dogFriendly && !poi.dogFriendly) return false;
-            // Category filter
-            if (filters.categories.length > 0 && !poi.tags.some(tag => filters.categories.includes(tag))) return false;
+            
+            // Category filter - make it more flexible for streaming data
+            if (filters.categories.length > 0) {
+                const poiCategory = poi.category?.toLowerCase() || '';
+                const poiTags = poi.tags?.map(tag => tag.toLowerCase()) || [];
+                
+                const hasMatchingCategory = filters.categories.some(filterCategory => {
+                    const lowerFilterCategory = filterCategory.toLowerCase();
+                    
+                    // Direct match
+                    if (poiTags.includes(lowerFilterCategory) || poiCategory.includes(lowerFilterCategory)) {
+                        return true;
+                    }
+                    
+                    // Fuzzy matching for common categories
+                    if (lowerFilterCategory.includes('historic') && (poiCategory.includes('historic') || poiCategory.includes('heritage') || poiCategory.includes('monument'))) return true;
+                    if (lowerFilterCategory.includes('cuisine') && (poiCategory.includes('restaurant') || poiCategory.includes('food') || poiCategory.includes('market'))) return true;
+                    if (lowerFilterCategory.includes('museum') && poiCategory.includes('museum')) return true;
+                    if (lowerFilterCategory.includes('architecture') && (poiCategory.includes('building') || poiCategory.includes('palace') || poiCategory.includes('cathedral'))) return true;
+                    
+                    return false;
+                });
+                
+                if (!hasMatchingCategory) return false;
+            }
+            
             // Time to spend filter
             if (filters.timeToSpend.length > 0 && !filters.timeToSpend.includes(poi.timeToSpend)) return false;
+            
             // Budget filter
             if (filters.budget.length > 0 && !filters.budget.includes(poi.budget)) return false;
+            
             return true;
         });
+        
+        console.log('Filtered Card POIs result:', filtered);
+        return filtered;
     };
+
+    // Filtered POIs for MAP (applies filters to map POIs)
+    const filteredMapPOIs = () => {
+        const pois = mapPointsOfInterest();
+        console.log('Filtering Map POIs:', pois);
+        
+        // For now, don't filter map POIs too heavily - show the full itinerary
+        // You can add filtering here if needed
+        console.log('Map POIs (unfiltered):', pois);
+        return pois;
+    };
+
+    // Legacy function for backwards compatibility - now uses card POIs
+    const filteredPOIs = () => filteredCardPOIs();
 
     const toggleFilter = (filterType, value) => {
         setActiveFilters(prev => ({
@@ -452,6 +682,33 @@ export default function ItineraryResultsPage() {
 
     return (
         <div class="min-h-screen bg-gray-50">
+            {/* Chat Success Banner */}
+            <Show when={fromChat()}>
+                <div class="bg-gradient-to-r from-green-50 to-blue-50 border-b border-green-200 px-4 py-3 sm:px-6">
+                    <div class="max-w-7xl mx-auto">
+                        <div class="flex items-center gap-3">
+                            <div class="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
+                                <MessageCircle class="w-4 h-4 text-white" />
+                            </div>
+                            <div class="flex-1">
+                                <p class="text-sm font-medium text-green-900">
+                                    ✨ Your personalized itinerary is ready!
+                                </p>
+                                <p class="text-xs text-green-700">
+                                    Generated from your chat: "{location.state?.originalMessage || 'Walk in Madrid'}"
+                                </p>
+                            </div>
+                            <button
+                                onClick={() => setFromChat(false)}
+                                class="p-1 text-green-600 hover:text-green-700"
+                            >
+                                <X class="w-4 h-4" />
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </Show>
+
             {/* Header - Mobile First */}
             <div class="bg-white border-b border-gray-200 px-4 py-3 sm:px-6 sm:py-4">
                 <div class="max-w-7xl mx-auto">
@@ -530,7 +787,7 @@ export default function ItineraryResultsPage() {
                                 Filters
                             </button>
                             <div class="text-sm text-gray-600">
-                                {filteredPOIs().length} places
+                                {filteredCardPOIs().length} places in cards, {filteredMapPOIs().length} on map
                             </div>
                         </div>
                         <div class="flex items-center gap-2 text-sm text-gray-600">
@@ -543,6 +800,89 @@ export default function ItineraryResultsPage() {
                 </div>
             </div>
 
+            {/* City Information and General POIs - Only show when we have streaming data */}
+            <Show when={streamingData() && streamingData().general_city_data}>
+                <div class="bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-blue-100">
+                    <div class="max-w-7xl mx-auto px-4 py-6 sm:px-6">
+                        <div class="grid gap-6 lg:grid-cols-3">
+                            {/* City Information */}
+                            <div class="lg:col-span-2">
+                                <h2 class="text-xl font-bold text-gray-900 mb-3">
+                                    About {streamingData()?.general_city_data?.city}
+                                </h2>
+                                <p class="text-gray-700 text-sm leading-relaxed mb-4">
+                                    {streamingData()?.general_city_data?.description}
+                                </p>
+                                <div class="grid grid-cols-2 gap-4 text-xs">
+                                    <div>
+                                        <span class="font-medium text-gray-600">Population:</span>
+                                        <div class="text-gray-800">{streamingData()?.general_city_data?.population}</div>
+                                    </div>
+                                    <div>
+                                        <span class="font-medium text-gray-600">Language:</span>
+                                        <div class="text-gray-800">{streamingData()?.general_city_data?.language}</div>
+                                    </div>
+                                    <div>
+                                        <span class="font-medium text-gray-600">Weather:</span>
+                                        <div class="text-gray-800">{streamingData()?.general_city_data?.weather}</div>
+                                    </div>
+                                    <div>
+                                        <span class="font-medium text-gray-600">Timezone:</span>
+                                        <div class="text-gray-800">{streamingData()?.general_city_data?.timezone}</div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            {/* Quick Stats */}
+                            <div class="bg-white rounded-lg p-4 shadow-sm">
+                                <h3 class="font-semibold text-gray-900 mb-3 text-sm">Quick Info</h3>
+                                <div class="space-y-2 text-xs">
+                                    <Show when={streamingData()?.points_of_interest}>
+                                        <div class="flex justify-between">
+                                            <span class="text-gray-600">General POIs:</span>
+                                            <span class="font-medium">{streamingData()?.points_of_interest?.length || 0}</span>
+                                        </div>
+                                    </Show>
+                                    <Show when={streamingData()?.itinerary_response?.points_of_interest}>
+                                        <div class="flex justify-between">
+                                            <span class="text-gray-600">Itinerary POIs:</span>
+                                            <span class="font-medium">{streamingData()?.itinerary_response?.points_of_interest?.length || 0}</span>
+                                        </div>
+                                    </Show>
+                                    <div class="flex justify-between">
+                                        <span class="text-gray-600">Area:</span>
+                                        <span class="font-medium">{streamingData()?.general_city_data?.area}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        {/* General POIs Summary */}
+                        <Show when={streamingData()?.points_of_interest && streamingData().points_of_interest.length > 0}>
+                            <div class="mt-6">
+                                <h3 class="text-lg font-semibold text-gray-900 mb-3">All Points of Interest in {streamingData()?.general_city_data?.city}</h3>
+                                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                                    <For each={streamingData()?.points_of_interest?.slice(0, 6)}>
+                                        {(poi) => (
+                                            <div class="bg-white rounded-lg p-3 shadow-sm border border-gray-100">
+                                                <h4 class="font-medium text-gray-900 text-sm mb-1">{poi.name}</h4>
+                                                <p class="text-xs text-gray-600 mb-2">{poi.category}</p>
+                                                <p class="text-xs text-gray-700 line-clamp-2">{poi.description_poi}</p>
+                                            </div>
+                                        )}
+                                    </For>
+                                </div>
+                                <Show when={streamingData()?.points_of_interest?.length > 6}>
+                                    <p class="text-xs text-gray-500 mt-3 text-center">
+                                        And {streamingData().points_of_interest.length - 6} more places to explore...
+                                    </p>
+                                </Show>
+                            </div>
+                        </Show>
+                    </div>
+                </div>
+            </Show>
+
             {/* Main Content - Mobile First */}
             <div class="max-w-7xl mx-auto px-4 py-4 sm:px-6 sm:py-6">
                 <div class={`grid gap-4 sm:gap-6 ${viewMode() === 'split' ? 'grid-cols-1 lg:grid-cols-2' : 'grid-cols-1'}`}>
@@ -553,7 +893,8 @@ export default function ItineraryResultsPage() {
                                 zoom={12}
                                 minZoom={10}
                                 maxZoom={22}
-                                pointsOfInterest={filteredPOIs()}
+                                pointsOfInterest={filteredMapPOIs()}
+                                style="mapbox://styles/mapbox/streets-v12"
                             />
                         </div>
                     </Show>
@@ -562,7 +903,10 @@ export default function ItineraryResultsPage() {
                         <div class={viewMode() === 'list' ? 'col-span-full' : ''}>
                             <div class="space-y-4">
                                 <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                                    <h2 class="text-lg font-semibold text-gray-900">Places to Visit</h2>
+                                    <div>
+                                        <h2 class="text-lg font-semibold text-gray-900">Your Curated Itinerary</h2>
+                                        <p class="text-sm text-gray-600">Personalized places to visit based on your preferences</p>
+                                    </div>
                                     <button class="text-sm text-blue-600 hover:text-blue-700 flex items-center gap-1 self-start sm:self-auto">
                                         <Edit3 class="w-4 h-4" />
                                         Customize Order

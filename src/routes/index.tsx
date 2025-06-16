@@ -1,30 +1,14 @@
-import { Component, JSX } from 'solid-js';
+import { Component, createSignal, Show } from 'solid-js';
+import { useNavigate } from '@solidjs/router';
+import { Send, Loader2, MessageCircle, MapPin } from 'lucide-solid';
+import { sendUnifiedChatMessageStream, detectDomain } from '~/lib/api/llm';
+import { streamingService, createStreamingSession, getDomainRoute } from '~/lib/streaming-service';
+import type { StreamingSession } from '~/lib/api/types';
 import CTA from '~/components/features/Home/CTA';
 import ContentGrid from '~/components/features/Home/ContentGrid';
-import Hero from '~/components/features/Home/Hero';
 import Stats from '~/components/features/Home/Stats';
 import MobileAppAnnouncement from '~/components/features/Home/MobileAppAnnouncement';
-import { Landmark, Utensils, Sparkles, Map } from 'lucide-solid';
 
-// Data for the WanderWiseAI landing page
-const heroData = {
-    title: (
-        <>
-            Discover your next adventure,{' '}
-            <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-400 dark:to-purple-400">
-                smarter
-            </span>
-        </>
-    ),
-    subtitle: "Tired of generic city guides? Loci creates hyper-personalized travel plans based on your unique interests and real-time context.",
-    placeholder: "Where to? e.g., 'art museums in Paris'",
-    suggestions: [
-        { icon: <Landmark class="w-4 h-4" />, text: "Historical sites in Rome" },
-        { icon: <Utensils class="w-4 h-4" />, text: "Best ramen in Tokyo" },
-        { icon: <Sparkles class="w-4 h-4" />, text: "Hidden gems in Lisbon" },
-        { icon: <Map class="w-4 h-4" />, text: "3-hour art walk in Florence" },
-    ]
-};
 
 const statsData = {
     badgeText: "This month on Loci",
@@ -64,17 +48,359 @@ const contentData = [
 ];
 
 const LandingPage: Component = () => {
+    const navigate = useNavigate();
+    const [currentMessage, setCurrentMessage] = createSignal('');
+    const [isLoading, setIsLoading] = createSignal(false);
+    const [streamingSession, setStreamingSession] = createSignal<StreamingSession | null>(null);
+    const [streamProgress, setStreamProgress] = createSignal('');
+
+    const sendMessage = async () => {
+        if (!currentMessage().trim() || isLoading()) return;
+
+        const messageContent = currentMessage().trim();
+        setCurrentMessage('');
+        setIsLoading(true);
+        setStreamProgress('Analyzing your request...');
+
+        try {
+            // Detect domain from the message
+            const domain = detectDomain(messageContent);
+            console.log('Detected domain:', domain);
+
+            // Create streaming session
+            const session = createStreamingSession(domain);
+            setStreamingSession(session);
+
+            // Store session in localStorage for persistence
+            sessionStorage.setItem('currentStreamingSession', JSON.stringify(session));
+
+            // Start streaming request
+            const response = await sendUnifiedChatMessageStream({
+                profileId: '6ee5dc90-dd72-4dc8-b064-4ecbdd35d845',
+                message: messageContent,
+                userLocation: {
+                    userLat: 38.7223, // Default Lisbon coords
+                    userLon: -9.1393
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            // Set up streaming manager
+            streamingService.startStream(response, {
+                session,
+                onProgress: (updatedSession) => {
+                    setStreamingSession(updatedSession);
+
+                    // Update progress message based on domain and progress
+                    const domain = updatedSession.domain;
+                    if (updatedSession.data.general_city_data) {
+                        setStreamProgress(`Found information about ${updatedSession.data.general_city_data.city}...`);
+                    } else if (domain === 'accommodation') {
+                        setStreamProgress('Finding hotels...');
+                    } else if (domain === 'dining') {
+                        setStreamProgress('Searching restaurants...');
+                    } else if (domain === 'activities') {
+                        setStreamProgress('Discovering activities...');
+                    } else {
+                        setStreamProgress('Creating your itinerary...');
+                    }
+
+                    // Update session storage
+                    sessionStorage.setItem('currentStreamingSession', JSON.stringify(updatedSession));
+                },
+                onComplete: (completedSession) => {
+                    setStreamingSession(completedSession);
+                    setIsLoading(false);
+                    setStreamProgress('');
+
+                    // Store completed session
+                    sessionStorage.setItem('completedStreamingSession', JSON.stringify(completedSession));
+
+                    // Navigate to appropriate page based on domain
+                    const route = getDomainRoute(completedSession.domain);
+                    navigate(route, {
+                        state: {
+                            streamingData: completedSession.data,
+                            fromChat: true,
+                            originalMessage: messageContent
+                        }
+                    });
+                },
+                onError: (error) => {
+                    console.error('Streaming error:', error);
+                    setIsLoading(false);
+                    setStreamProgress('');
+                    setStreamingSession(null);
+                }
+            });
+
+        } catch (error) {
+            console.error('Error sending message:', error);
+            setIsLoading(false);
+            setStreamProgress('');
+            setStreamingSession(null);
+        }
+    };
+
+    const handleKeyPress = (e: KeyboardEvent) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            sendMessage();
+        }
+    };
+
     return (
         <div class="min-h-screen bg-gradient-to-b from-blue-50 via-purple-50 to-white dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 
                    [&[data-theme='vt-news']]:from-gray-900 [&[data-theme='vt-news']]:via-gray-800 [&[data-theme='vt-news']]:to-gray-900
                    [&[data-theme='valuetainment']]:from-gray-50 [&[data-theme='valuetainment']]:via-red-50 [&[data-theme='valuetainment']]:to-white
                    transition-colors">
-            <Hero
-                title={heroData.title}
-                subtitle={heroData.subtitle}
-                placeholder={heroData.placeholder}
-                suggestions={heroData.suggestions}
-            />
+
+            {/* Main Hero Section with Chat Input */}
+            <div class="relative">
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-16 text-center">
+                    <h1 class="text-4xl md:text-6xl font-bold text-gray-900 dark:text-white mb-6">
+                        Discover your next adventure,{' '}
+                        <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-400 dark:to-purple-400">
+                            smarter
+                        </span>
+                    </h1>
+                    <p class="text-xl text-gray-600 dark:text-gray-300 mb-12 max-w-3xl mx-auto">
+                        Tired of generic city guides? Loci creates hyper-personalized travel plans based on your unique interests and real-time context.
+                    </p>
+
+                    {/* Main Chat Input */}
+                    <div class="max-w-2xl mx-auto mb-8">
+                        <div class="flex items-end gap-3 bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-lg border border-gray-200 dark:border-gray-700">
+                            <div class="flex-1">
+                                <textarea
+                                    value={currentMessage()}
+                                    onInput={(e) => setCurrentMessage(e.target.value)}
+                                    onKeyPress={handleKeyPress}
+                                    placeholder="Where to? e.g., 'art museums in Paris', 'walk in Madrid', 'best food in Tokyo'"
+                                    class="w-full resize-none border-0 bg-transparent focus:ring-0 focus:outline-none text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
+                                    rows="2"
+                                    disabled={isLoading()}
+                                />
+                            </div>
+                            <button
+                                onClick={sendMessage}
+                                disabled={!currentMessage().trim() || isLoading()}
+                                class="bg-gradient-to-r from-blue-600 to-purple-600 text-white p-3 rounded-xl hover:from-blue-700 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center gap-2"
+                            >
+                                <Show when={isLoading()} fallback={<Send class="w-5 h-5" />}>
+                                    <Loader2 class="w-5 h-5 animate-spin" />
+                                </Show>
+                            </button>
+                        </div>
+
+                        {/* Streaming Progress */}
+                        <Show when={isLoading() && streamProgress()}>
+                            <div class="mt-4 bg-white dark:bg-gray-800 rounded-lg p-4 shadow-md border border-gray-200 dark:border-gray-700">
+                                <div class="flex items-center gap-3 text-gray-600 dark:text-gray-300">
+                                    <Loader2 class="w-5 h-5 animate-spin text-blue-600" />
+                                    <span class="text-sm font-medium">{streamProgress()}</span>
+                                </div>
+
+                                <Show when={streamingSession()}>
+                                    <div class="mt-3 text-xs text-gray-500 dark:text-gray-400 space-y-1">
+                                        <div class="flex items-center gap-2">
+                                            <span class="inline-block w-2 h-2 bg-blue-500 rounded-full"></span>
+                                            <span>Domain: {streamingSession()?.domain}</span>
+                                        </div>
+                                        <Show when={streamingSession()?.city}>
+                                            <div class="flex items-center gap-2">
+                                                <MapPin class="w-3 h-3" />
+                                                <span>City: {streamingSession()?.city}</span>
+                                            </div>
+                                        </Show>
+                                    </div>
+                                </Show>
+                            </div>
+                        </Show>
+
+                        <p class="text-sm text-gray-500 dark:text-gray-400 mt-3">
+                            Press Enter to send, Shift+Enter for new line
+                        </p>
+                    </div>
+
+                    {/* Quick Prompt Cards */}
+                    <Show when={!isLoading()}>
+                        <div class="max-w-4xl mx-auto mt-12">
+                            <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-6 text-center">
+                                Try these popular searches:
+                            </h3>
+                            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                                <button
+                                    onClick={() => {
+                                        setCurrentMessage("Hidden gems in Paris");
+                                        sendMessage();
+                                    }}
+                                    class="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border border-gray-200 dark:border-gray-700 hover:shadow-md hover:border-blue-300 dark:hover:border-blue-600 transition-all group text-left"
+                                >
+                                    <div class="flex items-start gap-3">
+                                        <span class="text-2xl">🌟</span>
+                                        <div>
+                                            <h4 class="font-medium text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                                                Hidden gems in Paris
+                                            </h4>
+                                            <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                                                Discover off-the-beaten-path spots
+                                            </p>
+                                        </div>
+                                    </div>
+                                </button>
+
+                                <button
+                                    onClick={() => {
+                                        setCurrentMessage("Best food markets in Italy");
+                                        sendMessage();
+                                    }}
+                                    class="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border border-gray-200 dark:border-gray-700 hover:shadow-md hover:border-blue-300 dark:hover:border-blue-600 transition-all group text-left"
+                                >
+                                    <div class="flex items-start gap-3">
+                                        <span class="text-2xl">🍕</span>
+                                        <div>
+                                            <h4 class="font-medium text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                                                Best food markets in Italy
+                                            </h4>
+                                            <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                                                Authentic local markets and food
+                                            </p>
+                                        </div>
+                                    </div>
+                                </button>
+
+                                <button
+                                    onClick={() => {
+                                        setCurrentMessage("3-day cultural tour of Rome");
+                                        sendMessage();
+                                    }}
+                                    class="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border border-gray-200 dark:border-gray-700 hover:shadow-md hover:border-blue-300 dark:hover:border-blue-600 transition-all group text-left"
+                                >
+                                    <div class="flex items-start gap-3">
+                                        <span class="text-2xl">🏛️</span>
+                                        <div>
+                                            <h4 class="font-medium text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                                                3-day cultural tour of Rome
+                                            </h4>
+                                            <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                                                Museums, history, and architecture
+                                            </p>
+                                        </div>
+                                    </div>
+                                </button>
+
+                                <button
+                                    onClick={() => {
+                                        setCurrentMessage("Family weekend in Amsterdam");
+                                        sendMessage();
+                                    }}
+                                    class="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border border-gray-200 dark:border-gray-700 hover:shadow-md hover:border-blue-300 dark:hover:border-blue-600 transition-all group text-left"
+                                >
+                                    <div class="flex items-start gap-3">
+                                        <span class="text-2xl">👨‍👩‍👧‍👦</span>
+                                        <div>
+                                            <h4 class="font-medium text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                                                Family weekend in Amsterdam
+                                            </h4>
+                                            <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                                                Kid-friendly activities and places
+                                            </p>
+                                        </div>
+                                    </div>
+                                </button>
+                            </div>
+
+                            {/* Additional row of prompt cards */}
+                            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-4">
+                                <button
+                                    onClick={() => {
+                                        setCurrentMessage("Instagram spots in Santorini");
+                                        sendMessage();
+                                    }}
+                                    class="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border border-gray-200 dark:border-gray-700 hover:shadow-md hover:border-blue-300 dark:hover:border-blue-600 transition-all group text-left"
+                                >
+                                    <div class="flex items-start gap-3">
+                                        <span class="text-2xl">📸</span>
+                                        <div>
+                                            <h4 class="font-medium text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                                                Instagram spots in Santorini
+                                            </h4>
+                                            <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                                                Most photogenic locations
+                                            </p>
+                                        </div>
+                                    </div>
+                                </button>
+
+                                <button
+                                    onClick={() => {
+                                        setCurrentMessage("Best hotels in Tokyo");
+                                        sendMessage();
+                                    }}
+                                    class="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border border-gray-200 dark:border-gray-700 hover:shadow-md hover:border-blue-300 dark:hover:border-blue-600 transition-all group text-left"
+                                >
+                                    <div class="flex items-start gap-3">
+                                        <span class="text-2xl">🏨</span>
+                                        <div>
+                                            <h4 class="font-medium text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                                                Best hotels in Tokyo
+                                            </h4>
+                                            <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                                                Accommodation recommendations
+                                            </p>
+                                        </div>
+                                    </div>
+                                </button>
+
+                                <button
+                                    onClick={() => {
+                                        setCurrentMessage("Walk in Madrid");
+                                        sendMessage();
+                                    }}
+                                    class="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border border-gray-200 dark:border-gray-700 hover:shadow-md hover:border-blue-300 dark:hover:border-blue-600 transition-all group text-left"
+                                >
+                                    <div class="flex items-start gap-3">
+                                        <span class="text-2xl">🚶‍♂️</span>
+                                        <div>
+                                            <h4 class="font-medium text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                                                Walk in Madrid
+                                            </h4>
+                                            <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                                                Explore the city on foot
+                                            </p>
+                                        </div>
+                                    </div>
+                                </button>
+
+                                <button
+                                    onClick={() => {
+                                        setCurrentMessage("Nightlife in Berlin");
+                                        sendMessage();
+                                    }}
+                                    class="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border border-gray-200 dark:border-gray-700 hover:shadow-md hover:border-blue-300 dark:hover:border-blue-600 transition-all group text-left"
+                                >
+                                    <div class="flex items-start gap-3">
+                                        <span class="text-2xl">🎭</span>
+                                        <div>
+                                            <h4 class="font-medium text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                                                Nightlife in Berlin
+                                            </h4>
+                                            <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                                                Bars, clubs, and entertainment
+                                            </p>
+                                        </div>
+                                    </div>
+                                </button>
+                            </div>
+                        </div>
+                    </Show>
+                </div>
+            </div>
+
             <Stats badgeText={statsData.badgeText} items={statsData.items} />
             <ContentGrid items={contentData} />
             <MobileAppAnnouncement />

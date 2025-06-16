@@ -80,26 +80,23 @@ export default function Hero(props: HeroProps) {
                                 <button
                                     type="button"
                                     onClick={() => setSelectedContext(option.id)}
-                                    class={`group relative p-4 rounded-xl border transition-all duration-200 hover:shadow-md ${
-                                        selectedContext() === option.id
+                                    class={`group relative p-4 rounded-xl border transition-all duration-200 hover:shadow-md ${selectedContext() === option.id
                                             ? 'border-primary bg-primary/10 [&[data-theme="vt-news"]]:border-yellow-500 [&[data-theme="vt-news"]]:bg-yellow-500/10 [&[data-theme="valuetainment"]]:border-red-500 [&[data-theme="valuetainment"]]:bg-red-500/10'
                                             : 'border-border bg-background/60 backdrop-blur-sm hover:bg-accent'
-                                    }`}
+                                        }`}
                                 >
                                     <div class="flex flex-col items-center text-center space-y-2">
-                                        <div class={`p-2 rounded-lg transition-colors ${
-                                            selectedContext() === option.id
+                                        <div class={`p-2 rounded-lg transition-colors ${selectedContext() === option.id
                                                 ? 'bg-primary text-primary-foreground [&[data-theme="vt-news"]]:bg-yellow-500 [&[data-theme="vt-news"]]:text-black [&[data-theme="valuetainment"]]:bg-red-500'
                                                 : 'bg-muted text-muted-foreground group-hover:bg-primary group-hover:text-primary-foreground [&[data-theme="vt-news"]]:group-hover:bg-yellow-500 [&[data-theme="vt-news"]]:group-hover:text-black [&[data-theme="valuetainment"]]:group-hover:bg-red-500'
-                                        }`}>
+                                            }`}>
                                             {option.icon}
                                         </div>
                                         <div>
-                                            <h3 class={`font-semibold text-sm ${
-                                                selectedContext() === option.id
+                                            <h3 class={`font-semibold text-sm ${selectedContext() === option.id
                                                     ? 'text-primary [&[data-theme="vt-news"]]:text-yellow-600 [&[data-theme="valuetainment"]]:text-red-600'
                                                     : 'text-foreground'
-                                            }`}>
+                                                }`}>
                                                 {option.label}
                                             </h3>
                                             <p class="text-xs text-muted-foreground mt-1">
