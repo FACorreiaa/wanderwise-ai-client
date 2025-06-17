@@ -22,6 +22,7 @@
     "mapbox-gl": "^3.12.0",
     "solid-icons": "^1.1.0",
     "solid-js": "^1.9.5",
+    "solid-transition-group": "^0.3.0",
     "tailwind-merge": "^3.3.0",
     "tailwindcss-animate": "^1.0.7",
     "vinxi": "^0.5.3",
@@ -30,10 +31,10 @@
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.1.8",
-    "tailwindcss": "^4.1.8",
-    "wrangler": "^4.20.0",
     "@types/node": "^24.0.1",
-    "nitropack": "^2.11.12"
+    "nitropack": "^2.11.12",
+    "tailwindcss": "^4.1.8",
+    "wrangler": "^4.20.0"
   },
   "engines": {
     "node": ">=22"
