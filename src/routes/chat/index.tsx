@@ -4,6 +4,7 @@ import { MessageCircle, Send, Bot, User, MapPin, Clock, Star, Heart, Download, S
 import { sendUnifiedChatMessageStream, detectDomain } from '~/lib/api/llm';
 import { streamingService, createStreamingSession, getDomainRoute } from '~/lib/streaming-service';
 import type { StreamingSession, DomainType, UnifiedChatResponse } from '~/lib/api/types';
+import { useUserLocation } from '@/contexts/LocationContext';
 
 export default function ChatPage() {
     const navigate = useNavigate();
@@ -19,6 +20,10 @@ export default function ChatPage() {
     const [streamingSession, setStreamingSession] = createSignal(null);
     const [streamProgress, setStreamProgress] = createSignal('');
 
+
+    const { userLocation } = useUserLocation()
+    const userLatitude = userLocation()?.latitude || 38.7223;
+    const userLongitude = userLocation()?.longitude || -9.1393;
     // Sample chat sessions
     const [sessions] = createSignal([
         {
@@ -134,8 +139,8 @@ export default function ChatPage() {
                 profileId: '6ee5dc90-dd72-4dc8-b064-4ecbdd35d845', // TODO: Get from auth context
                 message: messageContent,
                 userLocation: {
-                    userLat: 38.7223, // Default Lisbon coords
-                    userLon: -9.1393
+                    userLat: userLatitude,
+                    userLon: userLongitude
                 }
             });
 
@@ -386,10 +391,10 @@ export default function ChatPage() {
 
             <div class={`max-w-[70%] ${message.type === 'user' ? 'order-1' : ''}`}>
                 <div class={`rounded-2xl px-4 py-3 ${message.type === 'user'
-                        ? 'bg-blue-600 text-white'
-                        : message.type === 'error'
-                            ? 'bg-red-50 text-red-800 border border-red-200'
-                            : 'bg-gray-100 text-gray-800'
+                    ? 'bg-blue-600 text-white'
+                    : message.type === 'error'
+                        ? 'bg-red-50 text-red-800 border border-red-200'
+                        : 'bg-gray-100 text-gray-800'
                     }`}>
                     <p class="text-sm whitespace-pre-wrap">{message.content}</p>
                 </div>

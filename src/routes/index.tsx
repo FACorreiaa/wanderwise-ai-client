@@ -8,6 +8,7 @@ import CTA from '~/components/features/Home/CTA';
 import ContentGrid from '~/components/features/Home/ContentGrid';
 import Stats from '~/components/features/Home/Stats';
 import MobileAppAnnouncement from '~/components/features/Home/MobileAppAnnouncement';
+import { useUserLocation } from '@/contexts/LocationContext';
 
 
 const statsData = {
@@ -53,6 +54,11 @@ const LandingPage: Component = () => {
     const [isLoading, setIsLoading] = createSignal(false);
     const [streamingSession, setStreamingSession] = createSignal<StreamingSession | null>(null);
     const [streamProgress, setStreamProgress] = createSignal('');
+    const { userLocation } = useUserLocation()
+    const userLatitude = userLocation()?.latitude || 38.7223;
+    const userLongitude = userLocation()?.longitude || -9.1393;
+
+
 
     const sendMessage = async () => {
         if (!currentMessage().trim() || isLoading()) return;
@@ -84,8 +90,8 @@ const LandingPage: Component = () => {
                 profileId: '6ee5dc90-dd72-4dc8-b064-4ecbdd35d845',
                 message: messageContent,
                 userLocation: {
-                    userLat: 38.7223, // Default Lisbon coords
-                    userLon: -9.1393
+                    userLat: userLatitude,
+                    userLon: userLongitude
                 }
             });
 

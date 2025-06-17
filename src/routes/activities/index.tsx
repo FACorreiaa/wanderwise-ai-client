@@ -4,6 +4,7 @@ import { MapPin, Clock, Star, Filter, Heart, Share2, Download, Edit3, Plus, X, N
 import MapComponent from '~/components/features/Map/Map';
 // Removed old API imports - now using unified streaming endpoint only
 import type { ActivitiesResponse, POIDetailedInfo } from '~/lib/api/types';
+import { useUserLocation } from '@/contexts/LocationContext';
 
 export default function ActivitiesPage() {
     const location = useLocation();
@@ -21,6 +22,10 @@ export default function ActivitiesPage() {
     const [isLoading, setIsLoading] = createSignal(false);
     const [sessionId, setSessionId] = createSignal('activities-session-id');
 
+
+    const { userLocation } = useUserLocation()
+    const userLatitude = userLocation()?.latitude || 38.7223;
+    const userLongitude = userLocation()?.longitude || -9.1393;
     // Filter states
     const [activeFilters, setActiveFilters] = createSignal({
         categories: [], // Start with no filters active so all activities show initially
@@ -32,8 +37,8 @@ export default function ActivitiesPage() {
     // Search parameters
     const [searchParams, setSearchParams] = createSignal({
         location: "Lisboa, Portugal",
-        centerLat: 38.7223,
-        centerLng: -9.1393
+        centerLat: userLatitude,
+        centerLng: userLongitude
     });
 
     // Removed old API hooks - now using unified streaming endpoint only
@@ -42,7 +47,7 @@ export default function ActivitiesPage() {
     onMount(() => {
         console.log('=== ACTIVITIES PAGE MOUNT ===');
         console.log('Location state:', location.state);
-        
+
         // Check for streaming data from route state  
         if (location.state?.streamingData) {
             console.log('Found activities streaming data in route state');
@@ -54,12 +59,12 @@ export default function ActivitiesPage() {
             // Try to get data from session storage
             const storedSession = sessionStorage.getItem('completedStreamingSession');
             console.log('Session storage content:', storedSession);
-            
+
             if (storedSession) {
                 try {
                     const session = JSON.parse(storedSession);
                     console.log('Parsed session:', session);
-                    
+
                     if (session.data && session.data.activities) {
                         console.log('Setting activities data from session storage');
                         setStreamingData(session.data as ActivitiesResponse);
@@ -84,7 +89,7 @@ export default function ActivitiesPage() {
             console.log('Using streaming activities data:', streaming.activities);
             return streaming.activities.map(convertActivityToDisplayFormat);
         }
-        
+
         // No fallback API data - only streaming data is used
         return [];
     };
@@ -128,7 +133,7 @@ export default function ActivitiesPage() {
         try {
             // Simulate API call for activity recommendations
             await new Promise(resolve => setTimeout(resolve, 1500));
-            
+
             setChatHistory(prev => [...prev, {
                 type: 'assistant',
                 content: "I'd be happy to help you discover amazing activities! I can recommend cultural sites, entertainment venues, outdoor adventures, or unique experiences based on your interests. What type of activity are you looking for?",
@@ -195,7 +200,7 @@ export default function ActivitiesPage() {
             const activityFeatures = activity.features || [];
             const activityPrice = activity.price || '';
             const activityRating = activity.rating || 0;
-            
+
             // Category filter
             if (filters.categories.length > 0 && !filters.categories.some(category => activityTags.includes(category))) return false;
             // Price range filter
@@ -577,7 +582,7 @@ export default function ActivitiesPage() {
                                         <Compass class="w-12 h-12 text-gray-300 mx-auto mb-4" />
                                         <h3 class="text-lg font-semibold text-gray-900 mb-2">No activities found</h3>
                                         <p class="text-gray-600 mb-4">Start a new search from the home page to find activities</p>
-                                        <button 
+                                        <button
                                             onClick={() => window.location.href = '/'}
                                             class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
                                         >

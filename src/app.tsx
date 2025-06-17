@@ -8,6 +8,7 @@ import "./app.css";
 import { QueryClient, QueryClientProvider } from "@tanstack/solid-query";
 import { AuthProvider } from "~/contexts/AuthContext";
 import { ThemeProvider } from "~/contexts/ThemeContext";
+import { LocationProvider } from "~/contexts/LocationContext";
 
 const queryClient = new QueryClient();
 
@@ -18,14 +19,16 @@ export default function App() {
         <Router
           root={props => (
             <AuthProvider>
-              <div class="min-h-screen flex flex-col bg-white dark:bg-gray-900 transition-colors">
-                <Nav />
-                <main class="flex-grow min-h-screen bg-gradient-to-b from-blue-50 via-purple-50 to-white dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 transition-colors">
-                  <Suspense>{props.children}</Suspense>
-                </main>
-                <Footer />
-                <PWAInstall />
-              </div>
+              <LocationProvider>
+                <div class="min-h-screen flex flex-col bg-white dark:bg-gray-900 transition-colors">
+                  <Nav />
+                  <main class="flex-grow min-h-screen bg-gradient-to-b from-blue-50 via-purple-50 to-white dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 transition-colors">
+                    <Suspense>{props.children}</Suspense>
+                  </main>
+                  <Footer />
+                  <PWAInstall />
+                </div>
+              </LocationProvider>
             </AuthProvider>
           )}
         >
