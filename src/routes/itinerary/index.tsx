@@ -41,31 +41,54 @@ export default function ItineraryResultsPage() {
 
     // Initialize with streaming data on mount
     onMount(() => {
+        console.log('=== ITINERARY PAGE MOUNT ===');
+        console.log('Location state:', location.state);
+        console.log('Session storage keys:', Object.keys(sessionStorage));
+        
         // Check for streaming data from route state
         if (location.state?.streamingData) {
+            console.log('Found streaming data in route state');
             setStreamingData(location.state.streamingData);
             setFromChat(true);
             console.log('Received streaming data from chat:', location.state.streamingData);
             console.log('Points of interest:', location.state.streamingData.points_of_interest);
             console.log('Itinerary POIs:', location.state.streamingData.itinerary_response?.points_of_interest);
         } else {
+            console.log('No streaming data in route state, checking session storage');
             // Try to get data from session storage
             const storedSession = sessionStorage.getItem('completedStreamingSession');
+            console.log('Session storage content:', storedSession);
+            
             if (storedSession) {
                 try {
                     const session = JSON.parse(storedSession);
+                    console.log('Parsed session:', session);
+                    
                     if (session.data) {
+                        console.log('Setting streaming data from session storage');
                         setStreamingData(session.data);
                         setFromChat(true);
                         console.log('Loaded streaming data from session storage:', session.data);
                         console.log('Points of interest:', session.data.points_of_interest);
                         console.log('Itinerary POIs:', session.data.itinerary_response?.points_of_interest);
+                    } else {
+                        console.log('No data found in session');
                     }
                 } catch (error) {
                     console.error('Error parsing stored session:', error);
                 }
+            } else {
+                console.log('No stored session found');
             }
         }
+        
+        // Debug current streaming data state
+        setTimeout(() => {
+            console.log('=== STREAMING DATA STATE AFTER MOUNT ===');
+            console.log('Current streamingData():', streamingData());
+            console.log('Map POIs:', mapPointsOfInterest());
+            console.log('Filtered Map POIs:', filteredMapPOIs());
+        }, 100);
     });
 
     // Get current itinerary data from streaming data, API, or fallback
@@ -888,14 +911,24 @@ export default function ItineraryResultsPage() {
                 <div class={`grid gap-4 sm:gap-6 ${viewMode() === 'split' ? 'grid-cols-1 lg:grid-cols-2' : 'grid-cols-1'}`}>
                     <Show when={viewMode() === 'map' || viewMode() === 'split'}>
                         <div class={viewMode() === 'map' ? 'col-span-full h-[400px] sm:h-[600px]' : 'h-[300px] sm:h-[500px]'}>
-                            <MapComponent
-                                center={[itinerary().centerLng, itinerary().centerLat]}
-                                zoom={12}
-                                minZoom={10}
-                                maxZoom={22}
-                                pointsOfInterest={filteredMapPOIs()}
-                                style="mapbox://styles/mapbox/streets-v12"
-                            />
+                            {(() => {
+                                const mapPOIs = filteredMapPOIs();
+                                console.log('=== RENDERING MAP COMPONENT ===');
+                                console.log('Map POIs being passed to MapComponent:', mapPOIs);
+                                console.log('Map POIs length:', mapPOIs.length);
+                                console.log('Center coordinates:', [itinerary().centerLng, itinerary().centerLat]);
+                                
+                                return (
+                                    <MapComponent
+                                        center={[itinerary().centerLng, itinerary().centerLat]}
+                                        zoom={12}
+                                        minZoom={10}
+                                        maxZoom={22}
+                                        pointsOfInterest={mapPOIs}
+                                        style="mapbox://styles/mapbox/streets-v12"
+                                    />
+                                );
+                            })()}
                         </div>
                     </Show>
 

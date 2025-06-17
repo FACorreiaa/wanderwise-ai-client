@@ -193,7 +193,9 @@ export default function MapComponent({ center, zoom, minZoom, maxZoom, pointsOfI
 
     // Initialize map on mount
     onMount(() => {
-        mapboxgl.accessToken = import.meta.env.VITE_MAPBOX_API_KEY;
+        const mapboxToken = import.meta.env.VITE_MAPBOX_API_KEY;
+        console.log('Mapbox token from env:', mapboxToken ? 'SET' : 'NOT SET');
+        mapboxgl.accessToken = mapboxToken;
 
         console.log('=== MAP COMPONENT INIT ===');
         console.log('Container:', mapContainer);
@@ -211,6 +213,19 @@ export default function MapComponent({ center, zoom, minZoom, maxZoom, pointsOfI
 
         map.on('load', () => {
             console.log('Map loaded successfully');
+            
+            // Test with hardcoded marker to verify map is working
+            console.log('Adding test marker at map center');
+            const testMarker = new mapboxgl.Marker()
+                .setLngLat(center)
+                .addTo(map);
+            
+            // Remove test marker after 3 seconds
+            setTimeout(() => {
+                testMarker.remove();
+                console.log('Test marker removed');
+            }, 3000);
+            
             // Add initial markers if POIs are available
             if (pointsOfInterest && pointsOfInterest.length > 0) {
                 addMarkers(pointsOfInterest);
