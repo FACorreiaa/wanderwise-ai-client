@@ -32,10 +32,16 @@ export class StreamingChatService {
     general_pois: string;
     itinerary: string;
     city_data: string;
+    hotels: string;
+    restaurants: string;
+    activities: string;
   } = {
     general_pois: '',
     itinerary: '',
-    city_data: ''
+    city_data: '',
+    hotels: '',
+    restaurants: '',
+    activities: ''
   };
 
   constructor() {}
@@ -164,7 +170,10 @@ export class StreamingChatService {
     this.chunkBuffer = {
       general_pois: '',
       itinerary: '',
-      city_data: ''
+      city_data: '',
+      hotels: '',
+      restaurants: '',
+      activities: ''
     };
     
     this.manager.onProgress(this.manager.session);
@@ -175,7 +184,7 @@ export class StreamingChatService {
     
     const { chunk, part } = event.data;
     
-    if (part && (part === 'general_pois' || part === 'itinerary' || part === 'city_data')) {
+    if (part && (part === 'general_pois' || part === 'itinerary' || part === 'city_data' || part === 'hotels' || part === 'restaurants' || part === 'activities')) {
       // Accumulate chunks for the specific part
       this.chunkBuffer[part] += chunk;
       
@@ -213,6 +222,9 @@ export class StreamingChatService {
             const jsonData = JSON.parse(jsonStr);
             
             // Process the complete JSON based on part type
+            console.log(`=== PARSED JSON FOR ${part.toUpperCase()} ===`);
+            console.log('JSON data:', jsonData);
+            
             switch (part) {
               case 'city_data':
                 this.handleParsedCityData(jsonData);
@@ -222,6 +234,15 @@ export class StreamingChatService {
                 break;
               case 'itinerary':
                 this.handleParsedItinerary(jsonData);
+                break;
+              case 'hotels':
+                this.handleParsedHotels(jsonData);
+                break;
+              case 'restaurants':
+                this.handleParsedRestaurants(jsonData);
+                break;
+              case 'activities':
+                this.handleParsedActivities(jsonData);
                 break;
             }
             
@@ -285,6 +306,65 @@ export class StreamingChatService {
       this.manager.onProgress(this.manager.session);
     } catch (error) {
       console.error('Error processing parsed itinerary data:', error);
+    }
+  }
+
+  private handleParsedHotels(hotelsData: any): void {
+    if (!this.manager) return;
+    
+    try {
+      const hotels = hotelsData.hotels || [];
+      
+      this.manager.session.data = {
+        hotels,
+        domain: 'accommodation',
+        session_id: this.manager.session.sessionId
+      } as AccommodationResponse;
+      
+      this.manager.onProgress(this.manager.session);
+    } catch (error) {
+      console.error('Error processing parsed hotels data:', error);
+    }
+  }
+
+  private handleParsedRestaurants(restaurantsData: any): void {
+    if (!this.manager) return;
+    
+    try {
+      const restaurants = restaurantsData.restaurants || [];
+      console.log('=== STREAMING SERVICE: handleParsedRestaurants ===');
+      console.log('Raw restaurantsData:', restaurantsData);
+      console.log('Extracted restaurants:', restaurants);
+      console.log('Restaurants count:', restaurants.length);
+      
+      this.manager.session.data = {
+        restaurants,
+        domain: 'dining',
+        session_id: this.manager.session.sessionId
+      } as DiningResponse;
+      
+      console.log('Set session data:', this.manager.session.data);
+      this.manager.onProgress(this.manager.session);
+    } catch (error) {
+      console.error('Error processing parsed restaurants data:', error);
+    }
+  }
+
+  private handleParsedActivities(activitiesData: any): void {
+    if (!this.manager) return;
+    
+    try {
+      const activities = activitiesData.activities || [];
+      
+      this.manager.session.data = {
+        activities,
+        domain: 'activities',
+        session_id: this.manager.session.sessionId
+      } as ActivitiesResponse;
+      
+      this.manager.onProgress(this.manager.session);
+    } catch (error) {
+      console.error('Error processing parsed activities data:', error);
     }
   }
 
@@ -456,7 +536,10 @@ export class StreamingChatService {
     this.chunkBuffer = {
       general_pois: '',
       itinerary: '',
-      city_data: ''
+      city_data: '',
+      hotels: '',
+      restaurants: '',
+      activities: ''
     };
   }
 }
@@ -482,7 +565,7 @@ export const getDomainRoute = (domain: DomainType): string => {
     case 'dining':
       return '/restaurants';
     case 'activities':
-      return '/discover';
+      return '/activities';
     default:
       return '/itinerary';
   }

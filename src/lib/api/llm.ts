@@ -187,6 +187,10 @@ export const sendUnifiedChatMessage = async (request: UnifiedChatRequest): Promi
 export const sendUnifiedChatMessageStream = async (request: UnifiedChatStreamRequest): Promise<Response> => {
   const token = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
   
+  console.log('=== STREAMING API CALL ===');
+  console.log('Token found:', !!token);
+  console.log('Request:', request);
+  
   return fetch(`${API_BASE_URL}/llm/prompt-response/chat/sessions/unified-chat/stream/${request.profileId}`, {
     method: 'POST',
     headers: {

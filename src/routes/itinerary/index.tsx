@@ -1,7 +1,7 @@
 import { createSignal, createEffect, For, Show, onMount } from 'solid-js';
 import { useLocation } from '@solidjs/router';
 import mapboxgl from 'mapbox-gl';
-import { MapPin, Clock, Star, Filter, Heart, Share2, Download, Edit3, Plus, X, Navigation, Calendar, Users, DollarSign, Camera, Coffee, Utensils, Building, TreePine, ShoppingBag, Loader2, MessageCircle, Send } from 'lucide-solid';
+import { MapPin, Clock, Star, Filter, Heart, Share2, Download, Edit3, Plus, X, Navigation, Calendar, Users, DollarSign, Camera, Coffee, Utensils, Building, TreePine, ShoppingBag, Loader2, MessageCircle, Send, Compass, Palette, Cloud } from 'lucide-solid';
 import MapComponent from '~/components/features/Map/Map';
 import { useItineraries, useItinerary, useUpdateItineraryMutation, useSaveItineraryMutation } from '~/lib/api/itineraries';
 import type { AiCityResponse, POIDetail } from '~/lib/api/types';
@@ -825,56 +825,74 @@ export default function ItineraryResultsPage() {
 
             {/* City Information and General POIs - Only show when we have streaming data */}
             <Show when={streamingData() && streamingData().general_city_data}>
-                <div class="bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-blue-100">
+                <div class="bg-white border-b border-gray-200">
                     <div class="max-w-7xl mx-auto px-4 py-6 sm:px-6">
                         <div class="grid gap-6 lg:grid-cols-3">
                             {/* City Information */}
                             <div class="lg:col-span-2">
-                                <h2 class="text-xl font-bold text-gray-900 mb-3">
-                                    About {streamingData()?.general_city_data?.city}
-                                </h2>
-                                <p class="text-gray-700 text-sm leading-relaxed mb-4">
-                                    {streamingData()?.general_city_data?.description}
-                                </p>
-                                <div class="grid grid-cols-2 gap-4 text-xs">
-                                    <div>
-                                        <span class="font-medium text-gray-600">Population:</span>
-                                        <div class="text-gray-800">{streamingData()?.general_city_data?.population}</div>
-                                    </div>
-                                    <div>
-                                        <span class="font-medium text-gray-600">Language:</span>
-                                        <div class="text-gray-800">{streamingData()?.general_city_data?.language}</div>
-                                    </div>
-                                    <div>
-                                        <span class="font-medium text-gray-600">Weather:</span>
-                                        <div class="text-gray-800">{streamingData()?.general_city_data?.weather}</div>
-                                    </div>
-                                    <div>
-                                        <span class="font-medium text-gray-600">Timezone:</span>
-                                        <div class="text-gray-800">{streamingData()?.general_city_data?.timezone}</div>
+                                <div class="bg-white rounded-lg border border-gray-200 p-6">
+                                    <h2 class="text-xl font-bold text-gray-900 mb-3 flex items-center gap-2">
+                                        <MapPin class="w-5 h-5 text-blue-600" />
+                                        About {streamingData()?.general_city_data?.city}
+                                    </h2>
+                                    <p class="text-gray-700 text-sm leading-relaxed mb-6">
+                                        {streamingData()?.general_city_data?.description}
+                                    </p>
+                                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                        <div class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                                            <Users class="w-4 h-4 text-gray-500" />
+                                            <div>
+                                                <div class="text-xs font-medium text-gray-600">Population</div>
+                                                <div class="text-sm text-gray-900">{streamingData()?.general_city_data?.population}</div>
+                                            </div>
+                                        </div>
+                                        <div class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                                            <MessageCircle class="w-4 h-4 text-gray-500" />
+                                            <div>
+                                                <div class="text-xs font-medium text-gray-600">Language</div>
+                                                <div class="text-sm text-gray-900">{streamingData()?.general_city_data?.language}</div>
+                                            </div>
+                                        </div>
+                                        <div class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                                            <Cloud class="w-4 h-4 text-gray-500" />
+                                            <div>
+                                                <div class="text-xs font-medium text-gray-600">Weather</div>
+                                                <div class="text-sm text-gray-900">{streamingData()?.general_city_data?.weather}</div>
+                                            </div>
+                                        </div>
+                                        <div class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                                            <Clock class="w-4 h-4 text-gray-500" />
+                                            <div>
+                                                <div class="text-xs font-medium text-gray-600">Timezone</div>
+                                                <div class="text-sm text-gray-900">{streamingData()?.general_city_data?.timezone}</div>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                             
                             {/* Quick Stats */}
-                            <div class="bg-white rounded-lg p-4 shadow-sm">
-                                <h3 class="font-semibold text-gray-900 mb-3 text-sm">Quick Info</h3>
-                                <div class="space-y-2 text-xs">
+                            <div class="bg-white rounded-lg border border-gray-200 p-6">
+                                <h3 class="font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                                    <Star class="w-4 h-4 text-blue-600" />
+                                    Quick Stats
+                                </h3>
+                                <div class="space-y-4">
                                     <Show when={streamingData()?.points_of_interest}>
-                                        <div class="flex justify-between">
-                                            <span class="text-gray-600">General POIs:</span>
-                                            <span class="font-medium">{streamingData()?.points_of_interest?.length || 0}</span>
+                                        <div class="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
+                                            <span class="text-sm text-gray-700">Places to explore</span>
+                                            <span class="font-semibold text-blue-600">{streamingData()?.points_of_interest?.length || 0}</span>
                                         </div>
                                     </Show>
                                     <Show when={streamingData()?.itinerary_response?.points_of_interest}>
-                                        <div class="flex justify-between">
-                                            <span class="text-gray-600">Itinerary POIs:</span>
-                                            <span class="font-medium">{streamingData()?.itinerary_response?.points_of_interest?.length || 0}</span>
+                                        <div class="flex items-center justify-between p-3 bg-green-50 rounded-lg">
+                                            <span class="text-sm text-gray-700">In your itinerary</span>
+                                            <span class="font-semibold text-green-600">{streamingData()?.itinerary_response?.points_of_interest?.length || 0}</span>
                                         </div>
                                     </Show>
-                                    <div class="flex justify-between">
-                                        <span class="text-gray-600">Area:</span>
-                                        <span class="font-medium">{streamingData()?.general_city_data?.area}</span>
+                                    <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                                        <span class="text-sm text-gray-700">Total area</span>
+                                        <span class="font-semibold text-gray-900">{streamingData()?.general_city_data?.area}</span>
                                     </div>
                                 </div>
                             </div>
@@ -883,22 +901,46 @@ export default function ItineraryResultsPage() {
                         {/* General POIs Summary */}
                         <Show when={streamingData()?.points_of_interest && streamingData().points_of_interest.length > 0}>
                             <div class="mt-6">
-                                <h3 class="text-lg font-semibold text-gray-900 mb-3">All Points of Interest in {streamingData()?.general_city_data?.city}</h3>
-                                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                                <div class="flex items-center justify-between mb-4">
+                                    <h3 class="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                                        <Compass class="w-5 h-5 text-blue-600" />
+                                        All Points of Interest in {streamingData()?.general_city_data?.city}
+                                    </h3>
+                                    <span class="text-sm text-gray-500">
+                                        {streamingData()?.points_of_interest?.length} places
+                                    </span>
+                                </div>
+                                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                                     <For each={streamingData()?.points_of_interest?.slice(0, 6)}>
                                         {(poi) => (
-                                            <div class="bg-white rounded-lg p-3 shadow-sm border border-gray-100">
-                                                <h4 class="font-medium text-gray-900 text-sm mb-1">{poi.name}</h4>
-                                                <p class="text-xs text-gray-600 mb-2">{poi.category}</p>
-                                                <p class="text-xs text-gray-700 line-clamp-2">{poi.description_poi}</p>
+                                            <div class="bg-white rounded-lg p-4 border border-gray-200 hover:shadow-md transition-shadow cursor-pointer group">
+                                                <div class="flex items-start gap-3">
+                                                    <div class="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0 group-hover:bg-blue-200 transition-colors">
+                                                        {(() => {
+                                                            const category = poi.category?.toLowerCase() || '';
+                                                            if (category.includes('museum') || category.includes('cultural')) return <Palette class="w-4 h-4 text-blue-600" />;
+                                                            if (category.includes('park') || category.includes('garden')) return <TreePine class="w-4 h-4 text-green-600" />;
+                                                            if (category.includes('restaurant') || category.includes('food')) return <Utensils class="w-4 h-4 text-orange-600" />;
+                                                            if (category.includes('hotel') || category.includes('accommodation')) return <Building class="w-4 h-4 text-purple-600" />;
+                                                            return <MapPin class="w-4 h-4 text-blue-600" />;
+                                                        })()}
+                                                    </div>
+                                                    <div class="flex-1 min-w-0">
+                                                        <h4 class="font-medium text-gray-900 text-sm mb-1 group-hover:text-blue-600 transition-colors">{poi.name}</h4>
+                                                        <p class="text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded-full w-fit mb-2">{poi.category}</p>
+                                                        <p class="text-xs text-gray-700 line-clamp-2">{poi.description_poi}</p>
+                                                    </div>
+                                                </div>
                                             </div>
                                         )}
                                     </For>
                                 </div>
                                 <Show when={streamingData()?.points_of_interest?.length > 6}>
-                                    <p class="text-xs text-gray-500 mt-3 text-center">
-                                        And {streamingData().points_of_interest.length - 6} more places to explore...
-                                    </p>
+                                    <div class="mt-4 text-center">
+                                        <button class="text-sm text-blue-600 hover:text-blue-700 font-medium">
+                                            View all {streamingData().points_of_interest.length - 6} remaining places →
+                                        </button>
+                                    </div>
                                 </Show>
                             </div>
                         </Show>

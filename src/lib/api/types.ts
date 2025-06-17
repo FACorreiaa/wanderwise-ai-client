@@ -326,47 +326,64 @@ export interface AiCityResponse {
 
 export interface HotelDetailedInfo {
   id: string;
+  city: string;
   name: string;
   latitude: number;
   longitude: number;
   category: string;
   description: string;
-  address: string;
-  website: string;
-  rating: number;
-  price_range: string;
+  address?: string;
+  website?: string;
+  phone_number?: string;
+  opening_hours?: string;
+  price_level?: string;
   amenities: string[];
+  tags: string[];
+  images: string[];
+  rating: number;
+  llm_interaction_id: string;
 }
 
 export interface RestaurantDetailedInfo {
   id: string;
+  city: string;
   name: string;
   latitude: number;
   longitude: number;
   category: string;
   description: string;
-  address: string;
-  website: string;
+  address?: string;
+  website?: string;
+  phone_number?: string;
+  opening_hours?: string;
+  price_level?: string;
+  cuisine_type?: string;
+  tags: string[];
+  images: string[];
   rating: number;
-  price_range: string;
-  cuisine_type: string;
-  specialties: string[];
+  llm_interaction_id: string;
 }
 
 export interface POIDetailedInfo {
   id: string;
+  city: string;
   name: string;
   latitude: number;
   longitude: number;
   category: string;
   description: string;
-  address: string;
-  website: string;
-  rating: number;
-  timeToSpend: string;
-  budget: string;
+  address?: string;
+  website?: string;
+  phone_number?: string;
+  opening_hours?: string;
+  price_level?: string;
   tags: string[];
-  priority: number;
+  images: string[];
+  rating: number;
+  time_to_spend?: string;
+  budget?: string;
+  priority?: number;
+  llm_interaction_id: string;
 }
 
 // Domain-specific response types

@@ -62,6 +62,11 @@ const LandingPage: Component = () => {
         setIsLoading(true);
         setStreamProgress('Analyzing your request...');
 
+        // Clear any previous session data
+        sessionStorage.removeItem('currentStreamingSession');
+        sessionStorage.removeItem('completedStreamingSession');
+        console.log('Cleared previous session data');
+
         try {
             // Detect domain from the message
             const domain = detectDomain(messageContent);

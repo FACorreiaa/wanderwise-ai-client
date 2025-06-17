@@ -93,22 +93,38 @@ export default function MapComponent({ center, zoom, minZoom, maxZoom, pointsOfI
 
             const markerElement = document.createElement('div');
             markerElement.className = 'custom-marker';
+
+            // Responsive marker sizing
+            const isMobile = mapContainer.offsetWidth < 768;
+            const markerSize = isMobile ? 28 : 32;
+            const fontSize = isMobile ? 12 : 14;
+            const borderWidth = isMobile ? 2 : 3;
+
             markerElement.style.cssText = `
-                width: 32px;
-                height: 32px;
+                width: ${markerSize}px;
+                height: ${markerSize}px;
                 border-radius: 50%;
                 background-color: ${poi.priority === 1 ? '#ef4444' : '#3b82f6'};
-                border: 3px solid white;
+                border: ${borderWidth}px solid white;
                 box-shadow: 0 2px 6px rgba(0,0,0,0.3);
                 display: flex;
                 align-items: center;
                 justify-content: center;
                 color: white;
                 font-weight: bold;
-                font-size: 14px;
+                font-size: ${fontSize}px;
                 cursor: pointer;
+                transition: transform 0.2s ease;
             `;
             markerElement.textContent = index + 1;
+
+            // Add hover effect
+            markerElement.addEventListener('mouseenter', () => {
+                markerElement.style.transform = 'scale(1.1)';
+            });
+            markerElement.addEventListener('mouseleave', () => {
+                markerElement.style.transform = 'scale(1)';
+            });
 
             const marker = new mapboxgl.Marker(markerElement)
                 .setLngLat([lng, lat])
@@ -117,17 +133,27 @@ export default function MapComponent({ center, zoom, minZoom, maxZoom, pointsOfI
             console.log(`  - Marker created and added to map`);
             currentMarkers.push(marker);
 
-            const popup = new mapboxgl.Popup({ offset: 25 })
+            // Responsive popup content
+            const popupWidth = isMobile ? 'min-w-[180px] max-w-[250px]' : 'min-w-[200px] max-w-[300px]';
+            const textSize = isMobile ? 'text-xs' : 'text-sm';
+            const titleSize = isMobile ? 'text-sm' : 'text-base';
+
+            const popup = new mapboxgl.Popup({
+                offset: isMobile ? 20 : 25,
+                closeButton: true,
+                closeOnClick: false,
+                maxWidth: isMobile ? '250px' : '300px'
+            })
                 .setHTML(`
-                    <div class="p-3 min-w-[200px]">
-                        <h3 class="font-semibold text-gray-900 mb-1">${poi.name}</h3>
-                        <p class="text-sm text-gray-600 mb-2">${poi.category}</p>
-                        <div class="flex items-center justify-between text-xs text-gray-500">
+                    <div class="p-3 ${popupWidth}">
+                        <h3 class="font-semibold text-gray-900 mb-1 ${titleSize}">${poi.name}</h3>
+                        <p class="${textSize} text-gray-600 mb-2">${poi.category}</p>
+                        <div class="flex items-center justify-between ${textSize} text-gray-500">
                             <span>⭐ ${poi.rating}</span>
                             <span>${poi.timeToSpend}</span>
                             <span class="font-medium">${poi.budget}</span>
                         </div>
-                        ${poi.dogFriendly ? '<div class="mt-2 text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">🐕 Dog Friendly</div>' : ''}
+                        ${poi.dogFriendly ? `<div class="mt-2 ${textSize} bg-green-100 text-green-800 px-2 py-1 rounded-full">🐕 Dog Friendly</div>` : ''}
                     </div>
                 `);
 
@@ -138,6 +164,8 @@ export default function MapComponent({ center, zoom, minZoom, maxZoom, pointsOfI
 
         // Create optimized route line
         if (optimizedPOIs.length > 1) {
+            const isMobile = mapContainer.offsetWidth < 768;
+
             const coordinates = optimizedPOIs.map(poi => {
                 const lat = typeof poi.latitude === 'string' ? parseFloat(poi.latitude) : poi.latitude;
                 const lng = typeof poi.longitude === 'string' ? parseFloat(poi.longitude) : poi.longitude;
@@ -158,7 +186,10 @@ export default function MapComponent({ center, zoom, minZoom, maxZoom, pointsOfI
                 }
             });
 
-            // Add the route layer
+            // Add the route layer with responsive styling
+            const routeWidth = isMobile ? 2 : 3;
+            const dashArray = isMobile ? [2, 2] : [3, 3];
+
             map.addLayer({
                 id: 'route',
                 type: 'line',
@@ -169,8 +200,8 @@ export default function MapComponent({ center, zoom, minZoom, maxZoom, pointsOfI
                 },
                 paint: {
                     'line-color': '#3b82f6',
-                    'line-width': 3,
-                    'line-dasharray': [3, 3],
+                    'line-width': routeWidth,
+                    'line-dasharray': dashArray,
                     'line-opacity': 0.7
                 }
             });
@@ -184,8 +215,15 @@ export default function MapComponent({ center, zoom, minZoom, maxZoom, pointsOfI
                 const lng = typeof poi.longitude === 'string' ? parseFloat(poi.longitude) : poi.longitude;
                 bounds.extend([lng, lat]);
             });
+            // Responsive padding based on container size
+            const isMobile = mapContainer.offsetWidth < 768;
+            const padding = isMobile
+                ? { top: 20, bottom: 20, left: 20, right: 20 }
+                : { top: 50, bottom: 50, left: 50, right: 50 };
+
             map.fitBounds(bounds, {
-                padding: { top: 50, bottom: 50, left: 50, right: 50 }
+                padding: padding,
+                maxZoom: isMobile ? 14 : 16
             });
             console.log('Map bounds fitted to show all markers');
         }
@@ -202,30 +240,47 @@ export default function MapComponent({ center, zoom, minZoom, maxZoom, pointsOfI
         console.log('Center:', center);
         console.log('Initial POIs:', pointsOfInterest);
 
+        // Detect if mobile for responsive initialization
+        const isMobile = window.innerWidth < 768;
+
         map = new mapboxgl.Map({
             container: mapContainer,
             style: style,
             center: center,
-            zoom: zoom || 12,
+            zoom: isMobile ? (zoom || 11) : (zoom || 12),
             minZoom: minZoom || 10,
-            maxZoom: maxZoom || 22
+            maxZoom: maxZoom || 22,
+            preserveDrawingBuffer: true,
+            interactive: true,
+            touchZoomRotate: true,
+            touchPitch: true,
+            dragRotate: !isMobile, // Disable drag rotate on mobile for better UX
+            pitchWithRotate: !isMobile
         });
+
+        // Add responsive navigation controls
+        const nav = new mapboxgl.NavigationControl({
+            showCompass: !isMobile,
+            showZoom: true,
+            visualizePitch: !isMobile
+        });
+        map.addControl(nav, 'top-right');
 
         map.on('load', () => {
             console.log('Map loaded successfully');
-            
+
             // Test with hardcoded marker to verify map is working
             console.log('Adding test marker at map center');
             const testMarker = new mapboxgl.Marker()
                 .setLngLat(center)
                 .addTo(map);
-            
+
             // Remove test marker after 3 seconds
             setTimeout(() => {
                 testMarker.remove();
                 console.log('Test marker removed');
             }, 3000);
-            
+
             // Add initial markers if POIs are available
             if (pointsOfInterest && pointsOfInterest.length > 0) {
                 addMarkers(pointsOfInterest);
@@ -234,6 +289,38 @@ export default function MapComponent({ center, zoom, minZoom, maxZoom, pointsOfI
 
         map.on('error', (e) => {
             console.error('Map error:', e);
+        });
+
+        // Add resize handler for responsive behavior
+        const resizeObserver = new ResizeObserver(() => {
+            if (map) {
+                map.resize();
+            }
+        });
+
+        if (mapContainer) {
+            resizeObserver.observe(mapContainer);
+        }
+
+        // Handle window resize and orientation changes
+        const handleResize = () => {
+            if (map) {
+                setTimeout(() => {
+                    map.resize();
+                }, 100); // Small delay to ensure container has resized
+            }
+        };
+
+        window.addEventListener('resize', handleResize);
+        window.addEventListener('orientationchange', handleResize);
+
+        // Cleanup resize observer and event listeners
+        onCleanup(() => {
+            if (resizeObserver && mapContainer) {
+                resizeObserver.unobserve(mapContainer);
+            }
+            window.removeEventListener('resize', handleResize);
+            window.removeEventListener('orientationchange', handleResize);
         });
     });
 
@@ -260,5 +347,5 @@ export default function MapComponent({ center, zoom, minZoom, maxZoom, pointsOfI
         }
     });
 
-    return <div ref={mapContainer} class="w-full h-full" />;
+    return <div ref={mapContainer} class="w-full h-full min-h-[300px] rounded-lg overflow-hidden" />;
 }

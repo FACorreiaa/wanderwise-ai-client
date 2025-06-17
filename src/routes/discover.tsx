@@ -1,6 +1,8 @@
-import { createSignal, For, Show, createEffect } from 'solid-js';
-import { Search, Filter, MapPin, Star, Heart, Bookmark, Clock, DollarSign, Users, Wifi, Camera, Grid, List, SortAsc, SortDesc } from 'lucide-solid';
+import { createSignal, For, Show, createEffect, onMount } from 'solid-js';
+import { useLocation } from '@solidjs/router';
+import { Search, Filter, MapPin, Star, Heart, Bookmark, Clock, DollarSign, Users, Wifi, Camera, Grid, List, SortAsc, SortDesc, X, Compass } from 'lucide-solid';
 import { useNearbyPOIs, useSearchPOIs, useFavorites, useAddToFavoritesMutation, useRemoveFromFavoritesMutation } from '~/lib/api/pois';
+import type { ActivitiesResponse, POIDetailedInfo } from '~/lib/api/types';
 
 export default function DiscoverPage() {
     const [searchQuery, setSearchQuery] = createSignal('');
@@ -12,6 +14,8 @@ export default function DiscoverPage() {
     const [sortOrder, setSortOrder] = createSignal('desc');
     const [viewMode, setViewMode] = createSignal('grid'); // 'grid', 'list'
     const [showFilters, setShowFilters] = createSignal(false);
+    const [streamingData, setStreamingData] = createSignal<ActivitiesResponse | null>(null);
+    const [fromChat, setFromChat] = createSignal(false);
 
     // Current location for nearby search (could come from geolocation)
     const [currentLocation, setCurrentLocation] = createSignal({ lat: 41.1579, lng: -8.6291 });
@@ -36,12 +40,85 @@ export default function DiscoverPage() {
         }
     );
 
+    // Initialize with streaming data on mount
+    onMount(() => {
+        console.log('=== DISCOVER PAGE MOUNT ===');
+        console.log('Location state:', location.state);
+        
+        // Check for streaming data from route state  
+        if (location.state?.streamingData) {
+            console.log('Found activities streaming data in route state');
+            setStreamingData(location.state.streamingData as ActivitiesResponse);
+            setFromChat(true);
+            console.log('Received activities data:', location.state.streamingData);
+        } else {
+            console.log('No streaming data in route state, checking session storage');
+            // Try to get data from session storage
+            const storedSession = sessionStorage.getItem('completedStreamingSession');
+            console.log('Session storage content:', storedSession);
+            
+            if (storedSession) {
+                try {
+                    const session = JSON.parse(storedSession);
+                    console.log('Parsed session:', session);
+                    
+                    if (session.data && session.data.activities) {
+                        console.log('Setting activities data from session storage');
+                        setStreamingData(session.data as ActivitiesResponse);
+                        setFromChat(true);
+                        console.log('Loaded activities data from session storage:', session.data);
+                    } else {
+                        console.log('No activities data found in session');
+                    }
+                } catch (error) {
+                    console.error('Error parsing stored session:', error);
+                }
+            } else {
+                console.log('No stored session found');
+            }
+        }
+    });
+
     // Get POIs from appropriate source
     const pois = () => {
+        // Prioritize streaming data if available
+        const streaming = streamingData();
+        if (streaming && streaming.activities && streaming.activities.length > 0) {
+            console.log('Using streaming activities data:', streaming.activities);
+            return streaming.activities.map(convertPOIToDisplayFormat);
+        }
+        
+        // Fallback to search or nearby data
         if (searchQuery().trim()) {
             return searchPOIsQuery.data || [];
         }
         return nearbyPOIsQuery.data || [];
+    };
+
+    // Convert streaming POI data to display format
+    const convertPOIToDisplayFormat = (poi: POIDetailedInfo) => {
+        return {
+            id: poi.id,
+            name: poi.name,
+            category: poi.category,
+            description: poi.description,
+            latitude: poi.latitude,
+            longitude: poi.longitude,
+            address: poi.address || 'Address not available',
+            price: poi.price_level || 'Free',
+            rating: poi.rating || 4.0,
+            reviewCount: 0, // Not available in streaming data
+            tags: poi.tags || [],
+            amenities: poi.tags || [],
+            distance: '0.5 km', // Default value
+            city: poi.city,
+            country: 'Portugal', // Default
+            timeToSpend: poi.time_to_spend || '1-2 hours',
+            budget: poi.budget || poi.price_level || 'Free',
+            priority: poi.priority || 1,
+            featured: false, // Default
+            openNow: true // Default
+        };
     };
 
     // Check if POI is in favorites
@@ -330,13 +407,40 @@ export default function DiscoverPage() {
 
     return (
         <div class="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors">
+            {/* Chat Success Banner */}
+            <Show when={fromChat()}>
+                <div class="bg-gradient-to-r from-green-50 to-blue-50 border-b border-green-200 px-4 py-3 sm:px-6">
+                    <div class="max-w-7xl mx-auto">
+                        <div class="flex items-center gap-3">
+                            <div class="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
+                                <Compass class="w-4 h-4 text-white" />
+                            </div>
+                            <div class="flex-1">
+                                <p class="text-sm font-medium text-green-900">
+                                    ✨ Your activity recommendations are ready!
+                                </p>
+                                <p class="text-xs text-green-700">
+                                    Generated from your chat: "{location.state?.originalMessage || 'Activity search'}"
+                                </p>
+                            </div>
+                            <button
+                                onClick={() => setFromChat(false)}
+                                class="p-1 text-green-600 hover:text-green-700"
+                            >
+                                <X class="w-4 h-4" />
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </Show>
+
             {/* Header */}
             <div class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
                 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
                     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                         <div>
-                            <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Discover Places</h1>
-                            <p class="text-gray-600 dark:text-gray-400 mt-1">Find amazing places to visit around the world</p>
+                            <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Discover {displayLocation()}</h1>
+                            <p class="text-gray-600 dark:text-gray-400 mt-1">{pois().length} amazing places to visit</p>
                         </div>
                     </div>
                 </div>
@@ -459,4 +563,13 @@ export default function DiscoverPage() {
             </div>
         </div>
     );
+
+    // Get display location
+    const displayLocation = () => {
+        const streaming = streamingData();
+        if (streaming && streaming.activities && streaming.activities.length > 0) {
+            return streaming.activities[0].city || 'Places';
+        }
+        return 'Places';
+    };
 }
