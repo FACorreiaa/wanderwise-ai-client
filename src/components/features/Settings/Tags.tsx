@@ -109,11 +109,11 @@ export default function TagsComponent(props: TagsUIProps) {
     return (
       <div class="space-y-8">
         <div class="text-center py-12">
-          <h3 class="text-lg font-semibold text-gray-900 mb-2">Error Loading Tags</h3>
-          <p class="text-gray-600 mb-4">Unable to load tags. Please try again.</p>
+          <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">Error Loading Tags</h3>
+          <p class="text-gray-600 dark:text-gray-300 mb-4">Unable to load tags. Please try again.</p>
           <button
             onClick={props.onRetry}
-            class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+            class="px-4 py-2 bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white rounded-lg"
           >
             Retry
           </button>
@@ -125,16 +125,16 @@ export default function TagsComponent(props: TagsUIProps) {
   return (
     <div class="space-y-8">
       <div>
-        <h2 class="text-2xl font-bold text-gray-900 mb-2">Travel Tags</h2>
-        <p class="text-gray-600 mb-6">
+        <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-2">Travel Tags</h2>
+        <p class="text-gray-600 dark:text-gray-300 mb-6">
           Manage your personal tags and activate/deactivate both global and personal tags to personalize your travel recommendations.
         </p>
 
-        <div class="bg-white rounded-lg border border-gray-200 p-6">
+        <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
           {/* Add New Tag Form */}
-          <div class="mb-6 pb-6 border-b border-gray-200">
+          <div class="mb-6 pb-6 border-b border-gray-200 dark:border-gray-700">
             <div class="flex items-center justify-between mb-3">
-              <h4 class="font-semibold text-gray-900">Manage Tags</h4>
+              <h4 class="font-semibold text-gray-900 dark:text-white">Manage Tags</h4>
               <Show when={!showAddTagForm()} fallback={
                 <button
                   onClick={() => {
@@ -143,14 +143,14 @@ export default function TagsComponent(props: TagsUIProps) {
                     setNewTagDescription('');
                     setNewTagType('');
                   }}
-                  class="px-3 py-1 text-sm text-gray-600 hover:text-gray-800"
+                  class="px-3 py-1 text-sm text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-gray-100"
                 >
                   Cancel
                 </button>
               }>
                 <button
                   onClick={() => setShowAddTagForm(true)}
-                  class="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm font-medium"
+                  class="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 dark:bg-green-500 dark:hover:bg-green-600 text-white rounded-lg text-sm font-medium"
                 >
                   <Plus class="w-4 h-4" />
                   Add New Tag

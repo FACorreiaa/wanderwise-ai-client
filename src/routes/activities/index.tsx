@@ -1,17 +1,18 @@
 import { createSignal, createEffect, For, Show, onMount } from 'solid-js';
 import { useLocation } from '@solidjs/router';
-import { MapPin, Clock, Star, Filter, Heart, Share2, Download, Edit3, Plus, X, Navigation, Calendar, Users, DollarSign, Camera, Coffee, Utensils, Wifi, CreditCard, Loader2, MessageCircle, Send, Bed, Building2, Car, Waves, Dumbbell, UtensilsCrossed, Shield, Phone } from 'lucide-solid';
+import { MapPin, Clock, Star, Filter, Heart, Share2, Download, Edit3, Plus, X, Navigation, Calendar, Users, DollarSign, Camera, Coffee, Utensils, Wifi, CreditCard, Loader2, MessageCircle, Send, Compass, Map, Zap, Mountain, Palette, Music } from 'lucide-solid';
 import MapComponent from '~/components/features/Map/Map';
 // Removed old API imports - now using unified streaming endpoint only
-import type { AccommodationResponse, HotelDetailedInfo } from '~/lib/api/types';
+import type { ActivitiesResponse, POIDetailedInfo } from '~/lib/api/types';
+import { useUserLocation } from '@/contexts/LocationContext';
 
-export default function HotelsPage() {
+export default function ActivitiesPage() {
     const location = useLocation();
-    const [selectedHotel, setSelectedHotel] = createSignal(null);
+    const [selectedActivity, setSelectedActivity] = createSignal(null);
     const [showFilters, setShowFilters] = createSignal(false);
     const [viewMode, setViewMode] = createSignal('split'); // 'map', 'list', 'split'
-    const [myBookmarks, setMyBookmarks] = createSignal([]); // Track bookmarked hotels
-    const [streamingData, setStreamingData] = createSignal<AccommodationResponse | null>(null);
+    const [myFavorites, setMyFavorites] = createSignal([]); // Track favorite activities
+    const [streamingData, setStreamingData] = createSignal<ActivitiesResponse | null>(null);
     const [fromChat, setFromChat] = createSignal(false);
 
     // Chat functionality
@@ -19,45 +20,58 @@ export default function HotelsPage() {
     const [chatMessage, setChatMessage] = createSignal('');
     const [chatHistory, setChatHistory] = createSignal([]);
     const [isLoading, setIsLoading] = createSignal(false);
-    const [sessionId, setSessionId] = createSignal('hotels-session-id');
+    const [sessionId, setSessionId] = createSignal('activities-session-id');
 
+
+    const { userLocation } = useUserLocation()
+    const userLatitude = userLocation()?.latitude || 38.7223;
+    const userLongitude = userLocation()?.longitude || -9.1393;
     // Filter states
     const [activeFilters, setActiveFilters] = createSignal({
-        types: [], // Start with no filters active so all hotels show initially
+        categories: [], // Start with no filters active so all activities show initially
         priceRange: [],
-        amenities: [],
+        features: [],
         rating: 0
     });
 
+    // Search parameters
+    const [searchParams, setSearchParams] = createSignal({
+        location: "Lisboa, Portugal",
+        centerLat: userLatitude,
+        centerLng: userLongitude
+    });
+
+    // Removed old API hooks - now using unified streaming endpoint only
+
     // Initialize with streaming data on mount
     onMount(() => {
-        console.log('=== HOTELS PAGE MOUNT ===');
+        console.log('=== ACTIVITIES PAGE MOUNT ===');
         console.log('Location state:', location.state);
-        
+
         // Check for streaming data from route state  
         if (location.state?.streamingData) {
-            console.log('Found accommodation streaming data in route state');
-            setStreamingData(location.state.streamingData as AccommodationResponse);
+            console.log('Found activities streaming data in route state');
+            setStreamingData(location.state.streamingData as ActivitiesResponse);
             setFromChat(true);
-            console.log('Received accommodation data:', location.state.streamingData);
+            console.log('Received activities data:', location.state.streamingData);
         } else {
             console.log('No streaming data in route state, checking session storage');
             // Try to get data from session storage
             const storedSession = sessionStorage.getItem('completedStreamingSession');
             console.log('Session storage content:', storedSession);
-            
+
             if (storedSession) {
                 try {
                     const session = JSON.parse(storedSession);
                     console.log('Parsed session:', session);
-                    
-                    if (session.data && session.data.hotels) {
-                        console.log('Setting accommodation data from session storage');
-                        setStreamingData(session.data as AccommodationResponse);
+
+                    if (session.data && session.data.activities) {
+                        console.log('Setting activities data from session storage');
+                        setStreamingData(session.data as ActivitiesResponse);
                         setFromChat(true);
-                        console.log('Loaded accommodation data from session storage:', session.data);
+                        console.log('Loaded activities data from session storage:', session.data);
                     } else {
-                        console.log('No accommodation data found in session');
+                        console.log('No activities data found in session');
                     }
                 } catch (error) {
                     console.error('Error parsing stored session:', error);
@@ -68,54 +82,41 @@ export default function HotelsPage() {
         }
     });
 
-    // Sample search/booking parameters
-    const [searchParams, setSearchParams] = createSignal({
-        location: "Porto, Portugal",
-        checkIn: "2024-01-15",
-        checkOut: "2024-01-18",
-        guests: 2,
-        rooms: 1,
-        centerLat: 41.1579,
-        centerLng: -8.6291
-    });
-
-    // Removed old API hooks - now using unified streaming endpoint only
-
-    const hotels = () => {
+    const activities = () => {
         // Prioritize streaming data if available
         const streaming = streamingData();
-        if (streaming && streaming.hotels && streaming.hotels.length > 0) {
-            console.log('Using streaming hotels data:', streaming.hotels);
-            return streaming.hotels.map(convertHotelToDisplayFormat);
+        if (streaming && streaming.activities && streaming.activities.length > 0) {
+            console.log('Using streaming activities data:', streaming.activities);
+            return streaming.activities.map(convertActivityToDisplayFormat);
         }
-        
+
         // No fallback API data - only streaming data is used
         return [];
     };
 
-    // Convert streaming hotel data to display format
-    const convertHotelToDisplayFormat = (hotel: HotelDetailedInfo) => {
+    // Convert streaming activity data to display format
+    const convertActivityToDisplayFormat = (activity: POIDetailedInfo) => {
         return {
-            id: hotel.id || `hotel-${Math.random().toString(36).substr(2, 9)}`,
-            name: hotel.name || 'Unknown Hotel',
-            type: hotel.category || 'Hotel',
-            description: hotel.description || 'No description available',
-            latitude: hotel.latitude || 0,
-            longitude: hotel.longitude || 0,
-            address: hotel.address || 'Address not available',
-            priceRange: hotel.price_level || '€€',
-            pricePerNight: hotel.price_level || '€€',
-            rating: hotel.rating || 4.0,
+            id: activity.id,
+            name: activity.name,
+            category: activity.category,
+            description: activity.description,
+            latitude: activity.latitude,
+            longitude: activity.longitude,
+            address: activity.address || 'Address not available',
+            price: activity.price_level || 'Free',
+            rating: activity.rating || 4.0,
             reviewCount: 0, // Not available in streaming data
-            amenities: Array.isArray(hotel.amenities) ? hotel.amenities : [],
-            tags: Array.isArray(hotel.tags) ? hotel.tags : [],
-            features: Array.isArray(hotel.tags) ? hotel.tags : [],
-            phone: hotel.phone_number || 'Not available',
-            website: hotel.website || '',
-            checkInTime: '15:00',
-            checkOutTime: '11:00',
-            cancellationPolicy: 'Free cancellation up to 24 hours',
-            roomTypes: ['Standard Room', 'Deluxe Room'] // Default values
+            tags: activity.tags || [],
+            features: activity.tags || [],
+            phone: activity.phone_number || 'Not available',
+            website: activity.website || '',
+            openingHours: activity.opening_hours || 'Hours not available',
+            timeToSpend: activity.time_to_spend || '1-2 hours',
+            budget: activity.budget || activity.price_level || 'Free',
+            priority: activity.priority || 1,
+            featured: false, // Default
+            openNow: true // Default
         };
     };
 
@@ -130,12 +131,12 @@ export default function HotelsPage() {
         setChatHistory(prev => [...prev, { type: 'user', content: userMessage, timestamp: new Date() }]);
 
         try {
-            // Simulate API call for hotel recommendations
+            // Simulate API call for activity recommendations
             await new Promise(resolve => setTimeout(resolve, 1500));
-            
+
             setChatHistory(prev => [...prev, {
                 type: 'assistant',
-                content: "I'd be happy to help you find the perfect hotel! I can help you with recommendations based on your budget, preferred amenities, location preferences, or special requirements. What type of accommodation are you looking for?",
+                content: "I'd be happy to help you discover amazing activities! I can recommend cultural sites, entertainment venues, outdoor adventures, or unique experiences based on your interests. What type of activity are you looking for?",
                 timestamp: new Date()
             }]);
 
@@ -159,88 +160,57 @@ export default function HotelsPage() {
     };
 
     const filterOptions = {
-        types: [
-            { id: 'luxury', label: 'Luxury Hotel', icon: Building2 },
-            { id: 'boutique', label: 'Boutique Hotel', icon: Heart },
-            { id: 'historic', label: 'Historic Hotel', icon: Building2 },
-            { id: 'business', label: 'Business Hotel', icon: Coffee },
-            { id: 'design', label: 'Design Hotel', icon: Camera }
+        categories: [
+            { id: 'cultural', label: 'Cultural', icon: Palette },
+            { id: 'entertainment', label: 'Entertainment', icon: Music },
+            { id: 'outdoor', label: 'Outdoor', icon: Mountain },
+            { id: 'adventure', label: 'Adventure', icon: Zap },
+            { id: 'sightseeing', label: 'Sightseeing', icon: Camera }
         ],
-        priceRange: ['€', '€€', '€€€', '€€€€'],
-        amenities: ['Spa', 'Pool', 'Restaurant', 'Gym', 'WiFi', 'Parking', 'Pet Friendly', 'Business Center']
+        priceRange: ['Free', '€', '€€', '€€€'],
+        features: ['Family Friendly', 'Pet Friendly', 'Accessible', 'Photography', 'Educational', 'Outdoor Seating']
     };
 
-    const getHotelIcon = (type: any) => {
+    const getActivityIcon = (category: any) => {
         const iconMap = {
-            'Luxury Hotel': Building2,
-            'Historic Hotel': Building2,
-            'Boutique Hotel': Heart,
-            'Business Hotel': Coffee,
-            'Design Hotel': Camera
+            'Cultural': Palette,
+            'Entertainment': Music,
+            'Outdoor': Mountain,
+            'Adventure': Zap,
+            'Sightseeing': Camera
         };
-        return iconMap[type] || Building2;
+        return iconMap[category] || Compass;
     };
 
     const getPriceColor = (price) => {
         const colorMap = {
-            '€': 'text-green-600',
-            '€€': 'text-blue-600',
-            '€€€': 'text-orange-600',
-            '€€€€': 'text-red-600'
+            'Free': 'text-green-600',
+            '€': 'text-blue-600',
+            '€€': 'text-orange-600',
+            '€€€': 'text-red-600'
         };
         return colorMap[price] || 'text-gray-600';
     };
 
-    const filteredHotels = () => {
-        const allHotels = hotels();
-        console.log('=== FILTERED HOTELS DEBUG ===');
-        console.log('All hotels:', allHotels);
-        console.log('All hotels length:', allHotels.length);
-        console.log('Active filters:', activeFilters());
-        
-        const filtered = allHotels.filter(hotel => {
+    const filteredActivities = () => {
+        return activities().filter(activity => {
             const filters = activeFilters();
-            // Safety check for hotel properties
-            const hotelTags = hotel.tags || [];
-            const hotelAmenities = hotel.amenities || [];
-            const hotelPriceRange = hotel.priceRange || '';
-            const hotelRating = hotel.rating || 0;
-            
-            console.log(`Filtering hotel: ${hotel.name}`);
-            console.log(`  - Tags: ${hotelTags}`);
-            console.log(`  - Amenities: ${hotelAmenities}`);
-            console.log(`  - Price range: ${hotelPriceRange}`);
-            console.log(`  - Rating: ${hotelRating}`);
-            
-            // Type filter - check both hotel.type and hotel tags
-            if (filters.types.length > 0 && !filters.types.some(type => 
-                hotel.type === type || hotelTags.includes(type)
-            )) {
-                console.log(`  - Filtered out by type: ${filters.types} not in [${hotel.type}] or ${hotelTags}`);
-                return false;
-            }
+            // Safety check for activity properties
+            const activityTags = activity.tags || [];
+            const activityFeatures = activity.features || [];
+            const activityPrice = activity.price || '';
+            const activityRating = activity.rating || 0;
+
+            // Category filter
+            if (filters.categories.length > 0 && !filters.categories.some(category => activityTags.includes(category))) return false;
             // Price range filter
-            if (filters.priceRange.length > 0 && !filters.priceRange.includes(hotelPriceRange)) {
-                console.log(`  - Filtered out by price: ${filters.priceRange} not includes ${hotelPriceRange}`);
-                return false;
-            }
-            // Amenities filter
-            if (filters.amenities.length > 0 && !filters.amenities.some(amenity => hotelAmenities.includes(amenity))) {
-                console.log(`  - Filtered out by amenities: ${filters.amenities} not in ${hotelAmenities}`);
-                return false;
-            }
+            if (filters.priceRange.length > 0 && !filters.priceRange.includes(activityPrice)) return false;
+            // Features filter
+            if (filters.features.length > 0 && !filters.features.some(feature => activityFeatures.includes(feature))) return false;
             // Rating filter
-            if (filters.rating > 0 && hotelRating < filters.rating) {
-                console.log(`  - Filtered out by rating: ${hotelRating} < ${filters.rating}`);
-                return false;
-            }
-            console.log(`  - Hotel passed all filters`);
+            if (filters.rating > 0 && activityRating < filters.rating) return false;
             return true;
         });
-        
-        console.log('Filtered hotels:', filtered);
-        console.log('Filtered hotels length:', filtered.length);
-        return filtered;
     };
 
     const toggleFilter = (filterType, value) => {
@@ -252,47 +222,47 @@ export default function HotelsPage() {
         }));
     };
 
-    const addToBookmarks = (hotel) => {
-        setMyBookmarks(prev => prev.some(item => item.id === hotel.id) ? prev : [...prev, hotel]);
+    const addToFavorites = (activity) => {
+        setMyFavorites(prev => prev.some(item => item.id === activity.id) ? prev : [...prev, activity]);
     };
 
-    const renderHotelCard = (hotel) => {
-        const IconComponent = getHotelIcon(hotel.type);
+    const renderActivityCard = (activity) => {
+        const IconComponent = getActivityIcon(activity.category);
         return (
             <div
-                class={`bg-white rounded-lg border p-4 cursor-pointer transition-all hover:shadow-md ${selectedHotel()?.id === hotel.id ? 'ring-2 ring-blue-500 shadow-md' : 'border-gray-200'}`}
-                onClick={() => setSelectedHotel(hotel)}
+                class={`bg-white rounded-lg border p-4 cursor-pointer transition-all hover:shadow-md ${selectedActivity()?.id === activity.id ? 'ring-2 ring-green-500 shadow-md' : 'border-gray-200'}`}
+                onClick={() => setSelectedActivity(activity)}
             >
                 <div class="flex items-start gap-3">
-                    <div class="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center flex-shrink-0">
+                    <div class="w-10 h-10 rounded-full bg-green-500 flex items-center justify-center flex-shrink-0">
                         <IconComponent class="w-5 h-5 text-white" />
                     </div>
                     <div class="flex-1 min-w-0">
                         <div class="flex items-start justify-between mb-2">
                             <div>
-                                <h3 class="font-semibold text-gray-900 text-sm">{hotel.name}</h3>
-                                <p class="text-xs text-gray-500">{hotel.type}</p>
+                                <h3 class="font-semibold text-gray-900 text-sm">{activity.name}</h3>
+                                <p class="text-xs text-gray-500">{activity.category}</p>
                             </div>
                             <div class="flex items-center gap-1 text-xs">
                                 <Star class="w-3 h-3 text-yellow-500 fill-current" />
-                                <span class="text-gray-600">{hotel.rating}</span>
-                                <span class="text-gray-400">({hotel.reviewCount})</span>
+                                <span class="text-gray-600">{activity.rating}</span>
+                                <span class="text-gray-400">({activity.reviewCount})</span>
                             </div>
                         </div>
-                        <p class="text-xs text-gray-600 mb-3 line-clamp-2">{hotel.description}</p>
+                        <p class="text-xs text-gray-600 mb-3 line-clamp-2">{activity.description}</p>
                         <div class="flex items-center justify-between text-xs">
                             <div class="flex items-center gap-3">
-                                <div class={`font-medium ${getPriceColor(hotel.priceRange)}`}>
-                                    {hotel.priceRange}
+                                <div class={`font-medium ${getPriceColor(activity.price)}`}>
+                                    {activity.price}
                                 </div>
                                 <div class="text-gray-500">
-                                    {hotel.pricePerNight}
+                                    {activity.timeToSpend}
                                 </div>
                             </div>
                             <div class="flex flex-wrap gap-1">
-                                {hotel.amenities.slice(0, 2).map(amenity => (
-                                    <span class="bg-blue-100 text-blue-800 px-1.5 py-0.5 rounded text-xs">
-                                        {amenity}
+                                {activity.features.slice(0, 2).map(feature => (
+                                    <span class="bg-green-100 text-green-800 px-1.5 py-0.5 rounded text-xs">
+                                        {feature}
                                     </span>
                                 ))}
                             </div>
@@ -308,21 +278,21 @@ export default function HotelsPage() {
             <div class="absolute top-full left-0 right-0 mt-2 bg-white rounded-lg border border-gray-200 shadow-lg p-4 z-10">
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                     <div>
-                        <h4 class="font-semibold text-gray-900 mb-2 text-sm">Hotel Type</h4>
+                        <h4 class="font-semibold text-gray-900 mb-2 text-sm">Category</h4>
                         <div class="space-y-1">
-                            <For each={filterOptions.types}>
-                                {(type) => {
-                                    const IconComponent = type.icon;
+                            <For each={filterOptions.categories}>
+                                {(category) => {
+                                    const IconComponent = category.icon;
                                     return (
                                         <label class="flex items-center gap-2 text-sm cursor-pointer hover:bg-gray-50 p-1 rounded">
                                             <input
                                                 type="checkbox"
                                                 class="rounded border-gray-300"
-                                                checked={activeFilters().types.includes(type.label)}
-                                                onChange={() => toggleFilter('types', type.label)}
+                                                checked={activeFilters().categories.includes(category.label)}
+                                                onChange={() => toggleFilter('categories', category.label)}
                                             />
                                             <IconComponent class="w-4 h-4 text-gray-500" />
-                                            <span class="text-gray-700">{type.label}</span>
+                                            <span class="text-gray-700">{category.label}</span>
                                         </label>
                                     );
                                 }}
@@ -348,18 +318,18 @@ export default function HotelsPage() {
                         </div>
                     </div>
                     <div>
-                        <h4 class="font-semibold text-gray-900 mb-2 text-sm">Amenities</h4>
+                        <h4 class="font-semibold text-gray-900 mb-2 text-sm">Features</h4>
                         <div class="space-y-1">
-                            <For each={filterOptions.amenities}>
-                                {(amenity) => (
+                            <For each={filterOptions.features}>
+                                {(feature) => (
                                     <label class="flex items-center gap-2 text-sm cursor-pointer hover:bg-gray-50 p-1 rounded">
                                         <input
                                             type="checkbox"
                                             class="rounded border-gray-300"
-                                            checked={activeFilters().amenities.includes(amenity)}
-                                            onChange={() => toggleFilter('amenities', amenity)}
+                                            checked={activeFilters().features.includes(feature)}
+                                            onChange={() => toggleFilter('features', feature)}
                                         />
-                                        <span class="text-gray-700">{amenity}</span>
+                                        <span class="text-gray-700">{feature}</span>
                                     </label>
                                 )}
                             </For>
@@ -391,14 +361,14 @@ export default function HotelsPage() {
     const renderChatInterface = () => (
         <Show when={showChat()}>
             <div class="fixed bottom-6 right-6 w-96 h-[500px] bg-white rounded-lg shadow-2xl border border-gray-200 flex flex-col z-50">
-                <div class="flex items-center justify-between p-4 border-b border-gray-200 bg-blue-600 text-white rounded-t-lg">
+                <div class="flex items-center justify-between p-4 border-b border-gray-200 bg-green-600 text-white rounded-t-lg">
                     <div class="flex items-center gap-2">
                         <MessageCircle class="w-5 h-5" />
-                        <span class="font-medium">Hotel Assistant</span>
+                        <span class="font-medium">Activity Recommendations</span>
                     </div>
                     <button
                         onClick={() => setShowChat(false)}
-                        class="p-1 hover:bg-blue-700 rounded"
+                        class="p-1 hover:bg-green-700 rounded"
                     >
                         <X class="w-4 h-4" />
                     </button>
@@ -407,10 +377,10 @@ export default function HotelsPage() {
                 <div class="flex-1 overflow-y-auto p-4 space-y-4">
                     <Show when={chatHistory().length === 0}>
                         <div class="text-center text-gray-500 py-8">
-                            <Bed class="w-12 h-12 mx-auto mb-4 text-gray-300" />
-                            <p class="text-sm">Ask me to help find your perfect hotel!</p>
+                            <Compass class="w-12 h-12 mx-auto mb-4 text-gray-300" />
+                            <p class="text-sm">Ask me for activity recommendations!</p>
                             <p class="text-xs mt-2 text-gray-400">
-                                Try: "Find luxury hotels with spa" or "Budget hotels near the center"
+                                Try: "Museums in the city center" or "Outdoor activities for families"
                             </p>
                         </div>
                     </Show>
@@ -419,13 +389,13 @@ export default function HotelsPage() {
                         {(message) => (
                             <div class={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}>
                                 <div class={`max-w-[80%] p-3 rounded-lg text-sm ${message.type === 'user'
-                                    ? 'bg-blue-600 text-white'
+                                    ? 'bg-green-600 text-white'
                                     : message.type === 'error'
                                         ? 'bg-red-100 text-red-800 border border-red-200'
                                         : 'bg-gray-100 text-gray-800'
                                     }`}>
                                     <p class="whitespace-pre-wrap">{message.content}</p>
-                                    <p class={`text-xs mt-1 opacity-70 ${message.type === 'user' ? 'text-blue-100' : 'text-gray-500'}`}>
+                                    <p class={`text-xs mt-1 opacity-70 ${message.type === 'user' ? 'text-green-100' : 'text-gray-500'}`}>
                                         {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                     </p>
                                 </div>
@@ -437,7 +407,7 @@ export default function HotelsPage() {
                         <div class="flex justify-start">
                             <div class="bg-gray-100 p-3 rounded-lg flex items-center gap-2 text-sm text-gray-600">
                                 <Loader2 class="w-4 h-4 animate-spin" />
-                                <span>Finding perfect hotels...</span>
+                                <span>Finding amazing activities...</span>
                             </div>
                         </div>
                     </Show>
@@ -449,15 +419,15 @@ export default function HotelsPage() {
                             value={chatMessage()}
                             onInput={(e) => setChatMessage(e.target.value)}
                             onKeyPress={handleKeyPress}
-                            placeholder="Ask for hotel recommendations..."
-                            class="flex-1 resize-none border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            placeholder="Ask for activity recommendations..."
+                            class="flex-1 resize-none border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
                             rows="2"
                             disabled={isLoading()}
                         />
                         <button
                             onClick={sendChatMessage}
                             disabled={!chatMessage().trim() || isLoading()}
-                            class="p-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                            class="p-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                         >
                             <Send class="w-4 h-4" />
                         </button>
@@ -470,8 +440,8 @@ export default function HotelsPage() {
     // Get display location
     const displayLocation = () => {
         const streaming = streamingData();
-        if (streaming && streaming.hotels && streaming.hotels.length > 0) {
-            return streaming.hotels[0].city || 'Hotels';
+        if (streaming && streaming.activities && streaming.activities.length > 0) {
+            return streaming.activities[0].city || 'Activities';
         }
         return searchParams().location;
     };
@@ -484,14 +454,14 @@ export default function HotelsPage() {
                     <div class="max-w-7xl mx-auto">
                         <div class="flex items-center gap-3">
                             <div class="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
-                                <Bed class="w-4 h-4 text-white" />
+                                <Compass class="w-4 h-4 text-white" />
                             </div>
                             <div class="flex-1">
                                 <p class="text-sm font-medium text-green-900">
-                                    ✨ Your hotel recommendations are ready!
+                                    ✨ Your activity recommendations are ready!
                                 </p>
                                 <p class="text-xs text-green-700">
-                                    Generated from your chat: "{location.state?.originalMessage || 'Hotel search'}"
+                                    Generated from your chat: "{location.state?.originalMessage || 'Activity search'}"
                                 </p>
                             </div>
                             <button
@@ -510,10 +480,8 @@ export default function HotelsPage() {
                 <div class="max-w-7xl mx-auto">
                     <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                         <div>
-                            <h1 class="text-xl font-bold text-gray-900 sm:text-2xl">Hotels in {displayLocation()}</h1>
-                            <p class="text-sm text-gray-600 mt-1 sm:text-base">
-                                {hotels().length} recommendations • {searchParams().guests} guests • {searchParams().rooms} room
-                            </p>
+                            <h1 class="text-xl font-bold text-gray-900 sm:text-2xl">Activities in {displayLocation()}</h1>
+                            <p class="text-sm text-gray-600 mt-1 sm:text-base">{activities().length} amazing things to do</p>
                         </div>
                         <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
                             {/* View Mode Toggle */}
@@ -542,16 +510,16 @@ export default function HotelsPage() {
                             <div class="flex flex-col gap-2 sm:flex-row sm:gap-3">
                                 <button
                                     onClick={() => setShowChat(true)}
-                                    class="flex items-center justify-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all shadow-sm text-sm font-medium"
+                                    class="flex items-center justify-center gap-2 px-4 py-2 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-lg hover:from-green-700 hover:to-green-800 transition-all shadow-sm text-sm font-medium"
                                 >
                                     <MessageCircle class="w-4 h-4" />
-                                    Get Help
+                                    Get Recommendations
                                 </button>
 
                                 <div class="flex gap-2">
                                     <button class="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors text-sm sm:flex-initial">
                                         <Heart class="w-4 h-4" />
-                                        <span class="hidden sm:inline">Saved</span>
+                                        <span class="hidden sm:inline">Favorites</span>
                                     </button>
                                     <button class="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors text-sm sm:flex-initial">
                                         <Share2 class="w-4 h-4" />
@@ -571,19 +539,14 @@ export default function HotelsPage() {
                         <div class="flex items-center gap-4">
                             <button
                                 onClick={() => setShowFilters(!showFilters())}
-                                class={`flex items-center gap-2 px-4 py-2 rounded-lg border transition-colors text-sm font-medium ${showFilters() ? 'bg-blue-50 border-blue-200 text-blue-700' : 'border-gray-200 text-gray-700 hover:bg-gray-50'}`}
+                                class={`flex items-center gap-2 px-4 py-2 rounded-lg border transition-colors text-sm font-medium ${showFilters() ? 'bg-green-50 border-green-200 text-green-700' : 'border-gray-200 text-gray-700 hover:bg-gray-50'}`}
                             >
                                 <Filter class="w-4 h-4" />
                                 Filters
                             </button>
                             <div class="text-sm text-gray-600">
-                                {filteredHotels().length} hotels available
+                                {filteredActivities().length} activities
                             </div>
-                        </div>
-                        <div class="flex items-center gap-2 text-sm text-gray-600">
-                            <Users class="w-4 h-4" />
-                            <span class="hidden sm:inline">{searchParams().guests} guests, {searchParams().rooms} room</span>
-                            <span class="sm:hidden">{searchParams().guests}G, {searchParams().rooms}R</span>
                         </div>
                     </div>
                     {renderFiltersPanel()}
@@ -600,7 +563,7 @@ export default function HotelsPage() {
                                 zoom={12}
                                 minZoom={10}
                                 maxZoom={22}
-                                pointsOfInterest={filteredHotels()}
+                                pointsOfInterest={filteredActivities()}
                             />
                         </div>
                     </Show>
@@ -609,27 +572,27 @@ export default function HotelsPage() {
                         <div class={viewMode() === 'list' ? 'col-span-full' : ''}>
                             <div class="space-y-4">
                                 <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                                    <h2 class="text-lg font-semibold text-gray-900">Available Hotels</h2>
+                                    <h2 class="text-lg font-semibold text-gray-900">Available Activities</h2>
                                     <p class="text-sm text-gray-600 self-start sm:self-auto">
-                                        {filteredHotels().length} of {hotels().length} hotels
+                                        Found {filteredActivities().length} activities
                                     </p>
                                 </div>
-                                <Show when={filteredHotels().length > 0} fallback={
+                                <Show when={filteredActivities().length > 0} fallback={
                                     <div class="text-center py-12">
-                                        <Bed class="w-12 h-12 text-gray-300 mx-auto mb-4" />
-                                        <h3 class="text-lg font-semibold text-gray-900 mb-2">No hotels found</h3>
-                                        <p class="text-gray-600 mb-4">Start a new search from the home page to find hotels</p>
-                                        <button 
+                                        <Compass class="w-12 h-12 text-gray-300 mx-auto mb-4" />
+                                        <h3 class="text-lg font-semibold text-gray-900 mb-2">No activities found</h3>
+                                        <p class="text-gray-600 mb-4">Start a new search from the home page to find activities</p>
+                                        <button
                                             onClick={() => window.location.href = '/'}
-                                            class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                                            class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
                                         >
                                             Start New Search
                                         </button>
                                     </div>
                                 }>
                                     <div class="grid gap-3">
-                                        <For each={filteredHotels()}>
-                                            {(hotel) => renderHotelCard(hotel)}
+                                        <For each={filteredActivities()}>
+                                            {(activity) => renderActivityCard(activity)}
                                         </For>
                                     </div>
                                 </Show>
@@ -646,24 +609,24 @@ export default function HotelsPage() {
             <Show when={!showChat()}>
                 <button
                     onClick={() => setShowChat(true)}
-                    class="fixed bottom-4 right-4 w-12 h-12 bg-blue-600 text-white rounded-full shadow-lg hover:bg-blue-700 transition-all hover:scale-105 flex items-center justify-center z-40 sm:bottom-6 sm:right-6 sm:w-14 sm:h-14"
+                    class="fixed bottom-4 right-4 w-12 h-12 bg-green-600 text-white rounded-full shadow-lg hover:bg-green-700 transition-all hover:scale-105 flex items-center justify-center z-40 sm:bottom-6 sm:right-6 sm:w-14 sm:h-14"
                 >
-                    <Bed class="w-5 h-5 sm:w-6 sm:h-6" />
+                    <Compass class="w-5 h-5 sm:w-6 sm:h-6" />
                 </button>
             </Show>
 
-            {/* Selected Hotel Details Modal */}
-            <Show when={selectedHotel()}>
+            {/* Selected Activity Details Modal */}
+            <Show when={selectedActivity()}>
                 <div class="fixed inset-0 bg-black bg-opacity-50 flex items-end sm:items-center justify-center p-0 sm:p-4 z-50">
                     <div class="bg-white rounded-t-lg sm:rounded-lg max-w-2xl w-full max-h-[90vh] sm:max-h-[80vh] overflow-y-auto">
                         <div class="p-4 sm:p-6">
                             <div class="flex items-start justify-between mb-4">
                                 <div class="flex-1 min-w-0">
-                                    <h3 class="text-lg font-bold text-gray-900 sm:text-xl pr-2">{selectedHotel().name}</h3>
-                                    <p class="text-gray-600 text-sm sm:text-base">{selectedHotel().type}</p>
+                                    <h3 class="text-lg font-bold text-gray-900 sm:text-xl pr-2">{selectedActivity().name}</h3>
+                                    <p class="text-gray-600 text-sm sm:text-base">{selectedActivity().category}</p>
                                 </div>
                                 <button
-                                    onClick={() => setSelectedHotel(null)}
+                                    onClick={() => setSelectedActivity(null)}
                                     class="p-2 hover:bg-gray-100 rounded-lg flex-shrink-0"
                                 >
                                     <X class="w-5 h-5" />
@@ -673,59 +636,32 @@ export default function HotelsPage() {
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-4 text-sm">
                                 <div class="flex items-center gap-2">
                                     <Star class="w-4 h-4 text-yellow-500 fill-current" />
-                                    <span>{selectedHotel().rating}/5 ({selectedHotel().reviewCount} reviews)</span>
+                                    <span>{selectedActivity().rating}/5 ({selectedActivity().reviewCount} reviews)</span>
                                 </div>
                                 <div class="flex items-center gap-2">
                                     <DollarSign class="w-4 h-4 text-gray-500" />
-                                    <span class={getPriceColor(selectedHotel().priceRange)}>{selectedHotel().pricePerNight} per night</span>
+                                    <span class={getPriceColor(selectedActivity().price)}>{selectedActivity().price}</span>
                                 </div>
                                 <div class="flex items-center gap-2 col-span-1 sm:col-span-2">
                                     <MapPin class="w-4 h-4 text-gray-500 flex-shrink-0" />
-                                    <span class="text-xs sm:text-sm">{selectedHotel().address}</span>
+                                    <span class="text-xs sm:text-sm">{selectedActivity().address}</span>
                                 </div>
                                 <div class="flex items-center gap-2">
                                     <Clock class="w-4 h-4 text-gray-500" />
-                                    <span>Check-in: {selectedHotel().checkInTime}</span>
+                                    <span>{selectedActivity().openingHours}</span>
                                 </div>
                                 <div class="flex items-center gap-2">
                                     <Clock class="w-4 h-4 text-gray-500" />
-                                    <span>Check-out: {selectedHotel().checkOutTime}</span>
+                                    <span>Time needed: {selectedActivity().timeToSpend}</span>
                                 </div>
                             </div>
 
-                            <p class="text-gray-700 mb-4 text-sm sm:text-base">{selectedHotel().description}</p>
-
-                            <div class="mb-4">
-                                <h4 class="font-semibold text-gray-900 mb-2">Room Types</h4>
-                                <div class="flex flex-wrap gap-2">
-                                    <For each={selectedHotel().roomTypes}>
-                                        {(roomType) => (
-                                            <span class="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs">
-                                                {roomType}
-                                            </span>
-                                        )}
-                                    </For>
-                                </div>
-                            </div>
-
-                            <div class="mb-4">
-                                <h4 class="font-semibold text-gray-900 mb-2">Amenities</h4>
-                                <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                                    <For each={selectedHotel().amenities}>
-                                        {(amenity) => (
-                                            <div class="flex items-center gap-2 text-sm text-gray-700">
-                                                <div class="w-1.5 h-1.5 bg-green-500 rounded-full"></div>
-                                                {amenity}
-                                            </div>
-                                        )}
-                                    </For>
-                                </div>
-                            </div>
+                            <p class="text-gray-700 mb-4 text-sm sm:text-base">{selectedActivity().description}</p>
 
                             <div class="mb-4">
                                 <h4 class="font-semibold text-gray-900 mb-2">Features</h4>
                                 <div class="flex flex-wrap gap-2">
-                                    <For each={selectedHotel().features}>
+                                    <For each={selectedActivity().features}>
                                         {(feature) => (
                                             <span class="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs">
                                                 {feature}
@@ -738,18 +674,18 @@ export default function HotelsPage() {
                             <div class="border-t pt-4">
                                 <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                                     <div class="text-sm text-gray-600">
-                                        <p><strong>Phone:</strong> {selectedHotel().phone}</p>
-                                        <p><strong>Cancellation:</strong> {selectedHotel().cancellationPolicy}</p>
+                                        <p><strong>Phone:</strong> {selectedActivity().phone}</p>
+                                        <p><strong>Website:</strong> {selectedActivity().website}</p>
                                     </div>
                                     <div class="flex flex-col gap-2 sm:flex-row">
                                         <button
-                                            onClick={() => addToBookmarks(selectedHotel())}
-                                            class={`px-4 py-2 rounded-lg text-sm font-medium ${myBookmarks().some(item => item.id === selectedHotel().id) ? 'bg-red-600 text-white' : 'bg-blue-600 text-white hover:bg-blue-700'}`}
+                                            onClick={() => addToFavorites(selectedActivity())}
+                                            class={`px-4 py-2 rounded-lg text-sm font-medium ${myFavorites().some(item => item.id === selectedActivity().id) ? 'bg-red-600 text-white' : 'bg-green-600 text-white hover:bg-green-700'}`}
                                         >
-                                            {myBookmarks().some(item => item.id === selectedHotel().id) ? 'Saved' : 'Save Hotel'}
+                                            {myFavorites().some(item => item.id === selectedActivity().id) ? 'Favorited' : 'Add to Favorites'}
                                         </button>
-                                        <button class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm font-medium">
-                                            Book Now
+                                        <button class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 text-sm">
+                                            Plan Visit
                                         </button>
                                     </div>
                                 </div>

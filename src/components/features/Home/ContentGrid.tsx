@@ -19,7 +19,7 @@ interface ContentGridProps {
 
 export default function ContentGrid(props: ContentGridProps) {
     return (
-        <section class="w-full py-12 sm:py-16 md:py-20 lg:py-24 bg-muted/30" aria-labelledby="content-grid-heading">
+        <section class="w-full py-12 sm:py-16 md:py-20 lg:py-24 bg-muted/30 dark:bg-gray-900/30" aria-labelledby="content-grid-heading">
             <div class="container px-4 sm:px-6 lg:px-8">
                 <h2 id="content-grid-heading" class="sr-only">Featured Content</h2>
                 {/* Mobile-first filter buttons */}

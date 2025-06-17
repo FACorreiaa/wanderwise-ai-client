@@ -334,7 +334,7 @@ export default function TravelProfiles(props: TravelProfilesProps) {
     <div class="space-y-6">
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-2">Profile Name</label>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Profile Name</label>
           <input
             type="text"
             value={formData().profile_name}
@@ -344,7 +344,7 @@ export default function TravelProfiles(props: TravelProfilesProps) {
           />
         </div>
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-2">Search Radius (km)</label>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Search Radius (km)</label>
           <input
             type="number"
             value={formData().search_radius_km}
@@ -357,7 +357,7 @@ export default function TravelProfiles(props: TravelProfilesProps) {
 
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-2">Preferred Time</label>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Preferred Time</label>
           <select
             value={formData().preferred_time}
             onChange={(e) => updateField('preferred_time', e.target.value)}
@@ -370,7 +370,7 @@ export default function TravelProfiles(props: TravelProfilesProps) {
           </select>
         </div>
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-2">Budget Level (1-5)</label>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Budget Level (1-5)</label>
           <input
             type="range"
             min="1"
@@ -457,7 +457,7 @@ export default function TravelProfiles(props: TravelProfilesProps) {
       </div>
 
       <div>
-        <label class="block text-sm font-medium text-gray-700 mb-2">Tags</label>
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Tags</label>
         <div class="flex flex-wrap gap-2">
           <For each={activeTags()}>
             {(tag) => (
@@ -477,7 +477,7 @@ export default function TravelProfiles(props: TravelProfilesProps) {
       </div>
 
       <div>
-        <label class="block text-sm font-medium text-gray-700 mb-2">Interests</label>
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Interests</label>
         <div class="flex flex-wrap gap-2">
           <For each={activeInterests()}>
             {(interest) => (
@@ -878,25 +878,25 @@ export default function TravelProfiles(props: TravelProfilesProps) {
   return (
     <div class="space-y-6">
       <div>
-        <h2 class="text-2xl font-bold text-gray-900 mb-2">Travel Profiles</h2>
-        <p class="text-gray-600 mb-6">Create and manage different travel profiles for various types of trips. Each profile can have its own preferences for accommodations, dining, activities, and planning.</p>
+        <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-2">Travel Profiles</h2>
+        <p class="text-gray-600 dark:text-gray-300 mb-6">Create and manage different travel profiles for various types of trips. Each profile can have its own preferences for accommodations, dining, activities, and planning.</p>
 
         <Show when={!isCreating() && !editingProfile()}>
           <div class="space-y-4">
             <For each={profiles()}>
               {(profile) => (
-                <div class="bg-white rounded-lg border border-gray-200 p-6">
+                <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
                   <div class="flex items-start justify-between">
                     <div class="flex-1">
                       <div class="flex items-center gap-3 mb-2">
-                        <h3 class="text-lg font-semibold text-gray-900">{profile.profile_name}</h3>
+                        <h3 class="text-lg font-semibold text-gray-900 dark:text-white">{profile.profile_name}</h3>
                         <Show when={profile.is_default}>
-                          <span class="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs font-medium">
+                          <span class="px-2 py-1 bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 rounded-full text-xs font-medium">
                             Default
                           </span>
                         </Show>
                       </div>
-                      <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm text-gray-600 mb-4">
+                      <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm text-gray-600 dark:text-gray-300 mb-4">
                         <div class="flex items-center gap-1">
                           <MapPin class="w-4 h-4" />
                           <span>{profile.search_radius_km}km radius</span>
@@ -918,14 +918,14 @@ export default function TravelProfiles(props: TravelProfilesProps) {
                         <div class="flex flex-wrap gap-2">
                           <For each={profile.interests || []}>
                             {(interest) => (
-                              <span class="px-2 py-1 bg-green-100 text-green-700 rounded-md text-sm">
+                              <span class="px-2 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 rounded-md text-sm">
                                 {interest}
                               </span>
                             )}
                           </For>
                           <For each={profile.tags || []}>
                             {(tag) => (
-                              <span class="px-2 py-1 bg-blue-100 text-blue-700 rounded-md text-sm">
+                              <span class="px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-md text-sm">
                                 {tag}
                               </span>
                             )}
@@ -937,21 +937,21 @@ export default function TravelProfiles(props: TravelProfilesProps) {
                       <button
                         onClick={() => setDefaultProfile(profile.id, profile.profile_name)}
                         disabled={profile.is_default || setDefaultProfileMutation.isPending}
-                        class={`p-2 rounded-lg ${profile.is_default ? 'text-green-500' : 'text-gray-400 hover:text-gray-600'} ${setDefaultProfileMutation.isPending ? 'opacity-50 cursor-not-allowed' : ''}`}
+                        class={`p-2 rounded-lg ${profile.is_default ? 'text-green-500 dark:text-green-400' : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'} ${setDefaultProfileMutation.isPending ? 'opacity-50 cursor-not-allowed' : ''}`}
                         title={profile.is_default ? 'This is the default profile' : 'Set as default profile'}
                       >
                         <Power class="w-4 h-4" />
                       </button>
                       <button
                         onClick={() => startEditing(profile)}
-                        class="p-2 text-gray-400 hover:text-gray-600 rounded-lg"
+                        class="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded-lg"
                       >
                         <Edit3 class="w-4 h-4" />
                       </button>
                       <Show when={!profile.is_default}>
                         <button
                           onClick={() => deleteProfile(profile.id, profile.profile_name)}
-                          class="p-2 text-red-400 hover:text-red-600 rounded-lg"
+                          class="p-2 text-red-400 hover:text-red-600 dark:hover:text-red-400 rounded-lg"
                         >
                           <Trash2 class="w-4 h-4" />
                         </button>
@@ -964,9 +964,9 @@ export default function TravelProfiles(props: TravelProfilesProps) {
 
             <button
               onClick={startCreating}
-              class="w-full p-6 border-2 border-dashed border-gray-300 rounded-lg hover:border-blue-400 hover:bg-blue-50 transition-colors group"
+              class="w-full p-6 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg hover:border-blue-400 dark:hover:border-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors group"
             >
-              <div class="flex items-center justify-center gap-2 text-gray-600 group-hover:text-blue-600">
+              <div class="flex items-center justify-center gap-2 text-gray-600 dark:text-gray-300 group-hover:text-blue-600 dark:group-hover:text-blue-400">
                 <Plus class="w-5 h-5" />
                 <span class="font-medium">Create New Travel Profile</span>
               </div>
@@ -975,21 +975,21 @@ export default function TravelProfiles(props: TravelProfilesProps) {
         </Show>
 
         <Show when={isCreating() || editingProfile()}>
-          <div class="bg-white rounded-lg border border-gray-200 p-6">
+          <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
             <div class="flex items-center justify-between mb-6">
-              <h3 class="text-lg font-semibold text-gray-900">
+              <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
                 {editingProfile() ? 'Edit Profile' : 'Create New Profile'}
               </h3>
               <button
                 onClick={cancelEditing}
-                class="p-2 text-gray-400 hover:text-gray-600 rounded-lg"
+                class="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded-lg"
               >
                 <X class="w-4 h-4" />
               </button>
             </div>
 
             {/* Section Navigation */}
-            <div class="flex flex-wrap gap-2 mb-6 border-b border-gray-200 pb-4">
+            <div class="flex flex-wrap gap-2 mb-6 border-b border-gray-200 dark:border-gray-700 pb-4">
               <For each={sections}>
                 {(section) => {
                   const Icon = section.icon;
@@ -998,8 +998,8 @@ export default function TravelProfiles(props: TravelProfilesProps) {
                       onClick={() => setActiveSection(section.id)}
                       class={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                         activeSection() === section.id
-                          ? 'bg-blue-600 text-white'
-                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                          ? 'bg-blue-600 dark:bg-blue-500 text-white'
+                          : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
                       }`}
                     >
                       <Icon class="w-4 h-4" />
@@ -1014,17 +1014,17 @@ export default function TravelProfiles(props: TravelProfilesProps) {
             {renderCurrentSection()}
 
             {/* Form Actions */}
-            <div class="flex justify-end gap-3 mt-8 pt-6 border-t border-gray-200">
+            <div class="flex justify-end gap-3 mt-8 pt-6 border-t border-gray-200 dark:border-gray-700">
               <button
                 onClick={cancelEditing}
-                class="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 font-medium"
+                class="px-4 py-2 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 font-medium"
               >
                 Cancel
               </button>
               <button
                 onClick={saveProfile}
                 disabled={createProfileMutation.isPending || updateProfileMutation.isPending}
-                class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium flex items-center gap-2 disabled:opacity-50"
+                class="px-6 py-2 bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white rounded-lg font-medium flex items-center gap-2 disabled:opacity-50"
               >
                 <Save class="w-4 h-4" />
                 {(createProfileMutation.isPending || updateProfileMutation.isPending) ? 'Saving...' : 'Save Profile'}

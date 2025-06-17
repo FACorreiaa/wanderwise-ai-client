@@ -261,3 +261,158 @@ export interface TravelProfileFormData {
   activity_preferences?: ActivityPreferences;
   itinerary_preferences?: ItineraryPreferences;
 }
+
+// ==================
+// STREAMING TYPES
+// ==================
+
+export type DomainType = 'general' | 'itinerary' | 'accommodation' | 'dining' | 'activities';
+
+export type StreamEventType = 'start' | 'chunk' | 'complete' | 'error' | 'city_data' | 'general_pois' | 'itinerary' | 'hotels' | 'restaurants' | 'activities';
+
+export interface StreamEvent {
+  type: StreamEventType;
+  data?: any;
+  error?: string;
+  event_id?: string;
+  timestamp?: string;
+  is_final?: boolean;
+}
+
+export interface GeneralCityData {
+  city: string;
+  country: string;
+  state_province: string;
+  description: string;
+  center_latitude: number;
+  center_longitude: number;
+  population: string;
+  area: string;
+  timezone: string;
+  language: string;
+  weather: string;
+  attractions: string;
+  history: string;
+}
+
+export interface POIDetail {
+  id: string;
+  llm_interaction_id: string;
+  city: string;
+  city_id: string;
+  name: string;
+  latitude: number;
+  longitude: number;
+  category: string;
+  description_poi: string;
+  address: string;
+  website: string;
+  opening_hours: string;
+  distance: number;
+}
+
+export interface AIItineraryResponse {
+  itinerary_name: string;
+  overall_description: string;
+  points_of_interest: POIDetail[];
+}
+
+export interface AiCityResponse {
+  general_city_data: GeneralCityData;
+  points_of_interest: POIDetail[];
+  itinerary_response: AIItineraryResponse;
+  session_id: string;
+}
+
+export interface HotelDetailedInfo {
+  id: string;
+  city: string;
+  name: string;
+  latitude: number;
+  longitude: number;
+  category: string;
+  description: string;
+  address?: string;
+  website?: string;
+  phone_number?: string;
+  opening_hours?: string;
+  price_level?: string;
+  amenities: string[];
+  tags: string[];
+  images: string[];
+  rating: number;
+  llm_interaction_id: string;
+}
+
+export interface RestaurantDetailedInfo {
+  id: string;
+  city: string;
+  name: string;
+  latitude: number;
+  longitude: number;
+  category: string;
+  description: string;
+  address?: string;
+  website?: string;
+  phone_number?: string;
+  opening_hours?: string;
+  price_level?: string;
+  cuisine_type?: string;
+  tags: string[];
+  images: string[];
+  rating: number;
+  llm_interaction_id: string;
+}
+
+export interface POIDetailedInfo {
+  id: string;
+  city: string;
+  name: string;
+  latitude: number;
+  longitude: number;
+  category: string;
+  description: string;
+  address?: string;
+  website?: string;
+  phone_number?: string;
+  opening_hours?: string;
+  price_level?: string;
+  tags: string[];
+  images: string[];
+  rating: number;
+  time_to_spend?: string;
+  budget?: string;
+  priority?: number;
+  llm_interaction_id: string;
+}
+
+// Domain-specific response types
+export interface AccommodationResponse {
+  hotels: HotelDetailedInfo[];
+  domain: 'accommodation';
+  session_id: string;
+}
+
+export interface DiningResponse {
+  restaurants: RestaurantDetailedInfo[];
+  domain: 'dining';
+  session_id: string;
+}
+
+export interface ActivitiesResponse {
+  activities: POIDetailedInfo[];
+  domain: 'activities';
+  session_id: string;
+}
+
+export type UnifiedChatResponse = AiCityResponse | AccommodationResponse | DiningResponse | ActivitiesResponse;
+
+// Streaming session management
+export interface StreamingSession {
+  sessionId: string;
+  domain: DomainType;
+  city?: string;
+  data: Partial<UnifiedChatResponse>;
+  isComplete: boolean;
+  error?: string;
+}

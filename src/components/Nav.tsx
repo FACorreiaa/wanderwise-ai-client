@@ -8,6 +8,7 @@ import { ImageRoot, ImageFallback, Image } from "@/ui/image";
 import { useAuth } from "~/contexts/AuthContext";
 import { useTheme } from "~/contexts/ThemeContext";
 import PWAInstall from "~/components/PWAInstall";
+import ThemeSelector from "~/components/ThemeSelector";
 
 // Public navigation items (for non-authenticated users)
 const publicNavigationItems = [
@@ -135,18 +136,8 @@ export default function Nav() {
                 {/* PWA Install Button */}
                 <PWAInstall />
                 
-                {/* Theme Toggle for non-authenticated users */}
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={toggleTheme}
-                  class="p-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors"
-                  title={isDark() ? "Switch to light mode" : "Switch to dark mode"}
-                >
-                  <Show when={isDark()} fallback={<Moon class="w-4 h-4" />}>
-                    <Sun class="w-4 h-4" />
-                  </Show>
-                </Button>
+                {/* Theme Selector for non-authenticated users */}
+                <ThemeSelector />
 
                 <A href="/auth/signin">
                   <Button variant="ghost" class="text-gray-700 dark:text-gray-300 text-sm lg:text-base px-3 lg:px-4">
@@ -165,18 +156,8 @@ export default function Nav() {
               {/* PWA Install Button */}
               <PWAInstall />
               
-              {/* Theme Toggle */}
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={toggleTheme}
-                class="p-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors"
-                title={isDark() ? "Switch to light mode" : "Switch to dark mode"}
-              >
-                <Show when={isDark()} fallback={<Moon class="w-4 h-4" />}>
-                  <Sun class="w-4 h-4" />
-                </Show>
-              </Button>
+              {/* Theme Selector */}
+              <ThemeSelector />
 
               <Button
                 variant="ghost"
@@ -295,17 +276,7 @@ export default function Nav() {
                       <div class="font-medium text-gray-900 dark:text-white">{user()?.username || 'User'}</div>
                       <div class="text-sm text-gray-500 dark:text-gray-400">{user()?.email || 'user@example.com'}</div>
                     </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={toggleTheme}
-                      class="p-2 text-gray-600 dark:text-gray-300"
-                      title={isDark() ? "Switch to light mode" : "Switch to dark mode"}
-                    >
-                      <Show when={isDark()} fallback={<Moon class="w-4 h-4" />}>
-                        <Sun class="w-4 h-4" />
-                      </Show>
-                    </Button>
+                    <ThemeSelector />
                   </div>
                   <A href="/settings" class="block" onClick={() => setIsMenuOpen(false)}>
                     <Button variant="outline" class="w-full justify-center py-3 text-base">
@@ -327,18 +298,7 @@ export default function Nav() {
             >
               <div class="px-4 py-6 space-y-3 border-t border-gray-200 dark:border-gray-700">
                 <div class="flex justify-center mb-3">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={toggleTheme}
-                    class="p-2 text-gray-600 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-lg"
-                    title={isDark() ? "Switch to light mode" : "Switch to dark mode"}
-                  >
-                    <Show when={isDark()} fallback={<Moon class="w-4 h-4" />}>
-                      <Sun class="w-4 h-4" />
-                    </Show>
-                    <span class="ml-2 text-sm">{isDark() ? 'Light Mode' : 'Dark Mode'}</span>
-                  </Button>
+                  <ThemeSelector />
                 </div>
                 <A href="/auth/signin" class="block" onClick={() => setIsMenuOpen(false)}>
                   <Button variant="outline" class="w-full justify-center py-3 text-base">

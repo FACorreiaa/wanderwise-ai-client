@@ -60,7 +60,7 @@ export const useGetRecommendationsMutation = () => {
 
 export const StartChat = async (request: StartChatRequest): Promise<ChatSession> => {
   const endpoint = getContextualEndpoint('sessions', request.contextType);
-  
+
   return apiRequest<ChatSession>(`${endpoint}/${request.profileId}`, {
     method: 'POST',
     body: JSON.stringify({
@@ -74,14 +74,13 @@ export const StartChat = async (request: StartChatRequest): Promise<ChatSession>
 export const StartChatStream = async (request: StartChatRequest): Promise<Response> => {
   const endpoint = getContextualEndpoint('sessions/stream', request.contextType);
   const token = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
-  
+
   return fetch(`${API_BASE_URL}/${endpoint}/${request.profileId}`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       ...(token && { Authorization: `Bearer ${token}` }),
     },
-    credentials: 'include',
     body: JSON.stringify({
       context_type: request.contextType,
       city_name: request.cityName,
@@ -92,7 +91,7 @@ export const StartChatStream = async (request: StartChatRequest): Promise<Respon
 
 export const ContinueChat = async (request: ContinueChatRequest): Promise<ChatMessage> => {
   const endpoint = getContextualEndpoint(`sessions/${request.sessionId}/messages`, request.contextType);
-  
+
   return apiRequest<ChatMessage>(endpoint, {
     method: 'POST',
     body: JSON.stringify({
@@ -106,14 +105,13 @@ export const ContinueChat = async (request: ContinueChatRequest): Promise<ChatMe
 export const ContinueChatStream = async (request: ContinueChatRequest): Promise<Response> => {
   const endpoint = getContextualEndpoint(`sessions/${request.sessionId}/messages/stream`, request.contextType);
   const token = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
-  
+
   return fetch(`${API_BASE_URL}/${endpoint}`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       ...(token && { Authorization: `Bearer ${token}` }),
     },
-    credentials: 'include',
     body: JSON.stringify({
       message: request.message,
       city_name: request.cityName,
@@ -133,7 +131,7 @@ function getContextualEndpoint(basePath: string, contextType: ChatContextType): 
     itineraries: `/llm/itineraries/chat/${basePath}`,
     general: `/llm/prompt-response/chat/${basePath}`,
   };
-  
+
   return contextMap[contextType];
 }
 
@@ -150,5 +148,96 @@ export const useStartChatMutation = () => {
 export const useContinueChatMutation = () => {
   return useMutation(() => ({
     mutationFn: ContinueChat,
+  }));
+};
+
+// ==================
+// UNIFIED STREAMING CHAT
+// ==================
+
+export interface UnifiedChatRequest {
+  profileId: string;
+  message: string;
+  userLocation?: {
+    userLat: number;
+    userLon: number;
+  };
+}
+
+export interface UnifiedChatStreamRequest extends UnifiedChatRequest { }
+
+// Unified chat service - sends message and gets streaming response
+export const sendUnifiedChatMessage = async (request: UnifiedChatRequest): Promise<Response> => {
+  const token = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
+
+  return fetch(`${API_BASE_URL}/llm/prompt-response/chat/sessions/${request.profileId}`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token && { Authorization: `Bearer ${token}` }),
+    },
+    body: JSON.stringify({
+      message: request.message,
+      user_location: request.userLocation,
+    }),
+  });
+};
+
+// Unified chat streaming service
+export const sendUnifiedChatMessageStream = async (request: UnifiedChatStreamRequest): Promise<Response> => {
+  const token = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
+
+  console.log('=== STREAMING API CALL ===');
+  console.log('Token found:', !!token);
+  console.log('Request:', request);
+
+  return fetch(`${API_BASE_URL}/llm/prompt-response/chat/sessions/stream/${request.profileId}`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token && { Authorization: `Bearer ${token}` }),
+    },
+    body: JSON.stringify({
+      message: request.message,
+      user_location: request.userLocation,
+    }),
+  });
+};
+
+// Domain detection utility (client-side)
+export const detectDomain = (message: string): import('./types').DomainType => {
+  const lowerMessage = message.toLowerCase();
+
+  // Accommodation domain keywords
+  if (/hotel|hostel|accommodation|stay|sleep|room|booking|airbnb|lodge|resort|guesthouse/.test(lowerMessage)) {
+    return 'accommodation';
+  }
+
+  // Dining domain keywords
+  if (/restaurant|food|eat|dine|meal|cuisine|drink|cafe|bar|lunch|dinner|breakfast|brunch/.test(lowerMessage)) {
+    return 'dining';
+  }
+
+  // Activity domain keywords
+  if (/activity|museum|park|attraction|tour|visit|see|do|experience|adventure|shopping|nightlife/.test(lowerMessage)) {
+    return 'activities';
+  }
+
+  // Itinerary domain keywords
+  if (/itinerary|plan|schedule|trip|day|week|journey|route|organize|arrange/.test(lowerMessage)) {
+    return 'itinerary';
+  }
+
+  // Default to general domain
+  return 'general';
+};
+
+// ==================
+// MUTATION HOOKS FOR UNIFIED CHAT
+// ==================
+
+export const useUnifiedChatMutation = () => {
+  return useMutation(() => ({
+    mutationFn: sendUnifiedChatMessage,
   }));
 };

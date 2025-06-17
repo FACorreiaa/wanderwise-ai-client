@@ -1,13 +1,18 @@
 import { createSignal, createEffect, For, Show, onMount } from 'solid-js';
+import { useLocation } from '@solidjs/router';
 import { MapPin, Clock, Star, Filter, Heart, Share2, Download, Edit3, Plus, X, Navigation, Calendar, Users, DollarSign, Camera, Coffee, Utensils, Wifi, CreditCard, Loader2, MessageCircle, Send, ChefHat, Wine, UtensilsCrossed, Smartphone } from 'lucide-solid';
 import MapComponent from '~/components/features/Map/Map';
-import { useRestaurantsByPreferences, useNearbyRestaurants } from '~/lib/api/restaurants';
+// Removed old API imports - now using unified streaming endpoint only
+import type { DiningResponse, RestaurantDetailedInfo } from '~/lib/api/types';
 
 export default function RestaurantsPage() {
+    const location = useLocation();
     const [selectedRestaurant, setSelectedRestaurant] = createSignal(null);
     const [showFilters, setShowFilters] = createSignal(false);
     const [viewMode, setViewMode] = createSignal('split'); // 'map', 'list', 'split'
     const [myFavorites, setMyFavorites] = createSignal([]); // Track favorite restaurants
+    const [streamingData, setStreamingData] = createSignal<DiningResponse | null>(null);
+    const [fromChat, setFromChat] = createSignal(false);
 
     // Chat functionality
     const [showChat, setShowChat] = createSignal(false);
@@ -18,7 +23,7 @@ export default function RestaurantsPage() {
 
     // Filter states
     const [activeFilters, setActiveFilters] = createSignal({
-        cuisines: ['Portuguese', 'Seafood', 'International'],
+        cuisines: [], // Start with no filters active so all restaurants show initially
         priceRange: [],
         features: [],
         rating: 0
@@ -34,26 +39,82 @@ export default function RestaurantsPage() {
         centerLng: -8.6291
     });
 
-    // Use API hooks for restaurant data
-    const nearbyRestaurantsQuery = useNearbyRestaurants(
-        searchParams().centerLat,
-        searchParams().centerLng,
-        5000 // 5km radius
-    );
-    
-    const preferencesQuery = useRestaurantsByPreferences({
-        location: searchParams().location,
-        cuisines: activeFilters().cuisines,
-        priceRange: activeFilters().priceRange,
-        features: activeFilters().features
+    // Removed old API hooks - now using unified streaming endpoint only
+
+    // Initialize with streaming data on mount
+    onMount(() => {
+        console.log('=== RESTAURANTS PAGE MOUNT ===');
+        console.log('Location state:', location.state);
+        
+        // Check for streaming data from route state  
+        if (location.state?.streamingData) {
+            console.log('Found dining streaming data in route state');
+            setStreamingData(location.state.streamingData as DiningResponse);
+            setFromChat(true);
+            console.log('Received dining data:', location.state.streamingData);
+        } else {
+            console.log('No streaming data in route state, checking session storage');
+            // Try to get data from session storage
+            const storedSession = sessionStorage.getItem('completedStreamingSession');
+            console.log('Session storage content:', storedSession);
+            
+            if (storedSession) {
+                try {
+                    const session = JSON.parse(storedSession);
+                    console.log('Parsed session:', session);
+                    
+                    if (session.data && session.data.restaurants) {
+                        console.log('Setting dining data from session storage');
+                        setStreamingData(session.data as DiningResponse);
+                        setFromChat(true);
+                        console.log('Loaded dining data from session storage:', session.data);
+                    } else {
+                        console.log('No dining data found in session');
+                    }
+                } catch (error) {
+                    console.error('Error parsing stored session:', error);
+                }
+            } else {
+                console.log('No stored session found');
+            }
+        }
     });
 
     const restaurants = () => {
-        // Prefer preferences-based results if available, otherwise use nearby
-        if (preferencesQuery.data && preferencesQuery.data.length > 0) {
-            return preferencesQuery.data;
+        // Prioritize streaming data if available
+        const streaming = streamingData();
+        if (streaming && streaming.restaurants && streaming.restaurants.length > 0) {
+            console.log('Using streaming restaurants data:', streaming.restaurants);
+            return streaming.restaurants.map(convertRestaurantToDisplayFormat);
         }
-        return nearbyRestaurantsQuery.data || [];
+        
+        // No fallback API data - only streaming data is used
+        return [];
+    };
+
+    // Convert streaming restaurant data to display format
+    const convertRestaurantToDisplayFormat = (restaurant: RestaurantDetailedInfo) => {
+        return {
+            id: restaurant.id || `restaurant-${Math.random().toString(36).substr(2, 9)}`,
+            name: restaurant.name || 'Unknown Restaurant',
+            cuisine: restaurant.cuisine_type || restaurant.category || 'Restaurant',
+            description: restaurant.description || 'No description available',
+            latitude: restaurant.latitude || 0,
+            longitude: restaurant.longitude || 0,
+            address: restaurant.address || 'Address not available',
+            priceRange: restaurant.price_level || '€€',
+            rating: restaurant.rating || 4.0,
+            reviewCount: 0, // Not available in streaming data
+            features: Array.isArray(restaurant.tags) ? restaurant.tags : [],
+            specialties: Array.isArray(restaurant.tags) ? restaurant.tags : [],
+            tags: Array.isArray(restaurant.tags) ? restaurant.tags : [],
+            phone: restaurant.phone_number || 'Not available',
+            website: restaurant.website || '',
+            openingHours: restaurant.opening_hours || 'Hours not available',
+            reservationRequired: false, // Default
+            takeaway: true, // Default
+            delivery: true // Default
+        };
     };
 
     // Chat logic
@@ -132,14 +193,20 @@ export default function RestaurantsPage() {
     const filteredRestaurants = () => {
         return restaurants().filter(restaurant => {
             const filters = activeFilters();
+            // Safety check for restaurant properties
+            const restaurantTags = restaurant.tags || [];
+            const restaurantFeatures = restaurant.features || [];
+            const restaurantPriceRange = restaurant.priceRange || '';
+            const restaurantRating = restaurant.rating || 0;
+            
             // Cuisine filter
-            if (filters.cuisines.length > 0 && !filters.cuisines.some(cuisine => restaurant.tags.includes(cuisine))) return false;
+            if (filters.cuisines.length > 0 && !filters.cuisines.some(cuisine => restaurantTags.includes(cuisine))) return false;
             // Price range filter
-            if (filters.priceRange.length > 0 && !filters.priceRange.includes(restaurant.priceRange)) return false;
+            if (filters.priceRange.length > 0 && !filters.priceRange.includes(restaurantPriceRange)) return false;
             // Features filter
-            if (filters.features.length > 0 && !filters.features.some(feature => restaurant.features.includes(feature))) return false;
+            if (filters.features.length > 0 && !filters.features.some(feature => restaurantFeatures.includes(feature))) return false;
             // Rating filter
-            if (filters.rating > 0 && restaurant.rating < filters.rating) return false;
+            if (filters.rating > 0 && restaurantRating < filters.rating) return false;
             return true;
         });
     };
@@ -368,15 +435,51 @@ export default function RestaurantsPage() {
         </Show>
     );
 
+    // Get display location
+    const displayLocation = () => {
+        const streaming = streamingData();
+        if (streaming && streaming.restaurants && streaming.restaurants.length > 0) {
+            return streaming.restaurants[0].city || 'Restaurants';
+        }
+        return searchParams().location;
+    };
+
     return (
         <div class="min-h-screen bg-gray-50">
+            {/* Chat Success Banner */}
+            <Show when={fromChat()}>
+                <div class="bg-gradient-to-r from-green-50 to-blue-50 border-b border-green-200 px-4 py-3 sm:px-6">
+                    <div class="max-w-7xl mx-auto">
+                        <div class="flex items-center gap-3">
+                            <div class="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
+                                <ChefHat class="w-4 h-4 text-white" />
+                            </div>
+                            <div class="flex-1">
+                                <p class="text-sm font-medium text-green-900">
+                                    ✨ Your restaurant recommendations are ready!
+                                </p>
+                                <p class="text-xs text-green-700">
+                                    Generated from your chat: "{location.state?.originalMessage || 'Restaurant search'}"
+                                </p>
+                            </div>
+                            <button
+                                onClick={() => setFromChat(false)}
+                                class="p-1 text-green-600 hover:text-green-700"
+                            >
+                                <X class="w-4 h-4" />
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </Show>
+
             {/* Header - Mobile First */}
             <div class="bg-white border-b border-gray-200 px-4 py-3 sm:px-6 sm:py-4">
                 <div class="max-w-7xl mx-auto">
                     <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                         <div>
-                            <h1 class="text-xl font-bold text-gray-900 sm:text-2xl">Restaurants in {searchParams().location}</h1>
-                            <p class="text-sm text-gray-600 mt-1 sm:text-base">Discover the best dining experiences</p>
+                            <h1 class="text-xl font-bold text-gray-900 sm:text-2xl">Restaurants in {displayLocation()}</h1>
+                            <p class="text-sm text-gray-600 mt-1 sm:text-base">{restaurants().length} dining recommendations</p>
                         </div>
                         <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
                             {/* View Mode Toggle */}
@@ -472,11 +575,25 @@ export default function RestaurantsPage() {
                                         Found {filteredRestaurants().length} restaurants
                                     </p>
                                 </div>
-                                <div class="grid gap-3">
-                                    <For each={filteredRestaurants()}>
-                                        {(restaurant) => renderRestaurantCard(restaurant)}
-                                    </For>
-                                </div>
+                                <Show when={filteredRestaurants().length > 0} fallback={
+                                    <div class="text-center py-12">
+                                        <Utensils class="w-12 h-12 text-gray-300 mx-auto mb-4" />
+                                        <h3 class="text-lg font-semibold text-gray-900 mb-2">No restaurants found</h3>
+                                        <p class="text-gray-600 mb-4">Start a new search from the home page to find restaurants</p>
+                                        <button 
+                                            onClick={() => window.location.href = '/'}
+                                            class="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors"
+                                        >
+                                            Start New Search
+                                        </button>
+                                    </div>
+                                }>
+                                    <div class="grid gap-3">
+                                        <For each={filteredRestaurants()}>
+                                            {(restaurant) => renderRestaurantCard(restaurant)}
+                                        </For>
+                                    </div>
+                                </Show>
                             </div>
                         </div>
                     </Show>

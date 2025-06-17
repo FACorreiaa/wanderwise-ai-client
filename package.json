@@ -30,10 +30,10 @@
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.1.8",
-    "tailwindcss": "^4.1.8",
-    "wrangler": "^4.20.0",
     "@types/node": "^24.0.1",
-    "nitropack": "^2.11.12"
+    "nitropack": "^2.11.12",
+    "tailwindcss": "^4.1.8",
+    "wrangler": "^4.20.0"
   },
   "engines": {
     "node": ">=22"

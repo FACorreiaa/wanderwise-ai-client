@@ -27,18 +27,18 @@ const trendingCompanies = [
 
 const TrendingComponent: Component = () => {
     return (
-        <section class="py-16 px-4 sm:px-6 lg:px-8">
+        <section class="py-16 px-4 sm:px-6 lg:px-8 bg-white dark:bg-gray-900">
             <div class="max-w-6xl mx-auto">
                 <div class="flex items-center justify-center space-x-8 mb-12">
-                    <Button variant="ghost" class="text-blue-600 border-b-2 border-blue-600">
+                    <Button variant="ghost" class="text-blue-600 dark:text-blue-400 border-b-2 border-blue-600 dark:border-blue-400">
                         Trending
                     </Button>
-                    <Button variant="ghost" class="text-gray-600">
-                        <Badge class="bg-blue-600 text-white mr-2">NEW</Badge>
+                    <Button variant="ghost" class="text-gray-600 dark:text-gray-300">
+                        <Badge class="bg-blue-600 dark:bg-blue-700 text-white mr-2">NEW</Badge>
                         Insights
                     </Button>
-                    <Button variant="ghost" class="text-gray-600">
-                        <Badge class="bg-blue-600 text-white mr-2">NEW</Badge>
+                    <Button variant="ghost" class="text-gray-600 dark:text-gray-300">
+                        <Badge class="bg-blue-600 dark:bg-blue-700 text-white mr-2">NEW</Badge>
                         Predictions
                     </Button>
                 </div>
@@ -46,7 +46,7 @@ const TrendingComponent: Component = () => {
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
                     <For each={trendingCompanies}>
                         {(company) => (
-                            <Card class="hover:shadow-lg transition-all duration-300 bg-white/70 backdrop-blur-sm border border-gray-200">
+                            <Card class="hover:shadow-lg transition-all duration-300 bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm border border-gray-200 dark:border-gray-700">
                                 <CardHeader class="pb-4">
                                     <div class="flex items-start space-x-4">
                                         <div class="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center text-white text-xl">
@@ -54,12 +54,12 @@ const TrendingComponent: Component = () => {
                                         </div>
                                         <div class="flex-1">
                                             <div class="flex items-center space-x-2 mb-1">
-                                                <CardTitle class="text-lg font-semibold">{company.name}</CardTitle>
+                                                <CardTitle class="text-lg font-semibold text-gray-900 dark:text-white">{company.name}</CardTitle>
                                                 <Badge variant="secondary" class="text-xs">
                                                     {company.category}
                                                 </Badge>
                                             </div>
-                                            <CardDescription class="text-gray-600">
+                                            <CardDescription class="text-gray-600 dark:text-gray-300">
                                                 {company.description}
                                             </CardDescription>
                                         </div>
@@ -72,7 +72,7 @@ const TrendingComponent: Component = () => {
                 </div>
 
                 <div class="text-center mt-12">
-                    <Button variant="outline" class="border-2 border-blue-600 text-blue-600 hover:bg-blue-50">
+                    <Button variant="outline" class="border-2 border-blue-600 dark:border-blue-400 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30">
                         View All Trending <ArrowRight class="w-4 h-4 ml-2" />
                     </Button>
                 </div>
