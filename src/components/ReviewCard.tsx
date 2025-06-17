@@ -93,9 +93,9 @@ export default function ReviewCard(props: ReviewProps) {
 
                     <div class="flex-1 min-w-0">
                         <div class="flex items-center gap-2 mb-1">
-                            <h4 class="font-semibold text-gray-900 truncate">{review().userName}</h4>
+                            <h4 class="font-semibold text-gray-900 dark:text-white truncate">{review().userName}</h4>
                             {review().verified && (
-                                <span class="px-2 py-0.5 bg-green-100 text-green-800 rounded-full text-xs font-medium">
+                                <span class="px-2 py-0.5 bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 rounded-full text-xs font-medium">
                                     Verified
                                 </span>
                             )}
@@ -109,13 +109,13 @@ export default function ReviewCard(props: ReviewProps) {
                                     {review().rating}/5
                                 </span>
                             </div>
-                            <span class="text-xs text-gray-500">
+                            <span class="text-xs text-gray-500 dark:text-gray-400">
                                 {formatDate(review().date)}
                             </span>
                         </div>
 
                         {/* Travel Info */}
-                        <div class="flex items-center gap-4 text-xs text-gray-500">
+                        <div class="flex items-center gap-4 text-xs text-gray-500 dark:text-gray-400">
                             {review().visitDate && (
                                 <div class="flex items-center gap-1">
                                     <Calendar class="w-3 h-3" />
@@ -138,19 +138,19 @@ export default function ReviewCard(props: ReviewProps) {
                     </div>
 
                     {/* Actions Menu */}
-                    <button class="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg">
+                    <button class="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
                         <MoreHorizontal class="w-4 h-4" />
                     </button>
                 </div>
 
                 {/* Review Title */}
                 <Show when={review().title}>
-                    <h3 class="font-semibold text-gray-900 mb-3">{review().title}</h3>
+                    <h3 class="font-semibold text-gray-900 dark:text-white mb-3">{review().title}</h3>
                 </Show>
 
                 {/* Review Content */}
                 <div class="mb-4">
-                    <p class="text-gray-700 leading-relaxed">
+                    <p class="text-gray-700 dark:text-gray-300 leading-relaxed">
                         {showFullContent() || review().content.length <= 200
                             ? review().content
                             : truncateContent(review().content)
@@ -160,7 +160,7 @@ export default function ReviewCard(props: ReviewProps) {
                     <Show when={review().content.length > 200 && !showFullContent()}>
                         <button
                             onClick={() => setShowFullContent(true)}
-                            class="mt-2 text-blue-600 hover:text-blue-700 text-sm font-medium"
+                            class="mt-2 text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 text-sm font-medium"
                         >
                             Read more
                         </button>
@@ -172,17 +172,17 @@ export default function ReviewCard(props: ReviewProps) {
                     <div class="mb-4">
                         <div class="flex items-center gap-2 mb-2">
                             <Camera class="w-4 h-4 text-gray-500" />
-                            <span class="text-sm text-gray-600">{review().photos.length} photo{review().photos.length > 1 ? 's' : ''}</span>
+                            <span class="text-sm text-gray-600 dark:text-gray-300">{review().photos.length} photo{review().photos.length > 1 ? 's' : ''}</span>
                         </div>
                         
                         <div class="grid grid-cols-3 gap-2">
                             {review().photos.slice(0, 3).map((photo, index) => (
                                 <button
                                     onClick={() => setShowPhotos(true)}
-                                    class="relative aspect-square bg-gray-100 rounded-lg overflow-hidden hover:opacity-90 transition-opacity"
+                                    class="relative aspect-square bg-gray-100 dark:bg-gray-700 rounded-lg overflow-hidden hover:opacity-90 transition-opacity"
                                 >
-                                    <div class="absolute inset-0 bg-gradient-to-br from-blue-100 to-purple-100 flex items-center justify-center">
-                                        <Camera class="w-6 h-6 text-gray-400" />
+                                    <div class="absolute inset-0 bg-gradient-to-br from-blue-100 to-purple-100 dark:from-blue-900 dark:to-purple-900 flex items-center justify-center">
+                                        <Camera class="w-6 h-6 text-gray-400 dark:text-gray-500" />
                                     </div>
                                     {index === 2 && review().photos.length > 3 && (
                                         <div class="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
@@ -196,7 +196,7 @@ export default function ReviewCard(props: ReviewProps) {
                 </Show>
 
                 {/* Actions */}
-                <div class="flex items-center justify-between pt-4 border-t border-gray-100">
+                <div class="flex items-center justify-between pt-4 border-t border-gray-100 dark:border-gray-700">
                     <div class="flex items-center gap-4">
                         {/* Helpful/Not Helpful */}
                         <div class="flex items-center gap-2">
@@ -204,8 +204,8 @@ export default function ReviewCard(props: ReviewProps) {
                                 onClick={() => handleReaction('helpful')}
                                 class={`flex items-center gap-1 px-3 py-1 rounded-lg text-sm transition-colors ${
                                     review().userReaction === 'helpful'
-                                        ? 'bg-green-100 text-green-700'
-                                        : 'text-gray-600 hover:bg-gray-100'
+                                        ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300'
+                                        : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
                                 }`}
                             >
                                 <ThumbsUp class="w-4 h-4" />
@@ -219,8 +219,8 @@ export default function ReviewCard(props: ReviewProps) {
                                 onClick={() => handleReaction('not-helpful')}
                                 class={`flex items-center gap-1 px-3 py-1 rounded-lg text-sm transition-colors ${
                                     review().userReaction === 'not-helpful'
-                                        ? 'bg-red-100 text-red-700'
-                                        : 'text-gray-600 hover:bg-gray-100'
+                                        ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300'
+                                        : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
                                 }`}
                             >
                                 <ThumbsDown class="w-4 h-4" />
@@ -234,7 +234,7 @@ export default function ReviewCard(props: ReviewProps) {
                         <Show when={props.onReply}>
                             <button
                                 onClick={() => props.onReply!(review().id)}
-                                class="flex items-center gap-1 px-3 py-1 text-gray-600 hover:bg-gray-100 rounded-lg text-sm transition-colors"
+                                class="flex items-center gap-1 px-3 py-1 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg text-sm transition-colors"
                             >
                                 <Reply class="w-4 h-4" />
                                 <span>Reply</span>
@@ -245,7 +245,7 @@ export default function ReviewCard(props: ReviewProps) {
                     {/* Report */}
                     <button
                         onClick={() => props.onFlag && props.onFlag(review().id)}
-                        class="flex items-center gap-1 px-3 py-1 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg text-sm transition-colors"
+                        class="flex items-center gap-1 px-3 py-1 text-gray-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg text-sm transition-colors"
                     >
                         <Flag class="w-4 h-4" />
                         <span>Report</span>

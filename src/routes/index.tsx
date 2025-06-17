@@ -8,7 +8,8 @@ import CTA from '~/components/features/Home/CTA';
 import ContentGrid from '~/components/features/Home/ContentGrid';
 import Stats from '~/components/features/Home/Stats';
 import MobileAppAnnouncement from '~/components/features/Home/MobileAppAnnouncement';
-import { useUserLocation } from '@/contexts/LocationContext';
+import LocationPermissionPrompt from '~/components/LocationPermissionPrompt';
+import { useUserLocation } from '~/contexts/LocationContext';
 
 
 const statsData = {
@@ -80,6 +81,7 @@ const LandingPage: Component = () => {
 
             // Create streaming session
             const session = createStreamingSession(domain);
+            session.query = messageContent; // Store the user's message
             setStreamingSession(session);
 
             // Store session in localStorage for persistence
@@ -416,6 +418,16 @@ const LandingPage: Component = () => {
             <ContentGrid items={contentData} />
             <MobileAppAnnouncement />
             <CTA />
+            
+            {/* Location Permission Prompt */}
+            <LocationPermissionPrompt 
+                onPermissionGranted={() => {
+                    console.log('Location permission granted');
+                }}
+                onPermissionDenied={() => {
+                    console.log('Location permission denied');
+                }}
+            />
         </div>
     );
 };

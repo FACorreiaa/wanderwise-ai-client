@@ -30,19 +30,19 @@ const ForgotPassword: Component<{ onSwitchMode?: (mode: AuthMode) => void }> = (
         <AuthLayout showBackButton onBack={handleBackToSignIn}>
             <Show when={!emailSent()} fallback={
                 <div class="text-center">
-                    <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <FiCheck class="w-8 h-8 text-green-600" />
+                    <div class="w-16 h-16 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <FiCheck class="w-8 h-8 text-green-600 dark:text-green-400" />
                     </div>
-                    <h1 class="text-2xl font-bold text-gray-900 mb-2">Check your email</h1>
-                    <p class="text-gray-600 mb-6">
+                    <h1 class="text-2xl font-bold text-gray-900 dark:text-white mb-2">Check your email</h1>
+                    <p class="text-gray-600 dark:text-gray-300 mb-6">
                         We've sent a password reset link to <br />
                         <span class="font-medium">{email()}</span>
                     </p>
-                    <p class="text-sm text-gray-500 mb-6">
+                    <p class="text-sm text-gray-500 dark:text-gray-400 mb-6">
                         Didn't receive the email? Check your spam folder or{' '}
                         <button
                             onClick={() => setEmailSent(false)}
-                            class="text-blue-600 hover:underline"
+                            class="text-blue-600 dark:text-blue-400 hover:underline"
                         >
                             try again
                         </button>
@@ -57,13 +57,13 @@ const ForgotPassword: Component<{ onSwitchMode?: (mode: AuthMode) => void }> = (
                 </div>
             }>
                 <div class="text-center mb-6">
-                    <h1 class="text-2xl font-bold text-gray-900 mb-2">Reset your password</h1>
-                    <p class="text-gray-600">Enter your email address and we'll send you a link to reset your password</p>
+                    <h1 class="text-2xl font-bold text-gray-900 dark:text-white mb-2">Reset your password</h1>
+                    <p class="text-gray-600 dark:text-gray-300">Enter your email address and we'll send you a link to reset your password</p>
                 </div>
 
                 <form onSubmit={handleSubmit} class="space-y-4">
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                             Email address
                         </label>
                         <TextFieldRoot>
@@ -72,7 +72,7 @@ const ForgotPassword: Component<{ onSwitchMode?: (mode: AuthMode) => void }> = (
                                 placeholder="Enter your email"
                                 value={email()}
                                 onInput={(e) => setEmail(e.currentTarget.value)}
-                                class="w-full px-4 py-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                                class="w-full px-4 py-3 rounded-lg border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                                 required
                             />
                         </TextFieldRoot>

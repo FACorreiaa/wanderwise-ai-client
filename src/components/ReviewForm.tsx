@@ -115,19 +115,19 @@ export default function ReviewForm(props: ReviewFormProps) {
 
     return (
         <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-            <div class="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div class="bg-white dark:bg-gray-800 rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
                 {/* Header */}
-                <div class="p-6 border-b border-gray-200">
+                <div class="p-6 border-b border-gray-200 dark:border-gray-700">
                     <div class="flex items-center justify-between">
                         <div>
-                            <h2 class="text-xl font-semibold text-gray-900">Write a Review</h2>
+                            <h2 class="text-xl font-semibold text-gray-900 dark:text-white">Write a Review</h2>
                             <Show when={props.poiName}>
-                                <p class="text-sm text-gray-600 mt-1">for {props.poiName}</p>
+                                <p class="text-sm text-gray-600 dark:text-gray-300 mt-1">for {props.poiName}</p>
                             </Show>
                         </div>
                         <button
                             onClick={props.onCancel}
-                            class="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                            class="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors">
                         >
                             <X class="w-5 h-5" />
                         </button>
@@ -138,7 +138,7 @@ export default function ReviewForm(props: ReviewFormProps) {
                 <form onSubmit={handleSubmit} class="p-6 space-y-6">
                     {/* Rating */}
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-3">
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
                             Overall Rating *
                         </label>
                         <div class="flex items-center gap-2">
@@ -146,7 +146,7 @@ export default function ReviewForm(props: ReviewFormProps) {
                                 {renderStars()}
                             </div>
                             <Show when={rating() > 0}>
-                                <span class="text-lg font-medium text-gray-900 ml-2">
+                                <span class="text-lg font-medium text-gray-900 dark:text-white ml-2">
                                     {getRatingLabel(rating())}
                                 </span>
                             </Show>
@@ -155,7 +155,7 @@ export default function ReviewForm(props: ReviewFormProps) {
 
                     {/* Title */}
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                             Review Title
                         </label>
                         <input
@@ -163,15 +163,15 @@ export default function ReviewForm(props: ReviewFormProps) {
                             value={title()}
                             onInput={(e) => setTitle(e.target.value)}
                             placeholder="Summarize your experience"
-                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                             maxLength={100}
                         />
-                        <p class="text-xs text-gray-500 mt-1">{title().length}/100 characters</p>
+                        <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">{title().length}/100 characters</p>
                     </div>
 
                     {/* Content */}
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                             Your Review *
                         </label>
                         <textarea
@@ -179,24 +179,24 @@ export default function ReviewForm(props: ReviewFormProps) {
                             onInput={(e) => setContent(e.target.value)}
                             placeholder="Share your experience, tips, and what made this place special..."
                             rows={5}
-                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                            class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                             maxLength={1000}
                         />
-                        <p class="text-xs text-gray-500 mt-1">{content().length}/1000 characters</p>
+                        <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">{content().length}/1000 characters</p>
                     </div>
 
                     {/* Visit Date */}
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                             When did you visit?
                         </label>
                         <div class="relative">
-                            <Calendar class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                            <Calendar class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 w-4 h-4" />
                             <input
                                 type="date"
                                 value={visitDate()}
                                 onInput={(e) => setVisitDate(e.target.value)}
-                                class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                class="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                                 max={new Date().toISOString().split('T')[0]}
                             />
                         </div>
@@ -204,7 +204,7 @@ export default function ReviewForm(props: ReviewFormProps) {
 
                     {/* Travel Type */}
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-3">
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
                             Type of Travel
                         </label>
                         <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
@@ -221,11 +221,11 @@ export default function ReviewForm(props: ReviewFormProps) {
                                         />
                                         <div class={`p-3 border-2 rounded-lg transition-all text-center ${
                                             travelType() === type.id
-                                                ? 'border-blue-500 bg-blue-50'
-                                                : 'border-gray-200 hover:border-gray-300'
+                                                ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
+                                                : 'border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500'
                                         }`}>
                                             <div class="text-xl mb-1">{type.icon}</div>
-                                            <div class="text-sm font-medium text-gray-900">{type.label}</div>
+                                            <div class="text-sm font-medium text-gray-900 dark:text-white">{type.label}</div>
                                         </div>
                                     </label>
                                 )}
@@ -235,12 +235,12 @@ export default function ReviewForm(props: ReviewFormProps) {
 
                     {/* Photos */}
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-3">
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
                             Add Photos (Optional)
                         </label>
                         
                         {/* Photo Upload */}
-                        <div class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-gray-400 transition-colors">
+                        <div class="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6 text-center hover:border-gray-400 dark:hover:border-gray-500 transition-colors">
                             <input
                                 type="file"
                                 multiple
@@ -250,11 +250,11 @@ export default function ReviewForm(props: ReviewFormProps) {
                                 id="photo-upload"
                             />
                             <label for="photo-upload" class="cursor-pointer">
-                                <Camera class="w-8 h-8 text-gray-400 mx-auto mb-2" />
-                                <p class="text-sm text-gray-600">
-                                    <span class="text-blue-600 font-medium">Click to upload</span> or drag and drop
+                                <Camera class="w-8 h-8 text-gray-400 dark:text-gray-500 mx-auto mb-2" />
+                                <p class="text-sm text-gray-600 dark:text-gray-300">
+                                    <span class="text-blue-600 dark:text-blue-400 font-medium">Click to upload</span> or drag and drop
                                 </p>
-                                <p class="text-xs text-gray-500 mt-1">PNG, JPG up to 10MB each</p>
+                                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">PNG, JPG up to 10MB each</p>
                             </label>
                         </div>
 
@@ -285,8 +285,8 @@ export default function ReviewForm(props: ReviewFormProps) {
                 </form>
 
                 {/* Footer */}
-                <div class="p-6 border-t border-gray-200 flex items-center justify-between">
-                    <p class="text-xs text-gray-500">
+                <div class="p-6 border-t border-gray-200 dark:border-gray-700 flex items-center justify-between">
+                    <p class="text-xs text-gray-500 dark:text-gray-400">
                         Your review will be public and help other travelers
                     </p>
                     
@@ -294,7 +294,7 @@ export default function ReviewForm(props: ReviewFormProps) {
                         <button
                             type="button"
                             onClick={props.onCancel}
-                            class="cb-button cb-button-secondary px-4 py-2"
+                            class="px-4 py-2 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-600 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700"
                             disabled={isSubmitting()}
                         >
                             Cancel
@@ -302,7 +302,7 @@ export default function ReviewForm(props: ReviewFormProps) {
                         <button
                             onClick={handleSubmit}
                             disabled={!rating() || !content().trim() || isSubmitting()}
-                            class="cb-button cb-button-primary px-4 py-2 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                            class="px-4 py-2 bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                         >
                             {isSubmitting() ? (
                                 <>
