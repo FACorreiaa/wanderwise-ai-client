@@ -1,12 +1,13 @@
 import { createSignal, createEffect, For, Show, onMount } from 'solid-js';
 import { useNavigate } from '@solidjs/router';
 import { MessageCircle, Send, Bot, User, MapPin, Clock, Star, Heart, Download, Share2, Copy, Trash2, Plus, Loader2, Sparkles, Globe, Calendar, Users, ChevronDown, ChevronUp } from 'lucide-solid';
-import { sendUnifiedChatMessageStream, detectDomain } from '~/lib/api/llm';
+import { sendUnifiedChatMessageStream, detectDomain, getUserChatSessions, useGetChatSessionsQuery } from '~/lib/api/llm';
 import { streamingService, createStreamingSession, getDomainRoute } from '~/lib/streaming-service';
 import type { StreamingSession, DomainType, UnifiedChatResponse } from '~/lib/api/types';
 import { useUserLocation } from '~/contexts/LocationContext';
 import { HotelResults, RestaurantResults, ActivityResults, ItineraryResults } from '~/components/results';
 import DetailedItemModal from '~/components/DetailedItemModal';
+import { createQuery } from '@tanstack/solid-query';
 
 export default function ChatPage() {
     const navigate = useNavigate();
@@ -29,33 +30,12 @@ export default function ChatPage() {
     const { userLocation } = useUserLocation()
     const userLatitude = userLocation()?.latitude || 38.7223;
     const userLongitude = userLocation()?.longitude || -9.1393;
-    // Sample chat sessions
-    const [sessions] = createSignal([
-        {
-            id: 'session-1',
-            title: 'Porto Weekend Trip',
-            preview: 'Looking for hidden gems in Porto...',
-            timestamp: '2024-01-20T14:30:00Z',
-            messageCount: 8,
-            hasItinerary: true
-        },
-        {
-            id: 'session-2',
-            title: 'Family Trip to London',
-            preview: 'Planning activities for kids...',
-            timestamp: '2024-01-18T10:15:00Z',
-            messageCount: 12,
-            hasItinerary: true
-        },
-        {
-            id: 'session-3',
-            title: 'Food Tour Barcelona',
-            preview: 'Best tapas restaurants...',
-            timestamp: '2024-01-15T16:45:00Z',
-            messageCount: 6,
-            hasItinerary: false
-        }
-    ]);
+    
+    // Get chat sessions from API
+    const profileId = '6ee5dc90-dd72-4dc8-b064-4ecbdd35d845'; // TODO: Get from auth context
+    const chatSessionsQuery = createQuery(() => useGetChatSessionsQuery(profileId));
+    
+    const sessions = () => chatSessionsQuery.data || [];
 
     const profiles = [
         { id: 'solo', name: 'Solo Explorer', icon: '🎒', description: 'Independent travel focused' },
@@ -339,6 +319,7 @@ export default function ChatPage() {
     };
 
     const handleItemClick = (item, type) => {
+        console.log('Opening modal for item:', item.name, 'type:', type);
         setSelectedItem({
             ...item,
             type: type
@@ -674,30 +655,59 @@ export default function ChatPage() {
                 <div class="flex-1 overflow-y-auto">
                     <div class="p-3 sm:p-4">
                         <h3 class="text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 sm:mb-3">Recent Conversations</h3>
-                        <div class="space-y-1 sm:space-y-2">
-                            <For each={sessions()}>
-                                {(session) => (
-                                    <button
-                                        onClick={() => loadSession(session)}
-                                        class={`w-full text-left p-2 sm:p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors ${selectedSession()?.id === session.id ? 'bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700' : 'border border-transparent'
-                                            }`}
-                                    >
-                                        <div class="flex items-start justify-between mb-1">
-                                            <h4 class="text-xs sm:text-sm font-medium text-gray-900 dark:text-white truncate pr-1">{session.title}</h4>
-                                            <Show when={session.hasItinerary}>
-                                                <Sparkles class="w-3 h-3 text-purple-500 dark:text-purple-400 flex-shrink-0" />
-                                            </Show>
-                                        </div>
-                                        <p class="text-xs text-gray-600 dark:text-gray-300 truncate mb-1 sm:mb-2">{session.preview}</p>
-                                        <div class="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
-                                            <span class="text-xs">{formatTimestamp(session.timestamp)}</span>
-                                            <span class="text-xs hidden sm:inline">{session.messageCount} messages</span>
-                                            <span class="text-xs sm:hidden">{session.messageCount}m</span>
-                                        </div>
-                                    </button>
-                                )}
-                            </For>
-                        </div>
+                        
+                        <Show when={chatSessionsQuery.isLoading}>
+                            <div class="flex items-center justify-center py-8">
+                                <Loader2 class="w-5 h-5 animate-spin text-gray-400" />
+                            </div>
+                        </Show>
+                        
+                        <Show when={chatSessionsQuery.isError}>
+                            <div class="text-center py-4">
+                                <p class="text-xs text-red-500 dark:text-red-400">Failed to load chat history</p>
+                                <button 
+                                    onClick={() => chatSessionsQuery.refetch()}
+                                    class="text-xs text-blue-600 dark:text-blue-400 hover:underline mt-1"
+                                >
+                                    Try again
+                                </button>
+                            </div>
+                        </Show>
+                        
+                        <Show when={!chatSessionsQuery.isLoading && !chatSessionsQuery.isError}>
+                            <div class="space-y-1 sm:space-y-2">
+                                <Show when={sessions().length === 0}>
+                                    <div class="text-center py-8">
+                                        <MessageCircle class="w-8 h-8 text-gray-300 dark:text-gray-600 mx-auto mb-2" />
+                                        <p class="text-xs text-gray-500 dark:text-gray-400">No conversations yet</p>
+                                        <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">Start chatting to see history</p>
+                                    </div>
+                                </Show>
+                                
+                                <For each={sessions()}>
+                                    {(session) => (
+                                        <button
+                                            onClick={() => loadSession(session)}
+                                            class={`w-full text-left p-2 sm:p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors ${selectedSession()?.id === session.id ? 'bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700' : 'border border-transparent'
+                                                }`}
+                                        >
+                                            <div class="flex items-start justify-between mb-1">
+                                                <h4 class="text-xs sm:text-sm font-medium text-gray-900 dark:text-white truncate pr-1">{session.title}</h4>
+                                                <Show when={session.hasItinerary}>
+                                                    <Sparkles class="w-3 h-3 text-purple-500 dark:text-purple-400 flex-shrink-0" />
+                                                </Show>
+                                            </div>
+                                            <p class="text-xs text-gray-600 dark:text-gray-300 truncate mb-1 sm:mb-2">{session.preview}</p>
+                                            <div class="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
+                                                <span class="text-xs">{formatTimestamp(session.timestamp)}</span>
+                                                <span class="text-xs hidden sm:inline">{session.messageCount} messages</span>
+                                                <span class="text-xs sm:hidden">{session.messageCount}m</span>
+                                            </div>
+                                        </button>
+                                    )}
+                                </For>
+                            </div>
+                        </Show>
                     </div>
                 </div>
             </div>
@@ -720,6 +730,7 @@ export default function ChatPage() {
                         <div class="flex items-center gap-1 sm:gap-2 flex-shrink-0">
                             <span class="text-xs text-gray-500 dark:text-gray-400 hidden sm:inline">Using:</span>
                             <span class="text-xs font-medium text-blue-600 dark:text-blue-400 truncate max-w-20 sm:max-w-none">{activeProfile()}</span>
+                            
                         </div>
                     </div>
                 </div>

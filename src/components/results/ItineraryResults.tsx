@@ -227,6 +227,7 @@ export default function ItineraryResults(props: ItineraryResultsProps) {
                         target="_blank" 
                         rel="noopener noreferrer"
                         class="text-sm text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
+                        onClick={(e) => e.stopPropagation()}
                       >
                         Learn More <ChevronRight class="w-3 h-3" />
                       </a>

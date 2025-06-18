@@ -63,14 +63,14 @@ export default function Nav() {
         <div class="flex justify-between items-center h-14 sm:h-16">
           {/* Logo - Mobile First */}
           <div class="flex items-center">
-            <A href="/" class="flex items-center space-x-2">
-              <div class="w-6 h-6 sm:w-8 sm:h-8">
+            <A href="/" class="flex items-center">
+              <div class="w-6 h-6 sm:w-8 sm:h-8 flex items-center justify-center">
                 <ImageRoot>
-                  <Image src="/images/loci.png" class="w-full h-full object-contain" />
+                  <Image src="/images/loci-abstract-symbol.svg" class="w-full h-full object-contain" />
                   <ImageFallback class="w-full h-full bg-blue-600 text-white rounded flex items-center justify-center text-sm font-bold">L</ImageFallback>
                 </ImageRoot>
               </div>
-              <span class="pl-2 text-lg sm:text-xl font-bold text-gray-900 dark:text-white transition-colors">Loci</span>
+              <span class="ml-2 text-lg sm:text-xl font-bold text-gray-900 dark:text-white transition-colors">Loci</span>
               <Show when={isAuthenticated()}>
                 <Badge variant="secondary" class="ml-1 sm:ml-2 bg-blue-100 text-blue-800 text-xs px-1.5 py-0.5 sm:px-2 sm:py-1">AI</Badge>
               </Show>
@@ -205,14 +205,14 @@ export default function Nav() {
           <div class="flex flex-col h-full">
             {/* Mobile Header */}
             <div class="flex justify-between items-center px-4 py-4 border-b border-gray-200 dark:border-gray-700">
-              <A href="/" class="flex items-center space-x-2" onClick={() => setIsMenuOpen(false)}>
-                <div class="w-6 h-6">
+              <A href="/" class="flex items-center" onClick={() => setIsMenuOpen(false)}>
+                <div class="w-6 h-6 flex items-center justify-center">
                   <ImageRoot>
-                    <Image src="/images/loci.png" class="w-full h-full object-contain" />
+                    <Image src="/images/loci-abstract-symbol.svg" class="w-full h-full object-contain" />
                     <ImageFallback class="w-full h-full bg-blue-600 text-white rounded flex items-center justify-center text-sm font-bold">L</ImageFallback>
                   </ImageRoot>
                 </div>
-                <span class="text-lg font-bold text-gray-900 dark:text-white">Loci</span>
+                <span class="ml-2 text-lg font-bold text-gray-900 dark:text-white">Loci</span>
                 <Show when={isAuthenticated()}>
                   <Badge variant="secondary" class="ml-1 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-300 text-xs px-1.5 py-0.5">AI</Badge>
                 </Show>

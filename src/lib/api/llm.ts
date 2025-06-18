@@ -241,3 +241,125 @@ export const useUnifiedChatMutation = () => {
     mutationFn: sendUnifiedChatMessage,
   }));
 };
+
+// ==================
+// CHAT SESSIONS RETRIEVAL
+// ==================
+
+export interface ChatSessionSummary {
+  id: string;
+  title: string;
+  preview: string;
+  timestamp: string;
+  messageCount: number;
+  hasItinerary: boolean;
+  lastMessage?: string;
+}
+
+// Get chat sessions for a user
+export const getUserChatSessions = async (profileId: string): Promise<ChatSessionSummary[]> => {
+  try {
+    const response = await apiRequest<any[]>(`/llm/prompt-response/chat/sessions/user/${profileId}`, {
+      method: 'GET',
+    });
+    
+    // Transform the response to our expected format
+    return response.map((session: any) => ({
+      id: session.id,
+      title: session.title || generateSessionTitle(session.conversation_history),
+      preview: session.preview || generatePreview(session.conversation_history),
+      timestamp: session.updated_at || session.created_at,
+      messageCount: session.conversation_history?.length || 0,
+      hasItinerary: session.current_itinerary ? true : false,
+      lastMessage: getLastMessage(session.conversation_history)
+    }));
+  } catch (error) {
+    console.warn('Chat sessions endpoint not available yet, using mock data');
+    // Return mock data for now until backend endpoint is implemented
+    return getMockChatSessions();
+  }
+};
+
+// Helper function to generate session title from conversation
+const generateSessionTitle = (conversationHistory: any[]): string => {
+  if (!conversationHistory || conversationHistory.length === 0) {
+    return 'New Conversation';
+  }
+  
+  const firstUserMessage = conversationHistory.find(msg => msg.type === 'user');
+  if (firstUserMessage) {
+    const content = firstUserMessage.content || '';
+    // Extract location or main topic
+    const words = content.split(' ').slice(0, 4);
+    return words.join(' ') + (content.split(' ').length > 4 ? '...' : '');
+  }
+  
+  return 'Chat Session';
+};
+
+// Helper function to generate preview from conversation
+const generatePreview = (conversationHistory: any[]): string => {
+  if (!conversationHistory || conversationHistory.length === 0) {
+    return 'Start a new conversation...';
+  }
+  
+  const lastMessage = conversationHistory[conversationHistory.length - 1];
+  if (lastMessage) {
+    const content = lastMessage.content || '';
+    return content.length > 60 ? content.substring(0, 60) + '...' : content;
+  }
+  
+  return 'Continue conversation...';
+};
+
+// Helper function to get last message
+const getLastMessage = (conversationHistory: any[]): string => {
+  if (!conversationHistory || conversationHistory.length === 0) {
+    return '';
+  }
+  
+  const lastMessage = conversationHistory[conversationHistory.length - 1];
+  return lastMessage?.content || '';
+};
+
+// Mock data for development - will be removed once backend endpoint is ready
+const getMockChatSessions = (): ChatSessionSummary[] => {
+  return [
+    {
+      id: 'session-1',
+      title: 'Porto Weekend Trip',
+      preview: 'Looking for hidden gems in Porto...',
+      timestamp: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(), // 2 days ago
+      messageCount: 8,
+      hasItinerary: true,
+      lastMessage: 'Great! I found some amazing recommendations for Porto.'
+    },
+    {
+      id: 'session-2',
+      title: 'Family Trip to London',
+      preview: 'Planning activities for kids...',
+      timestamp: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000).toISOString(), // 4 days ago
+      messageCount: 12,
+      hasItinerary: true,
+      lastMessage: 'Here are some family-friendly activities in London.'
+    },
+    {
+      id: 'session-3',
+      title: 'Food Tour Barcelona',
+      preview: 'Best tapas restaurants...',
+      timestamp: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(), // 1 week ago
+      messageCount: 6,
+      hasItinerary: false,
+      lastMessage: 'I recommend these authentic tapas places.'
+    }
+  ];
+};
+
+// Query hook for getting chat sessions
+export const useGetChatSessionsQuery = (profileId: string) => {
+  return {
+    queryKey: ['chatSessions', profileId],
+    queryFn: () => getUserChatSessions(profileId),
+    enabled: !!profileId,
+  };
+};

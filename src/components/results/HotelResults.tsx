@@ -176,6 +176,7 @@ export default function HotelResults(props: HotelResultsProps) {
                     target="_blank" 
                     rel="noopener noreferrer"
                     class="text-sm text-blue-600 dark:text-blue-400 hover:underline"
+                    onClick={(e) => e.stopPropagation()}
                   >
                     View Details →
                   </a>

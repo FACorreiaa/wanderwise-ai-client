@@ -189,6 +189,7 @@ export default function RestaurantResults(props: RestaurantResultsProps) {
                     target="_blank" 
                     rel="noopener noreferrer"
                     class="text-sm text-blue-600 dark:text-blue-400 hover:underline"
+                    onClick={(e) => e.stopPropagation()}
                   >
                     View Menu & Details →
                   </a>
