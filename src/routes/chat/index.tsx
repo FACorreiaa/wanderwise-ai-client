@@ -1,10 +1,11 @@
 import { createSignal, createEffect, For, Show, onMount } from 'solid-js';
 import { useNavigate } from '@solidjs/router';
-import { MessageCircle, Send, Bot, User, MapPin, Clock, Star, Heart, Download, Share2, Copy, Trash2, Plus, Loader2, Sparkles, Globe, Calendar, Users } from 'lucide-solid';
+import { MessageCircle, Send, Bot, User, MapPin, Clock, Star, Heart, Download, Share2, Copy, Trash2, Plus, Loader2, Sparkles, Globe, Calendar, Users, ChevronDown, ChevronUp } from 'lucide-solid';
 import { sendUnifiedChatMessageStream, detectDomain } from '~/lib/api/llm';
 import { streamingService, createStreamingSession, getDomainRoute } from '~/lib/streaming-service';
 import type { StreamingSession, DomainType, UnifiedChatResponse } from '~/lib/api/types';
 import { useUserLocation } from '~/contexts/LocationContext';
+import { HotelResults, RestaurantResults, ActivityResults, ItineraryResults } from '~/components/results';
 
 export default function ChatPage() {
     const navigate = useNavigate();
@@ -19,6 +20,7 @@ export default function ChatPage() {
     const [selectedSession, setSelectedSession] = createSignal(null);
     const [streamingSession, setStreamingSession] = createSignal(null);
     const [streamProgress, setStreamProgress] = createSignal('');
+    const [expandedResults, setExpandedResults] = createSignal(new Set());
 
 
     const { userLocation } = useUserLocation()
@@ -177,26 +179,21 @@ export default function ChatPage() {
                     setIsLoading(false);
                     setStreamProgress('');
 
-                    // Add assistant message
+                    // Add assistant message with results
                     const assistantMessage = {
                         id: `msg-${Date.now()}-response`,
                         type: 'assistant',
                         content: getCompletionMessage(completedSession.domain, completedSession.city),
                         timestamp: new Date(),
                         hasItinerary: true,
-                        streamingData: completedSession.data
+                        streamingData: completedSession.data,
+                        showResults: true // New flag to show expanded results
                     };
 
                     setMessages(prev => [...prev, assistantMessage]);
 
                     // Store completed session
                     sessionStorage.setItem('completedStreamingSession', JSON.stringify(completedSession));
-
-                    // Navigate to appropriate page after a short delay
-                    setTimeout(() => {
-                        const route = getDomainRoute(completedSession.domain);
-                        navigate(route, { state: { streamingData: completedSession.data, fromChat: true } });
-                    }, 2000);
                 },
                 onError: (error) => {
                     console.error('Streaming error:', error);
@@ -324,6 +321,74 @@ export default function ChatPage() {
     const useQuickPrompt = (prompt) => {
         setCurrentMessage(prompt.text);
         sendMessage();
+    };
+
+    const toggleResultExpansion = (messageId) => {
+        setExpandedResults(prev => {
+            const newSet = new Set(prev);
+            if (newSet.has(messageId)) {
+                newSet.delete(messageId);
+            } else {
+                newSet.add(messageId);
+            }
+            return newSet;
+        });
+    };
+
+    const renderStreamingResults = (streamingData, messageId, compact = false) => {
+        const isExpanded = expandedResults().has(messageId);
+        const actualCompact = compact || !isExpanded;
+        
+        return (
+            <div class="space-y-4">
+                <Show when={streamingData.hotels && streamingData.hotels.length > 0}>
+                    <HotelResults 
+                        hotels={streamingData.hotels} 
+                        compact={actualCompact} 
+                        showToggle={false}
+                        initialLimit={3}
+                        limit={actualCompact ? 3 : undefined} 
+                    />
+                </Show>
+                <Show when={streamingData.restaurants && streamingData.restaurants.length > 0}>
+                    <RestaurantResults 
+                        restaurants={streamingData.restaurants} 
+                        compact={actualCompact} 
+                        showToggle={false}
+                        initialLimit={3}
+                        limit={actualCompact ? 3 : undefined} 
+                    />
+                </Show>
+                <Show when={streamingData.activities && streamingData.activities.length > 0}>
+                    <ActivityResults 
+                        activities={streamingData.activities} 
+                        compact={actualCompact} 
+                        showToggle={false}
+                        initialLimit={3}
+                        limit={actualCompact ? 3 : undefined} 
+                    />
+                </Show>
+                <Show when={streamingData.points_of_interest && streamingData.points_of_interest.length > 0}>
+                    <ItineraryResults 
+                        pois={streamingData.points_of_interest}
+                        itinerary={streamingData.itinerary_response}
+                        compact={actualCompact} 
+                        showToggle={false}
+                        initialLimit={5}
+                        limit={actualCompact ? 5 : undefined} 
+                    />
+                </Show>
+                <Show when={streamingData.itinerary_response && !streamingData.points_of_interest}>
+                    <ItineraryResults 
+                        itinerary={streamingData.itinerary_response}
+                        compact={actualCompact} 
+                        showToggle={false}
+                        initialLimit={5}
+                        limit={actualCompact ? 5 : undefined} 
+                    />
+                </Show>
+            </div>
+        );
     };
 
     const saveItinerary = () => {
@@ -467,8 +532,9 @@ export default function ChatPage() {
                                 </button>
                             </div>
                         }>
-                            {/* New streaming data display */}
+                            {/* New streaming data display with expandable results */}
                             <div>
+                                {/* Header section */}
                                 <Show when={message.streamingData.general_city_data}>
                                     <div class="flex items-center justify-between mb-3">
                                         <div>
@@ -477,134 +543,37 @@ export default function ChatPage() {
                                             </h4>
                                             <p class="text-sm text-gray-600 dark:text-gray-300">
                                                 {message.streamingData.general_city_data.city}, {message.streamingData.general_city_data.country}
-                                                {message.streamingData.points_of_interest && ` • ${message.streamingData.points_of_interest.length} places`}
                                             </p>
                                         </div>
                                         <div class="flex items-center gap-2">
-                                            <button class="p-2 text-gray-600 dark:text-gray-300 hover:text-blue-600 hover:bg-blue-50 rounded-lg" title="Save">
+                                            <button class="p-2 text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg" title="Save">
                                                 <Heart class="w-4 h-4" />
                                             </button>
-                                            <button class="p-2 text-gray-600 dark:text-gray-300 hover:text-green-600 hover:bg-green-50 rounded-lg" title="Share">
+                                            <button class="p-2 text-gray-600 dark:text-gray-300 hover:text-green-600 dark:hover:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg" title="Share">
                                                 <Share2 class="w-4 h-4" />
                                             </button>
                                         </div>
                                     </div>
-
-                                    {/* Preview of POIs */}
-                                    <Show when={message.streamingData.points_of_interest || message.streamingData.itinerary_response?.points_of_interest}>
-                                        <div class="space-y-2 mb-3">
-                                            <For each={(message.streamingData.itinerary_response?.points_of_interest || message.streamingData.points_of_interest)?.slice(0, 3)}>
-                                                {(poi) => (
-                                                    <div class="flex items-center gap-3 p-2 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                                                        <div class="w-6 h-6 rounded-full bg-blue-500 flex items-center justify-center text-white text-xs">
-                                                            <MapPin class="w-3 h-3" />
-                                                        </div>
-                                                        <div class="flex-1 min-w-0">
-                                                            <p class="text-sm font-medium text-gray-900 dark:text-white truncate">{poi.name}</p>
-                                                            <p class="text-xs text-gray-500 dark:text-gray-400">{poi.category}</p>
-                                                        </div>
-                                                    </div>
-                                                )}
-                                            </For>
-
-                                            <Show when={(message.streamingData.itinerary_response?.points_of_interest || message.streamingData.points_of_interest)?.length > 3}>
-                                                <p class="text-xs text-gray-500 dark:text-gray-400 text-center py-2">
-                                                    +{(message.streamingData.itinerary_response?.points_of_interest || message.streamingData.points_of_interest).length - 3} more places
-                                                </p>
-                                            </Show>
-                                        </div>
-                                    </Show>
                                 </Show>
 
-                                {/* Domain-specific previews */}
-                                <Show when={message.streamingData.hotels}>
-                                    <div class="mb-3">
-                                        <h4 class="font-semibold text-gray-900 dark:text-white mb-2">Hotel Recommendations</h4>
-                                        <div class="space-y-2">
-                                            <For each={message.streamingData.hotels.slice(0, 3)}>
-                                                {(hotel) => (
-                                                    <div class="flex items-center gap-3 p-2 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                                                        <div class="w-6 h-6 rounded-full bg-purple-500 flex items-center justify-center text-white text-xs">
-                                                            🏨
-                                                        </div>
-                                                        <div class="flex-1 min-w-0">
-                                                            <p class="text-sm font-medium text-gray-900 dark:text-white truncate">{hotel.name}</p>
-                                                            <p class="text-xs text-gray-500 dark:text-gray-400">{hotel.category} • {hotel.price_range}</p>
-                                                        </div>
-                                                        <div class="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
-                                                            <Star class="w-3 h-3 text-yellow-500 dark:text-yellow-400 fill-current" />
-                                                            <span>{hotel.rating}</span>
-                                                        </div>
-                                                    </div>
-                                                )}
-                                            </For>
-                                        </div>
-                                    </div>
-                                </Show>
+                                {/* Compact results preview */}
+                                {renderStreamingResults(message.streamingData, message.id, true)}
 
-                                <Show when={message.streamingData.restaurants}>
-                                    <div class="mb-3">
-                                        <h4 class="font-semibold text-gray-900 dark:text-white mb-2">Restaurant Recommendations</h4>
-                                        <div class="space-y-2">
-                                            <For each={message.streamingData.restaurants.slice(0, 3)}>
-                                                {(restaurant) => (
-                                                    <div class="flex items-center gap-3 p-2 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                                                        <div class="w-6 h-6 rounded-full bg-orange-500 flex items-center justify-center text-white text-xs">
-                                                            🍽️
-                                                        </div>
-                                                        <div class="flex-1 min-w-0">
-                                                            <p class="text-sm font-medium text-gray-900 dark:text-white truncate">{restaurant.name}</p>
-                                                            <p class="text-xs text-gray-500 dark:text-gray-400">{restaurant.cuisine_type} • {restaurant.price_range}</p>
-                                                        </div>
-                                                        <div class="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
-                                                            <Star class="w-3 h-3 text-yellow-500 dark:text-yellow-400 fill-current" />
-                                                            <span>{restaurant.rating}</span>
-                                                        </div>
-                                                    </div>
-                                                )}
-                                            </For>
-                                        </div>
-                                    </div>
-                                </Show>
-
-                                <Show when={message.streamingData.activities}>
-                                    <div class="mb-3">
-                                        <h4 class="font-semibold text-gray-900 dark:text-white mb-2">Activity Recommendations</h4>
-                                        <div class="space-y-2">
-                                            <For each={message.streamingData.activities.slice(0, 3)}>
-                                                {(activity) => (
-                                                    <div class="flex items-center gap-3 p-2 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                                                        <div class="w-6 h-6 rounded-full bg-green-500 flex items-center justify-center text-white text-xs">
-                                                            🎯
-                                                        </div>
-                                                        <div class="flex-1 min-w-0">
-                                                            <p class="text-sm font-medium text-gray-900 dark:text-white truncate">{activity.name}</p>
-                                                            <p class="text-xs text-gray-500 dark:text-gray-400">{activity.category} • {activity.budget}</p>
-                                                        </div>
-                                                        <div class="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
-                                                            <Star class="w-3 h-3 text-yellow-500 dark:text-yellow-400 fill-current" />
-                                                            <span>{activity.rating}</span>
-                                                        </div>
-                                                    </div>
-                                                )}
-                                            </For>
-                                        </div>
-                                    </div>
-                                </Show>
-
-                                <button
-                                    class="w-full mt-3 cb-button cb-button-primary py-2 text-sm"
-                                    onClick={() => {
-                                        // Navigate to appropriate page with streaming data
-                                        const session = JSON.parse(sessionStorage.getItem('completedStreamingSession') || '{}');
-                                        if (session.data) {
-                                            const route = getDomainRoute(session.domain);
-                                            navigate(route, { state: { streamingData: session.data, fromChat: true } });
+                                {/* Expand/Collapse button */}
+                                <Show when={message.showResults}>
+                                    <button
+                                        class="w-full mt-3 flex items-center justify-center gap-2 py-2 text-sm text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-700 transition-colors"
+                                        onClick={() => toggleResultExpansion(message.id)}
+                                    >
+                                        <span>
+                                            {expandedResults().has(message.id) ? 'Show Less' : 'Show All Details'}
+                                        </span>
+                                        {expandedResults().has(message.id) ? 
+                                            <ChevronUp class="w-4 h-4" /> : 
+                                            <ChevronDown class="w-4 h-4" />
                                         }
-                                    }}
-                                >
-                                    View Full Results →
-                                </button>
+                                    </button>
+                                </Show>
                             </div>
                         </Show>
                     </div>

@@ -5,6 +5,7 @@ import { MapPin, Clock, Star, Filter, Heart, Share2, Download, Edit3, Plus, X, N
 import MapComponent from '~/components/features/Map/Map';
 import { useItineraries, useItinerary, useUpdateItineraryMutation, useSaveItineraryMutation } from '~/lib/api/itineraries';
 import type { AiCityResponse, POIDetail } from '~/lib/api/types';
+import { ItineraryResults } from '~/components/results';
 
 export default function ItineraryResultsPage() {
     const location = useLocation();
@@ -16,6 +17,7 @@ export default function ItineraryResultsPage() {
     const [currentItineraryId, setCurrentItineraryId] = createSignal(null);
     const [streamingData, setStreamingData] = createSignal(null);
     const [fromChat, setFromChat] = createSignal(false);
+    const [showAllGeneralPOIs, setShowAllGeneralPOIs] = createSignal(false);
 
     // Chat functionality
     const [showChat, setShowChat] = createSignal(false);
@@ -704,7 +706,7 @@ export default function ItineraryResultsPage() {
     );
 
     return (
-        <div class="min-h-screen bg-gray-50">
+        <div class="min-h-screen bg-gray-50 dark:bg-gray-900">
             {/* Chat Success Banner */}
             <Show when={fromChat()}>
                 <div class="bg-gradient-to-r from-green-50 to-blue-50 border-b border-green-200 px-4 py-3 sm:px-6">
@@ -733,12 +735,12 @@ export default function ItineraryResultsPage() {
             </Show>
 
             {/* Header - Mobile First */}
-            <div class="bg-white border-b border-gray-200 px-4 py-3 sm:px-6 sm:py-4">
+            <div class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-4 py-3 sm:px-6 sm:py-4">
                 <div class="max-w-7xl mx-auto">
                     <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                         <div>
-                            <h1 class="text-xl font-bold text-gray-900 sm:text-2xl">{itinerary().name}</h1>
-                            <p class="text-sm text-gray-600 mt-1 sm:text-base">{itinerary().city}, {itinerary().country} • {itinerary().duration}</p>
+                            <h1 class="text-xl font-bold text-gray-900 dark:text-white sm:text-2xl">{itinerary().name}</h1>
+                            <p class="text-sm text-gray-600 dark:text-gray-300 mt-1 sm:text-base">{itinerary().city}, {itinerary().country} • {itinerary().duration}</p>
                         </div>
                         <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
                             {/* View Mode Toggle - Stack on Mobile */}
@@ -798,7 +800,7 @@ export default function ItineraryResultsPage() {
             </div>
 
             {/* Filters Bar - Mobile First */}
-            <div class="bg-white border-b border-gray-200 px-4 py-3 relative sm:px-6">
+            <div class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-4 py-3 relative sm:px-6">
                 <div class="max-w-7xl mx-auto">
                     <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                         <div class="flex items-center gap-4">
@@ -825,46 +827,46 @@ export default function ItineraryResultsPage() {
 
             {/* City Information and General POIs - Only show when we have streaming data */}
             <Show when={streamingData() && streamingData().general_city_data}>
-                <div class="bg-white border-b border-gray-200">
+                <div class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
                     <div class="max-w-7xl mx-auto px-4 py-6 sm:px-6">
                         <div class="grid gap-6 lg:grid-cols-3">
                             {/* City Information */}
                             <div class="lg:col-span-2">
-                                <div class="bg-white rounded-lg border border-gray-200 p-6">
-                                    <h2 class="text-xl font-bold text-gray-900 mb-3 flex items-center gap-2">
-                                        <MapPin class="w-5 h-5 text-blue-600" />
+                                <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+                                    <h2 class="text-xl font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
+                                        <MapPin class="w-5 h-5 text-blue-600 dark:text-blue-400" />
                                         About {streamingData()?.general_city_data?.city}
                                     </h2>
-                                    <p class="text-gray-700 text-sm leading-relaxed mb-6">
+                                    <p class="text-gray-700 dark:text-gray-300 text-sm leading-relaxed mb-6">
                                         {streamingData()?.general_city_data?.description}
                                     </p>
                                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                        <div class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                                            <Users class="w-4 h-4 text-gray-500" />
+                                        <div class="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                                            <Users class="w-4 h-4 text-gray-500 dark:text-gray-400" />
                                             <div>
-                                                <div class="text-xs font-medium text-gray-600">Population</div>
-                                                <div class="text-sm text-gray-900">{streamingData()?.general_city_data?.population}</div>
+                                                <div class="text-xs font-medium text-gray-600 dark:text-gray-300">Population</div>
+                                                <div class="text-sm text-gray-900 dark:text-white">{streamingData()?.general_city_data?.population}</div>
                                             </div>
                                         </div>
-                                        <div class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                                            <MessageCircle class="w-4 h-4 text-gray-500" />
+                                        <div class="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                                            <MessageCircle class="w-4 h-4 text-gray-500 dark:text-gray-400" />
                                             <div>
-                                                <div class="text-xs font-medium text-gray-600">Language</div>
-                                                <div class="text-sm text-gray-900">{streamingData()?.general_city_data?.language}</div>
+                                                <div class="text-xs font-medium text-gray-600 dark:text-gray-300">Language</div>
+                                                <div class="text-sm text-gray-900 dark:text-white">{streamingData()?.general_city_data?.language}</div>
                                             </div>
                                         </div>
-                                        <div class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                                            <Cloud class="w-4 h-4 text-gray-500" />
+                                        <div class="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                                            <Cloud class="w-4 h-4 text-gray-500 dark:text-gray-400" />
                                             <div>
-                                                <div class="text-xs font-medium text-gray-600">Weather</div>
-                                                <div class="text-sm text-gray-900">{streamingData()?.general_city_data?.weather}</div>
+                                                <div class="text-xs font-medium text-gray-600 dark:text-gray-300">Weather</div>
+                                                <div class="text-sm text-gray-900 dark:text-white">{streamingData()?.general_city_data?.weather}</div>
                                             </div>
                                         </div>
-                                        <div class="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                                            <Clock class="w-4 h-4 text-gray-500" />
+                                        <div class="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                                            <Clock class="w-4 h-4 text-gray-500 dark:text-gray-400" />
                                             <div>
-                                                <div class="text-xs font-medium text-gray-600">Timezone</div>
-                                                <div class="text-sm text-gray-900">{streamingData()?.general_city_data?.timezone}</div>
+                                                <div class="text-xs font-medium text-gray-600 dark:text-gray-300">Timezone</div>
+                                                <div class="text-sm text-gray-900 dark:text-white">{streamingData()?.general_city_data?.timezone}</div>
                                             </div>
                                         </div>
                                     </div>
@@ -872,27 +874,27 @@ export default function ItineraryResultsPage() {
                             </div>
                             
                             {/* Quick Stats */}
-                            <div class="bg-white rounded-lg border border-gray-200 p-6">
-                                <h3 class="font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                                    <Star class="w-4 h-4 text-blue-600" />
+                            <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+                                <h3 class="font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                                    <Star class="w-4 h-4 text-blue-600 dark:text-blue-400" />
                                     Quick Stats
                                 </h3>
                                 <div class="space-y-4">
                                     <Show when={streamingData()?.points_of_interest}>
-                                        <div class="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
-                                            <span class="text-sm text-gray-700">Places to explore</span>
-                                            <span class="font-semibold text-blue-600">{streamingData()?.points_of_interest?.length || 0}</span>
+                                        <div class="flex items-center justify-between p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                                            <span class="text-sm text-gray-700 dark:text-gray-300">Places to explore</span>
+                                            <span class="font-semibold text-blue-600 dark:text-blue-400">{streamingData()?.points_of_interest?.length || 0}</span>
                                         </div>
                                     </Show>
                                     <Show when={streamingData()?.itinerary_response?.points_of_interest}>
-                                        <div class="flex items-center justify-between p-3 bg-green-50 rounded-lg">
-                                            <span class="text-sm text-gray-700">In your itinerary</span>
-                                            <span class="font-semibold text-green-600">{streamingData()?.itinerary_response?.points_of_interest?.length || 0}</span>
+                                        <div class="flex items-center justify-between p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                                            <span class="text-sm text-gray-700 dark:text-gray-300">In your itinerary</span>
+                                            <span class="font-semibold text-green-600 dark:text-green-400">{streamingData()?.itinerary_response?.points_of_interest?.length || 0}</span>
                                         </div>
                                     </Show>
-                                    <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                                        <span class="text-sm text-gray-700">Total area</span>
-                                        <span class="font-semibold text-gray-900">{streamingData()?.general_city_data?.area}</span>
+                                    <div class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                                        <span class="text-sm text-gray-700 dark:text-gray-300">Total area</span>
+                                        <span class="font-semibold text-gray-900 dark:text-white">{streamingData()?.general_city_data?.area}</span>
                                     </div>
                                 </div>
                             </div>
@@ -902,33 +904,33 @@ export default function ItineraryResultsPage() {
                         <Show when={streamingData()?.points_of_interest && streamingData().points_of_interest.length > 0}>
                             <div class="mt-6">
                                 <div class="flex items-center justify-between mb-4">
-                                    <h3 class="text-lg font-semibold text-gray-900 flex items-center gap-2">
-                                        <Compass class="w-5 h-5 text-blue-600" />
+                                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                                        <Compass class="w-5 h-5 text-blue-600 dark:text-blue-400" />
                                         All Points of Interest in {streamingData()?.general_city_data?.city}
                                     </h3>
-                                    <span class="text-sm text-gray-500">
+                                    <span class="text-sm text-gray-500 dark:text-gray-400">
                                         {streamingData()?.points_of_interest?.length} places
                                     </span>
                                 </div>
                                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                                    <For each={streamingData()?.points_of_interest?.slice(0, 6)}>
+                                    <For each={showAllGeneralPOIs() ? streamingData()?.points_of_interest : streamingData()?.points_of_interest?.slice(0, 6)}>
                                         {(poi) => (
-                                            <div class="bg-white rounded-lg p-4 border border-gray-200 hover:shadow-md transition-shadow cursor-pointer group">
+                                            <div class="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700 hover:shadow-md transition-shadow cursor-pointer group">
                                                 <div class="flex items-start gap-3">
-                                                    <div class="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0 group-hover:bg-blue-200 transition-colors">
+                                                    <div class="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center flex-shrink-0 group-hover:bg-blue-200 dark:group-hover:bg-blue-800 transition-colors">
                                                         {(() => {
                                                             const category = poi.category?.toLowerCase() || '';
-                                                            if (category.includes('museum') || category.includes('cultural')) return <Palette class="w-4 h-4 text-blue-600" />;
-                                                            if (category.includes('park') || category.includes('garden')) return <TreePine class="w-4 h-4 text-green-600" />;
-                                                            if (category.includes('restaurant') || category.includes('food')) return <Utensils class="w-4 h-4 text-orange-600" />;
-                                                            if (category.includes('hotel') || category.includes('accommodation')) return <Building class="w-4 h-4 text-purple-600" />;
-                                                            return <MapPin class="w-4 h-4 text-blue-600" />;
+                                                            if (category.includes('museum') || category.includes('cultural')) return <Palette class="w-4 h-4 text-blue-600 dark:text-blue-400" />;
+                                                            if (category.includes('park') || category.includes('garden')) return <TreePine class="w-4 h-4 text-green-600 dark:text-green-400" />;
+                                                            if (category.includes('restaurant') || category.includes('food')) return <Utensils class="w-4 h-4 text-orange-600 dark:text-orange-400" />;
+                                                            if (category.includes('hotel') || category.includes('accommodation')) return <Building class="w-4 h-4 text-purple-600 dark:text-purple-400" />;
+                                                            return <MapPin class="w-4 h-4 text-blue-600 dark:text-blue-400" />;
                                                         })()}
                                                     </div>
                                                     <div class="flex-1 min-w-0">
-                                                        <h4 class="font-medium text-gray-900 text-sm mb-1 group-hover:text-blue-600 transition-colors">{poi.name}</h4>
-                                                        <p class="text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded-full w-fit mb-2">{poi.category}</p>
-                                                        <p class="text-xs text-gray-700 line-clamp-2">{poi.description_poi}</p>
+                                                        <h4 class="font-medium text-gray-900 dark:text-white text-sm mb-1 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">{poi.name}</h4>
+                                                        <p class="text-xs text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 px-2 py-1 rounded-full w-fit mb-2">{poi.category}</p>
+                                                        <p class="text-xs text-gray-700 dark:text-gray-300 line-clamp-2">{poi.description_poi}</p>
                                                     </div>
                                                 </div>
                                             </div>
@@ -937,8 +939,14 @@ export default function ItineraryResultsPage() {
                                 </div>
                                 <Show when={streamingData()?.points_of_interest?.length > 6}>
                                     <div class="mt-4 text-center">
-                                        <button class="text-sm text-blue-600 hover:text-blue-700 font-medium">
-                                            View all {streamingData().points_of_interest.length - 6} remaining places →
+                                        <button 
+                                            onClick={() => setShowAllGeneralPOIs(!showAllGeneralPOIs())}
+                                            class="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium transition-colors"
+                                        >
+                                            {showAllGeneralPOIs() 
+                                                ? 'Show less places ↑' 
+                                                : `View all ${streamingData().points_of_interest.length - 6} remaining places →`
+                                            }
                                         </button>
                                     </div>
                                 </Show>
@@ -979,19 +987,34 @@ export default function ItineraryResultsPage() {
                             <div class="space-y-4">
                                 <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                                     <div>
-                                        <h2 class="text-lg font-semibold text-gray-900">Your Curated Itinerary</h2>
-                                        <p class="text-sm text-gray-600">Personalized places to visit based on your preferences</p>
+                                        <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Your Curated Itinerary</h2>
+                                        <p class="text-sm text-gray-600 dark:text-gray-300">Personalized places to visit based on your preferences</p>
                                     </div>
-                                    <button class="text-sm text-blue-600 hover:text-blue-700 flex items-center gap-1 self-start sm:self-auto">
+                                    <button class="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 flex items-center gap-1 self-start sm:self-auto">
                                         <Edit3 class="w-4 h-4" />
                                         Customize Order
                                     </button>
                                 </div>
-                                <div class="grid gap-3">
-                                    <For each={filteredPOIs()}>
-                                        {(poi) => renderPOICard(poi)}
-                                    </For>
-                                </div>
+                                <ItineraryResults 
+                                    pois={filteredPOIs().map(poi => ({
+                                        name: poi.name,
+                                        latitude: poi.latitude,
+                                        longitude: poi.longitude,
+                                        category: poi.category,
+                                        description_poi: poi.description,
+                                        address: poi.address,
+                                        website: poi.website,
+                                        opening_hours: poi.openingHours,
+                                        rating: poi.rating,
+                                        priority: poi.priority,
+                                        timeToSpend: poi.timeToSpend,
+                                        budget: poi.budget,
+                                        distance: 0 // Calculate if needed
+                                    }))}
+                                    compact={false}
+                                    showToggle={filteredPOIs().length > 5}
+                                    initialLimit={5}
+                                />
                             </div>
                         </div>
                     </Show>

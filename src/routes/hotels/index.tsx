@@ -4,6 +4,7 @@ import { MapPin, Clock, Star, Filter, Heart, Share2, Download, Edit3, Plus, X, N
 import MapComponent from '~/components/features/Map/Map';
 // Removed old API imports - now using unified streaming endpoint only
 import type { AccommodationResponse, HotelDetailedInfo } from '~/lib/api/types';
+import { HotelResults } from '~/components/results';
 
 export default function HotelsPage() {
     const location = useLocation();
@@ -477,7 +478,7 @@ export default function HotelsPage() {
     };
 
     return (
-        <div class="min-h-screen bg-gray-50">
+        <div class="min-h-screen bg-gray-50 dark:bg-gray-900">
             {/* Chat Success Banner */}
             <Show when={fromChat()}>
                 <div class="bg-gradient-to-r from-green-50 to-blue-50 border-b border-green-200 px-4 py-3 sm:px-6">
@@ -506,33 +507,33 @@ export default function HotelsPage() {
             </Show>
 
             {/* Header - Mobile First */}
-            <div class="bg-white border-b border-gray-200 px-4 py-3 sm:px-6 sm:py-4">
+            <div class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-4 py-3 sm:px-6 sm:py-4">
                 <div class="max-w-7xl mx-auto">
                     <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                         <div>
-                            <h1 class="text-xl font-bold text-gray-900 sm:text-2xl">Hotels in {displayLocation()}</h1>
-                            <p class="text-sm text-gray-600 mt-1 sm:text-base">
+                            <h1 class="text-xl font-bold text-gray-900 dark:text-white sm:text-2xl">Hotels in {displayLocation()}</h1>
+                            <p class="text-sm text-gray-600 dark:text-gray-300 mt-1 sm:text-base">
                                 {hotels().length} recommendations • {searchParams().guests} guests • {searchParams().rooms} room
                             </p>
                         </div>
                         <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
                             {/* View Mode Toggle */}
-                            <div class="flex bg-gray-100 rounded-lg p-1 w-full sm:w-auto">
+                            <div class="flex bg-gray-100 dark:bg-gray-700 rounded-lg p-1 w-full sm:w-auto">
                                 <button
                                     onClick={() => setViewMode('map')}
-                                    class={`flex-1 px-3 py-1 rounded text-sm font-medium transition-colors sm:flex-initial ${viewMode() === 'map' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-600'}`}
+                                    class={`flex-1 px-3 py-1 rounded text-sm font-medium transition-colors sm:flex-initial ${viewMode() === 'map' ? 'bg-white dark:bg-gray-600 text-gray-900 dark:text-white shadow-sm' : 'text-gray-600 dark:text-gray-300'}`}
                                 >
                                     Map
                                 </button>
                                 <button
                                     onClick={() => setViewMode('split')}
-                                    class={`flex-1 px-3 py-1 rounded text-sm font-medium transition-colors sm:flex-initial ${viewMode() === 'split' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-600'}`}
+                                    class={`flex-1 px-3 py-1 rounded text-sm font-medium transition-colors sm:flex-initial ${viewMode() === 'split' ? 'bg-white dark:bg-gray-600 text-gray-900 dark:text-white shadow-sm' : 'text-gray-600 dark:text-gray-300'}`}
                                 >
                                     Split
                                 </button>
                                 <button
                                     onClick={() => setViewMode('list')}
-                                    class={`flex-1 px-3 py-1 rounded text-sm font-medium transition-colors sm:flex-initial ${viewMode() === 'list' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-600'}`}
+                                    class={`flex-1 px-3 py-1 rounded text-sm font-medium transition-colors sm:flex-initial ${viewMode() === 'list' ? 'bg-white dark:bg-gray-600 text-gray-900 dark:text-white shadow-sm' : 'text-gray-600 dark:text-gray-300'}`}
                                 >
                                     List
                                 </button>
@@ -565,13 +566,13 @@ export default function HotelsPage() {
             </div>
 
             {/* Filters Bar */}
-            <div class="bg-white border-b border-gray-200 px-4 py-3 relative sm:px-6">
+            <div class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-4 py-3 relative sm:px-6">
                 <div class="max-w-7xl mx-auto">
                     <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                         <div class="flex items-center gap-4">
                             <button
                                 onClick={() => setShowFilters(!showFilters())}
-                                class={`flex items-center gap-2 px-4 py-2 rounded-lg border transition-colors text-sm font-medium ${showFilters() ? 'bg-blue-50 border-blue-200 text-blue-700' : 'border-gray-200 text-gray-700 hover:bg-gray-50'}`}
+                                class={`flex items-center gap-2 px-4 py-2 rounded-lg border transition-colors text-sm font-medium ${showFilters() ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-700 text-blue-700 dark:text-blue-400' : 'border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'}`}
                             >
                                 <Filter class="w-4 h-4" />
                                 Filters
@@ -627,11 +628,24 @@ export default function HotelsPage() {
                                         </button>
                                     </div>
                                 }>
-                                    <div class="grid gap-3">
-                                        <For each={filteredHotels()}>
-                                            {(hotel) => renderHotelCard(hotel)}
-                                        </For>
-                                    </div>
+                                    <HotelResults 
+                                        hotels={filteredHotels().map(hotel => ({
+                                            name: hotel.name,
+                                            latitude: hotel.latitude,
+                                            longitude: hotel.longitude,
+                                            category: hotel.type,
+                                            description_poi: hotel.description,
+                                            address: hotel.address,
+                                            website: hotel.website,
+                                            rating: hotel.rating,
+                                            price_range: hotel.priceRange,
+                                            amenities: hotel.amenities,
+                                            distance: 0 // Calculate if needed
+                                        }))}
+                                        compact={false}
+                                        showToggle={filteredHotels().length > 5}
+                                        initialLimit={5}
+                                    />
                                 </Show>
                             </div>
                         </div>
