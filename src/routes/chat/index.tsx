@@ -6,6 +6,7 @@ import { streamingService, createStreamingSession, getDomainRoute } from '~/lib/
 import type { StreamingSession, DomainType, UnifiedChatResponse } from '~/lib/api/types';
 import { useUserLocation } from '~/contexts/LocationContext';
 import { HotelResults, RestaurantResults, ActivityResults, ItineraryResults } from '~/components/results';
+import DetailedItemModal from '~/components/DetailedItemModal';
 
 export default function ChatPage() {
     const navigate = useNavigate();
@@ -21,6 +22,8 @@ export default function ChatPage() {
     const [streamingSession, setStreamingSession] = createSignal(null);
     const [streamProgress, setStreamProgress] = createSignal('');
     const [expandedResults, setExpandedResults] = createSignal(new Set());
+    const [selectedItem, setSelectedItem] = createSignal(null);
+    const [showDetailModal, setShowDetailModal] = createSignal(false);
 
 
     const { userLocation } = useUserLocation()
@@ -335,9 +338,22 @@ export default function ChatPage() {
         });
     };
 
+    const handleItemClick = (item, type) => {
+        setSelectedItem({
+            ...item,
+            type: type
+        });
+        setShowDetailModal(true);
+    };
+
+    const closeDetailModal = () => {
+        setShowDetailModal(false);
+        setSelectedItem(null);
+    };
+
     const renderStreamingResults = (streamingData, messageId, compact = false) => {
         const isExpanded = expandedResults().has(messageId);
-        const actualCompact = compact || !isExpanded;
+        const actualCompact = compact && !isExpanded;
         
         return (
             <div class="space-y-4">
@@ -347,7 +363,8 @@ export default function ChatPage() {
                         compact={actualCompact} 
                         showToggle={false}
                         initialLimit={3}
-                        limit={actualCompact ? 3 : undefined} 
+                        limit={actualCompact ? 3 : undefined}
+                        onItemClick={(hotel) => handleItemClick(hotel, 'hotel')}
                     />
                 </Show>
                 <Show when={streamingData.restaurants && streamingData.restaurants.length > 0}>
@@ -356,7 +373,8 @@ export default function ChatPage() {
                         compact={actualCompact} 
                         showToggle={false}
                         initialLimit={3}
-                        limit={actualCompact ? 3 : undefined} 
+                        limit={actualCompact ? 3 : undefined}
+                        onItemClick={(restaurant) => handleItemClick(restaurant, 'restaurant')}
                     />
                 </Show>
                 <Show when={streamingData.activities && streamingData.activities.length > 0}>
@@ -365,7 +383,8 @@ export default function ChatPage() {
                         compact={actualCompact} 
                         showToggle={false}
                         initialLimit={3}
-                        limit={actualCompact ? 3 : undefined} 
+                        limit={actualCompact ? 3 : undefined}
+                        onItemClick={(activity) => handleItemClick(activity, 'activity')}
                     />
                 </Show>
                 <Show when={streamingData.points_of_interest && streamingData.points_of_interest.length > 0}>
@@ -375,7 +394,8 @@ export default function ChatPage() {
                         compact={actualCompact} 
                         showToggle={false}
                         initialLimit={5}
-                        limit={actualCompact ? 5 : undefined} 
+                        limit={actualCompact ? 5 : undefined}
+                        onItemClick={(poi) => handleItemClick(poi, 'poi')}
                     />
                 </Show>
                 <Show when={streamingData.itinerary_response && !streamingData.points_of_interest}>
@@ -384,7 +404,8 @@ export default function ChatPage() {
                         compact={actualCompact} 
                         showToggle={false}
                         initialLimit={5}
-                        limit={actualCompact ? 5 : undefined} 
+                        limit={actualCompact ? 5 : undefined}
+                        onItemClick={(poi) => handleItemClick(poi, 'poi')}
                     />
                 </Show>
             </div>
@@ -804,6 +825,13 @@ export default function ChatPage() {
                     </div>
                 </div>
             </div>
+
+            {/* Detailed Item Modal */}
+            <DetailedItemModal
+                item={selectedItem()}
+                isOpen={showDetailModal()}
+                onClose={closeDetailModal}
+            />
         </div>
     );
 }

@@ -30,6 +30,7 @@ interface ItineraryResultsProps {
   limit?: number;
   showToggle?: boolean; // Whether to show the "Show More/Less" button
   initialLimit?: number; // Initial number to show before "Show More"
+  onItemClick?: (poi: POI) => void; // Callback for item clicks
 }
 
 export default function ItineraryResults(props: ItineraryResultsProps) {
@@ -127,11 +128,14 @@ export default function ItineraryResults(props: ItineraryResultsProps) {
       <div class={props.compact ? "space-y-2" : "space-y-3"}>
         <For each={displayPOIs()}>
           {(poi, index) => (
-            <div class={`rounded-lg border border-gray-200 dark:border-gray-700 ${
-              props.compact 
-                ? "p-3 bg-gray-50 dark:bg-gray-800" 
-                : "p-4 bg-white dark:bg-gray-800 shadow-sm hover:shadow-md transition-shadow"
-            }`}>
+            <div 
+              class={`rounded-lg border border-gray-200 dark:border-gray-700 ${
+                props.compact 
+                  ? "p-3 bg-gray-50 dark:bg-gray-800" 
+                  : "p-4 bg-white dark:bg-gray-800 shadow-sm hover:shadow-md transition-shadow"
+              } ${props.onItemClick ? 'cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700' : ''}`}
+              onClick={() => props.onItemClick?.(poi)}
+            >
               <div class="flex items-start gap-3">
                 {/* Priority/Step Number */}
                 <div class="flex-shrink-0 mt-1">

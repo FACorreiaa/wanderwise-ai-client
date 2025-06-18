@@ -23,6 +23,7 @@ interface ActivityResultsProps {
   limit?: number;
   showToggle?: boolean; // Whether to show the "Show More/Less" button
   initialLimit?: number; // Initial number to show before "Show More"
+  onItemClick?: (activity: Activity) => void; // Callback for item clicks
 }
 
 export default function ActivityResults(props: ActivityResultsProps) {
@@ -110,11 +111,14 @@ export default function ActivityResults(props: ActivityResultsProps) {
       <div class={props.compact ? "space-y-2" : "space-y-4"}>
         <For each={displayActivities()}>
           {(activity) => (
-            <div class={`rounded-lg border border-gray-200 dark:border-gray-700 ${
-              props.compact 
-                ? "p-3 bg-gray-50 dark:bg-gray-800" 
-                : "p-4 bg-white dark:bg-gray-800 shadow-sm hover:shadow-md transition-shadow"
-            }`}>
+            <div 
+              class={`rounded-lg border border-gray-200 dark:border-gray-700 ${
+                props.compact 
+                  ? "p-3 bg-gray-50 dark:bg-gray-800" 
+                  : "p-4 bg-white dark:bg-gray-800 shadow-sm hover:shadow-md transition-shadow"
+              } ${props.onItemClick ? 'cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700' : ''}`}
+              onClick={() => props.onItemClick?.(activity)}
+            >
               <div class="flex items-start justify-between mb-2">
                 <div class="flex-1 min-w-0">
                   <div class="flex items-center gap-2">
