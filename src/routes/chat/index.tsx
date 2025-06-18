@@ -448,15 +448,15 @@ export default function ChatPage() {
     };
 
     const renderMessage = (message) => (
-        <div class={`flex gap-3 ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}>
+        <div class={`flex gap-2 sm:gap-3 ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}>
             {message.type === 'assistant' && (
-                <div class="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center flex-shrink-0">
-                    <Bot class="w-4 h-4 text-white" />
+                <div class="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center flex-shrink-0">
+                    <Bot class="w-3 h-3 sm:w-4 sm:h-4 text-white" />
                 </div>
             )}
 
-            <div class={`max-w-[70%] ${message.type === 'user' ? 'order-1' : ''}`}>
-                <div class={`rounded-2xl px-4 py-3 ${message.type === 'user'
+            <div class={`max-w-[85%] sm:max-w-[70%] ${message.type === 'user' ? 'order-1' : ''}`}>
+                <div class={`rounded-2xl px-3 py-2 sm:px-4 sm:py-3 ${message.type === 'user'
                     ? 'bg-blue-600 text-white'
                     : message.type === 'error'
                         ? 'bg-red-50 dark:bg-red-900/20 text-red-800 dark:text-red-200 border border-red-200 dark:border-red-800'
@@ -465,9 +465,9 @@ export default function ChatPage() {
                     <p class="text-sm whitespace-pre-wrap">{message.content}</p>
                 </div>
 
-                {/* Streaming data preview */}
+                {/* Streaming data preview - Mobile First */}
                 <Show when={message.hasItinerary && (message.itinerary || message.streamingData)}>
-                    <div class="mt-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+                    <div class="mt-2 sm:mt-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 sm:p-4">
                         <Show when={message.streamingData} fallback={
                             // Legacy itinerary display
                             <div>
@@ -536,21 +536,21 @@ export default function ChatPage() {
                             <div>
                                 {/* Header section */}
                                 <Show when={message.streamingData.general_city_data}>
-                                    <div class="flex items-center justify-between mb-3">
-                                        <div>
-                                            <h4 class="font-semibold text-gray-900 dark:text-white">
+                                    <div class="flex items-center justify-between mb-2 sm:mb-3">
+                                        <div class="min-w-0 flex-1 pr-2">
+                                            <h4 class="font-semibold text-gray-900 dark:text-white text-sm sm:text-base truncate">
                                                 {message.streamingData.itinerary_response?.itinerary_name || `${message.streamingData.general_city_data.city} Guide`}
                                             </h4>
-                                            <p class="text-sm text-gray-600 dark:text-gray-300">
+                                            <p class="text-xs sm:text-sm text-gray-600 dark:text-gray-300 truncate">
                                                 {message.streamingData.general_city_data.city}, {message.streamingData.general_city_data.country}
                                             </p>
                                         </div>
-                                        <div class="flex items-center gap-2">
-                                            <button class="p-2 text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg" title="Save">
-                                                <Heart class="w-4 h-4" />
+                                        <div class="flex items-center gap-1 sm:gap-2 flex-shrink-0">
+                                            <button class="p-1.5 sm:p-2 text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg" title="Save">
+                                                <Heart class="w-3 h-3 sm:w-4 sm:h-4" />
                                             </button>
-                                            <button class="p-2 text-gray-600 dark:text-gray-300 hover:text-green-600 dark:hover:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg" title="Share">
-                                                <Share2 class="w-4 h-4" />
+                                            <button class="p-1.5 sm:p-2 text-gray-600 dark:text-gray-300 hover:text-green-600 dark:hover:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg" title="Share">
+                                                <Share2 class="w-3 h-3 sm:w-4 sm:h-4" />
                                             </button>
                                         </div>
                                     </div>
@@ -559,18 +559,18 @@ export default function ChatPage() {
                                 {/* Compact results preview */}
                                 {renderStreamingResults(message.streamingData, message.id, true)}
 
-                                {/* Expand/Collapse button */}
+                                {/* Expand/Collapse button - Mobile First */}
                                 <Show when={message.showResults}>
                                     <button
-                                        class="w-full mt-3 flex items-center justify-center gap-2 py-2 text-sm text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-700 transition-colors"
+                                        class="w-full mt-2 sm:mt-3 flex items-center justify-center gap-1 sm:gap-2 py-2 text-xs sm:text-sm text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-700 transition-colors"
                                         onClick={() => toggleResultExpansion(message.id)}
                                     >
                                         <span>
                                             {expandedResults().has(message.id) ? 'Show Less' : 'Show All Details'}
                                         </span>
                                         {expandedResults().has(message.id) ? 
-                                            <ChevronUp class="w-4 h-4" /> : 
-                                            <ChevronDown class="w-4 h-4" />
+                                            <ChevronUp class="w-3 h-3 sm:w-4 sm:h-4" /> : 
+                                            <ChevronDown class="w-3 h-3 sm:w-4 sm:h-4" />
                                         }
                                     </button>
                                 </Show>
@@ -579,53 +579,53 @@ export default function ChatPage() {
                     </div>
                 </Show>
 
-                <p class={`text-xs mt-2 ${message.type === 'user' ? 'text-blue-100 text-right' : 'text-gray-500 dark:text-gray-400'}`}>
+                <p class={`text-xs mt-1 sm:mt-2 ${message.type === 'user' ? 'text-blue-100 text-right' : 'text-gray-500 dark:text-gray-400'}`}>
                     {formatTimestamp(message.timestamp)}
                 </p>
             </div>
 
             {message.type === 'user' && (
-                <div class="w-8 h-8 rounded-full bg-gray-300 dark:bg-gray-600 flex items-center justify-center flex-shrink-0">
-                    <User class="w-4 h-4 text-gray-600 dark:text-gray-300" />
+                <div class="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-gray-300 dark:bg-gray-600 flex items-center justify-center flex-shrink-0">
+                    <User class="w-3 h-3 sm:w-4 sm:h-4 text-gray-600 dark:text-gray-300" />
                 </div>
             )}
         </div>
     );
 
     return (
-        <div class="min-h-screen bg-gray-50 dark:bg-gray-900 flex">
-            {/* Sidebar - Chat History */}
-            <div class="w-80 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex flex-col">
-                {/* Sidebar Header */}
-                <div class="p-4 border-b border-gray-200 dark:border-gray-700">
-                    <div class="flex items-center justify-between mb-4">
-                        <h2 class="text-lg font-semibold text-gray-900 dark:text-white">AI Assistant</h2>
+        <div class="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col lg:flex-row">
+            {/* Sidebar - Chat History - Mobile First */}
+            <div class="w-full lg:w-80 bg-white dark:bg-gray-800 border-b lg:border-b-0 lg:border-r border-gray-200 dark:border-gray-700 flex flex-col order-2 lg:order-1">
+                {/* Sidebar Header - Mobile First */}
+                <div class="p-3 sm:p-4 border-b border-gray-200 dark:border-gray-700">
+                    <div class="flex items-center justify-between mb-3 sm:mb-4">
+                        <h2 class="text-base sm:text-lg font-semibold text-gray-900 dark:text-white">AI Assistant</h2>
                         <button
                             onClick={newChat}
-                            class="cb-button cb-button-primary p-2"
+                            class="cb-button cb-button-primary p-2 text-sm"
                             title="New chat"
                         >
                             <Plus class="w-4 h-4" />
                         </button>
                     </div>
 
-                    {/* Profile Selector */}
+                    {/* Profile Selector - Mobile First */}
                     <div class="relative">
                         <button
                             onClick={() => setShowProfileSelector(!showProfileSelector())}
-                            class="w-full flex items-center gap-2 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
+                            class="w-full flex items-center gap-2 p-2 sm:p-3 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
                         >
-                            <div class="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-sm">
+                            <div class="w-6 h-6 sm:w-8 sm:h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-xs sm:text-sm">
                                 🎒
                             </div>
-                            <div class="flex-1 text-left">
-                                <p class="text-sm font-medium text-gray-900 dark:text-white">{activeProfile()}</p>
-                                <p class="text-xs text-gray-500 dark:text-gray-400">Active profile</p>
+                            <div class="flex-1 text-left min-w-0">
+                                <p class="text-xs sm:text-sm font-medium text-gray-900 dark:text-white truncate">{activeProfile()}</p>
+                                <p class="text-xs text-gray-500 dark:text-gray-400 hidden sm:block">Active profile</p>
                             </div>
                         </button>
 
                         <Show when={showProfileSelector()}>
-                            <div class="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-10">
+                            <div class="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-10 max-h-60 overflow-y-auto">
                                 <For each={profiles}>
                                     {(profile) => (
                                         <button
@@ -633,13 +633,13 @@ export default function ChatPage() {
                                                 setActiveProfile(profile.name);
                                                 setShowProfileSelector(false);
                                             }}
-                                            class={`w-full flex items-center gap-3 p-3 hover:bg-gray-50 dark:hover:bg-gray-700 dark:bg-gray-700 transition-colors first:rounded-t-lg last:rounded-b-lg ${activeProfile() === profile.name ? 'bg-blue-50 text-blue-700' : 'text-gray-700 dark:text-gray-300'
+                                            class={`w-full flex items-center gap-2 sm:gap-3 p-2 sm:p-3 hover:bg-gray-50 dark:hover:bg-gray-700 dark:bg-gray-700 transition-colors first:rounded-t-lg last:rounded-b-lg ${activeProfile() === profile.name ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400' : 'text-gray-700 dark:text-gray-300'
                                                 }`}
                                         >
-                                            <span class="text-lg">{profile.icon}</span>
-                                            <div class="flex-1 text-left">
-                                                <p class="text-sm font-medium">{profile.name}</p>
-                                                <p class="text-xs text-gray-500 dark:text-gray-400">{profile.description}</p>
+                                            <span class="text-base sm:text-lg">{profile.icon}</span>
+                                            <div class="flex-1 text-left min-w-0">
+                                                <p class="text-xs sm:text-sm font-medium truncate">{profile.name}</p>
+                                                <p class="text-xs text-gray-500 dark:text-gray-400 hidden sm:block">{profile.description}</p>
                                             </div>
                                         </button>
                                     )}
@@ -649,28 +649,29 @@ export default function ChatPage() {
                     </div>
                 </div>
 
-                {/* Chat Sessions */}
+                {/* Chat Sessions - Mobile First */}
                 <div class="flex-1 overflow-y-auto">
-                    <div class="p-4">
-                        <h3 class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Recent Conversations</h3>
-                        <div class="space-y-2">
+                    <div class="p-3 sm:p-4">
+                        <h3 class="text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 sm:mb-3">Recent Conversations</h3>
+                        <div class="space-y-1 sm:space-y-2">
                             <For each={sessions()}>
                                 {(session) => (
                                     <button
                                         onClick={() => loadSession(session)}
-                                        class={`w-full text-left p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors ${selectedSession()?.id === session.id ? 'bg-blue-50 border border-blue-200' : 'border border-transparent'
+                                        class={`w-full text-left p-2 sm:p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors ${selectedSession()?.id === session.id ? 'bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700' : 'border border-transparent'
                                             }`}
                                     >
                                         <div class="flex items-start justify-between mb-1">
-                                            <h4 class="text-sm font-medium text-gray-900 dark:text-white truncate">{session.title}</h4>
+                                            <h4 class="text-xs sm:text-sm font-medium text-gray-900 dark:text-white truncate pr-1">{session.title}</h4>
                                             <Show when={session.hasItinerary}>
-                                                <Sparkles class="w-3 h-3 text-purple-500 dark:text-purple-400 flex-shrink-0 ml-2" />
+                                                <Sparkles class="w-3 h-3 text-purple-500 dark:text-purple-400 flex-shrink-0" />
                                             </Show>
                                         </div>
-                                        <p class="text-xs text-gray-600 dark:text-gray-300 truncate mb-2">{session.preview}</p>
+                                        <p class="text-xs text-gray-600 dark:text-gray-300 truncate mb-1 sm:mb-2">{session.preview}</p>
                                         <div class="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
-                                            <span>{formatTimestamp(session.timestamp)}</span>
-                                            <span>{session.messageCount} messages</span>
+                                            <span class="text-xs">{formatTimestamp(session.timestamp)}</span>
+                                            <span class="text-xs hidden sm:inline">{session.messageCount} messages</span>
+                                            <span class="text-xs sm:hidden">{session.messageCount}m</span>
                                         </div>
                                     </button>
                                 )}
@@ -680,65 +681,65 @@ export default function ChatPage() {
                 </div>
             </div>
 
-            {/* Main Chat Area */}
-            <div class="flex-1 flex flex-col">
-                {/* Chat Header */}
-                <div class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 p-4">
+            {/* Main Chat Area - Mobile First */}
+            <div class="flex-1 flex flex-col order-1 lg:order-2">
+                {/* Chat Header - Mobile First */}
+                <div class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 p-3 sm:p-4">
                     <div class="flex items-center justify-between">
-                        <div class="flex items-center gap-3">
-                            <div class="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
-                                <Bot class="w-5 h-5 text-white" />
+                        <div class="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
+                            <div class="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center flex-shrink-0">
+                                <Bot class="w-4 h-4 sm:w-5 sm:h-5 text-white" />
                             </div>
-                            <div>
-                                <h1 class="text-lg font-semibold text-gray-900 dark:text-white">AI Travel Assistant</h1>
-                                <p class="text-sm text-gray-600 dark:text-gray-300">Get personalized travel recommendations</p>
+                            <div class="min-w-0 flex-1">
+                                <h1 class="text-base sm:text-lg font-semibold text-gray-900 dark:text-white truncate">AI Travel Assistant</h1>
+                                <p class="text-xs sm:text-sm text-gray-600 dark:text-gray-300 hidden sm:block">Get personalized travel recommendations</p>
                             </div>
                         </div>
 
-                        <div class="flex items-center gap-2">
-                            <span class="text-xs text-gray-500 dark:text-gray-400">Using:</span>
-                            <span class="text-xs font-medium text-blue-600">{activeProfile()}</span>
+                        <div class="flex items-center gap-1 sm:gap-2 flex-shrink-0">
+                            <span class="text-xs text-gray-500 dark:text-gray-400 hidden sm:inline">Using:</span>
+                            <span class="text-xs font-medium text-blue-600 dark:text-blue-400 truncate max-w-20 sm:max-w-none">{activeProfile()}</span>
                         </div>
                     </div>
                 </div>
 
-                {/* Messages */}
-                <div class="flex-1 overflow-y-auto p-4 space-y-4">
+                {/* Messages - Mobile First */}
+                <div class="flex-1 overflow-y-auto p-3 sm:p-4 space-y-3 sm:space-y-4">
                     <For each={messages()}>
                         {(message) => renderMessage(message)}
                     </For>
 
-                    {/* Loading indicator with streaming progress */}
+                    {/* Loading indicator with streaming progress - Mobile First */}
                     <Show when={isLoading()}>
-                        <div class="flex gap-3 justify-start">
-                            <div class="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center flex-shrink-0">
-                                <Bot class="w-4 h-4 text-white" />
+                        <div class="flex gap-2 sm:gap-3 justify-start">
+                            <div class="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center flex-shrink-0">
+                                <Bot class="w-3 h-3 sm:w-4 sm:h-4 text-white" />
                             </div>
-                            <div class="bg-gray-100 dark:bg-gray-700 rounded-2xl px-4 py-3 max-w-md">
-                                <div class="flex items-center gap-2 text-gray-600 dark:text-gray-300 mb-2">
-                                    <Loader2 class="w-4 h-4 animate-spin" />
-                                    <span class="text-sm">
+                            <div class="bg-gray-100 dark:bg-gray-700 rounded-2xl px-3 py-2 sm:px-4 sm:py-3 max-w-xs sm:max-w-md">
+                                <div class="flex items-center gap-1 sm:gap-2 text-gray-600 dark:text-gray-300 mb-2">
+                                    <Loader2 class="w-3 h-3 sm:w-4 sm:h-4 animate-spin flex-shrink-0" />
+                                    <span class="text-xs sm:text-sm">
                                         {streamProgress() || 'Processing your request...'}
                                     </span>
                                 </div>
 
-                                {/* Streaming session progress */}
+                                {/* Streaming session progress - Mobile First */}
                                 <Show when={streamingSession()}>
                                     <div class="text-xs text-gray-500 dark:text-gray-400 space-y-1">
-                                        <div class="flex items-center gap-2">
-                                            <span class="inline-block w-2 h-2 bg-blue-500 rounded-full"></span>
-                                            <span>Domain: {streamingSession()?.domain}</span>
+                                        <div class="flex items-center gap-1 sm:gap-2">
+                                            <span class="inline-block w-2 h-2 bg-blue-500 rounded-full flex-shrink-0"></span>
+                                            <span class="truncate">Domain: {streamingSession()?.domain}</span>
                                         </div>
                                         <Show when={streamingSession()?.city}>
-                                            <div class="flex items-center gap-2">
-                                                <MapPin class="w-3 h-3" />
-                                                <span>City: {streamingSession()?.city}</span>
+                                            <div class="flex items-center gap-1 sm:gap-2">
+                                                <MapPin class="w-3 h-3 flex-shrink-0" />
+                                                <span class="truncate">City: {streamingSession()?.city}</span>
                                             </div>
                                         </Show>
                                         <Show when={streamingSession()?.sessionId}>
-                                            <div class="flex items-center gap-2">
-                                                <span class="inline-block w-2 h-2 bg-green-500 rounded-full"></span>
-                                                <span>Session: Active</span>
+                                            <div class="flex items-center gap-1 sm:gap-2">
+                                                <span class="inline-block w-2 h-2 bg-green-500 rounded-full flex-shrink-0"></span>
+                                                <span class="truncate">Session: Active</span>
                                             </div>
                                         </Show>
                                     </div>
@@ -747,22 +748,22 @@ export default function ChatPage() {
                         </div>
                     </Show>
 
-                    {/* Quick Prompts - Show when no conversation */}
+                    {/* Quick Prompts - Mobile First */}
                     <Show when={messages().length <= 1 && !isLoading()}>
                         <div class="max-w-4xl mx-auto">
-                            <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Try asking about:</h3>
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <h3 class="text-base sm:text-lg font-semibold text-gray-900 dark:text-white mb-3 sm:mb-4">Try asking about:</h3>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                                 <For each={quickPrompts}>
                                     {(prompt) => (
                                         <button
                                             onClick={() => useQuickPrompt(prompt)}
-                                            class="cb-card hover:shadow-md transition-all duration-200 p-4 text-left"
+                                            class="cb-card hover:shadow-md transition-all duration-200 p-3 sm:p-4 text-left"
                                         >
-                                            <div class="flex items-start gap-3">
-                                                <span class="text-2xl">{prompt.icon}</span>
-                                                <div>
-                                                    <h4 class="font-medium text-gray-900 dark:text-white mb-1">{prompt.text}</h4>
-                                                    <p class="text-sm text-gray-600 dark:text-gray-300">{prompt.description}</p>
+                                            <div class="flex items-start gap-2 sm:gap-3">
+                                                <span class="text-xl sm:text-2xl flex-shrink-0">{prompt.icon}</span>
+                                                <div class="min-w-0 flex-1">
+                                                    <h4 class="font-medium text-gray-900 dark:text-white mb-1 text-sm sm:text-base">{prompt.text}</h4>
+                                                    <p class="text-xs sm:text-sm text-gray-600 dark:text-gray-300">{prompt.description}</p>
                                                 </div>
                                             </div>
                                         </button>
@@ -773,17 +774,17 @@ export default function ChatPage() {
                     </Show>
                 </div>
 
-                {/* Message Input */}
-                <div class="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 p-4">
+                {/* Message Input - Mobile First */}
+                <div class="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 p-3 sm:p-4">
                     <div class="max-w-4xl mx-auto">
-                        <div class="flex items-end gap-3">
+                        <div class="flex items-end gap-2 sm:gap-3">
                             <div class="flex-1">
                                 <textarea
                                     value={currentMessage()}
                                     onInput={(e) => setCurrentMessage(e.target.value)}
                                     onKeyPress={handleKeyPress}
                                     placeholder="Ask me about destinations, activities, or let me create an itinerary for you..."
-                                    class="w-full resize-none border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-500 dark:placeholder-gray-400"
+                                    class="w-full resize-none border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg px-3 py-2 sm:px-4 sm:py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-500 dark:placeholder-gray-400 text-sm sm:text-base"
                                     rows="2"
                                     disabled={isLoading()}
                                 />
@@ -791,10 +792,10 @@ export default function ChatPage() {
                             <button
                                 onClick={sendMessage}
                                 disabled={!currentMessage().trim() || isLoading()}
-                                class="cb-button cb-button-primary px-4 py-3 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                                class="cb-button cb-button-primary px-3 py-2 sm:px-4 sm:py-3 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1 sm:gap-2 text-sm sm:text-base"
                             >
                                 <Send class="w-4 h-4" />
-                                Send
+                                <span class="hidden sm:inline">Send</span>
                             </button>
                         </div>
                         <p class="text-xs text-gray-500 dark:text-gray-400 mt-2 text-center">
