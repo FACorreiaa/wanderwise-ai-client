@@ -1,8 +1,11 @@
 import { createSignal, For, Show, createEffect, onMount } from 'solid-js';
 import { useLocation } from '@solidjs/router';
-import { Search, Filter, MapPin, Star, Heart, Bookmark, Clock, DollarSign, Users, Wifi, Camera, Grid, List, SortAsc, SortDesc, X, Compass } from 'lucide-solid';
+import { Search, Filter, MapPin, Star, Heart, Bookmark, Clock, DollarSign, Users, Wifi, Camera, Grid, List, SortAsc, SortDesc, X, Compass, Map } from 'lucide-solid';
 import { useNearbyPOIs, useSearchPOIs, useFavorites, useAddToFavoritesMutation, useRemoveFromFavoritesMutation } from '~/lib/api/pois';
+import { useCities, convertCitiesToDropdownFormat } from '~/lib/api/cities';
 import type { ActivitiesResponse, POIDetailedInfo } from '~/lib/api/types';
+import { useUserLocation } from '@/contexts/LocationContext';
+import MapComponent from '~/components/features/Map/Map';
 
 export default function DiscoverPage() {
     const [searchQuery, setSearchQuery] = createSignal('');
@@ -12,31 +15,60 @@ export default function DiscoverPage() {
     const [selectedPrice, setSelectedPrice] = createSignal('all');
     const [sortBy, setSortBy] = createSignal('popularity'); // 'popularity', 'rating', 'distance', 'price'
     const [sortOrder, setSortOrder] = createSignal('desc');
-    const [viewMode, setViewMode] = createSignal('grid'); // 'grid', 'list'
+    const [viewMode, setViewMode] = createSignal('grid'); // 'grid', 'list', 'map'
     const [showFilters, setShowFilters] = createSignal(false);
     const [streamingData, setStreamingData] = createSignal<ActivitiesResponse | null>(null);
     const [fromChat, setFromChat] = createSignal(false);
-
-    // Current location for nearby search (could come from geolocation)
-    const [currentLocation, setCurrentLocation] = createSignal({ lat: 41.1579, lng: -8.6291 });
+    const { userLocation } = useUserLocation()
+    const [searchRadius, setSearchRadius] = createSignal(10000);
 
     // API hooks
     const favoritesQuery = useFavorites();
     const addToFavoritesMutation = useAddToFavoritesMutation();
     const removeFromFavoritesMutation = useRemoveFromFavoritesMutation();
-    
+    //const citiesQuery = useCities();
+
+    // Current location for nearby search (could come from geolocation)
+    //const [currentLocation, setCurrentLocation] = createSignal({ lat: 41.1579, lng: -8.6291 });
+
+    // Discover is location-based, no city selection needed
+
+    // Create reactive filters (no city filter for discover)
+    const currentFilters = () => ({
+        category: selectedCategory() !== 'all' ? selectedCategory() : undefined,
+        price_range: selectedPrice() !== 'all' ? selectedPrice() : undefined,
+    });
+
+    // Get coordinates based on user location (discover is always location-based)
+    const getSearchCoordinates = () => {
+        const coords = {
+            lat: userLocation()?.latitude || 38.7223,
+            lon: userLocation()?.longitude || -9.1393
+        };
+        console.log('📍 Using user/default coordinates:', coords);
+        return coords;
+    };
+
     const nearbyPOIsQuery = useNearbyPOIs(
-        currentLocation().lat,
-        currentLocation().lng,
-        10000 // 10km radius
+        () => getSearchCoordinates().lat,
+        () => getSearchCoordinates().lon,
+        searchRadius, // Pass the signal getter directly
+        currentFilters
     );
-    
+
+
+    const radiusOptions = [
+        { value: 1000, label: '1 km' },
+        { value: 5000, label: '5 km' },
+        { value: 10000, label: '10 km' },
+        { value: 25000, label: '25 km' },
+    ];
+
     const searchPOIsQuery = useSearchPOIs(
         searchQuery(),
         {
             category: selectedCategory() !== 'all' ? selectedCategory() : undefined,
-            price_range: selectedPrice() !== 'all' ? selectedPrice() : undefined,
-            city: selectedCity() !== 'all' ? selectedCity() : undefined
+            price_range: selectedPrice() !== 'all' ? selectedPrice() : undefined
         }
     );
 
@@ -44,7 +76,7 @@ export default function DiscoverPage() {
     onMount(() => {
         console.log('=== DISCOVER PAGE MOUNT ===');
         console.log('Location state:', location.state);
-        
+
         // Check for streaming data from route state  
         if (location.state?.streamingData) {
             console.log('Found activities streaming data in route state');
@@ -56,12 +88,12 @@ export default function DiscoverPage() {
             // Try to get data from session storage
             const storedSession = sessionStorage.getItem('completedStreamingSession');
             console.log('Session storage content:', storedSession);
-            
+
             if (storedSession) {
                 try {
                     const session = JSON.parse(storedSession);
                     console.log('Parsed session:', session);
-                    
+
                     if (session.data && session.data.activities) {
                         console.log('Setting activities data from session storage');
                         setStreamingData(session.data as ActivitiesResponse);
@@ -80,20 +112,14 @@ export default function DiscoverPage() {
     });
 
     // Get POIs from appropriate source
-    const pois = () => {
-        // Prioritize streaming data if available
-        const streaming = streamingData();
-        if (streaming && streaming.activities && streaming.activities.length > 0) {
-            console.log('Using streaming activities data:', streaming.activities);
-            return streaming.activities.map(convertPOIToDisplayFormat);
-        }
-        
-        // Fallback to search or nearby data
-        if (searchQuery().trim()) {
-            return searchPOIsQuery.data || [];
-        }
-        return nearbyPOIsQuery.data || [];
-    };
+    const [pois] = useNearbyPOIs(
+        () => userLocation()?.latitude,
+        () => userLocation()?.longitude,
+        searchRadius, // Signal getter
+        currentFilters // Function returning filters
+    );
+
+    console.log('pois', pois())
 
     // Convert streaming POI data to display format
     const convertPOIToDisplayFormat = (poi: POIDetailedInfo) => {
@@ -109,7 +135,7 @@ export default function DiscoverPage() {
             rating: poi.rating || 4.0,
             reviewCount: 0, // Not available in streaming data
             tags: poi.tags || [],
-            amenities: poi.tags || [],
+            amenities: poi.amenities || [],
             distance: '0.5 km', // Default value
             city: poi.city,
             country: 'Portugal', // Default
@@ -126,19 +152,15 @@ export default function DiscoverPage() {
         return favoritesQuery.data?.some(poi => poi.id === poiId) || false;
     };
 
-    const cities = [
-        { id: 'all', label: 'All Cities', count: pois().length },
-        { id: 'porto', label: 'Porto', count: 4 },
-        { id: 'lisbon', label: 'Lisbon', count: 0 },
-        { id: 'barcelona', label: 'Barcelona', count: 0 }
-    ];
-
     const categories = [
-        { id: 'all', label: 'All Categories', count: pois().length },
-        { id: 'cultural', label: 'Cultural', count: 1 },
-        { id: 'landmark', label: 'Landmarks', count: 1 },
-        { id: 'market', label: 'Markets', count: 1 },
-        { id: 'entertainment', label: 'Entertainment', count: 1 }
+        { id: 'all', label: 'All Categories' },
+        { id: 'cultural', label: 'Cultural' },
+        { id: 'landmark', label: 'Landmarks' },
+        { id: 'historical', label: 'Historical Sites' },
+        { id: 'museum', label: 'Museums' },
+        { id: 'park', label: 'Parks & Nature' },
+        { id: 'restaurant', label: 'Restaurants' },
+        { id: 'entertainment', label: 'Entertainment' }
     ];
 
     const priceRanges = [
@@ -156,9 +178,24 @@ export default function DiscoverPage() {
         { id: 'price', label: 'Price' }
     ];
 
+    // Get display location
+    const displayLocation = () => {
+        const streaming = streamingData();
+        if (streaming && streaming.activities && streaming.activities.length > 0) {
+            return streaming.activities[0].city || 'Places';
+        }
+
+        return 'Nearby Places';
+    };
+
     // Filter and sort POIs
     const filteredPois = () => {
-        let filtered = pois();
+        const data = pois();
+        // If data is undefined or not an array, return an empty array
+        if (!data || !Array.isArray(data)) {
+            return [];
+        }
+        let filtered = data;
 
         // Search filter
         if (searchQuery()) {
@@ -166,19 +203,12 @@ export default function DiscoverPage() {
             filtered = filtered.filter(poi =>
                 poi.name.toLowerCase().includes(query) ||
                 poi.description.toLowerCase().includes(query) ||
-                poi.tags.some(tag => tag.toLowerCase().includes(query))
+                (poi.tags || []).some(tag => tag.toLowerCase().includes(query))
             );
         }
 
-        // City filter
-        if (selectedCity() !== 'all') {
-            filtered = filtered.filter(poi => poi.city.toLowerCase() === selectedCity());
-        }
-
-        // Category filter
-        if (selectedCategory() !== 'all') {
-            filtered = filtered.filter(poi => poi.category.toLowerCase() === selectedCategory());
-        }
+        // Note: City and Category filters are now handled server-side in the API
+        // No need for client-side filtering on these fields
 
         // Rating filter
         if (selectedRating() !== 'all') {
@@ -250,7 +280,7 @@ export default function DiscoverPage() {
                 <div class="absolute inset-0 flex items-center justify-center text-4xl">
                     🏛️
                 </div>
-                
+
                 {/* Badges */}
                 <div class="absolute top-3 left-3 flex flex-col gap-1">
                     <Show when={poi.featured}>
@@ -310,7 +340,7 @@ export default function DiscoverPage() {
                         <MapPin class="w-3 h-3" />
                         <span>{poi.distance}</span>
                     </div>
-                    <Show when={poi.amenities.length > 0}>
+                    <Show when={poi.amenities && poi.amenities.length > 0}>
                         <div class="flex items-center gap-1">
                             <Clock class="w-3 h-3" />
                             <span>{poi.amenities[0]}</span>
@@ -320,14 +350,14 @@ export default function DiscoverPage() {
 
                 {/* Tags */}
                 <div class="flex flex-wrap gap-1 mb-3">
-                    {poi.tags.slice(0, 3).map(tag => (
+                    {(poi.tags || []).slice(0, 3).map(tag => (
                         <span class="px-2 py-0.5 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded-full text-xs">
                             {tag}
                         </span>
                     ))}
-                    {poi.tags.length > 3 && (
+                    {(poi.tags || []).length > 3 && (
                         <span class="px-2 py-0.5 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 rounded-full text-xs">
-                            +{poi.tags.length - 3}
+                            +{(poi.tags || []).length - 3}
                         </span>
                     )}
                 </div>
@@ -335,20 +365,27 @@ export default function DiscoverPage() {
                 {/* Footer */}
                 <div class="flex items-center justify-between">
                     <div class="flex items-center gap-2 text-sm">
-                        <Show when={poi.amenities.includes('Wifi')}>
+                        <Show when={poi.amenities && poi.amenities.includes('Wifi')}>
                             <Wifi class="w-4 h-4 text-gray-400" />
                         </Show>
-                        <Show when={poi.amenities.includes('Parking')}>
+                        <Show when={poi.amenities && poi.amenities.includes('Parking')}>
                             <MapPin class="w-4 h-4 text-gray-400" />
                         </Show>
                     </div>
-                    <button class="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium text-sm">
+                    <button
+                        onClick={() => handleItemClick(poi, 'poi')}
+                        class="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium text-sm"
+                    >
                         View Details →
                     </button>
                 </div>
             </div>
         </div>
     );
+
+    createEffect(() => {
+        console.log('Search radius changed to:', searchRadius());
+    });
 
     const renderListItem = (poi) => (
         <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4 hover:shadow-md transition-all duration-200">
@@ -381,7 +418,7 @@ export default function DiscoverPage() {
 
                     <div class="flex items-center justify-between">
                         <div class="flex flex-wrap gap-1">
-                            {poi.tags.slice(0, 4).map(tag => (
+                            {(poi.tags || []).slice(0, 4).map(tag => (
                                 <span class="px-2 py-0.5 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded-full text-xs">
                                     {tag}
                                 </span>
@@ -395,7 +432,10 @@ export default function DiscoverPage() {
                             >
                                 <Heart class={`w-4 h-4 ${isFavorite(poi.id) ? 'fill-current' : ''}`} />
                             </button>
-                            <button class="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium text-sm">
+                            <button
+                                onClick={() => handleItemClick(poi, 'poi')}
+                                class="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium text-sm"
+                            >
                                 View Details →
                             </button>
                         </div>
@@ -440,7 +480,17 @@ export default function DiscoverPage() {
                     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                         <div>
                             <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Discover {displayLocation()}</h1>
-                            <p class="text-gray-600 dark:text-gray-400 mt-1">{pois().length} amazing places to visit</p>
+                            <Show when={pois.loading}>
+                                <p>Loading...</p>
+                            </Show>
+                            <Show when={pois.error}>
+                                <p>Error: {pois.error.message}</p>
+                            </Show>
+                            <Show when={pois()}>
+                                <p class="text-gray-600 dark:text-gray-400 mt-1">
+                                    {pois().length} amazing places to visit
+                                </p>
+                            </Show>
                         </div>
                     </div>
                 </div>
@@ -464,15 +514,21 @@ export default function DiscoverPage() {
 
                         {/* Filters */}
                         <div class="flex items-center gap-4 overflow-x-auto">
-                            <select
-                                value={selectedCity()}
-                                onChange={(e) => setSelectedCity(e.target.value)}
-                                class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                            >
-                                <For each={cities}>
-                                    {(city) => <option value={city.id}>{city.label} ({city.count})</option>}
-                                </For>
-                            </select>
+                            <div class="flex items-center gap-2">
+                                <label for="radius-select" class="text-sm font-medium text-gray-700 dark:text-gray-300 flex-shrink-0">
+                                    Radius:
+                                </label>
+                                <select
+                                    id="radius-select"
+                                    value={searchRadius()}
+                                    onChange={(e) => setSearchRadius(parseInt(e.target.value))}
+                                    class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                >
+                                    <For each={radiusOptions}>
+                                        {(option) => <option value={option.value}>{option.label}</option>}
+                                    </For>
+                                </select>
+                            </div>
 
                             <select
                                 value={selectedCategory()}
@@ -480,7 +536,7 @@ export default function DiscoverPage() {
                                 class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                             >
                                 <For each={categories}>
-                                    {(category) => <option value={category.id}>{category.label} ({category.count})</option>}
+                                    {(category) => <option value={category.id}>{category.label}</option>}
                                 </For>
                             </select>
 
@@ -527,11 +583,18 @@ export default function DiscoverPage() {
                                 >
                                     <List class="w-4 h-4" />
                                 </button>
+                                <button
+                                    onClick={() => setViewMode('map')}
+                                    class={`p-2 rounded ${viewMode() === 'map' ? 'bg-blue-600 text-white' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-600'}`}
+                                >
+                                    <Map class="w-4 h-4" />
+                                </button>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
+
 
             {/* Results */}
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
@@ -551,25 +614,27 @@ export default function DiscoverPage() {
                         </div>
                     }
                 >
-                    <div class={viewMode() === 'grid' 
-                        ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6" 
-                        : "space-y-4"
-                    }>
-                        <For each={filteredPois()}>
-                            {(poi) => viewMode() === 'grid' ? renderGridCard(poi) : renderListItem(poi)}
-                        </For>
-                    </div>
+                    <Show when={viewMode() === 'map'}>
+                        <div class="h-[600px] w-full rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700">
+                            <MapComponent
+                                center={[getSearchCoordinates().lon, getSearchCoordinates().lat]}
+                                zoom={12}
+                                pointsOfInterest={filteredPois()}
+                            />
+                        </div>
+                    </Show>
+                    <Show when={viewMode() !== 'map'}>
+                        <div class={viewMode() === 'grid'
+                            ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
+                            : "space-y-4"
+                        }>
+                            <For each={filteredPois()}>
+                                {(poi) => viewMode() === 'grid' ? renderGridCard(poi) : renderListItem(poi)}
+                            </For>
+                        </div>
+                    </Show>
                 </Show>
             </div>
         </div>
     );
-
-    // Get display location
-    const displayLocation = () => {
-        const streaming = streamingData();
-        if (streaming && streaming.activities && streaming.activities.length > 0) {
-            return streaming.activities[0].city || 'Places';
-        }
-        return 'Places';
-    };
 }

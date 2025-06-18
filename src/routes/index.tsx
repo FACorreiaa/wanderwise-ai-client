@@ -10,6 +10,7 @@ import Stats from '~/components/features/Home/Stats';
 import MobileAppAnnouncement from '~/components/features/Home/MobileAppAnnouncement';
 import LocationPermissionPrompt from '~/components/LocationPermissionPrompt';
 import { useUserLocation } from '~/contexts/LocationContext';
+import { useDefaultSearchProfile } from '~/lib/api/profiles';
 
 
 const statsData = {
@@ -58,6 +59,10 @@ const LandingPage: Component = () => {
     const { userLocation } = useUserLocation()
     const userLatitude = userLocation()?.latitude || 38.7223;
     const userLongitude = userLocation()?.longitude || -9.1393;
+    
+    // Get default search profile
+    const defaultProfileQuery = useDefaultSearchProfile();
+    const profileId = () => defaultProfileQuery.data?.id;
 
 
 
@@ -87,9 +92,15 @@ const LandingPage: Component = () => {
             // Store session in localStorage for persistence
             sessionStorage.setItem('currentStreamingSession', JSON.stringify(session));
 
+            // Get current profile ID
+            const currentProfileId = profileId();
+            if (!currentProfileId) {
+                throw new Error('No default search profile found');
+            }
+
             // Start streaming request
             const response = await sendUnifiedChatMessageStream({
-                profileId: '6ee5dc90-dd72-4dc8-b064-4ecbdd35d845',
+                profileId: currentProfileId,
                 message: messageContent,
                 userLocation: {
                     userLat: userLatitude,

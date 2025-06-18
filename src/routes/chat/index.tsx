@@ -7,10 +7,12 @@ import type { StreamingSession, DomainType, UnifiedChatResponse } from '~/lib/ap
 import { useUserLocation } from '~/contexts/LocationContext';
 import { HotelResults, RestaurantResults, ActivityResults, ItineraryResults } from '~/components/results';
 import DetailedItemModal from '~/components/DetailedItemModal';
-import { createQuery } from '@tanstack/solid-query';
+import { createQuery, useQuery, useQueryClient } from '@tanstack/solid-query';
+import { useDefaultSearchProfile } from '~/lib/api/profiles';
 
 export default function ChatPage() {
     const navigate = useNavigate();
+    const queryClient = useQueryClient();
     const [messages, setMessages] = createSignal([]);
     const [currentMessage, setCurrentMessage] = createSignal('');
     const [isLoading, setIsLoading] = createSignal(false);
@@ -30,11 +32,16 @@ export default function ChatPage() {
     const { userLocation } = useUserLocation()
     const userLatitude = userLocation()?.latitude || 38.7223;
     const userLongitude = userLocation()?.longitude || -9.1393;
-    
-    // Get chat sessions from API
-    const profileId = '6ee5dc90-dd72-4dc8-b064-4ecbdd35d845'; // TODO: Get from auth context
-    const chatSessionsQuery = createQuery(() => useGetChatSessionsQuery(profileId));
-    
+
+    // Get default search profile
+    const defaultProfileQuery = useDefaultSearchProfile();
+    const profileId = () => defaultProfileQuery.data?.id;
+
+    // Get chat sessions from API - only query when profileId is available
+    const chatSessionsQuery = useQuery(() => useGetChatSessionsQuery(profileId()));
+
+
+
     const sessions = () => chatSessionsQuery.data || [];
 
     const profiles = [
@@ -120,9 +127,15 @@ export default function ChatPage() {
             // Store session in localStorage for persistence
             sessionStorage.setItem('currentStreamingSession', JSON.stringify(session));
 
+            // Get current profile ID
+            const currentProfileId = profileId();
+            if (!currentProfileId) {
+                throw new Error('No default search profile found');
+            }
+
             // Start streaming request
             const response = await sendUnifiedChatMessageStream({
-                profileId: '6ee5dc90-dd72-4dc8-b064-4ecbdd35d845', // TODO: Get from auth context
+                profileId: currentProfileId,
                 message: messageContent,
                 userLocation: {
                     userLat: userLatitude,
@@ -177,6 +190,14 @@ export default function ChatPage() {
 
                     // Store completed session
                     sessionStorage.setItem('completedStreamingSession', JSON.stringify(completedSession));
+
+                    // Invalidate chat sessions query to refresh the sidebar
+                    const currentProfileId = profileId();
+                    if (currentProfileId) {
+                        queryClient.invalidateQueries({
+                            queryKey: ['chatSessions', currentProfileId]
+                        });
+                    }
                 },
                 onError: (error) => {
                     console.error('Streaming error:', error);
@@ -335,13 +356,13 @@ export default function ChatPage() {
     const renderStreamingResults = (streamingData, messageId, compact = false) => {
         const isExpanded = expandedResults().has(messageId);
         const actualCompact = compact && !isExpanded;
-        
+
         return (
             <div class="space-y-4">
                 <Show when={streamingData.hotels && streamingData.hotels.length > 0}>
-                    <HotelResults 
-                        hotels={streamingData.hotels} 
-                        compact={actualCompact} 
+                    <HotelResults
+                        hotels={streamingData.hotels}
+                        compact={actualCompact}
                         showToggle={false}
                         initialLimit={3}
                         limit={actualCompact ? 3 : undefined}
@@ -349,9 +370,9 @@ export default function ChatPage() {
                     />
                 </Show>
                 <Show when={streamingData.restaurants && streamingData.restaurants.length > 0}>
-                    <RestaurantResults 
-                        restaurants={streamingData.restaurants} 
-                        compact={actualCompact} 
+                    <RestaurantResults
+                        restaurants={streamingData.restaurants}
+                        compact={actualCompact}
                         showToggle={false}
                         initialLimit={3}
                         limit={actualCompact ? 3 : undefined}
@@ -359,9 +380,9 @@ export default function ChatPage() {
                     />
                 </Show>
                 <Show when={streamingData.activities && streamingData.activities.length > 0}>
-                    <ActivityResults 
-                        activities={streamingData.activities} 
-                        compact={actualCompact} 
+                    <ActivityResults
+                        activities={streamingData.activities}
+                        compact={actualCompact}
                         showToggle={false}
                         initialLimit={3}
                         limit={actualCompact ? 3 : undefined}
@@ -369,10 +390,10 @@ export default function ChatPage() {
                     />
                 </Show>
                 <Show when={streamingData.points_of_interest && streamingData.points_of_interest.length > 0}>
-                    <ItineraryResults 
+                    <ItineraryResults
                         pois={streamingData.points_of_interest}
                         itinerary={streamingData.itinerary_response}
-                        compact={actualCompact} 
+                        compact={actualCompact}
                         showToggle={false}
                         initialLimit={5}
                         limit={actualCompact ? 5 : undefined}
@@ -380,9 +401,9 @@ export default function ChatPage() {
                     />
                 </Show>
                 <Show when={streamingData.itinerary_response && !streamingData.points_of_interest}>
-                    <ItineraryResults 
+                    <ItineraryResults
                         itinerary={streamingData.itinerary_response}
-                        compact={actualCompact} 
+                        compact={actualCompact}
                         showToggle={false}
                         initialLimit={5}
                         limit={actualCompact ? 5 : undefined}
@@ -570,8 +591,8 @@ export default function ChatPage() {
                                         <span>
                                             {expandedResults().has(message.id) ? 'Show Less' : 'Show All Details'}
                                         </span>
-                                        {expandedResults().has(message.id) ? 
-                                            <ChevronUp class="w-3 h-3 sm:w-4 sm:h-4" /> : 
+                                        {expandedResults().has(message.id) ?
+                                            <ChevronUp class="w-3 h-3 sm:w-4 sm:h-4" /> :
                                             <ChevronDown class="w-3 h-3 sm:w-4 sm:h-4" />
                                         }
                                     </button>
@@ -655,17 +676,17 @@ export default function ChatPage() {
                 <div class="flex-1 overflow-y-auto">
                     <div class="p-3 sm:p-4">
                         <h3 class="text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 sm:mb-3">Recent Conversations</h3>
-                        
+
                         <Show when={chatSessionsQuery.isLoading}>
                             <div class="flex items-center justify-center py-8">
                                 <Loader2 class="w-5 h-5 animate-spin text-gray-400" />
                             </div>
                         </Show>
-                        
+
                         <Show when={chatSessionsQuery.isError}>
                             <div class="text-center py-4">
                                 <p class="text-xs text-red-500 dark:text-red-400">Failed to load chat history</p>
-                                <button 
+                                <button
                                     onClick={() => chatSessionsQuery.refetch()}
                                     class="text-xs text-blue-600 dark:text-blue-400 hover:underline mt-1"
                                 >
@@ -673,17 +694,35 @@ export default function ChatPage() {
                                 </button>
                             </div>
                         </Show>
-                        
+
                         <Show when={!chatSessionsQuery.isLoading && !chatSessionsQuery.isError}>
                             <div class="space-y-1 sm:space-y-2">
                                 <Show when={sessions().length === 0}>
-                                    <div class="text-center py-8">
-                                        <MessageCircle class="w-8 h-8 text-gray-300 dark:text-gray-600 mx-auto mb-2" />
-                                        <p class="text-xs text-gray-500 dark:text-gray-400">No conversations yet</p>
-                                        <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">Start chatting to see history</p>
+                                    <div class="text-center py-8 px-4">
+                                        <div class="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-blue-100 to-purple-100 dark:from-blue-900/20 dark:to-purple-900/20 rounded-full flex items-center justify-center">
+                                            <MessageCircle class="w-8 h-8 text-blue-500 dark:text-blue-400" />
+                                        </div>
+                                        <h3 class="text-sm font-medium text-gray-900 dark:text-white mb-2">No chat history yet</h3>
+                                        <p class="text-xs text-gray-500 dark:text-gray-400 mb-4 leading-relaxed">
+                                            Start a conversation to explore destinations, get recommendations, and create personalized itineraries.
+                                        </p>
+                                        <div class="space-y-2">
+                                            <div class="flex items-center gap-2 text-xs text-gray-400 dark:text-gray-500">
+                                                <div class="w-2 h-2 bg-green-500 rounded-full"></div>
+                                                <span>Ask about any destination</span>
+                                            </div>
+                                            <div class="flex items-center gap-2 text-xs text-gray-400 dark:text-gray-500">
+                                                <div class="w-2 h-2 bg-blue-500 rounded-full"></div>
+                                                <span>Get personalized recommendations</span>
+                                            </div>
+                                            <div class="flex items-center gap-2 text-xs text-gray-400 dark:text-gray-500">
+                                                <div class="w-2 h-2 bg-purple-500 rounded-full"></div>
+                                                <span>Create custom itineraries</span>
+                                            </div>
+                                        </div>
                                     </div>
                                 </Show>
-                                
+
                                 <For each={sessions()}>
                                     {(session) => (
                                         <button
@@ -730,7 +769,7 @@ export default function ChatPage() {
                         <div class="flex items-center gap-1 sm:gap-2 flex-shrink-0">
                             <span class="text-xs text-gray-500 dark:text-gray-400 hidden sm:inline">Using:</span>
                             <span class="text-xs font-medium text-blue-600 dark:text-blue-400 truncate max-w-20 sm:max-w-none">{activeProfile()}</span>
-                            
+
                         </div>
                     </div>
                 </div>

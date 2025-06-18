@@ -101,6 +101,9 @@ export const queryKeys = {
   // Settings
   settings: ['settings'] as const,
   userSettings: (profileId: string) => ['settings', profileId] as const,
+  
+  // Cities
+  cities: ['cities'] as const,
 };
 
 // Utility hooks

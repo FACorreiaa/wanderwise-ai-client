@@ -1,7 +1,8 @@
 // POI and favorites queries and mutations
 import { useQuery, useMutation, useQueryClient } from '@tanstack/solid-query';
 import { apiRequest, queryKeys } from './shared';
-import type { POI } from './types';
+import type { POI, POIDetailedInfo } from './types';
+import { createResource } from 'solid-js';
 
 // ===============
 // POI QUERIES
@@ -71,21 +72,63 @@ export const usePOIDetails = (poiId: string) => {
   }));
 };
 
-export const useNearbyPOIs = (lat: number, lng: number, radius?: number) => {
-  return useQuery(() => ({
-    queryKey: queryKeys.nearbyPois(lat, lng, radius),
-    queryFn: () => {
-      const params = new URLSearchParams({
-        lat: lat.toString(),
-        lng: lng.toString(),
-        ...(radius && { radius: radius.toString() }),
-      });
-      return apiRequest<POI[]>(`/llm/prompt-response/poi/nearby?${params}`);
-    },
-    enabled: !!(lat && lng),
-    staleTime: 10 * 60 * 1000,
-  }));
+export const getNearbyPOIs = async (
+  lat: number,
+  lon: number,
+  radiusMeters: number,
+  filters?: { city?: string; category?: string; price_range?: string }
+): Promise<POIDetailedInfo[]> => {
+  // Use URLSearchParams for safe and easy query string construction
+  const params = new URLSearchParams({
+    lat: lat.toString(),
+    lon: lon.toString(),        // FIX: Changed from 'lng' to 'lon'
+    distance: radiusMeters.toString(), // FIX: Changed from 'radius' to 'distance'
+  });
+
+  // Add optional filter parameters
+  if (filters?.city && filters.city !== 'all') {
+    params.append('city', filters.city);
+  }
+  if (filters?.category && filters.category !== 'all') {
+    params.append('category', filters.category);
+  }
+  if (filters?.price_range && filters.price_range !== 'all') {
+    params.append('price_range', filters.price_range);
+  }
+
+  // The endpoint path should match your router
+  const response = await apiRequest<{ points_of_interest: POIDetailedInfo[] }>(
+    `/llm/prompt-response/poi/nearby?${params.toString()}`,
+    { method: 'GET' }
+  );
+
+  return response.points_of_interest || [];
 };
+
+// Your TanStack Query hook that uses the function above
+export function useNearbyPOIs(latFn, lonFn, radiusFn, filtersFn) {
+  return createResource(
+    () => {
+      const lat = latFn();
+      const lon = lonFn();
+      const radiusMeters = radiusFn();
+      // Skip fetching if parameters are invalid (mimics enabled: !!(lat && lon && radiusMeters > 0))
+      if (!lat || !lon || radiusMeters <= 0) {
+        return null;
+      }
+      const filters = filtersFn();
+      // Serialize filters to detect content changes, use 'no-filters' if undefined
+      const filtersKey = filters ? JSON.stringify(filters) : 'no-filters';
+      return [lat, lon, radiusMeters, filtersKey];
+    },
+    async ([lat, lon, radiusMeters, filtersKey]) => {
+      // Parse filters back to an object, or undefined if not present
+      const filters = filtersKey !== 'no-filters' ? JSON.parse(filtersKey) : undefined;
+      console.log('🔍 Fetching nearby POIs:', { lat, lon, radiusMeters, filters });
+      return getNearbyPOIs(lat, lon, radiusMeters, filters);
+    }
+  );
+}
 
 export const useSearchPOIs = (query: string, filters?: any) => {
   return useQuery(() => ({

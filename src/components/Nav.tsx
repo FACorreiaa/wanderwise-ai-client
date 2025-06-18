@@ -19,7 +19,7 @@ const publicNavigationItems = [
 
 // Authenticated navigation items
 const authNavigationItems = [
-  { name: 'Discover', href: '/discover', icon: MapPin },
+  { name: 'Discover', href: '/discover', icon: MapPin, experimental: true },
   { name: 'Chat', href: '/chat', icon: MessageCircle },
   { name: 'Favorites', href: '/favorites', icon: Heart },
   { name: 'Lists', href: '/lists', icon: List },
@@ -121,6 +121,11 @@ export default function Nav() {
                     >
                       <IconComponent class="w-4 h-4" />
                       {item.name}
+                      <Show when={item.experimental}>
+                        <Badge variant="secondary" class="ml-1 bg-orange-100 dark:bg-orange-900 text-orange-700 dark:text-orange-300 text-xs px-1.5 py-0.5">
+                          Experimental
+                        </Badge>
+                      </Show>
                     </A>
                   );
                 }}
@@ -255,7 +260,14 @@ export default function Nav() {
                         onClick={() => setIsMenuOpen(false)}
                       >
                         <IconComponent class="w-5 h-5" />
-                        {item.name}
+                        <div class="flex items-center gap-2">
+                          {item.name}
+                          <Show when={item.experimental}>
+                            <Badge variant="secondary" class="bg-orange-100 dark:bg-orange-900 text-orange-700 dark:text-orange-300 text-xs px-1.5 py-0.5">
+                              Experimental
+                            </Badge>
+                          </Show>
+                        </div>
                       </A>
                     );
                   }}

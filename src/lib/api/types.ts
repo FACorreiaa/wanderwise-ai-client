@@ -377,6 +377,7 @@ export interface POIDetailedInfo {
   phone_number?: string;
   opening_hours?: string;
   price_level?: string;
+  amenities?: string[];
   tags: string[];
   images: string[];
   rating: number;

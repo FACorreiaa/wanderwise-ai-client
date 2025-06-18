@@ -33,3 +33,6 @@ export * from './settings';
 
 // Export search profile queries
 export * from './profiles';
+
+// Export city queries
+export * from './cities';
