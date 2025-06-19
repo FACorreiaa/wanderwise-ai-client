@@ -2,7 +2,7 @@
 import { useMutation } from '@tanstack/solid-query';
 import { apiRequest, API_BASE_URL } from './shared';
 import { defaultLLMRateLimiter, RateLimitError, showRateLimitNotification } from '../rate-limiter';
-import type { ChatSession, ChatMessage } from './types';
+import type { ChatSession, ChatMessage, ChatSessionResponse, StreamEvent, UnifiedChatResponse, ApiResponse } from './types';
 
 // ==================
 // CHAT/LLM TYPES
@@ -78,7 +78,7 @@ export const useSendMessageMutation = () => {
 export const useGetRecommendationsMutation = () => {
   return useMutation(() => ({
     mutationFn: ({ profileId, query }: { profileId: string; query: string }) =>
-      apiRequest<any>(`/llm/prompt-response/profile/${profileId}`, {
+      apiRequest<UnifiedChatResponse>(`/llm/prompt-response/profile/${profileId}`, {
         method: 'POST',
         body: JSON.stringify({ query }),
       }),
@@ -294,12 +294,12 @@ export interface ChatSessionSummary {
 // Get chat sessions for a user
 export const getUserChatSessions = async (profileId: string): Promise<ChatSessionSummary[]> => {
   try {
-    const response = await apiRequest<any[]>(`/llm/prompt-response/chat/sessions/user/${profileId}`, {
+    const response = await apiRequest<ChatSessionResponse[]>(`/llm/prompt-response/chat/sessions/user/${profileId}`, {
       method: 'GET',
     });
 
     // Transform the response to our expected format
-    return response.map((session: any) => ({
+    return response.map((session: ChatSessionResponse) => ({
       id: session.id,
       title: generateSessionTitle(session.conversation_history, session.city_name),
       preview: generatePreview(session.conversation_history),
@@ -317,7 +317,7 @@ export const getUserChatSessions = async (profileId: string): Promise<ChatSessio
 };
 
 // Helper function to generate session title from conversation
-const generateSessionTitle = (conversationHistory: any[], cityName?: string): string => {
+const generateSessionTitle = (conversationHistory: ChatMessage[], cityName?: string): string => {
   if (!conversationHistory || conversationHistory.length === 0) {
     return cityName ? `Trip to ${cityName}` : 'New Conversation';
   }
@@ -359,7 +359,7 @@ const generateSessionTitle = (conversationHistory: any[], cityName?: string): st
 };
 
 // Helper function to generate preview from conversation
-const generatePreview = (conversationHistory: any[]): string => {
+const generatePreview = (conversationHistory: ChatMessage[]): string => {
   if (!conversationHistory || conversationHistory.length === 0) {
     return 'Start a new conversation...';
   }
@@ -382,7 +382,7 @@ const generatePreview = (conversationHistory: any[]): string => {
 };
 
 // Helper function to get last message
-const getLastMessage = (conversationHistory: any[]): string => {
+const getLastMessage = (conversationHistory: ChatMessage[]): string => {
   if (!conversationHistory || conversationHistory.length === 0) {
     return '';
   }
@@ -392,7 +392,7 @@ const getLastMessage = (conversationHistory: any[]): string => {
 };
 
 // Helper function to check if conversation contains itinerary content
-const hasItineraryInMessages = (conversationHistory: any[]): boolean => {
+const hasItineraryInMessages = (conversationHistory: ChatMessage[]): boolean => {
   if (!conversationHistory || conversationHistory.length === 0) {
     return false;
   }
@@ -400,7 +400,7 @@ const hasItineraryInMessages = (conversationHistory: any[]): boolean => {
   // Look for itinerary-related keywords in assistant messages
   const itineraryKeywords = ['itinerary', 'recommendations', 'places to visit', 'day 1', 'day 2', 'restaurants', 'hotels', 'activities'];
 
-  return conversationHistory.some((message: any) => {
+  return conversationHistory.some((message: ChatMessage) => {
     if (message.role === 'assistant' && message.content) {
       const content = message.content.toLowerCase();
       return itineraryKeywords.some(keyword => content.includes(keyword));

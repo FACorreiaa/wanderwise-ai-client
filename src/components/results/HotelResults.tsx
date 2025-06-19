@@ -1,5 +1,5 @@
 import { For, Show, createSignal } from 'solid-js';
-import { Star, MapPin, Wifi, Car, Coffee, Utensils, ChevronDown, ChevronUp } from 'lucide-solid';
+import { Star, MapPin, Wifi, Car, Coffee, Utensils, ChevronDown, ChevronUp, Heart, Share2 } from 'lucide-solid';
 
 interface Hotel {
   name: string;
@@ -23,6 +23,9 @@ interface HotelResultsProps {
   showToggle?: boolean; // Whether to show the "Show More/Less" button
   initialLimit?: number; // Initial number to show before "Show More"
   onItemClick?: (hotel: Hotel) => void; // Callback for item clicks
+  onFavoriteClick?: (hotel: Hotel) => void; // Callback for favorite button
+  onShareClick?: (hotel: Hotel) => void; // Callback for share button
+  favorites?: string[]; // Array of favorite hotel IDs
 }
 
 export default function HotelResults(props: HotelResultsProps) {
@@ -165,6 +168,40 @@ export default function HotelResults(props: HotelResultsProps) {
                     <span class="text-xs text-gray-500 dark:text-gray-400">
                       +{hotel.amenities.length - 4} more
                     </span>
+                  </Show>
+                </div>
+              </Show>
+
+              {/* Action Buttons */}
+              <Show when={!props.compact && (props.onFavoriteClick || props.onShareClick)}>
+                <div class="flex items-center gap-2 mt-3">
+                  <Show when={props.onFavoriteClick}>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        props.onFavoriteClick?.(hotel);
+                      }}
+                      class={`p-2 rounded-lg transition-colors ${
+                        props.favorites?.includes(hotel.name)
+                          ? 'text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/30'
+                          : 'text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20'
+                      }`}
+                      title="Add to favorites"
+                    >
+                      <Heart class={`w-4 h-4 ${props.favorites?.includes(hotel.name) ? 'fill-current' : ''}`} />
+                    </button>
+                  </Show>
+                  <Show when={props.onShareClick}>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        props.onShareClick?.(hotel);
+                      }}
+                      class="p-2 rounded-lg text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
+                      title="Share this hotel"
+                    >
+                      <Share2 class="w-4 h-4" />
+                    </button>
                   </Show>
                 </div>
               </Show>

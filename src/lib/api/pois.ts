@@ -106,7 +106,12 @@ export const getNearbyPOIs = async (
 };
 
 // Your TanStack Query hook that uses the function above
-export function useNearbyPOIs(latFn, lonFn, radiusFn, filtersFn) {
+export function useNearbyPOIs(
+  latFn: () => number, 
+  lonFn: () => number, 
+  radiusFn: () => number, 
+  filtersFn: () => Record<string, unknown>
+) {
   return createResource(
     () => {
       const lat = latFn();
@@ -121,7 +126,7 @@ export function useNearbyPOIs(latFn, lonFn, radiusFn, filtersFn) {
       const filtersKey = filters ? JSON.stringify(filters) : 'no-filters';
       return [lat, lon, radiusMeters, filtersKey];
     },
-    async ([lat, lon, radiusMeters, filtersKey]) => {
+    async ([lat, lon, radiusMeters, filtersKey]: [number, number, number, string]) => {
       // Parse filters back to an object, or undefined if not present
       const filters = filtersKey !== 'no-filters' ? JSON.parse(filtersKey) : undefined;
       console.log('🔍 Fetching nearby POIs:', { lat, lon, radiusMeters, filters });

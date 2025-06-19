@@ -541,18 +541,21 @@ export default function RestaurantsPage() {
                                 <button
                                     onClick={() => setViewMode('map')}
                                     class={`flex-1 px-3 py-1 rounded text-sm font-medium transition-colors sm:flex-initial ${viewMode() === 'map' ? 'bg-white dark:bg-gray-600 text-gray-900 dark:text-white shadow-sm' : 'text-gray-600 dark:text-gray-300'}`}
+                                    title="Show only map"
                                 >
                                     Map
                                 </button>
                                 <button
                                     onClick={() => setViewMode('split')}
                                     class={`flex-1 px-3 py-1 rounded text-sm font-medium transition-colors sm:flex-initial ${viewMode() === 'split' ? 'bg-white dark:bg-gray-600 text-gray-900 dark:text-white shadow-sm' : 'text-gray-600 dark:text-gray-300'}`}
+                                    title="Split view: Map + Cards"
                                 >
                                     Split
                                 </button>
                                 <button
                                     onClick={() => setViewMode('list')}
                                     class={`flex-1 px-3 py-1 rounded text-sm font-medium transition-colors sm:flex-initial ${viewMode() === 'list' ? 'bg-white dark:bg-gray-600 text-gray-900 dark:text-white shadow-sm' : 'text-gray-600 dark:text-gray-300'}`}
+                                    title="Show only cards"
                                 >
                                     List
                                 </button>
@@ -659,6 +662,22 @@ export default function RestaurantsPage() {
                                         compact={false}
                                         showToggle={filteredRestaurants().length > 5}
                                         initialLimit={5}
+                                        onFavoriteClick={(restaurant) => {
+                                            console.log('Add to favorites:', restaurant.name);
+                                            addToFavorites(restaurant);
+                                        }}
+                                        onShareClick={(restaurant) => {
+                                            if (navigator.share) {
+                                                navigator.share({
+                                                    title: restaurant.name,
+                                                    text: `Check out ${restaurant.name} - ${restaurant.description_poi}`,
+                                                    url: window.location.href
+                                                });
+                                            } else {
+                                                navigator.clipboard.writeText(`Check out ${restaurant.name}: ${restaurant.description_poi}`);
+                                            }
+                                        }}
+                                        favorites={myFavorites().map(f => f.name)}
                                     />
                                 </Show>
                             </div>

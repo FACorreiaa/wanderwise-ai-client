@@ -570,18 +570,21 @@ export default function HotelsPage() {
                                 <button
                                     onClick={() => setViewMode('map')}
                                     class={`flex-1 px-3 py-1 rounded text-sm font-medium transition-colors sm:flex-initial ${viewMode() === 'map' ? 'bg-white dark:bg-gray-600 text-gray-900 dark:text-white shadow-sm' : 'text-gray-600 dark:text-gray-300'}`}
+                                    title="Show only map"
                                 >
                                     Map
                                 </button>
                                 <button
                                     onClick={() => setViewMode('split')}
                                     class={`flex-1 px-3 py-1 rounded text-sm font-medium transition-colors sm:flex-initial ${viewMode() === 'split' ? 'bg-white dark:bg-gray-600 text-gray-900 dark:text-white shadow-sm' : 'text-gray-600 dark:text-gray-300'}`}
+                                    title="Split view: Map + Cards"
                                 >
                                     Split
                                 </button>
                                 <button
                                     onClick={() => setViewMode('list')}
                                     class={`flex-1 px-3 py-1 rounded text-sm font-medium transition-colors sm:flex-initial ${viewMode() === 'list' ? 'bg-white dark:bg-gray-600 text-gray-900 dark:text-white shadow-sm' : 'text-gray-600 dark:text-gray-300'}`}
+                                    title="Show only cards"
                                 >
                                     List
                                 </button>
@@ -693,6 +696,22 @@ export default function HotelsPage() {
                                         compact={false}
                                         showToggle={filteredHotels().length > 5}
                                         initialLimit={5}
+                                        onFavoriteClick={(hotel) => {
+                                            console.log('Add to bookmarks:', hotel.name);
+                                            addToBookmarks(hotel);
+                                        }}
+                                        onShareClick={(hotel) => {
+                                            if (navigator.share) {
+                                                navigator.share({
+                                                    title: hotel.name,
+                                                    text: `Check out ${hotel.name} - ${hotel.description_poi}`,
+                                                    url: window.location.href
+                                                });
+                                            } else {
+                                                navigator.clipboard.writeText(`Check out ${hotel.name}: ${hotel.description_poi}`);
+                                            }
+                                        }}
+                                        favorites={myBookmarks().map(b => b.name)}
                                     />
                                 </Show>
                             </div>

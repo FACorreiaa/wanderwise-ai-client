@@ -653,7 +653,7 @@ export default function DiscoverPage() {
                                     <button
                                         onClick={() => setViewMode('map-cards')}
                                         class={`p-2 rounded text-xs font-medium ${viewMode() === 'map-cards' ? 'bg-blue-600 text-white' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-600'}`}
-                                        title="Map + Cards View"
+                                        title="Split view: Map + Cards"
                                     >
                                         <div class="flex items-center gap-1">
                                             <Map class="w-3 h-3" />
@@ -663,14 +663,14 @@ export default function DiscoverPage() {
                                     <button
                                         onClick={() => setViewMode('cards')}
                                         class={`p-2 rounded ${viewMode() === 'cards' ? 'bg-blue-600 text-white' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-600'}`}
-                                        title="Cards Only View"
+                                        title="Show only cards"
                                     >
                                         <Grid class="w-4 h-4" />
                                     </button>
                                     <button
                                         onClick={() => setViewMode('map')}
                                         class={`p-2 rounded ${viewMode() === 'map' ? 'bg-blue-600 text-white' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-600'}`}
-                                        title="Map Only View"
+                                        title="Show only map"
                                     >
                                         <Map class="w-4 h-4" />
                                     </button>

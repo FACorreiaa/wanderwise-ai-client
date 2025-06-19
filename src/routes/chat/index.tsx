@@ -605,7 +605,25 @@ export default function ChatPage() {
                                     <div class="flex items-center justify-between mb-2 sm:mb-3">
                                         <div class="min-w-0 flex-1 pr-2">
                                             <h4 class="font-semibold text-gray-900 dark:text-white text-sm sm:text-base truncate">
-                                                {message.streamingData.itinerary_response?.itinerary_name || `${message.streamingData.general_city_data.city} Guide`}
+                                                {(() => {
+                                                    const rawName = message.streamingData.itinerary_response?.itinerary_name;
+                                                    if (!rawName) return `${message.streamingData.general_city_data.city} Guide`;
+                                                    
+                                                    // Handle case where itinerary_name might be a JSON string or object
+                                                    if (typeof rawName === 'string' && rawName.startsWith('{')) {
+                                                        try {
+                                                            const parsed = JSON.parse(rawName);
+                                                            return parsed.itinerary_name || parsed.name || `${message.streamingData.general_city_data.city} Guide`;
+                                                        } catch (e) {
+                                                            console.warn('Failed to parse itinerary name JSON in chat:', e);
+                                                            return `${message.streamingData.general_city_data.city} Guide`;
+                                                        }
+                                                    } else if (typeof rawName === 'object' && rawName?.itinerary_name) {
+                                                        return rawName.itinerary_name;
+                                                    }
+                                                    
+                                                    return rawName || `${message.streamingData.general_city_data.city} Guide`;
+                                                })()}
                                             </h4>
                                             <p class="text-xs sm:text-sm text-gray-600 dark:text-gray-300 truncate">
                                                 {message.streamingData.general_city_data.city}, {message.streamingData.general_city_data.country}

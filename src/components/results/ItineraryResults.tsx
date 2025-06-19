@@ -1,5 +1,5 @@
 import { For, Show, createSignal } from 'solid-js';
-import { Star, MapPin, Clock, Calendar, ChevronRight, ChevronDown, ChevronUp } from 'lucide-solid';
+import { Star, MapPin, Clock, Calendar, ChevronRight, ChevronDown, ChevronUp, Heart, Share2 } from 'lucide-solid';
 
 interface POI {
   name: string;
@@ -31,6 +31,9 @@ interface ItineraryResultsProps {
   showToggle?: boolean; // Whether to show the "Show More/Less" button
   initialLimit?: number; // Initial number to show before "Show More"
   onItemClick?: (poi: POI) => void; // Callback for item clicks
+  onFavoriteClick?: (poi: POI) => void; // Callback for favorite button
+  onShareClick?: (poi: POI) => void; // Callback for share button
+  favorites?: string[]; // Array of favorite POI IDs
 }
 
 export default function ItineraryResults(props: ItineraryResultsProps) {
@@ -74,7 +77,25 @@ export default function ItineraryResults(props: ItineraryResultsProps) {
     }
   };
 
-  const itineraryName = () => props.itinerary?.itinerary_name || "Custom Itinerary";
+  const itineraryName = () => {
+    const rawName = props.itinerary?.itinerary_name;
+    if (!rawName) return "Custom Itinerary";
+    
+    // Handle case where itinerary_name might be a JSON string or object
+    if (typeof rawName === 'string' && rawName.startsWith('{')) {
+      try {
+        const parsed = JSON.parse(rawName);
+        return parsed.itinerary_name || parsed.name || "Custom Itinerary";
+      } catch (e) {
+        console.warn('Failed to parse itinerary name JSON:', e);
+        return "Custom Itinerary";
+      }
+    } else if (typeof rawName === 'object' && rawName?.itinerary_name) {
+      return rawName.itinerary_name;
+    }
+    
+    return rawName || "Custom Itinerary";
+  };
   const description = () => props.itinerary?.overall_description;
 
   const getRatingColor = (rating: number) => {
@@ -219,6 +240,40 @@ export default function ItineraryResults(props: ItineraryResultsProps) {
                       </div>
                     </Show>
                   </div>
+
+                  {/* Action Buttons */}
+                  <Show when={!props.compact && (props.onFavoriteClick || props.onShareClick)}>
+                    <div class="flex items-center gap-2 mt-3">
+                      <Show when={props.onFavoriteClick}>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            props.onFavoriteClick?.(poi);
+                          }}
+                          class={`p-2 rounded-lg transition-colors ${
+                            props.favorites?.includes(poi.name)
+                              ? 'text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/30'
+                              : 'text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20'
+                          }`}
+                          title="Add to favorites"
+                        >
+                          <Heart class={`w-4 h-4 ${props.favorites?.includes(poi.name) ? 'fill-current' : ''}`} />
+                        </button>
+                      </Show>
+                      <Show when={props.onShareClick}>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            props.onShareClick?.(poi);
+                          }}
+                          class="p-2 rounded-lg text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
+                          title="Share this place"
+                        >
+                          <Share2 class="w-4 h-4" />
+                        </button>
+                      </Show>
+                    </div>
+                  </Show>
 
                   <Show when={poi.website && !props.compact}>
                     <div class="mt-3 pt-3 border-t border-gray-100 dark:border-gray-700">

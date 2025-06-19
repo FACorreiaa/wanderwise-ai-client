@@ -1,7 +1,16 @@
 import { A } from "@solidjs/router";
 import { Check, Star, Zap, Crown, Heart, MapPin, Brain, Clock } from "lucide-solid";
+import { createSignal, Show } from "solid-js";
+import PromoCodeSection from "~/components/PromoCodeSection";
 
 export default function Pricing() {
+  const [appliedPromo, setAppliedPromo] = createSignal(null);
+
+  const handlePromoSuccess = (promoData: any) => {
+    setAppliedPromo(promoData);
+    console.log('Promo applied:', promoData);
+  };
+
   const plans = [
     {
       name: "Free",
@@ -140,6 +149,29 @@ export default function Pricing() {
           </div>
         </header>
 
+        {/* Promo Code Section */}
+        <PromoCodeSection onSuccess={handlePromoSuccess} className="mb-16" />
+
+        {/* Promo Success Banner */}
+        <Show when={appliedPromo()}>
+          <div class="max-w-4xl mx-auto mb-12">
+            <div class="bg-gradient-to-r from-green-500 to-blue-500 text-white rounded-2xl p-6 shadow-lg">
+              <div class="flex items-center gap-4">
+                <div class="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
+                  <Star class="w-6 h-6" />
+                </div>
+                <div class="flex-1">
+                  <h3 class="text-xl font-bold mb-1">Promo Code Applied Successfully! 🎉</h3>
+                  <p class="text-white/90">{appliedPromo()?.description}</p>
+                  <Show when={appliedPromo()?.type === 'discount'}>
+                    <p class="text-sm text-white/80 mt-1">Your discount will be applied at checkout</p>
+                  </Show>
+                </div>
+              </div>
+            </div>
+          </div>
+        </Show>
+
         {/* Pricing Cards */}
         <section class="grid md:grid-cols-3 gap-8 mb-20" aria-labelledby="pricing-plans">
           <h2 id="pricing-plans" class="sr-only">Pricing Plans</h2>
@@ -180,8 +212,38 @@ export default function Pricing() {
                   </div>
 
                   <div class="mb-4">
-                    <span class={`text-4xl font-bold ${plan.disabled ? 'text-gray-500 dark:text-gray-400' : 'text-card-foreground'}`}>{plan.price}</span>
-                    <span class={`ml-2 ${plan.disabled ? 'text-gray-500 dark:text-gray-400' : 'text-muted-foreground'}`}>/{plan.period}</span>
+                    <div class="flex items-center gap-2">
+                      <span class={`text-4xl font-bold ${plan.disabled ? 'text-gray-500 dark:text-gray-400' : 'text-card-foreground'}`}>{plan.price}</span>
+                      <span class={`ml-2 ${plan.disabled ? 'text-gray-500 dark:text-gray-400' : 'text-muted-foreground'}`}>/{plan.period}</span>
+                    </div>
+                    {/* Show discount for applicable plans */}
+                    <Show when={appliedPromo() && appliedPromo()?.type === 'discount' && plan.name !== 'Free' && (appliedPromo()?.planAccess === 'any' || appliedPromo()?.planAccess === plan.name.toLowerCase())}>
+                      <div class="flex items-center gap-2 mt-2">
+                        <span class="text-lg text-muted-foreground line-through">{plan.price}</span>
+                        <span class="text-2xl font-bold text-green-600 dark:text-green-400">
+                          ${(parseFloat(plan.price.replace('$', '')) * (1 - appliedPromo()?.discount / 100)).toFixed(2)}
+                        </span>
+                        <span class="bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 px-2 py-1 rounded text-sm font-medium">
+                          {appliedPromo()?.discount}% OFF
+                        </span>
+                      </div>
+                    </Show>
+                    {/* Show free trial indicator */}
+                    <Show when={appliedPromo() && appliedPromo()?.type === 'free_trial' && plan.name !== 'Free' && (appliedPromo()?.planAccess === 'any' || appliedPromo()?.planAccess === plan.name.toLowerCase())}>
+                      <div class="mt-2">
+                        <span class="bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 px-3 py-1 rounded-full text-sm font-medium">
+                          FREE for {appliedPromo()?.duration} days
+                        </span>
+                      </div>
+                    </Show>
+                    {/* Show free access indicator */}
+                    <Show when={appliedPromo() && appliedPromo()?.type === 'free_access' && plan.name !== 'Free' && (appliedPromo()?.planAccess === 'any' || appliedPromo()?.planAccess === plan.name.toLowerCase())}>
+                      <div class="mt-2">
+                        <span class="bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 px-3 py-1 rounded-full text-sm font-medium">
+                          FREE ACCESS
+                        </span>
+                      </div>
+                    </Show>
                   </div>
 
                   <p class="text-muted-foreground mb-6">{plan.description}</p>

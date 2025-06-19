@@ -112,13 +112,13 @@ export const queryKeys = {
 
   // Hotels
   hotels: ['hotels'] as const,
-  hotelsByPreferences: (preferences: any) => ['hotels', 'preferences', preferences] as const,
+  hotelsByPreferences: (preferences: Record<string, unknown>) => ['hotels', 'preferences', preferences] as const,
   nearbyHotels: (lat: number, lng: number, radius?: number) => ['hotels', 'nearby', lat, lng, radius] as const,
   hotelDetails: (id: string) => ['hotels', 'details', id] as const,
 
   // Restaurants
   restaurants: ['restaurants'] as const,
-  restaurantsByPreferences: (preferences: any) => ['restaurants', 'preferences', preferences] as const,
+  restaurantsByPreferences: (preferences: Record<string, unknown>) => ['restaurants', 'preferences', preferences] as const,
   nearbyRestaurants: (lat: number, lng: number, radius?: number) => ['restaurants', 'nearby', lat, lng, radius] as const,
   restaurantDetails: (id: string) => ['restaurants', 'details', id] as const,
 
@@ -128,6 +128,10 @@ export const queryKeys = {
   
   // Cities
   cities: ['cities'] as const,
+
+  // Recents
+  recents: ['recents'] as const,
+  recentCityDetails: (cityName: string) => ['recents', 'city', cityName] as const,
 };
 
 // Utility hooks

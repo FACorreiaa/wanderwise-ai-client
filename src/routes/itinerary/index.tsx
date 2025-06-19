@@ -99,8 +99,27 @@ export default function ItineraryResultsPage() {
         
         if (streaming && streaming.general_city_data) {
             // Map streaming data to itinerary format
+            const itineraryName = streaming.itinerary_response?.itinerary_name;
+            console.log('Raw itinerary name:', itineraryName);
+            
+            // Handle case where itinerary_name might be a JSON string or object
+            let parsedName = itineraryName;
+            if (typeof itineraryName === 'string' && itineraryName.startsWith('{')) {
+                try {
+                    const parsed = JSON.parse(itineraryName);
+                    parsedName = parsed.itinerary_name || parsed.name || `${streaming.general_city_data.city} Adventure`;
+                } catch (e) {
+                    console.warn('Failed to parse itinerary name JSON:', e);
+                    parsedName = `${streaming.general_city_data.city} Adventure`;
+                }
+            } else if (typeof itineraryName === 'object' && itineraryName?.itinerary_name) {
+                parsedName = itineraryName.itinerary_name;
+            }
+            
+            console.log('Parsed itinerary name:', parsedName);
+            
             return {
-                name: streaming.itinerary_response?.itinerary_name || `${streaming.general_city_data.city} Adventure`,
+                name: parsedName || `${streaming.general_city_data.city} Adventure`,
                 description: streaming.itinerary_response?.overall_description || streaming.general_city_data.description,
                 city: streaming.general_city_data.city,
                 country: streaming.general_city_data.country,
@@ -794,18 +813,21 @@ export default function ItineraryResultsPage() {
                                 <button
                                     onClick={() => setViewMode('map')}
                                     class={`flex-1 px-3 py-1 rounded text-sm font-medium transition-colors sm:flex-initial ${viewMode() === 'map' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-600'}`}
+                                    title="Show only map"
                                 >
                                     Map
                                 </button>
                                 <button
                                     onClick={() => setViewMode('split')}
                                     class={`flex-1 px-3 py-1 rounded text-sm font-medium transition-colors sm:flex-initial ${viewMode() === 'split' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-600'}`}
+                                    title="Split view: Map + Cards"
                                 >
                                     Split
                                 </button>
                                 <button
                                     onClick={() => setViewMode('list')}
                                     class={`flex-1 px-3 py-1 rounded text-sm font-medium transition-colors sm:flex-initial ${viewMode() === 'list' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-600'}`}
+                                    title="Show only cards"
                                 >
                                     List
                                 </button>
@@ -1060,6 +1082,22 @@ export default function ItineraryResultsPage() {
                                     compact={false}
                                     showToggle={filteredPOIs().length > 5}
                                     initialLimit={5}
+                                    onFavoriteClick={(poi) => {
+                                        console.log('Add to favorites:', poi.name);
+                                        // Add your favorite logic here
+                                    }}
+                                    onShareClick={(poi) => {
+                                        if (navigator.share) {
+                                            navigator.share({
+                                                title: poi.name,
+                                                text: `Check out ${poi.name} - ${poi.description_poi}`,
+                                                url: window.location.href
+                                            });
+                                        } else {
+                                            navigator.clipboard.writeText(`Check out ${poi.name}: ${poi.description_poi}`);
+                                        }
+                                    }}
+                                    favorites={[]} // Add your favorites state here
                                 />
                             </div>
                         </div>

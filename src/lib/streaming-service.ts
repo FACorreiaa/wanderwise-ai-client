@@ -10,11 +10,13 @@ import type {
   DiningResponse,
   ActivitiesResponse,
   GeneralCityData,
+  POIDetailedInfo,
   POIDetail,
   AIItineraryResponse,
   HotelDetailedInfo,
   RestaurantDetailedInfo,
-  POIDetailedInfo
+  StreamChunkData,
+  StreamCompleteData
 } from './api/types';
 
 export interface StreamingSessionManager {
@@ -160,11 +162,12 @@ export class StreamingChatService {
   private handleStartEvent(event: StreamEvent): void {
     if (!this.manager || !event.data) return;
     
-    const { domain, city, session_id } = event.data;
+    const data = event.data as StreamCompleteData;
+    const { domain, city, session_id } = data;
     
-    this.manager.session.sessionId = session_id;
-    this.manager.session.domain = domain;
-    this.manager.session.city = city;
+    if (session_id) this.manager.session.sessionId = session_id;
+    if (domain) this.manager.session.domain = domain;
+    if (city) this.manager.session.city = city;
     
     // Reset chunk buffer for new session
     this.chunkBuffer = {
@@ -182,7 +185,8 @@ export class StreamingChatService {
   private handleChunkEvent(event: StreamEvent): void {
     if (!this.manager || !event.data) return;
     
-    const { chunk, part } = event.data;
+    const data = event.data as StreamChunkData;
+    const { chunk, part } = data;
     
     if (part && (part === 'general_pois' || part === 'itinerary' || part === 'city_data' || part === 'hotels' || part === 'restaurants' || part === 'activities')) {
       // Accumulate chunks for the specific part
@@ -258,7 +262,7 @@ export class StreamingChatService {
     }
   }
 
-  private handleParsedCityData(cityData: any): void {
+  private handleParsedCityData(cityData: GeneralCityData): void {
     if (!this.manager) return;
     
     try {
@@ -277,7 +281,7 @@ export class StreamingChatService {
     }
   }
 
-  private handleParsedGeneralPOIs(poisData: any): void {
+  private handleParsedGeneralPOIs(poisData: { points_of_interest: POIDetailedInfo[] }): void {
     if (!this.manager) return;
     
     try {
@@ -294,7 +298,7 @@ export class StreamingChatService {
     }
   }
 
-  private handleParsedItinerary(itineraryData: any): void {
+  private handleParsedItinerary(itineraryData: AIItineraryResponse): void {
     if (!this.manager) return;
     
     try {
@@ -376,7 +380,8 @@ export class StreamingChatService {
       
       // Initialize data structure based on domain
       if (this.manager.session.domain === 'general' || this.manager.session.domain === 'itinerary') {
-        if (!this.manager.session.data.general_city_data) {
+        const currentData = this.manager.session.data as Partial<AiCityResponse>;
+        if (!currentData.general_city_data) {
           this.manager.session.data = {
             ...this.manager.session.data,
             general_city_data: cityData,
@@ -399,7 +404,7 @@ export class StreamingChatService {
     if (!this.manager || !event.data) return;
     
     try {
-      const pois: POIDetail[] = this.parseStreamData(event.data);
+      const pois: POIDetailedInfo[] = this.parseStreamData(event.data);
       
       if (this.manager.session.domain === 'general' || this.manager.session.domain === 'itinerary') {
         (this.manager.session.data as Partial<AiCityResponse>).points_of_interest = pois;
