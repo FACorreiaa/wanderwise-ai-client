@@ -1,6 +1,7 @@
 // LLM and chat queries and mutations
 import { useMutation } from '@tanstack/solid-query';
 import { apiRequest, API_BASE_URL } from './shared';
+import { defaultLLMRateLimiter, RateLimitError, showRateLimitNotification } from '../rate-limiter';
 import type { ChatSession, ChatMessage } from './types';
 
 // ==================
@@ -8,6 +9,36 @@ import type { ChatSession, ChatMessage } from './types';
 // ==================
 
 export type ChatContextType = 'hotels' | 'restaurants' | 'itineraries' | 'general';
+
+// Rate-limited fetch function for streaming endpoints
+async function rateLimitedFetch(url: string, options: RequestInit, endpoint: string): Promise<Response> {
+  // Apply client-side rate limiting for LLM endpoints
+  const rateLimitCheck = await defaultLLMRateLimiter.checkRateLimit(endpoint);
+  if (!rateLimitCheck.allowed) {
+    const retryAfter = rateLimitCheck.retryAfter || 60;
+    showRateLimitNotification(retryAfter, endpoint);
+    throw new RateLimitError(
+      `Rate limit exceeded for ${endpoint}. Retry after ${retryAfter} seconds.`,
+      retryAfter,
+      endpoint
+    );
+  }
+
+  const response = await fetch(url, options);
+
+  // Handle server-side rate limiting
+  if (response.status === 429) {
+    const retryAfter = parseInt(response.headers.get('Retry-After') || '60');
+    showRateLimitNotification(retryAfter, endpoint);
+    throw new RateLimitError(
+      `Server rate limit exceeded for ${endpoint}. Retry after ${retryAfter} seconds.`,
+      retryAfter,
+      endpoint
+    );
+  }
+
+  return response;
+}
 
 export interface StartChatRequest {
   profileId: string;
@@ -74,8 +105,9 @@ export const StartChat = async (request: StartChatRequest): Promise<ChatSession>
 export const StartChatStream = async (request: StartChatRequest): Promise<Response> => {
   const endpoint = getContextualEndpoint('sessions/stream', request.contextType);
   const token = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
+  const fullEndpoint = `${endpoint}/${request.profileId}`;
 
-  return fetch(`${API_BASE_URL}/${endpoint}/${request.profileId}`, {
+  return rateLimitedFetch(`${API_BASE_URL}/${fullEndpoint}`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -86,7 +118,7 @@ export const StartChatStream = async (request: StartChatRequest): Promise<Respon
       city_name: request.cityName,
       initial_message: request.initialMessage,
     }),
-  });
+  }, fullEndpoint);
 };
 
 export const ContinueChat = async (request: ContinueChatRequest): Promise<ChatMessage> => {
@@ -106,7 +138,7 @@ export const ContinueChatStream = async (request: ContinueChatRequest): Promise<
   const endpoint = getContextualEndpoint(`sessions/${request.sessionId}/messages/stream`, request.contextType);
   const token = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
 
-  return fetch(`${API_BASE_URL}/${endpoint}`, {
+  return rateLimitedFetch(`${API_BASE_URL}/${endpoint}`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -117,7 +149,7 @@ export const ContinueChatStream = async (request: ContinueChatRequest): Promise<
       city_name: request.cityName,
       context_type: request.contextType,
     }),
-  });
+  }, endpoint);
 };
 
 // ==================
@@ -169,8 +201,9 @@ export interface UnifiedChatStreamRequest extends UnifiedChatRequest { }
 // Unified chat service - sends message and gets streaming response
 export const sendUnifiedChatMessage = async (request: UnifiedChatRequest): Promise<Response> => {
   const token = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
+  const endpoint = `/llm/prompt-response/chat/sessions/${request.profileId}`;
 
-  return fetch(`${API_BASE_URL}/llm/prompt-response/chat/sessions/${request.profileId}`, {
+  return rateLimitedFetch(`${API_BASE_URL}${endpoint}`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -180,18 +213,19 @@ export const sendUnifiedChatMessage = async (request: UnifiedChatRequest): Promi
       message: request.message,
       user_location: request.userLocation,
     }),
-  });
+  }, endpoint);
 };
 
 // Unified chat streaming service
 export const sendUnifiedChatMessageStream = async (request: UnifiedChatStreamRequest): Promise<Response> => {
   const token = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
+  const endpoint = `/llm/prompt-response/chat/sessions/stream/${request.profileId}`;
 
   console.log('=== STREAMING API CALL ===');
   console.log('Token found:', !!token);
   console.log('Request:', request);
 
-  return fetch(`${API_BASE_URL}/llm/prompt-response/chat/sessions/stream/${request.profileId}`, {
+  return rateLimitedFetch(`${API_BASE_URL}${endpoint}`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -201,7 +235,7 @@ export const sendUnifiedChatMessageStream = async (request: UnifiedChatStreamReq
       message: request.message,
       user_location: request.userLocation,
     }),
-  });
+  }, endpoint);
 };
 
 // Domain detection utility (client-side)
@@ -254,6 +288,7 @@ export interface ChatSessionSummary {
   messageCount: number;
   hasItinerary: boolean;
   lastMessage?: string;
+  cityName?: string;
 }
 
 // Get chat sessions for a user
@@ -266,12 +301,13 @@ export const getUserChatSessions = async (profileId: string): Promise<ChatSessio
     // Transform the response to our expected format
     return response.map((session: any) => ({
       id: session.id,
-      title: generateSessionTitle(session.conversation_history),
+      title: generateSessionTitle(session.conversation_history, session.city_name),
       preview: generatePreview(session.conversation_history),
       timestamp: session.updated_at || session.created_at,
       messageCount: session.conversation_history?.length || 0,
       hasItinerary: hasItineraryInMessages(session.conversation_history),
-      lastMessage: getLastMessage(session.conversation_history)
+      lastMessage: getLastMessage(session.conversation_history),
+      cityName: session.city_name
     }));
   } catch (error) {
     console.warn('Chat sessions endpoint not available, returning empty array');
@@ -281,21 +317,45 @@ export const getUserChatSessions = async (profileId: string): Promise<ChatSessio
 };
 
 // Helper function to generate session title from conversation
-const generateSessionTitle = (conversationHistory: any[]): string => {
+const generateSessionTitle = (conversationHistory: any[], cityName?: string): string => {
   if (!conversationHistory || conversationHistory.length === 0) {
-    return 'New Conversation';
+    return cityName ? `Trip to ${cityName}` : 'New Conversation';
   }
 
   // Look for first user message (role can be 'user' or type can be 'user')
   const firstUserMessage = conversationHistory.find(msg => msg.role === 'user' || msg.type === 'user');
   if (firstUserMessage) {
     const content = firstUserMessage.content || '';
-    // Extract location or main topic
-    const words = content.split(' ').slice(0, 4);
-    return words.join(' ') + (content.split(' ').length > 4 ? '...' : '');
+    
+    // Try to detect the intent from the message content
+    const lowerContent = content.toLowerCase();
+    
+    // Check for specific intents and create meaningful titles
+    if (lowerContent.includes('hotel') || lowerContent.includes('accommodation')) {
+      return cityName ? `Hotels in ${cityName}` : 'Hotel Search';
+    }
+    if (lowerContent.includes('restaurant') || lowerContent.includes('food') || lowerContent.includes('eat')) {
+      return cityName ? `Dining in ${cityName}` : 'Restaurant Search';
+    }
+    if (lowerContent.includes('activity') || lowerContent.includes('visit') || lowerContent.includes('see')) {
+      return cityName ? `Activities in ${cityName}` : 'Activity Search';
+    }
+    if (lowerContent.includes('itinerary') || lowerContent.includes('plan') || lowerContent.includes('trip')) {
+      return cityName ? `${cityName} Itinerary` : 'Trip Planning';
+    }
+    
+    // Fallback: Use first meaningful words + city
+    const words = content.split(' ').filter(word => word.length > 2).slice(0, 3);
+    const baseTitle = words.join(' ');
+    
+    if (cityName && !baseTitle.toLowerCase().includes(cityName.toLowerCase())) {
+      return `${baseTitle} - ${cityName}`;
+    }
+    
+    return baseTitle || (cityName ? `Trip to ${cityName}` : 'Chat Session');
   }
 
-  return 'Chat Session';
+  return cityName ? `Trip to ${cityName}` : 'Chat Session';
 };
 
 // Helper function to generate preview from conversation

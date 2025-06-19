@@ -466,46 +466,92 @@ export default function ItineraryResultsPage() {
                 onClick={() => setSelectedPOI(poi)}
             >
                 <div class="flex items-start gap-3">
-                    <div class={`w-10 h-10 rounded-full ${getPriorityColor(poi.priority)} flex items-center justify-center flex-shrink-0`}>
-                        <IconComponent class="w-5 h-5 text-white" />
+                    <div class={`w-12 h-12 rounded-full ${getPriorityColor(poi.priority)} flex items-center justify-center flex-shrink-0`}>
+                        <IconComponent class="w-6 h-6 text-white" />
                     </div>
                     <div class="flex-1 min-w-0">
                         <div class="flex items-start justify-between mb-2">
-                            <div>
-                                <h3 class="font-semibold text-gray-900 text-sm">{poi.name}</h3>
-                                <p class="text-xs text-gray-500">{poi.category}</p>
+                            <div class="flex-1 min-w-0">
+                                <h3 class="font-semibold text-gray-900 text-base mb-1">{poi.name}</h3>
+                                
+                                {/* Enhanced Filter Labels */}
+                                <div class="flex flex-wrap items-center gap-2 mb-2">
+                                    {/* POI Category Label */}
+                                    <span class="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-medium">
+                                        📍 {poi.category}
+                                    </span>
+                                    
+                                    {/* Budget/Price Range with Enhanced Styling */}
+                                    <span class={`px-3 py-1 rounded-full text-xs font-bold border ${getBudgetColor(poi.budget).includes('green') ? 'bg-green-50 text-green-700 border-green-200' : 
+                                        getBudgetColor(poi.budget).includes('blue') ? 'bg-blue-50 text-blue-700 border-blue-200' :
+                                        getBudgetColor(poi.budget).includes('orange') ? 'bg-orange-50 text-orange-700 border-orange-200' :
+                                        'bg-red-50 text-red-700 border-red-200'}`}>
+                                        {poi.budget} {poi.budget === 'Free' ? 'Entry' : poi.budget === '€' ? 'Budget' : poi.budget === '€€' ? 'Moderate' : 'Premium'}
+                                    </span>
+                                    
+                                    {/* Rating/Popularity Label */}
+                                    <Show when={poi.rating >= 4.5}>
+                                        <span class="px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs font-medium">
+                                            ⭐ Must Visit
+                                        </span>
+                                    </Show>
+                                    <Show when={poi.rating >= 4.0 && poi.rating < 4.5}>
+                                        <span class="px-3 py-1 bg-green-100 text-green-800 rounded-full text-xs font-medium">
+                                            ✓ Recommended
+                                        </span>
+                                    </Show>
+                                    
+                                    {/* Time to Spend Label */}
+                                    <span class="px-2 py-1 bg-purple-100 text-purple-700 rounded-full text-xs">
+                                        🕒 {poi.timeToSpend}
+                                    </span>
+                                    
+                                    {/* Priority Label */}
+                                    <Show when={poi.priority === 1}>
+                                        <span class="px-2 py-1 bg-red-100 text-red-700 rounded-full text-xs">
+                                            🔥 Priority
+                                        </span>
+                                    </Show>
+                                    
+                                    {/* Dog Friendly Label */}
+                                    <Show when={poi.dogFriendly}>
+                                        <span class="px-2 py-1 bg-amber-100 text-amber-700 rounded-full text-xs">
+                                            🐕 Pet Friendly
+                                        </span>
+                                    </Show>
+                                </div>
                             </div>
-                            <div class="flex items-center gap-1 text-xs">
+                            
+                            {/* Rating Badge */}
+                            <div class="flex items-center gap-1 bg-yellow-50 px-2 py-1 rounded-full border border-yellow-200">
                                 <Star class="w-3 h-3 text-yellow-500 fill-current" />
-                                <span class="text-gray-600">{poi.rating}</span>
+                                <span class="text-yellow-800 font-medium text-xs">{poi.rating}</span>
                             </div>
                         </div>
-                        <p class="text-xs text-gray-600 mb-3 line-clamp-2">{poi.description}</p>
-                        <div class="flex items-center justify-between text-xs">
+                        
+                        <p class="text-sm text-gray-600 mb-3 line-clamp-2">{poi.description}</p>
+                        
+                        {/* Enhanced Footer with Better Visual Hierarchy */}
+                        <div class="flex items-center justify-between">
                             <div class="flex items-center gap-3">
-                                <div class="flex items-center gap-1 text-gray-500">
-                                    <Clock class="w-3 h-3" />
-                                    <span>{poi.timeToSpend}</span>
-                                </div>
-                                <div class={`font-medium ${getBudgetColor(poi.budget)}`}>
+                                <div class="text-lg font-bold text-gray-900">
                                     {poi.budget}
                                 </div>
                             </div>
+                            
+                            {/* Control Buttons */}
                             <div class="flex items-center gap-2">
-                                {poi.dogFriendly && (
-                                    <span class="bg-green-100 text-green-800 px-2 py-0.5 rounded-full text-xs">
-                                        🐕 Dog OK
-                                    </span>
-                                )}
                                 <button
                                     onClick={(e) => { e.stopPropagation(); movePOI(poi.id, 'up'); }}
-                                    class="text-gray-500 hover:text-blue-600"
+                                    class="p-1 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                                    title="Move up"
                                 >
                                     ↑
                                 </button>
                                 <button
                                     onClick={(e) => { e.stopPropagation(); movePOI(poi.id, 'down'); }}
-                                    class="text-gray-500 hover:text-blue-600"
+                                    class="p-1 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                                    title="Move down"
                                 >
                                     ↓
                                 </button>

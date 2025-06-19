@@ -450,11 +450,15 @@ export default function ChatPage() {
     const loadSession = (session) => {
         setSelectedSession(session);
         // In a real app, you would load the session messages from the backend
+        const contextMessage = session.cityName 
+            ? `Continuing our conversation about your trip to ${session.cityName}. We discussed "${session.title.toLowerCase()}" with ${session.messageCount} messages.`
+            : `Continuing our conversation about "${session.title}". We had ${session.messageCount} messages.`;
+        
         setMessages([
             {
                 id: 'session-loaded',
                 type: 'assistant',
-                content: `Continuing our conversation about "${session.title}". How can I help you further with this trip?`,
+                content: `${contextMessage} How can I help you further${session.hasItinerary ? ' with your itinerary' : ''}?`,
                 timestamp: new Date(),
                 hasItinerary: session.hasItinerary
             }
@@ -468,6 +472,45 @@ export default function ChatPage() {
             hour: '2-digit',
             minute: '2-digit'
         });
+    };
+
+    // Helper function to format message content for display
+    const formatMessageContent = (content: string) => {
+        // Check if content looks like JSON (starts with { or [)
+        if (content.trim().startsWith('{') || content.trim().startsWith('[')) {
+            try {
+                const parsed = JSON.parse(content);
+                
+                // Handle different JSON response types
+                if (parsed.city && parsed.country) {
+                    return `I found information about ${parsed.city}, ${parsed.country}. Let me share the details with you!`;
+                }
+                
+                if (Array.isArray(parsed) && parsed.length > 0) {
+                    const firstItem = parsed[0];
+                    if (firstItem.name && firstItem.category) {
+                        const type = firstItem.cuisine_type ? 'restaurants' : firstItem.poi_type ? 'attractions' : 'places';
+                        return `I found ${parsed.length} great ${type} for you! Including ${firstItem.name} and ${parsed.length - 1} more options.`;
+                    }
+                }
+                
+                if (parsed.points_of_interest && Array.isArray(parsed.points_of_interest)) {
+                    const count = parsed.points_of_interest.length;
+                    const first = parsed.points_of_interest[0]?.name || 'some amazing places';
+                    return `I created a personalized itinerary with ${count} places to visit, including ${first} and more!`;
+                }
+                
+                // Generic fallback for other JSON
+                return "I've prepared some personalized recommendations for you! Check out the details below.";
+                
+            } catch (e) {
+                // If JSON parsing fails, return original content
+                return content;
+            }
+        }
+        
+        // Return original content if it's not JSON
+        return content;
     };
 
     const renderMessage = (message) => (
@@ -485,7 +528,7 @@ export default function ChatPage() {
                         ? 'bg-red-50 dark:bg-red-900/20 text-red-800 dark:text-red-200 border border-red-200 dark:border-red-800'
                         : 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200'
                     }`}>
-                    <p class="text-sm whitespace-pre-wrap">{message.content}</p>
+                    <p class="text-sm whitespace-pre-wrap">{formatMessageContent(message.content)}</p>
                 </div>
 
                 {/* Streaming data preview - Mobile First */}
@@ -731,16 +774,34 @@ export default function ChatPage() {
                                                 }`}
                                         >
                                             <div class="flex items-start justify-between mb-1">
-                                                <h4 class="text-xs sm:text-sm font-medium text-gray-900 dark:text-white truncate pr-1">{session.title}</h4>
-                                                <Show when={session.hasItinerary}>
-                                                    <Sparkles class="w-3 h-3 text-purple-500 dark:text-purple-400 flex-shrink-0" />
-                                                </Show>
+                                                <div class="flex-1 min-w-0">
+                                                    <h4 class="text-xs sm:text-sm font-medium text-gray-900 dark:text-white truncate">{session.title}</h4>
+                                                    <Show when={session.cityName}>
+                                                        <div class="flex items-center gap-1 mt-0.5">
+                                                            <MapPin class="w-3 h-3 text-gray-400 flex-shrink-0" />
+                                                            <span class="text-xs text-gray-500 dark:text-gray-400 truncate">{session.cityName}</span>
+                                                        </div>
+                                                    </Show>
+                                                </div>
+                                                <div class="flex items-center gap-1 flex-shrink-0 ml-1">
+                                                    <Show when={session.hasItinerary}>
+                                                        <Sparkles class="w-3 h-3 text-purple-500 dark:text-purple-400" />
+                                                    </Show>
+                                                    <Show when={session.messageCount > 5}>
+                                                        <div class="w-1.5 h-1.5 bg-blue-500 rounded-full"></div>
+                                                    </Show>
+                                                </div>
                                             </div>
-                                            <p class="text-xs text-gray-600 dark:text-gray-300 truncate mb-1 sm:mb-2">{session.preview}</p>
+                                            <p class="text-xs text-gray-600 dark:text-gray-300 truncate mb-1 sm:mb-2 leading-relaxed">{session.preview}</p>
                                             <div class="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
                                                 <span class="text-xs">{formatTimestamp(session.timestamp)}</span>
-                                                <span class="text-xs hidden sm:inline">{session.messageCount} messages</span>
-                                                <span class="text-xs sm:hidden">{session.messageCount}m</span>
+                                                <div class="flex items-center gap-2">
+                                                    <span class="text-xs hidden sm:inline">{session.messageCount} messages</span>
+                                                    <span class="text-xs sm:hidden">{session.messageCount}m</span>
+                                                    <Show when={session.hasItinerary}>
+                                                        <span class="text-xs text-purple-600 dark:text-purple-400 hidden sm:inline">• Itinerary</span>
+                                                    </Show>
+                                                </div>
                                             </div>
                                         </button>
                                     )}
