@@ -110,7 +110,7 @@ export default function DiscoverPage() {
     const [pois] = useNearbyPOIs(
         () => userLocation()?.latitude,
         () => userLocation()?.longitude,
-        searchRadius, // Signal getter
+        () => searchRadius(), // Fix: Pass as function that returns signal value
         currentFilters // Function returning filters
     );
 
@@ -326,7 +326,7 @@ export default function DiscoverPage() {
                         >
                             <Heart class={`w-4 h-4 ${isFavorite(poi.id) ? 'fill-current' : ''}`} />
                         </button>
-                        <button 
+                        <button
                             onClick={() => handleShare(poi)}
                             class="p-2 bg-white/90 text-gray-700 rounded-lg hover:scale-110 transition-transform"
                         >
@@ -593,90 +593,90 @@ export default function DiscoverPage() {
                         {/* Filters - Always visible on desktop, collapsible on mobile */}
                         <div class={`${showFilters() ? 'block' : 'hidden'} sm:block`}>
                             <div class="flex flex-col sm:flex-row sm:items-center gap-4 overflow-x-auto">
-                            <div class="flex items-center gap-2">
-                                <label for="radius-select" class="text-sm font-medium text-gray-700 dark:text-gray-300 flex-shrink-0">
-                                    Radius:
-                                </label>
+                                <div class="flex items-center gap-2">
+                                    <label for="radius-select" class="text-sm font-medium text-gray-700 dark:text-gray-300 flex-shrink-0">
+                                        Radius:
+                                    </label>
+                                    <select
+                                        id="radius-select"
+                                        value={searchRadius()}
+                                        onChange={(e) => setSearchRadius(parseInt(e.target.value))}
+                                        class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    >
+                                        <For each={radiusOptions}>
+                                            {(option) => <option value={option.value}>{option.label}</option>}
+                                        </For>
+                                    </select>
+                                </div>
+
                                 <select
-                                    id="radius-select"
-                                    value={searchRadius()}
-                                    onChange={(e) => setSearchRadius(parseInt(e.target.value))}
+                                    value={selectedCategory()}
+                                    onChange={(e) => setSelectedCategory(e.target.value)}
                                     class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                 >
-                                    <For each={radiusOptions}>
-                                        {(option) => <option value={option.value}>{option.label}</option>}
+                                    <For each={categories}>
+                                        {(category) => <option value={category.id}>{category.label}</option>}
                                     </For>
                                 </select>
-                            </div>
 
-                            <select
-                                value={selectedCategory()}
-                                onChange={(e) => setSelectedCategory(e.target.value)}
-                                class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                            >
-                                <For each={categories}>
-                                    {(category) => <option value={category.id}>{category.label}</option>}
-                                </For>
-                            </select>
-
-                            <select
-                                value={selectedPrice()}
-                                onChange={(e) => setSelectedPrice(e.target.value)}
-                                class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                            >
-                                <For each={priceRanges}>
-                                    {(price) => <option value={price.id}>{price.label}</option>}
-                                </For>
-                            </select>
-
-                            {/* Sort */}
-                            <div class="flex items-center gap-2">
                                 <select
-                                    value={sortBy()}
-                                    onChange={(e) => setSortBy(e.target.value)}
+                                    value={selectedPrice()}
+                                    onChange={(e) => setSelectedPrice(e.target.value)}
                                     class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                 >
-                                    <For each={sortOptions}>
-                                        {(option) => <option value={option.id}>{option.label}</option>}
+                                    <For each={priceRanges}>
+                                        {(price) => <option value={price.id}>{price.label}</option>}
                                     </For>
                                 </select>
-                                <button
-                                    onClick={() => setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc')}
-                                    class="p-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 bg-white dark:bg-gray-700"
-                                >
-                                    {sortOrder() === 'asc' ? <SortAsc class="w-4 h-4 text-gray-600 dark:text-gray-400" /> : <SortDesc class="w-4 h-4 text-gray-600 dark:text-gray-400" />}
-                                </button>
-                            </div>
 
-                            {/* View mode - 3 modes: map+cards, cards only, map only */}
-                            <div class="flex items-center border border-gray-300 dark:border-gray-600 rounded-lg p-1 bg-white dark:bg-gray-700">
-                                <button
-                                    onClick={() => setViewMode('map-cards')}
-                                    class={`p-2 rounded text-xs font-medium ${viewMode() === 'map-cards' ? 'bg-blue-600 text-white' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-600'}`}
-                                    title="Map + Cards View"
-                                >
-                                    <div class="flex items-center gap-1">
-                                        <Map class="w-3 h-3" />
-                                        <Grid class="w-3 h-3" />
-                                    </div>
-                                </button>
-                                <button
-                                    onClick={() => setViewMode('cards')}
-                                    class={`p-2 rounded ${viewMode() === 'cards' ? 'bg-blue-600 text-white' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-600'}`}
-                                    title="Cards Only View"
-                                >
-                                    <Grid class="w-4 h-4" />
-                                </button>
-                                <button
-                                    onClick={() => setViewMode('map')}
-                                    class={`p-2 rounded ${viewMode() === 'map' ? 'bg-blue-600 text-white' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-600'}`}
-                                    title="Map Only View"
-                                >
-                                    <Map class="w-4 h-4" />
-                                </button>
+                                {/* Sort */}
+                                <div class="flex items-center gap-2">
+                                    <select
+                                        value={sortBy()}
+                                        onChange={(e) => setSortBy(e.target.value)}
+                                        class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    >
+                                        <For each={sortOptions}>
+                                            {(option) => <option value={option.id}>{option.label}</option>}
+                                        </For>
+                                    </select>
+                                    <button
+                                        onClick={() => setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc')}
+                                        class="p-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 bg-white dark:bg-gray-700"
+                                    >
+                                        {sortOrder() === 'asc' ? <SortAsc class="w-4 h-4 text-gray-600 dark:text-gray-400" /> : <SortDesc class="w-4 h-4 text-gray-600 dark:text-gray-400" />}
+                                    </button>
+                                </div>
+
+                                {/* View mode - 3 modes: map+cards, cards only, map only */}
+                                <div class="flex items-center border border-gray-300 dark:border-gray-600 rounded-lg p-1 bg-white dark:bg-gray-700">
+                                    <button
+                                        onClick={() => setViewMode('map-cards')}
+                                        class={`p-2 rounded text-xs font-medium ${viewMode() === 'map-cards' ? 'bg-blue-600 text-white' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-600'}`}
+                                        title="Map + Cards View"
+                                    >
+                                        <div class="flex items-center gap-1">
+                                            <Map class="w-3 h-3" />
+                                            <Grid class="w-3 h-3" />
+                                        </div>
+                                    </button>
+                                    <button
+                                        onClick={() => setViewMode('cards')}
+                                        class={`p-2 rounded ${viewMode() === 'cards' ? 'bg-blue-600 text-white' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-600'}`}
+                                        title="Cards Only View"
+                                    >
+                                        <Grid class="w-4 h-4" />
+                                    </button>
+                                    <button
+                                        onClick={() => setViewMode('map')}
+                                        class={`p-2 rounded ${viewMode() === 'map' ? 'bg-blue-600 text-white' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-600'}`}
+                                        title="Map Only View"
+                                    >
+                                        <Map class="w-4 h-4" />
+                                    </button>
+                                </div>
                             </div>
                         </div>
-                    </div>
                     </div>
                 </div>
             </div>
@@ -711,7 +711,7 @@ export default function DiscoverPage() {
                                     pointsOfInterest={filteredPois()}
                                 />
                             </div>
-                            
+
                             {/* Cards Section */}
                             <div class="w-full lg:w-1/2 h-full overflow-y-auto">
                                 <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-1 gap-4 pr-2">
