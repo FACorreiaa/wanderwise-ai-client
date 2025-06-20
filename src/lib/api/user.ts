@@ -90,21 +90,7 @@ export const useDeleteProfileMutation = () => {
   }));
 };
 
-export const useSetDefaultProfileMutation = () => {
-  const queryClient = useQueryClient();
-
-  return useMutation(() => ({
-    mutationFn: (profileId: string) =>
-      apiRequest<{ message: string }>(`/user/search-profile/default/${profileId}`, { method: 'PUT' }),
-    onSuccess: (_, profileId) => {
-      // Update all profiles to reflect new default
-      queryClient.setQueryData(queryKeys.profiles, (old: UserProfile[] = []) =>
-        old.map(profile => ({ ...profile, is_default: profile.id === profileId }))
-      );
-      queryClient.invalidateQueries({ queryKey: queryKeys.defaultProfile });
-    },
-  }));
-};
+// useSetDefaultProfileMutation is exported from profiles.ts
 
 export const useUploadAvatarMutation = () => {
   const queryClient = useQueryClient();

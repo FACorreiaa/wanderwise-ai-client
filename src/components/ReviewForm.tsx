@@ -1,10 +1,21 @@
 import { createSignal, Show, For } from 'solid-js';
 import { Star, Camera, X, Upload, MapPin, Calendar, Users } from 'lucide-solid';
+import type { PhotoUploadEvent, UploadedPhoto } from '../lib/api/types';
+
+interface ReviewData {
+    rating: number;
+    title: string;
+    content: string;
+    visitDate: string;
+    travelType: string;
+    photos: UploadedPhoto[];
+    poiId?: string;
+}
 
 interface ReviewFormProps {
     poiId?: string;
     poiName?: string;
-    onSubmit: (reviewData: any) => void;
+    onSubmit: (reviewData: ReviewData) => void;
     onCancel: () => void;
     isOpen: boolean;
 }
@@ -46,7 +57,7 @@ export default function ReviewForm(props: ReviewFormProps) {
         });
     };
 
-    const handlePhotoUpload = (event) => {
+    const handlePhotoUpload = (event: PhotoUploadEvent) => {
         const files = Array.from(event.target.files);
         // In a real app, you would upload these files
         const newPhotos = files.map((file, index) => ({
@@ -57,11 +68,11 @@ export default function ReviewForm(props: ReviewFormProps) {
         setPhotos(prev => [...prev, ...newPhotos]);
     };
 
-    const removePhoto = (photoId) => {
+    const removePhoto = (photoId: string) => {
         setPhotos(prev => prev.filter(photo => photo.id !== photoId));
     };
 
-    const handleSubmit = async (e) => {
+    const handleSubmit = async (e: SubmitEvent) => {
         e.preventDefault();
         
         if (!rating() || !content().trim()) {
@@ -100,7 +111,7 @@ export default function ReviewForm(props: ReviewFormProps) {
         setPhotos([]);
     };
 
-    const getRatingLabel = (rating) => {
+    const getRatingLabel = (rating: number): string => {
         const labels = {
             1: 'Terrible',
             2: 'Poor',
@@ -128,7 +139,7 @@ export default function ReviewForm(props: ReviewFormProps) {
                         <button
                             onClick={props.onCancel}
                             class="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors">
-                        >
+                        
                             <X class="w-5 h-5" />
                         </button>
                     </div>

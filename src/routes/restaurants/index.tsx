@@ -229,41 +229,94 @@ export default function RestaurantsPage() {
         const IconComponent = getCuisineIcon(restaurant.cuisine);
         return (
             <div
-                class={`bg-white rounded-lg border p-4 cursor-pointer transition-all hover:shadow-md ${selectedRestaurant()?.id === restaurant.id ? 'ring-2 ring-blue-500 shadow-md' : 'border-gray-200'}`}
+                class={`bg-white rounded-lg border p-4 cursor-pointer transition-all hover:shadow-md ${selectedRestaurant()?.id === restaurant.id ? 'ring-2 ring-orange-500 shadow-md' : 'border-gray-200'}`}
                 onClick={() => setSelectedRestaurant(restaurant)}
             >
                 <div class="flex items-start gap-3">
-                    <div class="w-10 h-10 rounded-full bg-orange-500 flex items-center justify-center flex-shrink-0">
-                        <IconComponent class="w-5 h-5 text-white" />
+                    <div class="w-12 h-12 rounded-full bg-orange-500 flex items-center justify-center flex-shrink-0">
+                        <IconComponent class="w-6 h-6 text-white" />
                     </div>
                     <div class="flex-1 min-w-0">
                         <div class="flex items-start justify-between mb-2">
-                            <div>
-                                <h3 class="font-semibold text-gray-900 text-sm">{restaurant.name}</h3>
-                                <p class="text-xs text-gray-500">{restaurant.cuisine}</p>
+                            <div class="flex-1 min-w-0">
+                                <h3 class="font-semibold text-gray-900 text-base mb-1">{restaurant.name}</h3>
+                                
+                                {/* Enhanced Filter Labels */}
+                                <div class="flex flex-wrap items-center gap-2 mb-2">
+                                    {/* Cuisine Type Label */}
+                                    <span class="px-3 py-1 bg-orange-100 text-orange-800 rounded-full text-xs font-medium">
+                                        🍽️ {restaurant.cuisine}
+                                    </span>
+                                    
+                                    {/* Price Range with Enhanced Styling */}
+                                    <span class={`px-3 py-1 rounded-full text-xs font-bold border ${getPriceColor(restaurant.priceRange).includes('green') ? 'bg-green-50 text-green-700 border-green-200' : 
+                                        getPriceColor(restaurant.priceRange).includes('blue') ? 'bg-blue-50 text-blue-700 border-blue-200' :
+                                        getPriceColor(restaurant.priceRange).includes('orange') ? 'bg-orange-50 text-orange-700 border-orange-200' :
+                                        'bg-red-50 text-red-700 border-red-200'}`}>
+                                        {restaurant.priceRange} {restaurant.priceRange === '€' ? 'Budget' : restaurant.priceRange === '€€' ? 'Moderate' : restaurant.priceRange === '€€€' ? 'Fine Dining' : 'Luxury'}
+                                    </span>
+                                    
+                                    {/* Rating/Popularity Label */}
+                                    <Show when={restaurant.rating >= 4.5}>
+                                        <span class="px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs font-medium">
+                                            ⭐ Highly Rated
+                                        </span>
+                                    </Show>
+                                    <Show when={restaurant.rating >= 4.0 && restaurant.rating < 4.5}>
+                                        <span class="px-3 py-1 bg-green-100 text-green-800 rounded-full text-xs font-medium">
+                                            ✓ Popular
+                                        </span>
+                                    </Show>
+                                    
+                                    {/* Featured Special Labels */}
+                                    <Show when={restaurant.features.includes('Vegetarian') || restaurant.features.includes('Vegan')}>
+                                        <span class="px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs">
+                                            🌱 Vegetarian
+                                        </span>
+                                    </Show>
+                                    <Show when={restaurant.features.includes('Outdoor') || restaurant.features.includes('Terrace')}>
+                                        <span class="px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-xs">
+                                            🌤️ Terrace
+                                        </span>
+                                    </Show>
+                                    <Show when={restaurant.features.includes('Wine') || restaurant.features.includes('Bar')}>
+                                        <span class="px-2 py-1 bg-purple-100 text-purple-700 rounded-full text-xs">
+                                            🍷 Wine Bar
+                                        </span>
+                                    </Show>
+                                </div>
                             </div>
-                            <div class="flex items-center gap-1 text-xs">
+                            
+                            {/* Rating Badge */}
+                            <div class="flex items-center gap-1 bg-yellow-50 px-2 py-1 rounded-full border border-yellow-200">
                                 <Star class="w-3 h-3 text-yellow-500 fill-current" />
-                                <span class="text-gray-600">{restaurant.rating}</span>
-                                <span class="text-gray-400">({restaurant.reviewCount})</span>
+                                <span class="text-yellow-800 font-medium text-xs">{restaurant.rating}</span>
+                                <span class="text-yellow-600 text-xs">({restaurant.reviewCount})</span>
                             </div>
                         </div>
-                        <p class="text-xs text-gray-600 mb-3 line-clamp-2">{restaurant.description}</p>
-                        <div class="flex items-center justify-between text-xs">
+                        
+                        <p class="text-sm text-gray-600 mb-3 line-clamp-2">{restaurant.description}</p>
+                        
+                        {/* Enhanced Footer with Better Visual Hierarchy */}
+                        <div class="flex items-center justify-between">
                             <div class="flex items-center gap-3">
-                                <div class={`font-medium ${getPriceColor(restaurant.priceRange)}`}>
-                                    {restaurant.priceRange}
-                                </div>
-                                <div class="text-gray-500">
-                                    {restaurant.averagePrice}
+                                <div class="text-lg font-bold text-gray-900">
+                                    {restaurant.averagePrice || restaurant.priceRange}/person
                                 </div>
                             </div>
-                            <div class="flex flex-wrap gap-1">
-                                {restaurant.features.slice(0, 2).map(feature => (
-                                    <span class="bg-blue-100 text-blue-800 px-1.5 py-0.5 rounded text-xs">
+                            
+                            {/* Feature Tags */}
+                            <div class="flex items-center gap-1">
+                                {restaurant.features.slice(0, 3).map(feature => (
+                                    <span class="bg-gray-100 text-gray-700 px-2 py-1 rounded-md text-xs font-medium">
                                         {feature}
                                     </span>
                                 ))}
+                                <Show when={restaurant.features.length > 3}>
+                                    <span class="bg-gray-100 text-gray-500 px-2 py-1 rounded-md text-xs">
+                                        +{restaurant.features.length - 3}
+                                    </span>
+                                </Show>
                             </div>
                         </div>
                     </div>
@@ -488,18 +541,21 @@ export default function RestaurantsPage() {
                                 <button
                                     onClick={() => setViewMode('map')}
                                     class={`flex-1 px-3 py-1 rounded text-sm font-medium transition-colors sm:flex-initial ${viewMode() === 'map' ? 'bg-white dark:bg-gray-600 text-gray-900 dark:text-white shadow-sm' : 'text-gray-600 dark:text-gray-300'}`}
+                                    title="Show only map"
                                 >
                                     Map
                                 </button>
                                 <button
                                     onClick={() => setViewMode('split')}
                                     class={`flex-1 px-3 py-1 rounded text-sm font-medium transition-colors sm:flex-initial ${viewMode() === 'split' ? 'bg-white dark:bg-gray-600 text-gray-900 dark:text-white shadow-sm' : 'text-gray-600 dark:text-gray-300'}`}
+                                    title="Split view: Map + Cards"
                                 >
                                     Split
                                 </button>
                                 <button
                                     onClick={() => setViewMode('list')}
                                     class={`flex-1 px-3 py-1 rounded text-sm font-medium transition-colors sm:flex-initial ${viewMode() === 'list' ? 'bg-white dark:bg-gray-600 text-gray-900 dark:text-white shadow-sm' : 'text-gray-600 dark:text-gray-300'}`}
+                                    title="Show only cards"
                                 >
                                     List
                                 </button>
@@ -606,6 +662,22 @@ export default function RestaurantsPage() {
                                         compact={false}
                                         showToggle={filteredRestaurants().length > 5}
                                         initialLimit={5}
+                                        onFavoriteClick={(restaurant) => {
+                                            console.log('Add to favorites:', restaurant.name);
+                                            addToFavorites(restaurant);
+                                        }}
+                                        onShareClick={(restaurant) => {
+                                            if (navigator.share) {
+                                                navigator.share({
+                                                    title: restaurant.name,
+                                                    text: `Check out ${restaurant.name} - ${restaurant.description_poi}`,
+                                                    url: window.location.href
+                                                });
+                                            } else {
+                                                navigator.clipboard.writeText(`Check out ${restaurant.name}: ${restaurant.description_poi}`);
+                                            }
+                                        }}
+                                        favorites={myFavorites().map(f => f.name)}
                                     />
                                 </Show>
                             </div>

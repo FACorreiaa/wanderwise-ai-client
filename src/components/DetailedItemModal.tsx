@@ -275,7 +275,7 @@ export default function DetailedItemModal(props: DetailedItemModalProps) {
                 <div>
                   <h3 class="font-semibold text-gray-900 dark:text-white mb-3">Amenities</h3>
                   <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                    {props.item.amenities!.map(amenity => (
+                    {props.item.amenities!.map((amenity: string) => (
                       <div class="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
                         {getAmenityIcon(amenity) || <div class="w-2 h-2 bg-green-500 rounded-full"></div>}
                         <span>{amenity}</span>
@@ -289,7 +289,7 @@ export default function DetailedItemModal(props: DetailedItemModalProps) {
                 <div>
                   <h3 class="font-semibold text-gray-900 dark:text-white mb-3">Tags</h3>
                   <div class="flex flex-wrap gap-2">
-                    {props.item.tags!.map(tag => (
+                    {props.item.tags!.map((tag: string) => (
                       <span class="bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-2 py-1 rounded-full text-xs">
                         {tag}
                       </span>

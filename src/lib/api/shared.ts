@@ -1,14 +1,27 @@
 // Shared utilities and types for API queries
 import { useQueryClient } from '@tanstack/solid-query';
 import type { UserProfile, Interest, POI } from './types';
+import { defaultLLMRateLimiter, RateLimitError, showRateLimitNotification } from '../rate-limiter';
 
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1';
 
-// Enhanced request wrapper with better error handling
+// Enhanced request wrapper with better error handling and rate limiting
 export async function apiRequest<T>(
   endpoint: string,
   options: RequestInit = {}
 ): Promise<T> {
+  // Apply client-side rate limiting for LLM endpoints
+  const rateLimitCheck = await defaultLLMRateLimiter.checkRateLimit(endpoint);
+  if (!rateLimitCheck.allowed) {
+    const retryAfter = rateLimitCheck.retryAfter || 60;
+    showRateLimitNotification(retryAfter, endpoint);
+    throw new RateLimitError(
+      `Rate limit exceeded for ${endpoint}. Retry after ${retryAfter} seconds.`,
+      retryAfter,
+      endpoint
+    );
+  }
+
   // Check both localStorage (persistent) and sessionStorage (temporary) for token
   const token = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
 
@@ -26,6 +39,17 @@ export async function apiRequest<T>(
   const response = await fetch(url, config);
 
   if (!response.ok) {
+    // Handle server-side rate limiting
+    if (response.status === 429) {
+      const retryAfter = parseInt(response.headers.get('Retry-After') || '60');
+      showRateLimitNotification(retryAfter, endpoint);
+      throw new RateLimitError(
+        `Server rate limit exceeded for ${endpoint}. Retry after ${retryAfter} seconds.`,
+        retryAfter,
+        endpoint
+      );
+    }
+
     if (response.status === 401) {
       // Clear both storage types on unauthorized
       localStorage.removeItem('access_token');
@@ -88,13 +112,13 @@ export const queryKeys = {
 
   // Hotels
   hotels: ['hotels'] as const,
-  hotelsByPreferences: (preferences: any) => ['hotels', 'preferences', preferences] as const,
+  hotelsByPreferences: (preferences: Record<string, unknown>) => ['hotels', 'preferences', preferences] as const,
   nearbyHotels: (lat: number, lng: number, radius?: number) => ['hotels', 'nearby', lat, lng, radius] as const,
   hotelDetails: (id: string) => ['hotels', 'details', id] as const,
 
   // Restaurants
   restaurants: ['restaurants'] as const,
-  restaurantsByPreferences: (preferences: any) => ['restaurants', 'preferences', preferences] as const,
+  restaurantsByPreferences: (preferences: Record<string, unknown>) => ['restaurants', 'preferences', preferences] as const,
   nearbyRestaurants: (lat: number, lng: number, radius?: number) => ['restaurants', 'nearby', lat, lng, radius] as const,
   restaurantDetails: (id: string) => ['restaurants', 'details', id] as const,
 
@@ -104,6 +128,10 @@ export const queryKeys = {
   
   // Cities
   cities: ['cities'] as const,
+
+  // Recents
+  recents: ['recents'] as const,
+  recentCityDetails: (cityName: string) => ['recents', 'city', cityName] as const,
 };
 
 // Utility hooks

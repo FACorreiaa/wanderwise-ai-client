@@ -1,6 +1,6 @@
 import { createSignal, For, Show, createEffect, onMount } from 'solid-js';
-import { useLocation } from '@solidjs/router';
-import { Search, Filter, MapPin, Star, Heart, Bookmark, Clock, DollarSign, Users, Wifi, Camera, Grid, List, SortAsc, SortDesc, X, Compass, Map } from 'lucide-solid';
+import { useLocation, useNavigate } from '@solidjs/router';
+import { Search, Filter, MapPin, Star, Heart, Bookmark, Clock, DollarSign, Users, Wifi, Camera, Grid, List, SortAsc, SortDesc, X, Compass, Map, Share2, Eye } from 'lucide-solid';
 import { useNearbyPOIs, useSearchPOIs, useFavorites, useAddToFavoritesMutation, useRemoveFromFavoritesMutation } from '~/lib/api/pois';
 import { useCities, convertCitiesToDropdownFormat } from '~/lib/api/cities';
 import type { ActivitiesResponse, POIDetailedInfo } from '~/lib/api/types';
@@ -15,12 +15,14 @@ export default function DiscoverPage() {
     const [selectedPrice, setSelectedPrice] = createSignal('all');
     const [sortBy, setSortBy] = createSignal('popularity'); // 'popularity', 'rating', 'distance', 'price'
     const [sortOrder, setSortOrder] = createSignal('desc');
-    const [viewMode, setViewMode] = createSignal('grid'); // 'grid', 'list', 'map'
+    const [viewMode, setViewMode] = createSignal('map-cards'); // 'map-cards', 'cards', 'map'
     const [showFilters, setShowFilters] = createSignal(false);
     const [streamingData, setStreamingData] = createSignal<ActivitiesResponse | null>(null);
     const [fromChat, setFromChat] = createSignal(false);
-    const { userLocation } = useUserLocation()
+    const { userLocation } = useUserLocation();
     const [searchRadius, setSearchRadius] = createSignal(10000);
+    const navigate = useNavigate();
+    const location = useLocation();
 
     // API hooks
     const favoritesQuery = useFavorites();
@@ -28,15 +30,13 @@ export default function DiscoverPage() {
     const removeFromFavoritesMutation = useRemoveFromFavoritesMutation();
     //const citiesQuery = useCities();
 
-    // Current location for nearby search (could come from geolocation)
-    //const [currentLocation, setCurrentLocation] = createSignal({ lat: 41.1579, lng: -8.6291 });
-
     // Discover is location-based, no city selection needed
 
     // Create reactive filters (no city filter for discover)
     const currentFilters = () => ({
         category: selectedCategory() !== 'all' ? selectedCategory() : undefined,
         price_range: selectedPrice() !== 'all' ? selectedPrice() : undefined,
+        min_rating: selectedRating() !== 'all' ? selectedRating() : undefined,
     });
 
     // Get coordinates based on user location (discover is always location-based)
@@ -49,19 +49,15 @@ export default function DiscoverPage() {
         return coords;
     };
 
-    const nearbyPOIsQuery = useNearbyPOIs(
-        () => getSearchCoordinates().lat,
-        () => getSearchCoordinates().lon,
-        searchRadius, // Pass the signal getter directly
-        currentFilters
-    );
-
-
     const radiusOptions = [
         { value: 1000, label: '1 km' },
         { value: 5000, label: '5 km' },
         { value: 10000, label: '10 km' },
         { value: 25000, label: '25 km' },
+        { value: 50000, label: '50 km' },
+        { value: 75000, label: '75 km' },
+        { value: 100000, label: '100 km' },
+
     ];
 
     const searchPOIsQuery = useSearchPOIs(
@@ -115,9 +111,11 @@ export default function DiscoverPage() {
     const [pois] = useNearbyPOIs(
         () => userLocation()?.latitude,
         () => userLocation()?.longitude,
-        searchRadius, // Signal getter
+        () => searchRadius(), // Fix: Pass as function that returns signal value
         currentFilters // Function returning filters
     );
+
+
 
     console.log('pois', pois())
 
@@ -207,19 +205,8 @@ export default function DiscoverPage() {
             );
         }
 
-        // Note: City and Category filters are now handled server-side in the API
-        // No need for client-side filtering on these fields
-
-        // Rating filter
-        if (selectedRating() !== 'all') {
-            const minRating = parseInt(selectedRating());
-            filtered = filtered.filter(poi => poi.rating >= minRating);
-        }
-
-        // Price filter
-        if (selectedPrice() !== 'all') {
-            filtered = filtered.filter(poi => poi.price === selectedPrice());
-        }
+        // Note: Category, Price, and Rating filters are now handled server-side in the API
+        // Only search query is handled client-side for real-time filtering
 
         // Sort
         filtered.sort((a, b) => {
@@ -263,14 +250,69 @@ export default function DiscoverPage() {
         }
     };
 
+    // Handle POI item click for details view
+    const handleItemClick = (poi: any, type: string) => {
+        console.log('Viewing details for:', poi.name);
+        // Navigate to POI details page or open modal
+        // navigate(`/poi/${poi.id}`);
+    };
+
+    // Handle sharing a POI
+    const handleShare = (poi: any) => {
+        if (navigator.share) {
+            navigator.share({
+                title: poi.name,
+                text: `Check out ${poi.name} - ${poi.description}`,
+                url: window.location.href + `?poi=${poi.id}`
+            }).catch(err => console.log('Error sharing:', err));
+        } else {
+            // Fallback to clipboard
+            const shareText = `Check out ${poi.name}: ${poi.description}`;
+            navigator.clipboard.writeText(shareText)
+                .then(() => {
+                    // Show notification
+                    console.log('Copied to clipboard!');
+                })
+                .catch(err => console.log('Failed to copy:', err));
+        }
+    };
+
     const getPriceColor = (price: string) => {
         const colorMap = {
             'Free': 'text-green-600 bg-green-50 dark:text-green-400 dark:bg-green-900',
             '€': 'text-blue-600 bg-blue-50 dark:text-blue-400 dark:bg-blue-900',
             '€€': 'text-orange-600 bg-orange-50 dark:text-orange-400 dark:bg-orange-900',
-            '€€€': 'text-red-600 bg-red-50 dark:text-red-400 dark:bg-red-900'
+            '€€€': 'text-red-600 bg-red-50 dark:text-red-400 dark:bg-red-900',
+            '€€€€': 'text-purple-600 bg-purple-50 dark:text-purple-400 dark:bg-purple-900'
         };
         return colorMap[price] || 'text-gray-600 bg-gray-50 dark:text-gray-400 dark:bg-gray-800';
+    };
+
+    const getPopularityInfo = (priority: number) => {
+        if (priority >= 9) {
+            return { label: 'Trending', color: 'text-red-600 bg-red-50 dark:text-red-400 dark:bg-red-900', icon: '🔥' };
+        } else if (priority >= 7) {
+            return { label: 'Popular', color: 'text-orange-600 bg-orange-50 dark:text-orange-400 dark:bg-orange-900', icon: '⭐' };
+        } else if (priority >= 5) {
+            return { label: 'Liked', color: 'text-blue-600 bg-blue-50 dark:text-blue-400 dark:bg-blue-900', icon: '👍' };
+        } else if (priority >= 3) {
+            return { label: 'Rising', color: 'text-green-600 bg-green-50 dark:text-green-400 dark:bg-green-900', icon: '📈' };
+        }
+        return null; // Don't show anything for low popularity
+    };
+
+    const getCategoryColor = (category: string) => {
+        const categoryColorMap = {
+            'restaurant': 'text-red-700 bg-red-100 dark:text-red-300 dark:bg-red-900',
+            'museum': 'text-purple-700 bg-purple-100 dark:text-purple-300 dark:bg-purple-900',
+            'park': 'text-green-700 bg-green-100 dark:text-green-300 dark:bg-green-900',
+            'landmark': 'text-blue-700 bg-blue-100 dark:text-blue-300 dark:bg-blue-900',
+            'historical': 'text-amber-700 bg-amber-100 dark:text-amber-300 dark:bg-amber-900',
+            'entertainment': 'text-pink-700 bg-pink-100 dark:text-pink-300 dark:bg-pink-900',
+            'cultural': 'text-indigo-700 bg-indigo-100 dark:text-indigo-300 dark:bg-indigo-900',
+            'beach': 'text-cyan-700 bg-cyan-100 dark:text-cyan-300 dark:bg-cyan-900'
+        };
+        return categoryColorMap[category.toLowerCase()] || 'text-gray-700 bg-gray-100 dark:text-gray-300 dark:bg-gray-700';
     };
 
     const renderGridCard = (poi) => (
@@ -304,8 +346,11 @@ export default function DiscoverPage() {
                         >
                             <Heart class={`w-4 h-4 ${isFavorite(poi.id) ? 'fill-current' : ''}`} />
                         </button>
-                        <button class="p-2 bg-white/90 text-gray-700 rounded-lg hover:scale-110 transition-transform">
-                            <Bookmark class="w-4 h-4" />
+                        <button
+                            onClick={() => handleShare(poi)}
+                            class="p-2 bg-white/90 text-gray-700 rounded-lg hover:scale-110 transition-transform"
+                        >
+                            <Share2 class="w-4 h-4" />
                         </button>
                     </div>
                 </div>
@@ -325,7 +370,28 @@ export default function DiscoverPage() {
                 <div class="flex items-start justify-between mb-2">
                     <div class="flex-1 min-w-0">
                         <h3 class="font-semibold text-gray-900 dark:text-white text-base mb-1 truncate">{poi.name}</h3>
-                        <p class="text-sm text-gray-600 dark:text-gray-400">{poi.category} • {poi.city}</p>
+                        <div class="flex flex-wrap items-center gap-2 mb-1">
+                            <span class={`px-2 py-0.5 rounded-full text-xs font-medium ${getCategoryColor(poi.category)}`}>
+                                {poi.category}
+                            </span>
+                            <Show when={poi.priority && getPopularityInfo(poi.priority)}>
+                                {(() => {
+                                    const popularityInfo = getPopularityInfo(poi.priority);
+                                    return popularityInfo ? (
+                                        <span class={`px-2 py-0.5 rounded-full text-xs font-medium ${popularityInfo.color}`}>
+                                            <span class="mr-1">{popularityInfo.icon}</span>
+                                            {popularityInfo.label}
+                                        </span>
+                                    ) : null;
+                                })()}
+                            </Show>
+                            <Show when={poi.timeToSpend || poi.time_to_spend}>
+                                <span class="px-2 py-0.5 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full text-xs">
+                                    {poi.timeToSpend || poi.time_to_spend}
+                                </span>
+                            </Show>
+                        </div>
+                        <p class="text-sm text-gray-600 dark:text-gray-400">{poi.city}</p>
                     </div>
                     <span class={`px-2 py-1 rounded-full text-xs font-medium ${getPriceColor(poi.price)}`}>
                         {poi.price}
@@ -398,9 +464,30 @@ export default function DiscoverPage() {
                 {/* Content */}
                 <div class="flex-1 min-w-0">
                     <div class="flex items-start justify-between mb-2">
-                        <div>
+                        <div class="flex-1 min-w-0">
                             <h3 class="font-semibold text-gray-900 dark:text-white text-lg">{poi.name}</h3>
-                            <p class="text-sm text-gray-600 dark:text-gray-400">{poi.category} • {poi.city}, {poi.country}</p>
+                            <div class="flex flex-wrap items-center gap-2 mb-1">
+                                <span class={`px-2 py-0.5 rounded-full text-xs font-medium ${getCategoryColor(poi.category)}`}>
+                                    {poi.category}
+                                </span>
+                                <Show when={poi.priority && getPopularityInfo(poi.priority)}>
+                                    {(() => {
+                                        const popularityInfo = getPopularityInfo(poi.priority);
+                                        return popularityInfo ? (
+                                            <span class={`px-2 py-0.5 rounded-full text-xs font-medium ${popularityInfo.color}`}>
+                                                <span class="mr-1">{popularityInfo.icon}</span>
+                                                {popularityInfo.label}
+                                            </span>
+                                        ) : null;
+                                    })()}
+                                </Show>
+                                <Show when={poi.timeToSpend || poi.time_to_spend}>
+                                    <span class="px-2 py-0.5 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full text-xs">
+                                        {poi.timeToSpend || poi.time_to_spend}
+                                    </span>
+                                </Show>
+                            </div>
+                            <p class="text-sm text-gray-600 dark:text-gray-400">{poi.city}, {poi.country}</p>
                         </div>
                         <div class="flex items-center gap-2">
                             <div class="flex items-center gap-1">
@@ -429,14 +516,23 @@ export default function DiscoverPage() {
                             <button
                                 onClick={() => toggleFavorite(poi.id)}
                                 class={`p-2 rounded-lg ${isFavorite(poi.id) ? 'text-red-600 dark:text-red-400' : 'text-gray-400'} hover:bg-gray-100 dark:hover:bg-gray-700`}
+                                title="Add to favorites"
                             >
                                 <Heart class={`w-4 h-4 ${isFavorite(poi.id) ? 'fill-current' : ''}`} />
+                            </button>
+                            <button
+                                onClick={() => handleShare(poi)}
+                                class="p-2 rounded-lg text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700"
+                                title="Share this place"
+                            >
+                                <Share2 class="w-4 h-4" />
                             </button>
                             <button
                                 onClick={() => handleItemClick(poi, 'poi')}
                                 class="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium text-sm"
                             >
-                                View Details →
+                                <Eye class="w-4 h-4 inline mr-1" />
+                                Details
                             </button>
                         </div>
                     </div>
@@ -499,96 +595,118 @@ export default function DiscoverPage() {
             {/* Search and Filters */}
             <div class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
                 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-                    <div class="flex flex-col lg:flex-row lg:items-center gap-4">
-                        {/* Search */}
-                        <div class="relative flex-1 max-w-md">
-                            <Search class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                            <input
-                                type="text"
-                                placeholder="Search places..."
-                                value={searchQuery()}
-                                onInput={(e) => setSearchQuery(e.target.value)}
-                                class="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                            />
+                    <div class="flex flex-col gap-4">
+                        {/* Top row: Search + Filter toggle */}
+                        <div class="flex flex-col sm:flex-row sm:items-center gap-4">
+                            {/* Search */}
+                            <div class="relative flex-1 max-w-md">
+                                <Search class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                                <input
+                                    type="text"
+                                    placeholder="Search places..."
+                                    value={searchQuery()}
+                                    onInput={(e) => setSearchQuery(e.target.value)}
+                                    class="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                />
+                            </div>
+
+                            {/* Mobile filter toggle */}
+                            <div class="flex items-center gap-2 sm:hidden">
+                                <button
+                                    onClick={() => setShowFilters(!showFilters())}
+                                    class="flex items-center gap-2 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-600"
+                                >
+                                    <Filter class="w-4 h-4" />
+                                    Filters
+                                </button>
+                            </div>
                         </div>
 
-                        {/* Filters */}
-                        <div class="flex items-center gap-4 overflow-x-auto">
-                            <div class="flex items-center gap-2">
-                                <label for="radius-select" class="text-sm font-medium text-gray-700 dark:text-gray-300 flex-shrink-0">
-                                    Radius:
-                                </label>
+                        {/* Filters - Always visible on desktop, collapsible on mobile */}
+                        <div class={`${showFilters() ? 'block' : 'hidden'} sm:block`}>
+                            <div class="flex flex-col sm:flex-row sm:items-center gap-4 overflow-x-auto">
+                                <div class="flex items-center gap-2">
+                                    <label for="radius-select" class="text-sm font-medium text-gray-700 dark:text-gray-300 flex-shrink-0">
+                                        Radius:
+                                    </label>
+                                    <select
+                                        id="radius-select"
+                                        value={searchRadius()}
+                                        onChange={(e) => setSearchRadius(parseInt(e.target.value))}
+                                        class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    >
+                                        <For each={radiusOptions}>
+                                            {(option) => <option value={option.value}>{option.label}</option>}
+                                        </For>
+                                    </select>
+                                </div>
+
                                 <select
-                                    id="radius-select"
-                                    value={searchRadius()}
-                                    onChange={(e) => setSearchRadius(parseInt(e.target.value))}
+                                    value={selectedCategory()}
+                                    onChange={(e) => setSelectedCategory(e.target.value)}
                                     class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                 >
-                                    <For each={radiusOptions}>
-                                        {(option) => <option value={option.value}>{option.label}</option>}
+                                    <For each={categories}>
+                                        {(category) => <option value={category.id}>{category.label}</option>}
                                     </For>
                                 </select>
-                            </div>
 
-                            <select
-                                value={selectedCategory()}
-                                onChange={(e) => setSelectedCategory(e.target.value)}
-                                class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                            >
-                                <For each={categories}>
-                                    {(category) => <option value={category.id}>{category.label}</option>}
-                                </For>
-                            </select>
-
-                            <select
-                                value={selectedPrice()}
-                                onChange={(e) => setSelectedPrice(e.target.value)}
-                                class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                            >
-                                <For each={priceRanges}>
-                                    {(price) => <option value={price.id}>{price.label}</option>}
-                                </For>
-                            </select>
-
-                            {/* Sort */}
-                            <div class="flex items-center gap-2">
                                 <select
-                                    value={sortBy()}
-                                    onChange={(e) => setSortBy(e.target.value)}
+                                    value={selectedPrice()}
+                                    onChange={(e) => setSelectedPrice(e.target.value)}
                                     class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                 >
-                                    <For each={sortOptions}>
-                                        {(option) => <option value={option.id}>{option.label}</option>}
+                                    <For each={priceRanges}>
+                                        {(price) => <option value={price.id}>{price.label}</option>}
                                     </For>
                                 </select>
-                                <button
-                                    onClick={() => setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc')}
-                                    class="p-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 bg-white dark:bg-gray-700"
-                                >
-                                    {sortOrder() === 'asc' ? <SortAsc class="w-4 h-4 text-gray-600 dark:text-gray-400" /> : <SortDesc class="w-4 h-4 text-gray-600 dark:text-gray-400" />}
-                                </button>
-                            </div>
 
-                            {/* View mode */}
-                            <div class="flex items-center border border-gray-300 dark:border-gray-600 rounded-lg p-1 bg-white dark:bg-gray-700">
-                                <button
-                                    onClick={() => setViewMode('grid')}
-                                    class={`p-2 rounded ${viewMode() === 'grid' ? 'bg-blue-600 text-white' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-600'}`}
-                                >
-                                    <Grid class="w-4 h-4" />
-                                </button>
-                                <button
-                                    onClick={() => setViewMode('list')}
-                                    class={`p-2 rounded ${viewMode() === 'list' ? 'bg-blue-600 text-white' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-600'}`}
-                                >
-                                    <List class="w-4 h-4" />
-                                </button>
-                                <button
-                                    onClick={() => setViewMode('map')}
-                                    class={`p-2 rounded ${viewMode() === 'map' ? 'bg-blue-600 text-white' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-600'}`}
-                                >
-                                    <Map class="w-4 h-4" />
-                                </button>
+                                {/* Sort */}
+                                <div class="flex items-center gap-2">
+                                    <select
+                                        value={sortBy()}
+                                        onChange={(e) => setSortBy(e.target.value)}
+                                        class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    >
+                                        <For each={sortOptions}>
+                                            {(option) => <option value={option.id}>{option.label}</option>}
+                                        </For>
+                                    </select>
+                                    <button
+                                        onClick={() => setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc')}
+                                        class="p-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 bg-white dark:bg-gray-700"
+                                    >
+                                        {sortOrder() === 'asc' ? <SortAsc class="w-4 h-4 text-gray-600 dark:text-gray-400" /> : <SortDesc class="w-4 h-4 text-gray-600 dark:text-gray-400" />}
+                                    </button>
+                                </div>
+
+                                {/* View mode - 3 modes: map+cards, cards only, map only */}
+                                <div class="flex items-center border border-gray-300 dark:border-gray-600 rounded-lg p-1 bg-white dark:bg-gray-700">
+                                    <button
+                                        onClick={() => setViewMode('map-cards')}
+                                        class={`p-2 rounded text-xs font-medium ${viewMode() === 'map-cards' ? 'bg-blue-600 text-white' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-600'}`}
+                                        title="Split view: Map + Cards"
+                                    >
+                                        <div class="flex items-center gap-1">
+                                            <Map class="w-3 h-3" />
+                                            <Grid class="w-3 h-3" />
+                                        </div>
+                                    </button>
+                                    <button
+                                        onClick={() => setViewMode('cards')}
+                                        class={`p-2 rounded ${viewMode() === 'cards' ? 'bg-blue-600 text-white' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-600'}`}
+                                        title="Show only cards"
+                                    >
+                                        <Grid class="w-4 h-4" />
+                                    </button>
+                                    <button
+                                        onClick={() => setViewMode('map')}
+                                        class={`p-2 rounded ${viewMode() === 'map' ? 'bg-blue-600 text-white' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-600'}`}
+                                        title="Show only map"
+                                    >
+                                        <Map class="w-4 h-4" />
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -614,23 +732,46 @@ export default function DiscoverPage() {
                         </div>
                     }
                 >
+                    {/* Map + Cards View */}
+                    <Show when={viewMode() === 'map-cards'}>
+                        <div class="flex flex-col lg:flex-row gap-6 h-[700px]">
+                            {/* Map Section */}
+                            <div class="w-full lg:w-1/2 h-full rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700">
+                                <MapComponent
+                                    center={[getSearchCoordinates().lon, getSearchCoordinates().lat]}
+                                    zoom={12}
+                                    pointsOfInterest={filteredPois()}
+                                />
+                            </div>
+
+                            {/* Cards Section */}
+                            <div class="w-full lg:w-1/2 h-full overflow-y-auto">
+                                <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-1 gap-4 pr-2">
+                                    <For each={filteredPois()}>
+                                        {(poi) => renderListItem(poi)}
+                                    </For>
+                                </div>
+                            </div>
+                        </div>
+                    </Show>
+
+                    {/* Cards Only View */}
+                    <Show when={viewMode() === 'cards'}>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                            <For each={filteredPois()}>
+                                {(poi) => renderGridCard(poi)}
+                            </For>
+                        </div>
+                    </Show>
+
+                    {/* Map Only View */}
                     <Show when={viewMode() === 'map'}>
-                        <div class="h-[600px] w-full rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700">
+                        <div class="h-[700px] w-full rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700">
                             <MapComponent
                                 center={[getSearchCoordinates().lon, getSearchCoordinates().lat]}
                                 zoom={12}
                                 pointsOfInterest={filteredPois()}
                             />
-                        </div>
-                    </Show>
-                    <Show when={viewMode() !== 'map'}>
-                        <div class={viewMode() === 'grid'
-                            ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
-                            : "space-y-4"
-                        }>
-                            <For each={filteredPois()}>
-                                {(poi) => viewMode() === 'grid' ? renderGridCard(poi) : renderListItem(poi)}
-                            </For>
                         </div>
                     </Show>
                 </Show>

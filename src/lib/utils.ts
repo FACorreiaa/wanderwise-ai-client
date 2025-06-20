@@ -179,7 +179,9 @@ export const fuzzySearch = (query: string, items: string[]): string[] => {
   });
 };
 
-export const searchPOIs = (query: string, pois: any[]): any[] => {
+import type { POIDetailedInfo } from './api/types';
+
+export const searchPOIs = (query: string, pois: POIDetailedInfo[]): POIDetailedInfo[] => {
   if (!query.trim()) return pois;
   
   const lowerQuery = query.toLowerCase();
@@ -192,7 +194,7 @@ export const searchPOIs = (query: string, pois: any[]): any[] => {
 };
 
 // Local storage utilities
-export const saveToStorage = (key: string, value: any): void => {
+export const saveToStorage = (key: string, value: unknown): void => {
   try {
     localStorage.setItem(key, JSON.stringify(value));
   } catch (error) {
@@ -219,7 +221,7 @@ export const removeFromStorage = (key: string): void => {
 };
 
 // URL and navigation utilities
-export const buildQueryString = (params: Record<string, any>): string => {
+export const buildQueryString = (params: Record<string, unknown>): string => {
   const searchParams = new URLSearchParams();
   Object.entries(params).forEach(([key, value]) => {
     if (value !== undefined && value !== null && value !== '') {

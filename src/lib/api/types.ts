@@ -25,7 +25,17 @@ export interface UserProfileResponse {
   profile_image_url?: string;
   created_at?: string;
   interests?: string[];
-  [key: string]: any;
+  stats?: {
+    places_visited?: number;
+    reviews_written?: number;
+    lists_created?: number;
+    followers?: number;
+    following?: number;
+  };
+  badges?: string[];
+  social_links?: Record<string, string>;
+  preferences?: Record<string, unknown>;
+  settings?: Record<string, unknown>;
 }
 
 
@@ -91,15 +101,33 @@ export interface POI {
 export interface ChatMessage {
   id: string;
   type: 'user' | 'assistant' | 'system';
+  role?: 'user' | 'assistant' | 'system'; // For backward compatibility
   content: string;
   timestamp: Date;
   hasItinerary?: boolean;
-  itinerary?: any;
+  itinerary?: AIItineraryResponse;
+  metadata?: {
+    session_id?: string;
+    domain?: DomainType;
+    user_location?: {
+      latitude: number;
+      longitude: number;
+    };
+  };
 }
 
 export interface ChatSession {
   id: string;
   profile_id: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ChatSessionResponse {
+  id: string;
+  profile_id: string;
+  city_name?: string;
+  conversation_history: ChatMessage[];
   created_at: string;
   updated_at: string;
 }
@@ -270,9 +298,21 @@ export type DomainType = 'general' | 'itinerary' | 'accommodation' | 'dining' | 
 
 export type StreamEventType = 'start' | 'chunk' | 'complete' | 'error' | 'city_data' | 'general_pois' | 'itinerary' | 'hotels' | 'restaurants' | 'activities';
 
+// Streaming chunk data interfaces
+export interface StreamChunkData {
+  chunk?: string;
+  part?: string;
+}
+
+export interface StreamCompleteData {
+  domain?: DomainType;
+  city?: string;
+  session_id?: string;
+}
+
 export interface StreamEvent {
   type: StreamEventType;
-  data?: any;
+  data?: UnifiedChatResponse | GeneralCityData | POIDetailedInfo[] | HotelDetailedInfo[] | RestaurantDetailedInfo[] | AIItineraryResponse | StreamChunkData | StreamCompleteData | string;
   error?: string;
   event_id?: string;
   timestamp?: string;
@@ -314,12 +354,12 @@ export interface POIDetail {
 export interface AIItineraryResponse {
   itinerary_name: string;
   overall_description: string;
-  points_of_interest: POIDetail[];
+  points_of_interest: POIDetailedInfo[];
 }
 
 export interface AiCityResponse {
   general_city_data: GeneralCityData;
-  points_of_interest: POIDetail[];
+  points_of_interest: POIDetailedInfo[];
   itinerary_response: AIItineraryResponse;
   session_id: string;
 }
@@ -383,7 +423,7 @@ export interface POIDetailedInfo {
   rating: number;
   time_to_spend?: string;
   budget?: string;
-  priority?: number;
+  priority?: number; // Popularity score 1-10
   llm_interaction_id: string;
 }
 
@@ -416,4 +456,97 @@ export interface StreamingSession {
   data: Partial<UnifiedChatResponse>;
   isComplete: boolean;
   error?: string;
+}
+
+// Recent searches and activity types
+export interface RecentSearch {
+  id: string;
+  query: string;
+  location?: string;
+  timestamp: string;
+  domain: DomainType;
+  results_count?: number;
+}
+
+export interface RecentActivity {
+  id: string;
+  type: 'search' | 'poi_view' | 'hotel_view' | 'restaurant_view' | 'itinerary_save' | 'list_create';
+  entity_id?: string;
+  entity_name?: string;
+  timestamp: string;
+  metadata?: Record<string, unknown>;
+}
+
+export interface RecentsResponse {
+  recent_searches: RecentSearch[];
+  recent_activity: RecentActivity[];
+  pois?: POIDetailedInfo[];
+  hotels?: HotelDetailedInfo[];
+  restaurants?: RestaurantDetailedInfo[];
+}
+
+// API Error response types
+export interface ApiError {
+  message: string;
+  code?: string;
+  details?: Record<string, unknown>;
+  timestamp?: string;
+}
+
+export interface ApiResponse<T = unknown> {
+  data?: T;
+  error?: ApiError;
+  success: boolean;
+  message?: string;
+}
+
+// Event handler types for components
+export interface PhotoUploadEvent extends Event {
+  target: HTMLInputElement & {
+    files: FileList | null;
+  };
+}
+
+export interface UploadedPhoto {
+  id: string;
+  url: string;
+  file: File;
+  uploaded?: boolean;
+}
+
+// Search and filter types
+export interface SearchFilters {
+  category?: string[];
+  priceRange?: string;
+  rating?: number;
+  distance?: number;
+  amenities?: string[];
+  tags?: string[];
+}
+
+export interface SearchParams {
+  query?: string;
+  latitude?: number;
+  longitude?: number;
+  radius?: number;
+  filters?: SearchFilters;
+  limit?: number;
+  offset?: number;
+}
+
+// Preferences types for API calls
+export interface HotelPreferences extends SearchParams {
+  accommodation_type?: string[];
+  star_rating?: { min: number; max: number };
+  price_range_per_night?: { min: number; max: number };
+  amenities?: string[];
+  room_type?: string[];
+}
+
+export interface RestaurantPreferences extends SearchParams {
+  cuisine_types?: string[];
+  meal_types?: string[];
+  service_style?: string[];
+  price_range_per_person?: { min: number; max: number };
+  dietary_needs?: string[];
 }
