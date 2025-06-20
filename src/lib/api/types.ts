@@ -423,7 +423,7 @@ export interface POIDetailedInfo {
   rating: number;
   time_to_spend?: string;
   budget?: string;
-  priority?: number;
+  priority?: number; // Popularity score 1-10
   llm_interaction_id: string;
 }
 

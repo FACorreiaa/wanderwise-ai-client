@@ -290,9 +290,37 @@ export default function DiscoverPage() {
             'Free': 'text-green-600 bg-green-50 dark:text-green-400 dark:bg-green-900',
             '€': 'text-blue-600 bg-blue-50 dark:text-blue-400 dark:bg-blue-900',
             '€€': 'text-orange-600 bg-orange-50 dark:text-orange-400 dark:bg-orange-900',
-            '€€€': 'text-red-600 bg-red-50 dark:text-red-400 dark:bg-red-900'
+            '€€€': 'text-red-600 bg-red-50 dark:text-red-400 dark:bg-red-900',
+            '€€€€': 'text-purple-600 bg-purple-50 dark:text-purple-400 dark:bg-purple-900'
         };
         return colorMap[price] || 'text-gray-600 bg-gray-50 dark:text-gray-400 dark:bg-gray-800';
+    };
+
+    const getPopularityInfo = (priority: number) => {
+        if (priority >= 9) {
+            return { label: 'Trending', color: 'text-red-600 bg-red-50 dark:text-red-400 dark:bg-red-900', icon: '🔥' };
+        } else if (priority >= 7) {
+            return { label: 'Popular', color: 'text-orange-600 bg-orange-50 dark:text-orange-400 dark:bg-orange-900', icon: '⭐' };
+        } else if (priority >= 5) {
+            return { label: 'Liked', color: 'text-blue-600 bg-blue-50 dark:text-blue-400 dark:bg-blue-900', icon: '👍' };
+        } else if (priority >= 3) {
+            return { label: 'Rising', color: 'text-green-600 bg-green-50 dark:text-green-400 dark:bg-green-900', icon: '📈' };
+        }
+        return null; // Don't show anything for low popularity
+    };
+
+    const getCategoryColor = (category: string) => {
+        const categoryColorMap = {
+            'restaurant': 'text-red-700 bg-red-100 dark:text-red-300 dark:bg-red-900',
+            'museum': 'text-purple-700 bg-purple-100 dark:text-purple-300 dark:bg-purple-900',
+            'park': 'text-green-700 bg-green-100 dark:text-green-300 dark:bg-green-900',
+            'landmark': 'text-blue-700 bg-blue-100 dark:text-blue-300 dark:bg-blue-900',
+            'historical': 'text-amber-700 bg-amber-100 dark:text-amber-300 dark:bg-amber-900',
+            'entertainment': 'text-pink-700 bg-pink-100 dark:text-pink-300 dark:bg-pink-900',
+            'cultural': 'text-indigo-700 bg-indigo-100 dark:text-indigo-300 dark:bg-indigo-900',
+            'beach': 'text-cyan-700 bg-cyan-100 dark:text-cyan-300 dark:bg-cyan-900'
+        };
+        return categoryColorMap[category.toLowerCase()] || 'text-gray-700 bg-gray-100 dark:text-gray-300 dark:bg-gray-700';
     };
 
     const renderGridCard = (poi) => (
@@ -351,13 +379,19 @@ export default function DiscoverPage() {
                     <div class="flex-1 min-w-0">
                         <h3 class="font-semibold text-gray-900 dark:text-white text-base mb-1 truncate">{poi.name}</h3>
                         <div class="flex flex-wrap items-center gap-2 mb-1">
-                            <span class="px-2 py-0.5 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded-full text-xs font-medium">
+                            <span class={`px-2 py-0.5 rounded-full text-xs font-medium ${getCategoryColor(poi.category)}`}>
                                 {poi.category}
                             </span>
-                            <Show when={poi.priority && poi.priority > 7}>
-                                <span class="px-2 py-0.5 bg-orange-100 dark:bg-orange-900 text-orange-800 dark:text-orange-200 rounded-full text-xs font-medium">
-                                    Popular
-                                </span>
+                            <Show when={poi.priority && getPopularityInfo(poi.priority)}>
+                                {(() => {
+                                    const popularityInfo = getPopularityInfo(poi.priority);
+                                    return popularityInfo ? (
+                                        <span class={`px-2 py-0.5 rounded-full text-xs font-medium ${popularityInfo.color}`}>
+                                            <span class="mr-1">{popularityInfo.icon}</span>
+                                            {popularityInfo.label}
+                                        </span>
+                                    ) : null;
+                                })()}
                             </Show>
                             <Show when={poi.timeToSpend || poi.time_to_spend}>
                                 <span class="px-2 py-0.5 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full text-xs">
@@ -441,13 +475,19 @@ export default function DiscoverPage() {
                         <div class="flex-1 min-w-0">
                             <h3 class="font-semibold text-gray-900 dark:text-white text-lg">{poi.name}</h3>
                             <div class="flex flex-wrap items-center gap-2 mb-1">
-                                <span class="px-2 py-0.5 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded-full text-xs font-medium">
+                                <span class={`px-2 py-0.5 rounded-full text-xs font-medium ${getCategoryColor(poi.category)}`}>
                                     {poi.category}
                                 </span>
-                                <Show when={poi.priority && poi.priority > 7}>
-                                    <span class="px-2 py-0.5 bg-orange-100 dark:bg-orange-900 text-orange-800 dark:text-orange-200 rounded-full text-xs font-medium">
-                                        Popular
-                                    </span>
+                                <Show when={poi.priority && getPopularityInfo(poi.priority)}>
+                                    {(() => {
+                                        const popularityInfo = getPopularityInfo(poi.priority);
+                                        return popularityInfo ? (
+                                            <span class={`px-2 py-0.5 rounded-full text-xs font-medium ${popularityInfo.color}`}>
+                                                <span class="mr-1">{popularityInfo.icon}</span>
+                                                {popularityInfo.label}
+                                            </span>
+                                        ) : null;
+                                    })()}
                                 </Show>
                                 <Show when={poi.timeToSpend || poi.time_to_spend}>
                                     <span class="px-2 py-0.5 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full text-xs">
