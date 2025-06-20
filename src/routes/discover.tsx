@@ -36,6 +36,7 @@ export default function DiscoverPage() {
     const currentFilters = () => ({
         category: selectedCategory() !== 'all' ? selectedCategory() : undefined,
         price_range: selectedPrice() !== 'all' ? selectedPrice() : undefined,
+        min_rating: selectedRating() !== 'all' ? selectedRating() : undefined,
     });
 
     // Get coordinates based on user location (discover is always location-based)
@@ -113,6 +114,8 @@ export default function DiscoverPage() {
         () => searchRadius(), // Fix: Pass as function that returns signal value
         currentFilters // Function returning filters
     );
+
+
 
     console.log('pois', pois())
 
@@ -202,19 +205,8 @@ export default function DiscoverPage() {
             );
         }
 
-        // Note: City and Category filters are now handled server-side in the API
-        // No need for client-side filtering on these fields
-
-        // Rating filter
-        if (selectedRating() !== 'all') {
-            const minRating = parseInt(selectedRating());
-            filtered = filtered.filter(poi => poi.rating >= minRating);
-        }
-
-        // Price filter
-        if (selectedPrice() !== 'all') {
-            filtered = filtered.filter(poi => poi.price === selectedPrice());
-        }
+        // Note: Category, Price, and Rating filters are now handled server-side in the API
+        // Only search query is handled client-side for real-time filtering
 
         // Sort
         filtered.sort((a, b) => {
