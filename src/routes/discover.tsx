@@ -169,6 +169,14 @@ export default function DiscoverPage() {
         { id: '€€€', label: 'Expensive (€€€)' }
     ];
 
+    const ratingOptions = [
+        { id: 'all', label: 'All Ratings' },
+        { id: '4.0', label: '4.0+ Stars' },
+        { id: '3.5', label: '3.5+ Stars' },
+        { id: '3.0', label: '3.0+ Stars' },
+        { id: '2.5', label: '2.5+ Stars' }
+    ];
+
     const sortOptions = [
         { id: 'popularity', label: 'Popularity' },
         { id: 'rating', label: 'Rating' },
@@ -658,6 +666,16 @@ export default function DiscoverPage() {
                                 >
                                     <For each={priceRanges}>
                                         {(price) => <option value={price.id}>{price.label}</option>}
+                                    </For>
+                                </select>
+
+                                <select
+                                    value={selectedRating()}
+                                    onChange={(e) => setSelectedRating(e.target.value)}
+                                    class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                >
+                                    <For each={ratingOptions}>
+                                        {(rating) => <option value={rating.id}>{rating.label}</option>}
                                     </For>
                                 </select>
 

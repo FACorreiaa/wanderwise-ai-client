@@ -81,8 +81,8 @@ export const getNearbyPOIs = async (
   // Use URLSearchParams for safe and easy query string construction
   const params = new URLSearchParams({
     lat: lat.toString(),
-    lon: lon.toString(),        // FIX: Changed from 'lng' to 'lon'
-    distance: radiusMeters.toString(), // FIX: Changed from 'radius' to 'distance'
+    lon: lon.toString(),
+    distance: radiusMeters.toString(),
   });
 
   // Add optional filter parameters
@@ -107,9 +107,9 @@ export const getNearbyPOIs = async (
 
 // Your TanStack Query hook that uses the function above
 export function useNearbyPOIs(
-  latFn: () => number, 
-  lonFn: () => number, 
-  radiusFn: () => number, 
+  latFn: () => number,
+  lonFn: () => number,
+  radiusFn: () => number,
   filtersFn: () => Record<string, unknown>
 ) {
   return createResource(
