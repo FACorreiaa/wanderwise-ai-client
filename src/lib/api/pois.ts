@@ -98,7 +98,7 @@ export const getNearbyPOIs = async (
 
   // The endpoint path should match your router
   const response = await apiRequest<{ points_of_interest: POIDetailedInfo[] }>(
-    `/llm/prompt-response/poi/nearby?${params.toString()}`,
+    `/pois/nearby?${params.toString()}`,
     { method: 'GET' }
   );
 
