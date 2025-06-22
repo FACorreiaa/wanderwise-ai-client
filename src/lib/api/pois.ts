@@ -76,7 +76,7 @@ export const getNearbyPOIs = async (
   lat: number,
   lon: number,
   radiusMeters: number,
-  filters?: { city?: string; category?: string; price_range?: string }
+  //filters?: { city?: string; category?: string; price_range?: string }
 ): Promise<POIDetailedInfo[]> => {
   // Use URLSearchParams for safe and easy query string construction
   const params = new URLSearchParams({
@@ -86,15 +86,15 @@ export const getNearbyPOIs = async (
   });
 
   // Add optional filter parameters
-  if (filters?.city && filters.city !== 'all') {
-    params.append('city', filters.city);
-  }
-  if (filters?.category && filters.category !== 'all') {
-    params.append('category', filters.category);
-  }
-  if (filters?.price_range && filters.price_range !== 'all') {
-    params.append('price_range', filters.price_range);
-  }
+  // if (filters?.city && filters.city !== 'all') {
+  //   params.append('city', filters.city);
+  // }
+  // if (filters?.category && filters.category !== 'all') {
+  //   params.append('category', filters.category);
+  // }
+  // if (filters?.price_range && filters.price_range !== 'all') {
+  //   params.append('price_range', filters.price_range);
+  // }
 
   // The endpoint path should match your router
   const response = await apiRequest<{ points_of_interest: POIDetailedInfo[] }>(
@@ -110,7 +110,7 @@ export function useNearbyPOIs(
   latFn: () => number,
   lonFn: () => number,
   radiusFn: () => number,
-  filtersFn: () => Record<string, unknown>
+  //filtersFn: () => Record<string, unknown>
 ) {
   return createResource(
     () => {
@@ -121,16 +121,16 @@ export function useNearbyPOIs(
       if (!lat || !lon || radiusMeters <= 0) {
         return null;
       }
-      const filters = filtersFn();
+      //const filters = filtersFn();
       // Serialize filters to detect content changes, use 'no-filters' if undefined
-      const filtersKey = filters ? JSON.stringify(filters) : 'no-filters';
-      return [lat, lon, radiusMeters, filtersKey];
+      //const filtersKey = filters ? JSON.stringify(filters) : 'no-filters';
+      return [lat, lon, radiusMeters];
     },
-    async ([lat, lon, radiusMeters, filtersKey]: [number, number, number, string]) => {
+    async ([lat, lon, radiusMeters]: [number, number, number]) => {
       // Parse filters back to an object, or undefined if not present
-      const filters = filtersKey !== 'no-filters' ? JSON.parse(filtersKey) : undefined;
-      console.log('🔍 Fetching nearby POIs:', { lat, lon, radiusMeters, filters });
-      return getNearbyPOIs(lat, lon, radiusMeters, filters);
+      //const filters = filtersKey !== 'no-filters' ? JSON.parse(filtersKey) : undefined;
+      // console.log('🔍 Fetching nearby POIs:', { lat, lon, radiusMeters, filters });
+      return getNearbyPOIs(lat, lon, radiusMeters);
     }
   );
 }

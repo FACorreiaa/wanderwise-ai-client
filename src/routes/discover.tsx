@@ -1,18 +1,13 @@
 import { createSignal, For, Show, createEffect, onMount } from 'solid-js';
 import { useLocation, useNavigate } from '@solidjs/router';
 import { Search, Filter, MapPin, Star, Heart, Bookmark, Clock, DollarSign, Users, Wifi, Camera, Grid, List, SortAsc, SortDesc, X, Compass, Map, Share2, Eye } from 'lucide-solid';
-import { useNearbyPOIs, useSearchPOIs, useFavorites, useAddToFavoritesMutation, useRemoveFromFavoritesMutation } from '~/lib/api/pois';
-import { useCities, convertCitiesToDropdownFormat } from '~/lib/api/cities';
+import { useNearbyPOIs, useFavorites, useAddToFavoritesMutation, useRemoveFromFavoritesMutation } from '~/lib/api/pois';
 import type { ActivitiesResponse, POIDetailedInfo } from '~/lib/api/types';
 import { useUserLocation } from '@/contexts/LocationContext';
 import MapComponent from '~/components/features/Map/Map';
 
 export default function DiscoverPage() {
     const [searchQuery, setSearchQuery] = createSignal('');
-    const [selectedCity, setSelectedCity] = createSignal('all');
-    const [selectedCategory, setSelectedCategory] = createSignal('all');
-    const [selectedRating, setSelectedRating] = createSignal('all');
-    const [selectedPrice, setSelectedPrice] = createSignal('all');
     const [sortBy, setSortBy] = createSignal('popularity'); // 'popularity', 'rating', 'distance', 'price'
     const [sortOrder, setSortOrder] = createSignal('desc');
     const [viewMode, setViewMode] = createSignal('map-cards'); // 'map-cards', 'cards', 'map'
@@ -28,16 +23,6 @@ export default function DiscoverPage() {
     const favoritesQuery = useFavorites();
     const addToFavoritesMutation = useAddToFavoritesMutation();
     const removeFromFavoritesMutation = useRemoveFromFavoritesMutation();
-    //const citiesQuery = useCities();
-
-    // Discover is location-based, no city selection needed
-
-    // Create reactive filters (no city filter for discover)
-    const currentFilters = () => ({
-        category: selectedCategory() !== 'all' ? selectedCategory() : undefined,
-        price_range: selectedPrice() !== 'all' ? selectedPrice() : undefined,
-        min_rating: selectedRating() !== 'all' ? selectedRating() : undefined,
-    });
 
     // Get coordinates based on user location (discover is always location-based)
     const getSearchCoordinates = () => {
@@ -60,13 +45,6 @@ export default function DiscoverPage() {
 
     ];
 
-    const searchPOIsQuery = useSearchPOIs(
-        searchQuery(),
-        {
-            category: selectedCategory() !== 'all' ? selectedCategory() : undefined,
-            price_range: selectedPrice() !== 'all' ? selectedPrice() : undefined
-        }
-    );
 
     // Initialize with streaming data on mount
     onMount(() => {
@@ -76,9 +54,10 @@ export default function DiscoverPage() {
         // Check for streaming data from route state  
         if (location.state?.streamingData) {
             console.log('Found activities streaming data in route state');
-            setStreamingData(location.state.streamingData as ActivitiesResponse);
+            const data = location.state.streamingData as ActivitiesResponse;
+            setStreamingData(data);
             setFromChat(true);
-            console.log('Received activities data:', location.state.streamingData);
+            console.log('Received streaming data:', data);
         } else {
             console.log('No streaming data in route state, checking session storage');
             // Try to get data from session storage
@@ -91,10 +70,10 @@ export default function DiscoverPage() {
                     console.log('Parsed session:', session);
 
                     if (session.data && session.data.activities) {
-                        console.log('Setting activities data from session storage');
+                        console.log('Setting streaming data from session storage');
                         setStreamingData(session.data as ActivitiesResponse);
                         setFromChat(true);
-                        console.log('Loaded activities data from session storage:', session.data);
+                        console.log('Loaded streaming data from session storage:', session.data);
                     } else {
                         console.log('No activities data found in session');
                     }
@@ -111,8 +90,7 @@ export default function DiscoverPage() {
     const [pois] = useNearbyPOIs(
         () => userLocation()?.latitude,
         () => userLocation()?.longitude,
-        () => searchRadius(), // Fix: Pass as function that returns signal value
-        currentFilters // Function returning filters
+        () => searchRadius()
     );
 
 
@@ -150,32 +128,6 @@ export default function DiscoverPage() {
         return favoritesQuery.data?.some(poi => poi.id === poiId) || false;
     };
 
-    const categories = [
-        { id: 'all', label: 'All Categories' },
-        { id: 'cultural', label: 'Cultural' },
-        { id: 'landmark', label: 'Landmarks' },
-        { id: 'historical', label: 'Historical Sites' },
-        { id: 'museum', label: 'Museums' },
-        { id: 'park', label: 'Parks & Nature' },
-        { id: 'restaurant', label: 'Restaurants' },
-        { id: 'entertainment', label: 'Entertainment' }
-    ];
-
-    const priceRanges = [
-        { id: 'all', label: 'All Prices' },
-        { id: 'free', label: 'Free' },
-        { id: '€', label: 'Budget (€)' },
-        { id: '€€', label: 'Moderate (€€)' },
-        { id: '€€€', label: 'Expensive (€€€)' }
-    ];
-
-    const ratingOptions = [
-        { id: 'all', label: 'All Ratings' },
-        { id: '4.0', label: '4.0+ Stars' },
-        { id: '3.5', label: '3.5+ Stars' },
-        { id: '3.0', label: '3.0+ Stars' },
-        { id: '2.5', label: '2.5+ Stars' }
-    ];
 
     const sortOptions = [
         { id: 'popularity', label: 'Popularity' },
@@ -600,11 +552,11 @@ export default function DiscoverPage() {
                 </div>
             </div>
 
-            {/* Search and Filters */}
+            {/* Search and Controls */}
             <div class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
                 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
                     <div class="flex flex-col gap-4">
-                        {/* Top row: Search + Filter toggle */}
+                        {/* Top row: Search */}
                         <div class="flex flex-col sm:flex-row sm:items-center gap-4">
                             {/* Search */}
                             <div class="relative flex-1 max-w-md">
@@ -618,112 +570,97 @@ export default function DiscoverPage() {
                                 />
                             </div>
 
-                            {/* Mobile filter toggle */}
+                            {/* Mobile controls toggle */}
                             <div class="flex items-center gap-2 sm:hidden">
                                 <button
                                     onClick={() => setShowFilters(!showFilters())}
                                     class="flex items-center gap-2 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-600"
                                 >
                                     <Filter class="w-4 h-4" />
-                                    Filters
+                                    Controls
                                 </button>
                             </div>
                         </div>
 
-                        {/* Filters - Always visible on desktop, collapsible on mobile */}
+                        {/* Controls - Always visible on desktop, collapsible on mobile */}
                         <div class={`${showFilters() ? 'block' : 'hidden'} sm:block`}>
-                            <div class="flex flex-col sm:flex-row sm:items-center gap-4 overflow-x-auto">
-                                <div class="flex items-center gap-2">
-                                    <label for="radius-select" class="text-sm font-medium text-gray-700 dark:text-gray-300 flex-shrink-0">
-                                        Radius:
-                                    </label>
-                                    <select
-                                        id="radius-select"
-                                        value={searchRadius()}
-                                        onChange={(e) => setSearchRadius(parseInt(e.target.value))}
-                                        class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                    >
-                                        <For each={radiusOptions}>
-                                            {(option) => <option value={option.value}>{option.label}</option>}
-                                        </For>
-                                    </select>
-                                </div>
+                            <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                                {/* Left side: Primary controls */}
+                                <div class="flex flex-wrap items-center gap-4">
+                                    {/* Radius Selection */}
+                                    <div class="flex items-center gap-2">
+                                        <label for="radius-select" class="text-sm font-medium text-gray-700 dark:text-gray-300 whitespace-nowrap">
+                                            Search Radius:
+                                        </label>
+                                        <select
+                                            id="radius-select"
+                                            value={searchRadius()}
+                                            onChange={(e) => setSearchRadius(parseInt(e.target.value))}
+                                            class="min-w-[100px] px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                                        >
+                                            <For each={radiusOptions}>
+                                                {(option) => <option value={option.value}>{option.label}</option>}
+                                            </For>
+                                        </select>
+                                    </div>
 
-                                <select
-                                    value={selectedCategory()}
-                                    onChange={(e) => setSelectedCategory(e.target.value)}
-                                    class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                >
-                                    <For each={categories}>
-                                        {(category) => <option value={category.id}>{category.label}</option>}
-                                    </For>
-                                </select>
-
-                                <select
-                                    value={selectedPrice()}
-                                    onChange={(e) => setSelectedPrice(e.target.value)}
-                                    class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                >
-                                    <For each={priceRanges}>
-                                        {(price) => <option value={price.id}>{price.label}</option>}
-                                    </For>
-                                </select>
-
-                                <select
-                                    value={selectedRating()}
-                                    onChange={(e) => setSelectedRating(e.target.value)}
-                                    class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                >
-                                    <For each={ratingOptions}>
-                                        {(rating) => <option value={rating.id}>{rating.label}</option>}
-                                    </For>
-                                </select>
-
-                                {/* Sort */}
-                                <div class="flex items-center gap-2">
-                                    <select
-                                        value={sortBy()}
-                                        onChange={(e) => setSortBy(e.target.value)}
-                                        class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                    >
-                                        <For each={sortOptions}>
-                                            {(option) => <option value={option.id}>{option.label}</option>}
-                                        </For>
-                                    </select>
-                                    <button
-                                        onClick={() => setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc')}
-                                        class="p-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 bg-white dark:bg-gray-700"
-                                    >
-                                        {sortOrder() === 'asc' ? <SortAsc class="w-4 h-4 text-gray-600 dark:text-gray-400" /> : <SortDesc class="w-4 h-4 text-gray-600 dark:text-gray-400" />}
-                                    </button>
-                                </div>
-
-                                {/* View mode - 3 modes: map+cards, cards only, map only */}
-                                <div class="flex items-center border border-gray-300 dark:border-gray-600 rounded-lg p-1 bg-white dark:bg-gray-700">
-                                    <button
-                                        onClick={() => setViewMode('map-cards')}
-                                        class={`p-2 rounded text-xs font-medium ${viewMode() === 'map-cards' ? 'bg-blue-600 text-white' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-600'}`}
-                                        title="Split view: Map + Cards"
-                                    >
+                                    {/* Sort Controls */}
+                                    <div class="flex items-center gap-2">
+                                        <label class="text-sm font-medium text-gray-700 dark:text-gray-300 whitespace-nowrap">
+                                            Sort by:
+                                        </label>
                                         <div class="flex items-center gap-1">
-                                            <Map class="w-3 h-3" />
-                                            <Grid class="w-3 h-3" />
+                                            <select
+                                                value={sortBy()}
+                                                onChange={(e) => setSortBy(e.target.value)}
+                                                class="min-w-[120px] px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-l-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                                            >
+                                                <For each={sortOptions}>
+                                                    {(option) => <option value={option.id}>{option.label}</option>}
+                                                </For>
+                                            </select>
+                                            <button
+                                                onClick={() => setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc')}
+                                                class="p-2 border border-l-0 border-gray-300 dark:border-gray-600 rounded-r-lg hover:bg-gray-50 dark:hover:bg-gray-700 bg-white dark:bg-gray-700 transition-colors"
+                                                title={`Sort ${sortOrder() === 'asc' ? 'Descending' : 'Ascending'}`}
+                                            >
+                                                {sortOrder() === 'asc' ? <SortAsc class="w-4 h-4 text-gray-600 dark:text-gray-400" /> : <SortDesc class="w-4 h-4 text-gray-600 dark:text-gray-400" />}
+                                            </button>
                                         </div>
-                                    </button>
-                                    <button
-                                        onClick={() => setViewMode('cards')}
-                                        class={`p-2 rounded ${viewMode() === 'cards' ? 'bg-blue-600 text-white' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-600'}`}
-                                        title="Show only cards"
-                                    >
-                                        <Grid class="w-4 h-4" />
-                                    </button>
-                                    <button
-                                        onClick={() => setViewMode('map')}
-                                        class={`p-2 rounded ${viewMode() === 'map' ? 'bg-blue-600 text-white' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-600'}`}
-                                        title="Show only map"
-                                    >
-                                        <Map class="w-4 h-4" />
-                                    </button>
+                                    </div>
+                                </div>
+
+                                {/* Right side: View mode toggle */}
+                                <div class="flex items-center gap-2">
+                                    <label class="text-sm font-medium text-gray-700 dark:text-gray-300 whitespace-nowrap">
+                                        View:
+                                    </label>
+                                    <div class="flex items-center border border-gray-300 dark:border-gray-600 rounded-lg p-1 bg-white dark:bg-gray-700">
+                                        <button
+                                            onClick={() => setViewMode('map-cards')}
+                                            class={`p-2 rounded transition-colors ${viewMode() === 'map-cards' ? 'bg-blue-600 text-white' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-600'}`}
+                                            title="Split view: Map + Cards"
+                                        >
+                                            <div class="flex items-center gap-1">
+                                                <Map class="w-3 h-3" />
+                                                <Grid class="w-3 h-3" />
+                                            </div>
+                                        </button>
+                                        <button
+                                            onClick={() => setViewMode('cards')}
+                                            class={`p-2 rounded transition-colors ${viewMode() === 'cards' ? 'bg-blue-600 text-white' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-600'}`}
+                                            title="Show only cards"
+                                        >
+                                            <Grid class="w-4 h-4" />
+                                        </button>
+                                        <button
+                                            onClick={() => setViewMode('map')}
+                                            class={`p-2 rounded transition-colors ${viewMode() === 'map' ? 'bg-blue-600 text-white' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-600'}`}
+                                            title="Show only map"
+                                        >
+                                            <Map class="w-4 h-4" />
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         </div>

@@ -250,71 +250,6 @@ export default function ChatPage() {
         }
     };
 
-    const generateResponse = (userInput) => {
-        const input = userInput.toLowerCase();
-
-        if (input.includes('porto') || input.includes('portugal')) {
-            return {
-                text: `Great choice! Porto is a fantastic destination. Based on your "${activeProfile()}" profile, I've created a personalized itinerary focusing on cultural experiences and local favorites.\n\nHere's what I recommend for your Porto adventure:`,
-                hasItinerary: true,
-                itinerary: {
-                    title: "Porto Cultural Discovery",
-                    duration: "3 days",
-                    description: "A perfect blend of history, culture, and local experiences in Porto",
-                    places: [
-                        {
-                            name: "Livraria Lello",
-                            category: "Bookstore & Architecture",
-                            description: "One of the world's most beautiful bookstores with stunning neo-gothic architecture.",
-                            timeToSpend: "1-2 hours",
-                            budget: "€€",
-                            rating: 4.2,
-                            priority: 1
-                        },
-                        {
-                            name: "Ponte Luís I",
-                            category: "Landmark",
-                            description: "Iconic double-deck iron bridge offering spectacular views.",
-                            timeToSpend: "30-60 minutes",
-                            budget: "Free",
-                            rating: 4.6,
-                            priority: 1
-                        },
-                        {
-                            name: "Cais da Ribeira",
-                            category: "Historic District",
-                            description: "UNESCO World Heritage waterfront district with colorful buildings.",
-                            timeToSpend: "2-3 hours",
-                            budget: "€€",
-                            rating: 4.5,
-                            priority: 1
-                        }
-                    ]
-                }
-            };
-        }
-
-        if (input.includes('food') || input.includes('restaurant') || input.includes('eat')) {
-            return {
-                text: `I love helping food enthusiasts! Based on your preferences, here are some amazing culinary experiences I recommend. These places offer authentic local flavors and memorable dining experiences.\n\nWould you like me to create a detailed food tour itinerary for any specific city?`,
-                hasItinerary: false
-            };
-        }
-
-        if (input.includes('family') || input.includes('kids') || input.includes('children')) {
-            return {
-                text: `Perfect! Family travel requires special considerations. I'll focus on kid-friendly activities, accessible locations, and places that keep everyone entertained.\n\nWhich destination are you considering for your family trip? I can create an itinerary with activities suitable for all ages.`,
-                hasItinerary: false
-            };
-        }
-
-        // Default response
-        return {
-            text: `Thanks for your question! I'm here to help you plan amazing travel experiences. I can assist with:\n\n• Finding hidden gems and popular attractions\n• Creating personalized itineraries\n• Restaurant and accommodation recommendations\n• Local insights and travel tips\n\nWhat specific destination or type of experience are you interested in exploring?`,
-            hasItinerary: false
-        };
-    };
-
     const handleKeyPress = (e) => {
         if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();
@@ -450,10 +385,10 @@ export default function ChatPage() {
     const loadSession = (session) => {
         setSelectedSession(session);
         // In a real app, you would load the session messages from the backend
-        const contextMessage = session.cityName 
+        const contextMessage = session.cityName
             ? `Continuing our conversation about your trip to ${session.cityName}. We discussed "${session.title.toLowerCase()}" with ${session.messageCount} messages.`
             : `Continuing our conversation about "${session.title}". We had ${session.messageCount} messages.`;
-        
+
         setMessages([
             {
                 id: 'session-loaded',
@@ -480,12 +415,12 @@ export default function ChatPage() {
         if (content.trim().startsWith('{') || content.trim().startsWith('[')) {
             try {
                 const parsed = JSON.parse(content);
-                
+
                 // Handle different JSON response types
                 if (parsed.city && parsed.country) {
                     return `I found information about ${parsed.city}, ${parsed.country}. Let me share the details with you!`;
                 }
-                
+
                 if (Array.isArray(parsed) && parsed.length > 0) {
                     const firstItem = parsed[0];
                     if (firstItem.name && firstItem.category) {
@@ -493,22 +428,22 @@ export default function ChatPage() {
                         return `I found ${parsed.length} great ${type} for you! Including ${firstItem.name} and ${parsed.length - 1} more options.`;
                     }
                 }
-                
+
                 if (parsed.points_of_interest && Array.isArray(parsed.points_of_interest)) {
                     const count = parsed.points_of_interest.length;
                     const first = parsed.points_of_interest[0]?.name || 'some amazing places';
                     return `I created a personalized itinerary with ${count} places to visit, including ${first} and more!`;
                 }
-                
+
                 // Generic fallback for other JSON
                 return "I've prepared some personalized recommendations for you! Check out the details below.";
-                
+
             } catch (e) {
                 // If JSON parsing fails, return original content
                 return content;
             }
         }
-        
+
         // Return original content if it's not JSON
         return content;
     };
@@ -608,7 +543,7 @@ export default function ChatPage() {
                                                 {(() => {
                                                     const rawName = message.streamingData.itinerary_response?.itinerary_name;
                                                     if (!rawName) return `${message.streamingData.general_city_data.city} Guide`;
-                                                    
+
                                                     // Handle case where itinerary_name might be a JSON string or object
                                                     if (typeof rawName === 'string' && rawName.startsWith('{')) {
                                                         try {
@@ -621,7 +556,7 @@ export default function ChatPage() {
                                                     } else if (typeof rawName === 'object' && rawName?.itinerary_name) {
                                                         return rawName.itinerary_name;
                                                     }
-                                                    
+
                                                     return rawName || `${message.streamingData.general_city_data.city} Guide`;
                                                 })()}
                                             </h4>
