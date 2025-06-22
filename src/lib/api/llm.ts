@@ -2,7 +2,7 @@
 import { useMutation } from '@tanstack/solid-query';
 import { apiRequest, API_BASE_URL } from './shared';
 import { defaultLLMRateLimiter, RateLimitError, showRateLimitNotification } from '../rate-limiter';
-import type { ChatSession, ChatMessage, ChatSessionResponse, StreamEvent, UnifiedChatResponse, ApiResponse } from './types';
+import type { ChatSession, ChatMessage, ChatSessionResponse, StreamEvent, UnifiedChatResponse, ApiResponse, SessionPerformanceMetrics, SessionContentMetrics, SessionEngagementMetrics } from './types';
 
 // ==================
 // CHAT/LLM TYPES
@@ -289,6 +289,9 @@ export interface ChatSessionSummary {
   hasItinerary: boolean;
   lastMessage?: string;
   cityName?: string;
+  performanceMetrics?: SessionPerformanceMetrics;
+  contentMetrics?: SessionContentMetrics;
+  engagementMetrics?: SessionEngagementMetrics;
 }
 
 // Get chat sessions for a user
@@ -301,13 +304,16 @@ export const getUserChatSessions = async (profileId: string): Promise<ChatSessio
     // Transform the response to our expected format
     return response.map((session: ChatSessionResponse) => ({
       id: session.id,
-      title: generateSessionTitle(session.conversation_history, session.city_name),
+      title: generateSessionTitle(session.conversation_history, session.city_name, session.content_metrics),
       preview: generatePreview(session.conversation_history),
       timestamp: session.updated_at || session.created_at,
       messageCount: session.conversation_history?.length || 0,
-      hasItinerary: hasItineraryInMessages(session.conversation_history),
+      hasItinerary: session.content_metrics?.has_itinerary || hasItineraryInMessages(session.conversation_history),
       lastMessage: getLastMessage(session.conversation_history),
-      cityName: session.city_name
+      cityName: session.city_name,
+      performanceMetrics: session.performance_metrics,
+      contentMetrics: session.content_metrics,
+      engagementMetrics: session.engagement_metrics
     }));
   } catch (error) {
     console.warn('Chat sessions endpoint not available, returning empty array');
@@ -317,9 +323,37 @@ export const getUserChatSessions = async (profileId: string): Promise<ChatSessio
 };
 
 // Helper function to generate session title from conversation
-const generateSessionTitle = (conversationHistory: ChatMessage[], cityName?: string): string => {
+const generateSessionTitle = (conversationHistory: ChatMessage[], cityName?: string, contentMetrics?: SessionContentMetrics): string => {
   if (!conversationHistory || conversationHistory.length === 0) {
     return cityName ? `Trip to ${cityName}` : 'New Conversation';
+  }
+
+  // Use content metrics for smarter title generation
+  if (contentMetrics) {
+    const { dominant_categories, complexity_score, total_pois, total_hotels, total_restaurants } = contentMetrics;
+    
+    // Generate title based on dominant categories
+    if (dominant_categories.length > 0) {
+      const primaryCategory = dominant_categories[0];
+      const categoryNames = {
+        'accommodation': 'Hotels',
+        'dining': 'Restaurants', 
+        'attractions': 'Attractions',
+        'itinerary': 'Itinerary Planning'
+      };
+      
+      const categoryName = categoryNames[primaryCategory as keyof typeof categoryNames] || 'Recommendations';
+      const cityPart = cityName ? ` in ${cityName}` : '';
+      
+      // Add complexity indicator for rich sessions
+      if (complexity_score >= 8) {
+        return `Complete ${categoryName}${cityPart}`;
+      } else if (complexity_score >= 6) {
+        return `${categoryName} Guide${cityPart}`;
+      } else {
+        return `${categoryName}${cityPart}`;
+      }
+    }
   }
 
   // Look for first user message (role can be 'user' or type can be 'user')

@@ -411,14 +411,46 @@ export default function ChatPage() {
 
     // Helper function to format message content for display
     const formatMessageContent = (content: string) => {
-        // Check if content looks like JSON (starts with { or [)
-        if (content.trim().startsWith('{') || content.trim().startsWith('[')) {
+        // Handle prefixed responses like [city_data], [itinerary], etc.
+        let cleanedContent = content.trim();
+        
+        // Remove common LLM response prefixes
+        const prefixPatterns = [
+            /^\[city_data\]\s*/i,
+            /^\[itinerary\]\s*/i,
+            /^\[restaurants\]\s*/i,
+            /^\[hotels\]\s*/i,
+            /^\[activities\]\s*/i,
+            /^\[pois\]\s*/i,
+            /^\[general_pois\]\s*/i,
+            /^\[personalized_pois\]\s*/i,
+        ];
+
+        for (const pattern of prefixPatterns) {
+            cleanedContent = cleanedContent.replace(pattern, '');
+        }
+
+        // Remove markdown code blocks if present
+        cleanedContent = cleanedContent.replace(/```json\s*(.*?)\s*```/s, '$1');
+        cleanedContent = cleanedContent.trim();
+
+        // Check if cleaned content looks like JSON (starts with { or [)
+        if (cleanedContent.startsWith('{') || cleanedContent.startsWith('[')) {
             try {
-                const parsed = JSON.parse(content);
+                const parsed = JSON.parse(cleanedContent);
 
                 // Handle different JSON response types
                 if (parsed.city && parsed.country) {
-                    return `I found information about ${parsed.city}, ${parsed.country}. Let me share the details with you!`;
+                    const details = [];
+                    if (parsed.description) details.push(parsed.description);
+                    if (parsed.population) details.push(`Population: ${parsed.population}`);
+                    if (parsed.weather) details.push(`Weather: ${parsed.weather}`);
+                    
+                    let result = `Let me tell you about ${parsed.city}, ${parsed.country}!`;
+                    if (details.length > 0) {
+                        result += ` ${details.join('. ')}.`;
+                    }
+                    return result;
                 }
 
                 if (Array.isArray(parsed) && parsed.length > 0) {
@@ -435,11 +467,36 @@ export default function ChatPage() {
                     return `I created a personalized itinerary with ${count} places to visit, including ${first} and more!`;
                 }
 
+                // Check for general city data structure
+                if (parsed.general_city_data) {
+                    const cityData = parsed.general_city_data;
+                    return `I found information about ${cityData.city}, ${cityData.country}. ${cityData.description || 'Let me share the details with you!'}`;
+                }
+
                 // Generic fallback for other JSON
                 return "I've prepared some personalized recommendations for you! Check out the details below.";
 
             } catch (e) {
-                // If JSON parsing fails, return original content
+                // If JSON parsing fails, check if we can extract some meaning
+                const lowerContent = cleanedContent.toLowerCase();
+                
+                if (lowerContent.includes('city') || lowerContent.includes('country')) {
+                    return "I found information about your destination. Let me share the details with you!";
+                }
+                
+                if (lowerContent.includes('hotel') || lowerContent.includes('accommodation')) {
+                    return "I found some excellent hotel options for you!";
+                }
+                
+                if (lowerContent.includes('restaurant') || lowerContent.includes('dining')) {
+                    return "I discovered some amazing restaurants for you!";
+                }
+                
+                if (lowerContent.includes('itinerary') || lowerContent.includes('plan')) {
+                    return "I created a personalized travel plan for you!";
+                }
+                
+                // Return original content if we can't parse it
                 return content;
             }
         }
@@ -735,13 +792,42 @@ export default function ChatPage() {
                                                             <span class="text-xs text-gray-500 dark:text-gray-400 truncate">{session.cityName}</span>
                                                         </div>
                                                     </Show>
+                                                    {/* Content metrics summary */}
+                                                    <Show when={session.contentMetrics}>
+                                                        <div class="flex items-center gap-2 mt-1 text-xs text-gray-500 dark:text-gray-400">
+                                                            <Show when={session.contentMetrics!.total_pois > 0}>
+                                                                <span class="bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 px-1 py-0.5 rounded text-xs">
+                                                                    {session.contentMetrics!.total_pois} POIs
+                                                                </span>
+                                                            </Show>
+                                                            <Show when={session.contentMetrics!.total_hotels > 0}>
+                                                                <span class="bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 px-1 py-0.5 rounded text-xs">
+                                                                    {session.contentMetrics!.total_hotels} Hotels
+                                                                </span>
+                                                            </Show>
+                                                            <Show when={session.contentMetrics!.total_restaurants > 0}>
+                                                                <span class="bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 px-1 py-0.5 rounded text-xs">
+                                                                    {session.contentMetrics!.total_restaurants} Restaurants
+                                                                </span>
+                                                            </Show>
+                                                        </div>
+                                                    </Show>
                                                 </div>
                                                 <div class="flex items-center gap-1 flex-shrink-0 ml-1">
                                                     <Show when={session.hasItinerary}>
                                                         <Sparkles class="w-3 h-3 text-purple-500 dark:text-purple-400" />
                                                     </Show>
-                                                    <Show when={session.messageCount > 5}>
-                                                        <div class="w-1.5 h-1.5 bg-blue-500 rounded-full"></div>
+                                                    {/* Engagement level indicator */}
+                                                    <Show when={session.engagementMetrics}>
+                                                        <div class={`w-2 h-2 rounded-full ${
+                                                            session.engagementMetrics!.engagement_level === 'high' ? 'bg-green-500' :
+                                                            session.engagementMetrics!.engagement_level === 'medium' ? 'bg-yellow-500' :
+                                                            'bg-gray-400'
+                                                        }`} title={`${session.engagementMetrics!.engagement_level} engagement`}></div>
+                                                    </Show>
+                                                    {/* Complexity score indicator */}
+                                                    <Show when={session.contentMetrics && session.contentMetrics.complexity_score >= 7}>
+                                                        <div class="w-1.5 h-1.5 bg-blue-500 rounded-full" title="Complex session"></div>
                                                     </Show>
                                                 </div>
                                             </div>
@@ -749,6 +835,12 @@ export default function ChatPage() {
                                             <div class="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
                                                 <span class="text-xs">{formatTimestamp(session.timestamp)}</span>
                                                 <div class="flex items-center gap-2">
+                                                    {/* Performance indicator */}
+                                                    <Show when={session.performanceMetrics && session.performanceMetrics.avg_response_time_ms > 0}>
+                                                        <span class="text-xs hidden sm:inline" title={`Avg response: ${session.performanceMetrics!.avg_response_time_ms}ms`}>
+                                                            ⚡ {Math.round(session.performanceMetrics!.avg_response_time_ms / 1000)}s
+                                                        </span>
+                                                    </Show>
                                                     <span class="text-xs hidden sm:inline">{session.messageCount} messages</span>
                                                     <span class="text-xs sm:hidden">{session.messageCount}m</span>
                                                     <Show when={session.hasItinerary}>

@@ -130,6 +130,38 @@ export interface ChatSessionResponse {
   conversation_history: ChatMessage[];
   created_at: string;
   updated_at: string;
+  performance_metrics?: SessionPerformanceMetrics;
+  content_metrics?: SessionContentMetrics;
+  engagement_metrics?: SessionEngagementMetrics;
+}
+
+export interface SessionPerformanceMetrics {
+  avg_response_time_ms: number;
+  total_tokens: number;
+  prompt_tokens: number;
+  completion_tokens: number;
+  models_used: string[];
+  total_latency_ms: number;
+}
+
+export interface SessionContentMetrics {
+  total_pois: number;
+  total_hotels: number;
+  total_restaurants: number;
+  cities_covered: string[];
+  has_itinerary: boolean;
+  complexity_score: number;
+  dominant_categories: string[];
+}
+
+export interface SessionEngagementMetrics {
+  message_count: number;
+  conversation_duration: number; // in nanoseconds
+  user_message_count: number;
+  assistant_message_count: number;
+  avg_message_length: number;
+  peak_activity_time?: string;
+  engagement_level: 'low' | 'medium' | 'high';
 }
 
 export interface ItineraryList {
