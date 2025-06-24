@@ -36,9 +36,21 @@ export async function apiRequest<T>(
 
   // Ensure no double slashes in URL
   const url = `${API_BASE_URL.replace(/\/$/, '')}/${endpoint.replace(/^\//, '')}`;
-  const response = await fetch(url, config);
+  
+  // Debug logging for favorites endpoints
+  if (endpoint.includes('favourites')) {
+    console.log('🌐 API Request:', {
+      url,
+      method: config.method || 'GET',
+      headers: config.headers,
+      body: config.body
+    });
+  }
+  
+  try {
+    const response = await fetch(url, config);
 
-  if (!response.ok) {
+    if (!response.ok) {
     // Handle server-side rate limiting
     if (response.status === 429) {
       const retryAfter = parseInt(response.headers.get('Retry-After') || '60');
@@ -59,10 +71,62 @@ export async function apiRequest<T>(
     }
 
     const errorData = await response.json().catch(() => ({ message: 'Request failed' }));
+    
+    // Debug logging for favorites endpoints
+    if (endpoint.includes('favourites')) {
+      console.log('❌ API Error Response:', {
+        status: response.status,
+        statusText: response.statusText,
+        errorData
+      });
+    }
+    
     throw new APIError(errorData.message || `HTTP ${response.status}`, response.status, errorData.code);
   }
 
-  return response.json();
+  const data = await response.json();
+  
+  // Debug logging for favorites endpoints
+  if (endpoint.includes('favourites')) {
+    console.log('✅ API Success Response:', {
+      status: response.status,
+      data
+    });
+  }
+  
+  return data;
+  } catch (error) {
+    // Handle network/connection errors
+    if (error instanceof TypeError && 
+        (error.message.includes('Failed to fetch') || 
+         error.message.includes('ERR_CONNECTION_REFUSED') ||
+         error.message.includes('net::ERR_CONNECTION_REFUSED'))) {
+      
+      console.error('🚨 Server connection failed:', error);
+      
+      // Only redirect if we're not already on the server-down page
+      if (typeof window !== 'undefined' && !window.location.pathname.includes('/server-down')) {
+        window.location.href = '/server-down';
+      }
+      
+      throw new APIError('Server is unavailable. Please try again later.', 0, 'CONNECTION_REFUSED');
+    }
+    
+    // Handle other fetch errors
+    if (error instanceof TypeError) {
+      console.error('🚨 Network error:', error);
+      throw new APIError('Network error. Please check your connection.', 0, 'NETWORK_ERROR');
+    }
+    
+    // Re-throw APIError and RateLimitError instances
+    if (error instanceof APIError || error instanceof RateLimitError) {
+      throw error;
+    }
+    
+    // Handle unexpected errors
+    console.error('🚨 Unexpected error:', error);
+    throw new APIError('An unexpected error occurred.', 0, 'UNEXPECTED_ERROR');
+  }
 }
 
 // Custom error class for better error handling

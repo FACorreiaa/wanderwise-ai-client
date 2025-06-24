@@ -11,7 +11,17 @@ import { createResource } from 'solid-js';
 export const useFavorites = () => {
   return useQuery(() => ({
     queryKey: queryKeys.favorites,
-    queryFn: () => apiRequest<POI[]>('/pois/favourites'),
+    queryFn: async () => {
+      console.log('🔄 Fetching user favorites...');
+      try {
+        const response = await apiRequest<POI[]>('/pois/favourites');
+        console.log('✅ Favorites fetched:', response);
+        return response;
+      } catch (error) {
+        console.error('❌ Failed to fetch favorites:', error);
+        throw error;
+      }
+    },
     staleTime: 5 * 60 * 1000,
   }));
 };
@@ -20,13 +30,27 @@ export const useAddToFavoritesMutation = () => {
   const queryClient = useQueryClient();
 
   return useMutation(() => ({
-    mutationFn: (poiId: string) =>
-      apiRequest<{ message: string }>('/pois/favourites', {
+    mutationFn: async (params: { poiId: string; poiData?: POIDetailedInfo }) => {
+      console.log('🔄 Adding POI to favorites:', params);
+      const requestBody = {
+        poi_id: params.poiId,
+        ...(params.poiData && { poi_data: params.poiData })
+      };
+      console.log('📤 Request body:', requestBody);
+      
+      const response = await apiRequest<{ message: string }>('/pois/favourites', {
         method: 'POST',
-        body: JSON.stringify({ poi_id: poiId }),
-      }),
+        body: JSON.stringify(requestBody),
+      });
+      console.log('✅ Add to favorites response:', response);
+      return response;
+    },
     onSuccess: () => {
+      console.log('✅ Add to favorites successful, invalidating queries');
       queryClient.invalidateQueries({ queryKey: queryKeys.favorites });
+    },
+    onError: (error) => {
+      console.error('❌ Add to favorites failed:', error);
     },
   }));
 };
@@ -35,23 +59,30 @@ export const useRemoveFromFavoritesMutation = () => {
   const queryClient = useQueryClient();
 
   return useMutation(() => ({
-    mutationFn: (poiId: string) =>
-      apiRequest<{ message: string }>('/pois/favourites', {
+    mutationFn: async (poiId: string) => {
+      console.log('🔄 Removing POI from favorites:', poiId);
+      const response = await apiRequest<{ message: string }>('/pois/favourites', {
         method: 'DELETE',
         body: JSON.stringify({ poi_id: poiId }),
-      }),
-    onMutate: async (poiId) => {
-      // Optimistically remove from favorites
-      await queryClient.cancelQueries({ queryKey: queryKeys.favorites });
-      const previousFavorites = queryClient.getQueryData(queryKeys.favorites);
-
-      queryClient.setQueryData(queryKeys.favorites, (old: POI[] = []) =>
-        old.filter(poi => poi.id !== poiId)
-      );
-
-      return { previousFavorites };
+      });
+      console.log('✅ Remove from favorites response:', response);
+      return response;
     },
+    // Temporarily disable optimistic updates to debug
+    // onMutate: async (poiId) => {
+    //   console.log('🔄 Optimistically removing POI:', poiId);
+    //   // Optimistically remove from favorites
+    //   await queryClient.cancelQueries({ queryKey: queryKeys.favorites });
+    //   const previousFavorites = queryClient.getQueryData(queryKeys.favorites);
+
+    //   queryClient.setQueryData(queryKeys.favorites, (old: POI[] = []) =>
+    //     old.filter(poi => poi.id !== poiId)
+    //   );
+
+    //   return { previousFavorites };
+    // },
     onError: (err, poiId, context) => {
+      console.error('❌ Remove from favorites failed:', err);
       // Rollback on error
       if (context?.previousFavorites) {
         queryClient.setQueryData(queryKeys.favorites, context.previousFavorites);

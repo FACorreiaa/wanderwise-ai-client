@@ -14,6 +14,7 @@ export default function DiscoverPage() {
     const [showFilters, setShowFilters] = createSignal(false);
     const [streamingData, setStreamingData] = createSignal<ActivitiesResponse | null>(null);
     const [fromChat, setFromChat] = createSignal(false);
+    const [showOnlyFavorites, setShowOnlyFavorites] = createSignal(false);
     const { userLocation } = useUserLocation();
     const [searchRadius, setSearchRadius] = createSignal(10000);
     const navigate = useNavigate();
@@ -95,7 +96,12 @@ export default function DiscoverPage() {
 
 
 
-    console.log('pois', pois())
+    console.log('📍 POIs loaded:', pois());
+    console.log('⭐ Favorites query state:', {
+        data: favoritesQuery.data,
+        isLoading: favoritesQuery.isLoading,
+        error: favoritesQuery.error
+    });
 
     // Convert streaming POI data to display format
     const convertPOIToDisplayFormat = (poi: POIDetailedInfo) => {
@@ -125,7 +131,12 @@ export default function DiscoverPage() {
 
     // Check if POI is in favorites
     const isFavorite = (poiId: string) => {
-        return favoritesQuery.data?.some(poi => poi.id === poiId) || false;
+        const favs = favoritesQuery.data || [];
+        const isInFavorites = favs.some(poi => poi.id === poiId);
+        if (poiId) {
+            console.log(`🔍 Checking if POI ${poiId} is in favorites:`, isInFavorites, 'Total favorites:', favs.length);
+        }
+        return isInFavorites;
     };
 
 
@@ -163,6 +174,11 @@ export default function DiscoverPage() {
                 poi.description.toLowerCase().includes(query) ||
                 (poi.tags || []).some(tag => tag.toLowerCase().includes(query))
             );
+        }
+
+        // Filter favorites
+        if (showOnlyFavorites()) {
+            filtered = filtered.filter(poi => isFavorite(poi.id));
         }
 
         // Note: Category, Price, and Rating filters are now handled server-side in the API
@@ -203,10 +219,44 @@ export default function DiscoverPage() {
     };
 
     const toggleFavorite = (poiId: string) => {
+        const poi = filteredPois().find(p => p.id === poiId);
+        const poiName = poi?.name || 'POI';
+        
+        console.log('🎯 Toggle favorite for POI:', { poiId, poiName, isFavorite: isFavorite(poiId) });
+        console.log('📄 Full POI object:', poi);
+        
         if (isFavorite(poiId)) {
-            removeFromFavoritesMutation.mutate(poiId);
+            console.log('🗑️ Removing from favorites...');
+            removeFromFavoritesMutation.mutate(poiId, {
+                onSuccess: () => {
+                    console.log(`✨ Removed ${poiName} from favorites`);
+                    // Add a brief visual effect
+                    const button = document.querySelector(`[data-poi-id="${poiId}"]`);
+                    if (button) {
+                        button.classList.add('animate-pulse');
+                        setTimeout(() => button.classList.remove('animate-pulse'), 500);
+                    }
+                },
+                onError: (error) => {
+                    console.error('Failed to remove from favorites:', error);
+                }
+            });
         } else {
-            addToFavoritesMutation.mutate(poiId);
+            console.log('⭐ Adding to favorites...');
+            addToFavoritesMutation.mutate({ poiId, poiData: poi }, {
+                onSuccess: () => {
+                    console.log(`⭐ Added ${poiName} to favorites`);
+                    // Add a brief visual effect
+                    const button = document.querySelector(`[data-poi-id="${poiId}"]`);
+                    if (button) {
+                        button.classList.add('animate-bounce');
+                        setTimeout(() => button.classList.remove('animate-bounce'), 600);
+                    }
+                },
+                onError: (error) => {
+                    console.error('Failed to add to favorites:', error);
+                }
+            });
         }
     };
 
@@ -298,17 +348,25 @@ export default function DiscoverPage() {
                 </div>
 
                 {/* Action buttons */}
-                <div class="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                <div class="absolute top-3 right-3 opacity-100 transition-opacity">
                     <div class="flex flex-col gap-1">
                         <button
                             onClick={() => toggleFavorite(poi.id)}
-                            class={`p-2 rounded-lg ${isFavorite(poi.id) ? 'bg-red-500 text-white' : 'bg-white/90 text-gray-700'} hover:scale-110 transition-transform`}
+                            disabled={addToFavoritesMutation.isPending || removeFromFavoritesMutation.isPending}
+                            data-poi-id={poi.id}
+                            class={`p-2 rounded-lg shadow-sm ${isFavorite(poi.id) ? 'bg-yellow-500 text-white' : 'bg-white text-gray-700 dark:bg-gray-800 dark:text-gray-300'} hover:scale-110 transition-transform disabled:opacity-50 disabled:cursor-not-allowed`}
+                            title={isFavorite(poi.id) ? 'Remove from favorites' : 'Add to favorites'}
                         >
-                            <Heart class={`w-4 h-4 ${isFavorite(poi.id) ? 'fill-current' : ''}`} />
+                            <Show 
+                                when={!(addToFavoritesMutation.isPending || removeFromFavoritesMutation.isPending)}
+                                fallback={<div class="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin"></div>}
+                            >
+                                <Star class={`w-4 h-4 ${isFavorite(poi.id) ? 'fill-current' : ''}`} />
+                            </Show>
                         </button>
                         <button
                             onClick={() => handleShare(poi)}
-                            class="p-2 bg-white/90 text-gray-700 rounded-lg hover:scale-110 transition-transform"
+                            class="p-2 bg-white text-gray-700 dark:bg-gray-800 dark:text-gray-300 rounded-lg shadow-sm hover:scale-110 transition-transform"
                         >
                             <Share2 class="w-4 h-4" />
                         </button>
@@ -475,10 +533,17 @@ export default function DiscoverPage() {
                         <div class="flex items-center gap-2">
                             <button
                                 onClick={() => toggleFavorite(poi.id)}
-                                class={`p-2 rounded-lg ${isFavorite(poi.id) ? 'text-red-600 dark:text-red-400' : 'text-gray-400'} hover:bg-gray-100 dark:hover:bg-gray-700`}
-                                title="Add to favorites"
+                                disabled={addToFavoritesMutation.isPending || removeFromFavoritesMutation.isPending}
+                                data-poi-id={poi.id}
+                                class={`p-2 rounded-lg ${isFavorite(poi.id) ? 'text-yellow-600 dark:text-yellow-400' : 'text-gray-400'} hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed`}
+                                title={isFavorite(poi.id) ? 'Remove from favorites' : 'Add to favorites'}
                             >
-                                <Heart class={`w-4 h-4 ${isFavorite(poi.id) ? 'fill-current' : ''}`} />
+                                <Show 
+                                    when={!(addToFavoritesMutation.isPending || removeFromFavoritesMutation.isPending)}
+                                    fallback={<div class="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin"></div>}
+                                >
+                                    <Star class={`w-4 h-4 ${isFavorite(poi.id) ? 'fill-current' : ''}`} />
+                                </Show>
                             </button>
                             <button
                                 onClick={() => handleShare(poi)}
@@ -543,9 +608,17 @@ export default function DiscoverPage() {
                                 <p>Error: {pois.error.message}</p>
                             </Show>
                             <Show when={pois()}>
-                                <p class="text-gray-600 dark:text-gray-400 mt-1">
-                                    {pois().length} amazing places to visit
-                                </p>
+                                <div class="flex items-center gap-4 mt-1">
+                                    <p class="text-gray-600 dark:text-gray-400">
+                                        {pois().length} amazing places to visit
+                                    </p>
+                                    <Show when={favoritesQuery.data}>
+                                        <div class="flex items-center gap-1 text-sm text-yellow-600 dark:text-yellow-400">
+                                            <Star class="w-4 h-4 fill-current" />
+                                            <span>{favoritesQuery.data.length} favorites</span>
+                                        </div>
+                                    </Show>
+                                </div>
                             </Show>
                         </div>
                     </div>
@@ -602,6 +675,24 @@ export default function DiscoverPage() {
                                                 {(option) => <option value={option.value}>{option.label}</option>}
                                             </For>
                                         </select>
+                                    </div>
+
+                                    {/* Favorites Filter */}
+                                    <div class="flex items-center gap-2">
+                                        <button
+                                            onClick={() => setShowOnlyFavorites(!showOnlyFavorites())}
+                                            class={`flex items-center gap-2 px-3 py-2 border rounded-lg text-sm transition-colors ${
+                                                showOnlyFavorites() 
+                                                    ? 'bg-yellow-50 border-yellow-300 text-yellow-700 dark:bg-yellow-900/20 dark:border-yellow-700 dark:text-yellow-300' 
+                                                    : 'border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+                                            }`}
+                                        >
+                                            <Star class={`w-4 h-4 ${showOnlyFavorites() ? 'fill-current' : ''}`} />
+                                            <span class="hidden sm:inline">
+                                                {showOnlyFavorites() ? 'Show All' : 'Favorites Only'}
+                                            </span>
+                                            <span class="sm:hidden">⭐</span>
+                                        </button>
                                     </div>
 
                                     {/* Sort Controls */}
