@@ -5,6 +5,7 @@ import MapComponent from '~/components/features/Map/Map';
 // Removed old API imports - now using unified streaming endpoint only
 import type { AccommodationResponse, HotelDetailedInfo } from '~/lib/api/types';
 import { HotelResults } from '~/components/results';
+import { TypingAnimation } from '~/components/TypingAnimation';
 
 export default function HotelsPage() {
     const location = useLocation();
@@ -537,7 +538,7 @@ export default function HotelsPage() {
                             </div>
                             <div class="flex-1">
                                 <p class="text-sm font-medium text-green-900">
-                                    ✨ Your hotel recommendations are ready!
+                                    ✨ <TypingAnimation text="Your hotel recommendations are ready!" />
                                 </p>
                                 <p class="text-xs text-green-700">
                                     Generated from your chat: "{location.state?.originalMessage || 'Hotel search'}"

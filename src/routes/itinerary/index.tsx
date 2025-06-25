@@ -6,6 +6,7 @@ import MapComponent from '~/components/features/Map/Map';
 import { useItineraries, useItinerary, useUpdateItineraryMutation, useSaveItineraryMutation } from '~/lib/api/itineraries';
 import type { AiCityResponse, POIDetail } from '~/lib/api/types';
 import { ItineraryResults } from '~/components/results';
+import { TypingAnimation } from '~/components/TypingAnimation';
 
 export default function ItineraryResultsPage() {
     const location = useLocation();
@@ -782,7 +783,7 @@ export default function ItineraryResultsPage() {
                             </div>
                             <div class="flex-1">
                                 <p class="text-sm font-medium text-green-900">
-                                    ✨ Your personalized itinerary is ready!
+                                    ✨ <TypingAnimation text="Your personalized itinerary is ready!" />
                                 </p>
                                 <p class="text-xs text-green-700">
                                     Generated from your chat: "{location.state?.originalMessage || 'Walk in Madrid'}"

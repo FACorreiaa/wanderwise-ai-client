@@ -5,6 +5,7 @@ import { useNearbyPOIs, useFavorites, useAddToFavoritesMutation, useRemoveFromFa
 import type { ActivitiesResponse, POIDetailedInfo } from '~/lib/api/types';
 import { useUserLocation } from '@/contexts/LocationContext';
 import MapComponent from '~/components/features/Map/Map';
+import { TypingAnimation } from '~/components/TypingAnimation';
 
 export default function DiscoverPage() {
     const [searchQuery, setSearchQuery] = createSignal('');
@@ -578,7 +579,7 @@ export default function DiscoverPage() {
                             </div>
                             <div class="flex-1">
                                 <p class="text-sm font-medium text-green-900">
-                                    ✨ Your activity recommendations are ready!
+                                    ✨ <TypingAnimation text="Your activity recommendations are ready!" />
                                 </p>
                                 <p class="text-xs text-green-700">
                                     Generated from your chat: "{location.state?.originalMessage || 'Activity search'}"

@@ -9,6 +9,7 @@ import { HotelResults, RestaurantResults, ActivityResults, ItineraryResults } fr
 import DetailedItemModal from '~/components/DetailedItemModal';
 import { createQuery, useQuery, useQueryClient } from '@tanstack/solid-query';
 import { useDefaultSearchProfile } from '~/lib/api/profiles';
+import { TypingAnimation } from '~/components/TypingAnimation';
 
 export default function ChatPage() {
     const navigate = useNavigate();
@@ -520,7 +521,7 @@ export default function ChatPage() {
                         ? 'bg-red-50 dark:bg-red-900/20 text-red-800 dark:text-red-200 border border-red-200 dark:border-red-800'
                         : 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200'
                     }`}>
-                    <p class="text-sm whitespace-pre-wrap">{formatMessageContent(message.content)}</p>
+                    <p class="text-sm whitespace-pre-wrap"><TypingAnimation text={formatMessageContent(message.content)} /></p>
                 </div>
 
                 {/* Streaming data preview - Mobile First */}

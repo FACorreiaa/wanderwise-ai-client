@@ -6,6 +6,7 @@ import MapComponent from '~/components/features/Map/Map';
 import type { ActivitiesResponse, POIDetailedInfo } from '~/lib/api/types';
 import { useUserLocation } from '@/contexts/LocationContext';
 import { ActivityResults } from '~/components/results';
+import { TypingAnimation } from '~/components/TypingAnimation';
 
 export default function ActivitiesPage() {
     const location = useLocation();
@@ -519,7 +520,7 @@ export default function ActivitiesPage() {
                             </div>
                             <div class="flex-1">
                                 <p class="text-sm font-medium text-green-900">
-                                    ✨ Your activity recommendations are ready!
+                                    ✨ <TypingAnimation text="Your activity recommendations are ready!" />
                                 </p>
                                 <p class="text-xs text-green-700">
                                     Generated from your chat: "{location.state?.originalMessage || 'Activity search'}"
