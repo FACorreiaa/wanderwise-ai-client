@@ -222,10 +222,10 @@ export default function DiscoverPage() {
     const toggleFavorite = (poiId: string) => {
         const poi = filteredPois().find(p => p.id === poiId);
         const poiName = poi?.name || 'POI';
-        
+
         console.log('🎯 Toggle favorite for POI:', { poiId, poiName, isFavorite: isFavorite(poiId) });
         console.log('📄 Full POI object:', poi);
-        
+
         if (isFavorite(poiId)) {
             console.log('🗑️ Removing from favorites...');
             removeFromFavoritesMutation.mutate(poiId, {
@@ -237,6 +237,8 @@ export default function DiscoverPage() {
                         button.classList.add('animate-pulse');
                         setTimeout(() => button.classList.remove('animate-pulse'), 500);
                     }
+                    // Refetch favorites to update the UI
+                    favoritesQuery.refetch();
                 },
                 onError: (error) => {
                     console.error('Failed to remove from favorites:', error);
@@ -253,6 +255,8 @@ export default function DiscoverPage() {
                         button.classList.add('animate-bounce');
                         setTimeout(() => button.classList.remove('animate-bounce'), 600);
                     }
+                    // Refetch favorites to update the UI
+                    favoritesQuery.refetch();
                 },
                 onError: (error) => {
                     console.error('Failed to add to favorites:', error);
@@ -358,7 +362,7 @@ export default function DiscoverPage() {
                             class={`p-2 rounded-lg shadow-sm ${isFavorite(poi.id) ? 'bg-yellow-500 text-white' : 'bg-white text-gray-700 dark:bg-gray-800 dark:text-gray-300'} hover:scale-110 transition-transform disabled:opacity-50 disabled:cursor-not-allowed`}
                             title={isFavorite(poi.id) ? 'Remove from favorites' : 'Add to favorites'}
                         >
-                            <Show 
+                            <Show
                                 when={!(addToFavoritesMutation.isPending || removeFromFavoritesMutation.isPending)}
                                 fallback={<div class="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin"></div>}
                             >
@@ -539,7 +543,7 @@ export default function DiscoverPage() {
                                 class={`p-2 rounded-lg ${isFavorite(poi.id) ? 'text-yellow-600 dark:text-yellow-400' : 'text-gray-400'} hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed`}
                                 title={isFavorite(poi.id) ? 'Remove from favorites' : 'Add to favorites'}
                             >
-                                <Show 
+                                <Show
                                     when={!(addToFavoritesMutation.isPending || removeFromFavoritesMutation.isPending)}
                                     fallback={<div class="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin"></div>}
                                 >
@@ -682,11 +686,10 @@ export default function DiscoverPage() {
                                     <div class="flex items-center gap-2">
                                         <button
                                             onClick={() => setShowOnlyFavorites(!showOnlyFavorites())}
-                                            class={`flex items-center gap-2 px-3 py-2 border rounded-lg text-sm transition-colors ${
-                                                showOnlyFavorites() 
-                                                    ? 'bg-yellow-50 border-yellow-300 text-yellow-700 dark:bg-yellow-900/20 dark:border-yellow-700 dark:text-yellow-300' 
+                                            class={`flex items-center gap-2 px-3 py-2 border rounded-lg text-sm transition-colors ${showOnlyFavorites()
+                                                    ? 'bg-yellow-50 border-yellow-300 text-yellow-700 dark:bg-yellow-900/20 dark:border-yellow-700 dark:text-yellow-300'
                                                     : 'border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
-                                            }`}
+                                                }`}
                                         >
                                             <Star class={`w-4 h-4 ${showOnlyFavorites() ? 'fill-current' : ''}`} />
                                             <span class="hidden sm:inline">

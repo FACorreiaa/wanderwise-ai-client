@@ -45,12 +45,34 @@ export const useAddToFavoritesMutation = () => {
       console.log('✅ Add to favorites response:', response);
       return response;
     },
-    onSuccess: () => {
-      console.log('✅ Add to favorites successful, invalidating queries');
-      queryClient.invalidateQueries({ queryKey: queryKeys.favorites });
+    onMutate: async (params) => {
+      // Cancel any outgoing refetches
+      await queryClient.cancelQueries({ queryKey: queryKeys.favorites });
+      
+      // Snapshot the previous value
+      const previousFavorites = queryClient.getQueryData(queryKeys.favorites);
+      
+      // Optimistically update to the new value
+      queryClient.setQueryData(queryKeys.favorites, (old: POI[] | undefined) => {
+        const currentFavorites = old || [];
+        // Add the POI if we have the data, otherwise add a minimal POI object
+        const newPOI = params.poiData || { id: params.poiId, name: 'POI' } as POI;
+        return [...currentFavorites, newPOI];
+      });
+      
+      // Return a context object with the snapshotted value
+      return { previousFavorites };
     },
-    onError: (error) => {
+    onError: (error, params, context) => {
       console.error('❌ Add to favorites failed:', error);
+      // If the mutation fails, use the context returned from onMutate to roll back
+      queryClient.setQueryData(queryKeys.favorites, context?.previousFavorites);
+    },
+    onSettled: () => {
+      // Delay invalidation slightly to allow optimistic update to take effect
+      setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: queryKeys.favorites });
+      }, 100);
     },
   }));
 };
@@ -68,19 +90,19 @@ export const useRemoveFromFavoritesMutation = () => {
       console.log('✅ Remove from favorites response:', response);
       return response;
     },
-    // Temporarily disable optimistic updates to debug
-    // onMutate: async (poiId) => {
-    //   console.log('🔄 Optimistically removing POI:', poiId);
-    //   // Optimistically remove from favorites
-    //   await queryClient.cancelQueries({ queryKey: queryKeys.favorites });
-    //   const previousFavorites = queryClient.getQueryData(queryKeys.favorites);
+    onMutate: async (poiId) => {
+      console.log('🔄 Optimistically removing POI:', poiId);
+      // Optimistically remove from favorites
+      await queryClient.cancelQueries({ queryKey: queryKeys.favorites });
+      const previousFavorites = queryClient.getQueryData(queryKeys.favorites);
 
-    //   queryClient.setQueryData(queryKeys.favorites, (old: POI[] = []) =>
-    //     old.filter(poi => poi.id !== poiId)
-    //   );
+      queryClient.setQueryData(queryKeys.favorites, (old: POI[] | undefined) => {
+        const currentFavorites = old || [];
+        return currentFavorites.filter(poi => poi.id !== poiId);
+      });
 
-    //   return { previousFavorites };
-    // },
+      return { previousFavorites };
+    },
     onError: (err, poiId, context) => {
       console.error('❌ Remove from favorites failed:', err);
       // Rollback on error
@@ -89,7 +111,10 @@ export const useRemoveFromFavoritesMutation = () => {
       }
     },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.favorites });
+      // Delay invalidation slightly to allow optimistic update to take effect
+      setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: queryKeys.favorites });
+      }, 100);
     },
   }));
 };
