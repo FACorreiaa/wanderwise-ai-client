@@ -37,7 +37,7 @@ export const useAddToFavoritesMutation = () => {
         ...(params.poiData && { poi_data: params.poiData })
       };
       console.log('📤 Request body:', requestBody);
-      
+
       const response = await apiRequest<{ message: string }>('/pois/favourites', {
         method: 'POST',
         body: JSON.stringify(requestBody),
@@ -48,10 +48,10 @@ export const useAddToFavoritesMutation = () => {
     onMutate: async (params) => {
       // Cancel any outgoing refetches
       await queryClient.cancelQueries({ queryKey: queryKeys.favorites });
-      
+
       // Snapshot the previous value
       const previousFavorites = queryClient.getQueryData(queryKeys.favorites);
-      
+
       // Optimistically update to the new value
       queryClient.setQueryData(queryKeys.favorites, (old: POI[] | undefined) => {
         const currentFavorites = old || [];
@@ -59,7 +59,7 @@ export const useAddToFavoritesMutation = () => {
         const newPOI = params.poiData || { id: params.poiId, name: 'POI' } as POI;
         return [...currentFavorites, newPOI];
       });
-      
+
       // Return a context object with the snapshotted value
       return { previousFavorites };
     },
@@ -69,10 +69,7 @@ export const useAddToFavoritesMutation = () => {
       queryClient.setQueryData(queryKeys.favorites, context?.previousFavorites);
     },
     onSettled: () => {
-      // Delay invalidation slightly to allow optimistic update to take effect
-      setTimeout(() => {
-        queryClient.invalidateQueries({ queryKey: queryKeys.favorites });
-      }, 100);
+      queryClient.invalidateQueries({ queryKey: queryKeys.favorites });
     },
   }));
 };
@@ -111,10 +108,7 @@ export const useRemoveFromFavoritesMutation = () => {
       }
     },
     onSettled: () => {
-      // Delay invalidation slightly to allow optimistic update to take effect
-      setTimeout(() => {
-        queryClient.invalidateQueries({ queryKey: queryKeys.favorites });
-      }, 100);
+      queryClient.invalidateQueries({ queryKey: queryKeys.favorites });
     },
   }));
 };

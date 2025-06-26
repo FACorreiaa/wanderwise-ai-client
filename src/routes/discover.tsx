@@ -134,9 +134,7 @@ export default function DiscoverPage() {
     const isFavorite = (poiId: string) => {
         const favs = favoritesQuery.data || [];
         const isInFavorites = favs.some(poi => poi.id === poiId);
-        if (poiId) {
-            console.log(`🔍 Checking if POI ${poiId} is in favorites:`, isInFavorites, 'Total favorites:', favs.length);
-        }
+        console.log(`🔍 isFavorite(${poiId}):`, isInFavorites, 'Favs:', favs);
         return isInFavorites;
     };
 
@@ -219,49 +217,57 @@ export default function DiscoverPage() {
         return filtered;
     };
 
-    const toggleFavorite = (poiId: string) => {
-        const poi = filteredPois().find(p => p.id === poiId);
-        const poiName = poi?.name || 'POI';
+    // const toggleFavorite = (poiId: string, poi?: POIDetailedInfo) => {
+    //     const poiName = poi?.name || 'POI';
 
-        console.log('🎯 Toggle favorite for POI:', { poiId, poiName, isFavorite: isFavorite(poiId) });
-        console.log('📄 Full POI object:', poi);
+    //     console.log('🎯 Toggle favorite for POI:', { poiId, poiName, isFavorite: isFavorite(poiId) });
+    //     console.log('📄 Full POI object:', poi);
 
+    //     if (isFavorite(poiId)) {
+    //         console.log('🗑️ Removing from favorites...');
+    //         removeFromFavoritesMutation.mutate(poiId, {
+    //             onSuccess: () => {
+    //                 console.log(`✨ Removed ${poiName} from favorites`);
+    //                 // Add a brief visual effect
+    //                 const button = document.querySelector(`[data-poi-id="${poiId}"]`);
+    //                 if (button) {
+    //                     button.classList.add('animate-pulse');
+    //                     setTimeout(() => button.classList.remove('animate-pulse'), 500);
+    //                 }
+    //             },
+    //             onError: (error) => {
+    //                 console.error('Failed to remove from favorites:', error);
+    //             }
+    //         });
+    //     } else {
+    //         console.log('⭐ Adding to favorites...');
+    //         if (!poi) {
+    //             console.error("Cannot add to favorites without POI data");
+    //             return;
+    //         }
+    //         addToFavoritesMutation.mutate({ poiId, poiData: poi }, {
+    //             onSuccess: () => {
+    //                 console.log(`⭐ Added ${poiName} to favorites`);
+    //                 // Add a brief visual effect
+    //                 const button = document.querySelector(`[data-poi-id="${poiId}"]`);
+    //                 if (button) {
+    //                     button.classList.add('animate-bounce');
+    //                     setTimeout(() => button.classList.remove('animate-bounce'), 600);
+    //                 }
+    //             },
+    //             onError: (error) => {
+    //                 console.error('Failed to add to favorites:', error);
+    //             }
+    //         });
+    //     }
+    // };
+
+    const toggleFavorite = (poiId: string, poi?: POIDetailedInfo) => {
         if (isFavorite(poiId)) {
-            console.log('🗑️ Removing from favorites...');
-            removeFromFavoritesMutation.mutate(poiId, {
-                onSuccess: () => {
-                    console.log(`✨ Removed ${poiName} from favorites`);
-                    // Add a brief visual effect
-                    const button = document.querySelector(`[data-poi-id="${poiId}"]`);
-                    if (button) {
-                        button.classList.add('animate-pulse');
-                        setTimeout(() => button.classList.remove('animate-pulse'), 500);
-                    }
-                    // Refetch favorites to update the UI
-                    favoritesQuery.refetch();
-                },
-                onError: (error) => {
-                    console.error('Failed to remove from favorites:', error);
-                }
-            });
+            removeFromFavoritesMutation.mutate(poiId);
         } else {
-            console.log('⭐ Adding to favorites...');
-            addToFavoritesMutation.mutate({ poiId, poiData: poi }, {
-                onSuccess: () => {
-                    console.log(`⭐ Added ${poiName} to favorites`);
-                    // Add a brief visual effect
-                    const button = document.querySelector(`[data-poi-id="${poiId}"]`);
-                    if (button) {
-                        button.classList.add('animate-bounce');
-                        setTimeout(() => button.classList.remove('animate-bounce'), 600);
-                    }
-                    // Refetch favorites to update the UI
-                    favoritesQuery.refetch();
-                },
-                onError: (error) => {
-                    console.error('Failed to add to favorites:', error);
-                }
-            });
+            if (!poi) return; // Ensure poi is provided for adding
+            addToFavoritesMutation.mutate({ poiId, poiData: poi });
         }
     };
 
@@ -356,10 +362,10 @@ export default function DiscoverPage() {
                 <div class="absolute top-3 right-3 opacity-100 transition-opacity">
                     <div class="flex flex-col gap-1">
                         <button
-                            onClick={() => toggleFavorite(poi.id)}
+                            onClick={() => toggleFavorite(poi.id, poi)}
                             disabled={addToFavoritesMutation.isPending || removeFromFavoritesMutation.isPending}
                             data-poi-id={poi.id}
-                            class={`p-2 rounded-lg shadow-sm ${isFavorite(poi.id) ? 'bg-yellow-500 text-white' : 'bg-white text-gray-700 dark:bg-gray-800 dark:text-gray-300'} hover:scale-110 transition-transform disabled:opacity-50 disabled:cursor-not-allowed`}
+                            class={`p-2 rounded-lg ${isFavorite(poi.id) ? 'text-yellow-600' : 'text-gray-400'} ...`}
                             title={isFavorite(poi.id) ? 'Remove from favorites' : 'Add to favorites'}
                         >
                             <Show
@@ -537,7 +543,7 @@ export default function DiscoverPage() {
 
                         <div class="flex items-center gap-2">
                             <button
-                                onClick={() => toggleFavorite(poi.id)}
+                                onClick={() => toggleFavorite(poi.id, poi)}
                                 disabled={addToFavoritesMutation.isPending || removeFromFavoritesMutation.isPending}
                                 data-poi-id={poi.id}
                                 class={`p-2 rounded-lg ${isFavorite(poi.id) ? 'text-yellow-600 dark:text-yellow-400' : 'text-gray-400'} hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed`}
@@ -687,8 +693,8 @@ export default function DiscoverPage() {
                                         <button
                                             onClick={() => setShowOnlyFavorites(!showOnlyFavorites())}
                                             class={`flex items-center gap-2 px-3 py-2 border rounded-lg text-sm transition-colors ${showOnlyFavorites()
-                                                    ? 'bg-yellow-50 border-yellow-300 text-yellow-700 dark:bg-yellow-900/20 dark:border-yellow-700 dark:text-yellow-300'
-                                                    : 'border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+                                                ? 'bg-yellow-50 border-yellow-300 text-yellow-700 dark:bg-yellow-900/20 dark:border-yellow-700 dark:text-yellow-300'
+                                                : 'border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
                                                 }`}
                                         >
                                             <Star class={`w-4 h-4 ${showOnlyFavorites() ? 'fill-current' : ''}`} />
