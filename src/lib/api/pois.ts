@@ -68,9 +68,6 @@ export const useAddToFavoritesMutation = () => {
       // If the mutation fails, use the context returned from onMutate to roll back
       queryClient.setQueryData(queryKeys.favorites, context?.previousFavorites);
     },
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.favorites });
-    },
   }));
 };
 
@@ -106,9 +103,6 @@ export const useRemoveFromFavoritesMutation = () => {
       if (context?.previousFavorites) {
         queryClient.setQueryData(queryKeys.favorites, context.previousFavorites);
       }
-    },
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.favorites });
     },
   }));
 };
