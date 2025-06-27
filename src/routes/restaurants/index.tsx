@@ -6,7 +6,8 @@ import MapComponent from '~/components/features/Map/Map';
 import type { DiningResponse, RestaurantDetailedInfo } from '~/lib/api/types';
 import { RestaurantResults } from '~/components/results';
 import { TypingAnimation } from '~/components/TypingAnimation';
-import { API_BASE_URL } from '~/lib/api/shared';
+import { useChatSession } from '~/lib/hooks/useChatSession';
+import ChatInterface from '~/components/ui/ChatInterface';
 import { useAuth } from '~/contexts/AuthContext';
 
 export default function RestaurantsPage() {
@@ -18,12 +19,17 @@ export default function RestaurantsPage() {
     const [streamingData, setStreamingData] = createSignal<DiningResponse | null>(null);
     const [fromChat, setFromChat] = createSignal(false);
 
-    // Chat functionality
-    const [showChat, setShowChat] = createSignal(false);
-    const [chatMessage, setChatMessage] = createSignal('');
-    const [chatHistory, setChatHistory] = createSignal([]);
-    const [isLoading, setIsLoading] = createSignal(false);
-    const [sessionId, setSessionId] = createSignal('restaurants-session-id');
+    // Chat functionality using the reusable hook
+    const chatSession = useChatSession({
+        sessionIdPrefix: 'restaurants',
+        getStreamingData: () => streamingData(),
+        setStreamingData: setStreamingData,
+        onStreamingComplete: (data) => {
+            if (data && data.restaurants) {
+                setFromChat(true);
+            }
+        }
+    });
 
     // Filter states
     const [activeFilters, setActiveFilters] = createSignal({
@@ -121,44 +127,7 @@ export default function RestaurantsPage() {
         };
     };
 
-    // Chat logic
-    const sendChatMessage = async () => {
-        if (!chatMessage().trim() || isLoading()) return;
-
-        const userMessage = chatMessage().trim();
-        setChatMessage('');
-        setIsLoading(true);
-
-        setChatHistory(prev => [...prev, { type: 'user', content: userMessage, timestamp: new Date() }]);
-
-        try {
-            // Simulate API call for restaurant recommendations
-            await new Promise(resolve => setTimeout(resolve, 1500));
-            
-            setChatHistory(prev => [...prev, {
-                type: 'assistant',
-                content: "I'd be happy to help you find the perfect restaurant! Based on your preferences, I can recommend places with specific cuisines, price ranges, or dining experiences. What type of dining experience are you looking for?",
-                timestamp: new Date()
-            }]);
-
-        } catch (error) {
-            console.error('Error sending message:', error);
-            setChatHistory(prev => [...prev, {
-                type: 'error',
-                content: 'Sorry, there was an error processing your request. Please try again.',
-                timestamp: new Date()
-            }]);
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-    const handleKeyPress = (e) => {
-        if (e.key === 'Enter' && !e.shiftKey) {
-            e.preventDefault();
-            sendChatMessage();
-        }
-    };
+    // All chat logic is now handled by the useChatSession hook
 
     const filterOptions = {
         cuisines: [
@@ -413,84 +382,6 @@ export default function RestaurantsPage() {
         </Show>
     );
 
-    const renderChatInterface = () => (
-        <Show when={showChat()}>
-            <div class="fixed bottom-6 right-6 w-96 h-[500px] bg-white rounded-lg shadow-2xl border border-gray-200 flex flex-col z-50">
-                <div class="flex items-center justify-between p-4 border-b border-gray-200 bg-orange-600 text-white rounded-t-lg">
-                    <div class="flex items-center gap-2">
-                        <MessageCircle class="w-5 h-5" />
-                        <span class="font-medium">Restaurant Recommendations</span>
-                    </div>
-                    <button
-                        onClick={() => setShowChat(false)}
-                        class="p-1 hover:bg-orange-700 rounded"
-                    >
-                        <X class="w-4 h-4" />
-                    </button>
-                </div>
-
-                <div class="flex-1 overflow-y-auto p-4 space-y-4">
-                    <Show when={chatHistory().length === 0}>
-                        <div class="text-center text-gray-500 py-8">
-                            <Utensils class="w-12 h-12 mx-auto mb-4 text-gray-300" />
-                            <p class="text-sm">Ask me for restaurant recommendations!</p>
-                            <p class="text-xs mt-2 text-gray-400">
-                                Try: "Find me a romantic dinner spot" or "Vegetarian restaurants with good reviews"
-                            </p>
-                        </div>
-                    </Show>
-
-                    <For each={chatHistory()}>
-                        {(message) => (
-                            <div class={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}>
-                                <div class={`max-w-[80%] p-3 rounded-lg text-sm ${message.type === 'user'
-                                    ? 'bg-orange-600 text-white'
-                                    : message.type === 'error'
-                                        ? 'bg-red-100 text-red-800 border border-red-200'
-                                        : 'bg-gray-100 text-gray-800'
-                                    }`}>
-                                    <p class="whitespace-pre-wrap">{message.content}</p>
-                                    <p class={`text-xs mt-1 opacity-70 ${message.type === 'user' ? 'text-orange-100' : 'text-gray-500'}`}>
-                                        {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                    </p>
-                                </div>
-                            </div>
-                        )}
-                    </For>
-
-                    <Show when={isLoading()}>
-                        <div class="flex justify-start">
-                            <div class="bg-gray-100 p-3 rounded-lg flex items-center gap-2 text-sm text-gray-600">
-                                <Loader2 class="w-4 h-4 animate-spin" />
-                                <span>Finding perfect restaurants...</span>
-                            </div>
-                        </div>
-                    </Show>
-                </div>
-
-                <div class="p-4 border-t border-gray-200">
-                    <div class="flex items-end gap-2">
-                        <textarea
-                            value={chatMessage()}
-                            onInput={(e) => setChatMessage(e.target.value)}
-                            onKeyPress={handleKeyPress}
-                            placeholder="Ask for restaurant recommendations..."
-                            class="flex-1 resize-none border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                            rows="2"
-                            disabled={isLoading()}
-                        />
-                        <button
-                            onClick={sendChatMessage}
-                            disabled={!chatMessage().trim() || isLoading()}
-                            class="p-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                        >
-                            <Send class="w-4 h-4" />
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </Show>
-    );
 
     // Get display location
     const displayLocation = () => {
@@ -567,7 +458,7 @@ export default function RestaurantsPage() {
                             {/* Action Buttons */}
                             <div class="flex flex-col gap-2 sm:flex-row sm:gap-3">
                                 <button
-                                    onClick={() => setShowChat(true)}
+                                    onClick={() => chatSession.setShowChat(true)}
                                     class="flex items-center justify-center gap-2 px-4 py-2 bg-gradient-to-r from-orange-600 to-orange-700 text-white rounded-lg hover:from-orange-700 hover:to-orange-800 transition-all shadow-sm text-sm font-medium"
                                 >
                                     <MessageCircle class="w-4 h-4" />
@@ -690,17 +581,26 @@ export default function RestaurantsPage() {
             </div>
 
             {/* Chat Interface */}
-            {renderChatInterface()}
-
-            {/* Floating Chat Button */}
-            <Show when={!showChat()}>
-                <button
-                    onClick={() => setShowChat(true)}
-                    class="fixed bottom-4 right-4 w-12 h-12 bg-orange-600 text-white rounded-full shadow-lg hover:bg-orange-700 transition-all hover:scale-105 flex items-center justify-center z-40 sm:bottom-6 sm:right-6 sm:w-14 sm:h-14"
-                >
-                    <Utensils class="w-5 h-5 sm:w-6 sm:h-6" />
-                </button>
-            </Show>
+            <ChatInterface
+                showChat={chatSession.showChat()}
+                chatMessage={chatSession.chatMessage()}
+                chatHistory={chatSession.chatHistory()}
+                isLoading={chatSession.isLoading()}
+                setShowChat={chatSession.setShowChat}
+                setChatMessage={chatSession.setChatMessage}
+                sendChatMessage={chatSession.sendChatMessage}
+                handleKeyPress={chatSession.handleKeyPress}
+                title="Restaurant Recommendations"
+                placeholder="Ask for restaurant recommendations..."
+                emptyStateIcon={Utensils}
+                emptyStateTitle="Ask me for restaurant recommendations!"
+                emptyStateSubtitle='Try: "Find me a romantic dinner spot" or "Vegetarian restaurants with good reviews"'
+                loadingMessage="Finding perfect restaurants..."
+                headerColor="bg-orange-600"
+                userMessageColor="bg-orange-600"
+                floatingButtonColor="bg-orange-600 hover:bg-orange-700"
+                focusRingColor="focus:ring-orange-500"
+            />
 
             {/* Selected Restaurant Details Modal */}
             <Show when={selectedRestaurant()}>

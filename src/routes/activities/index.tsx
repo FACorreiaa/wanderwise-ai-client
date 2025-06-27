@@ -7,7 +7,8 @@ import type { ActivitiesResponse, POIDetailedInfo } from '~/lib/api/types';
 import { useUserLocation } from '@/contexts/LocationContext';
 import { ActivityResults } from '~/components/results';
 import { TypingAnimation } from '~/components/TypingAnimation';
-import { API_BASE_URL } from '~/lib/api/shared';
+import { useChatSession } from '~/lib/hooks/useChatSession';
+import ChatInterface from '~/components/ui/ChatInterface';
 import { useAuth } from '~/contexts/AuthContext';
 
 export default function ActivitiesPage() {
@@ -20,12 +21,17 @@ export default function ActivitiesPage() {
     const [streamingData, setStreamingData] = createSignal<ActivitiesResponse | null>(null);
     const [fromChat, setFromChat] = createSignal(false);
 
-    // Chat functionality
-    const [showChat, setShowChat] = createSignal(false);
-    const [chatMessage, setChatMessage] = createSignal('');
-    const [chatHistory, setChatHistory] = createSignal([]);
-    const [isLoading, setIsLoading] = createSignal(false);
-    const [sessionId, setSessionId] = createSignal(null);
+    // Chat functionality using the reusable hook
+    const chatSession = useChatSession({
+        sessionIdPrefix: 'activities',
+        getStreamingData: () => streamingData(),
+        setStreamingData: setStreamingData,
+        onStreamingComplete: (data) => {
+            if (data && data.activities) {
+                setFromChat(true);
+            }
+        }
+    });
     const [isUpdatingItinerary, setIsUpdatingItinerary] = createSignal(false);
 
 
@@ -126,509 +132,7 @@ export default function ActivitiesPage() {
         };
     };
 
-    // Chat logic
-    const sendChatMessage = async () => {
-        if (!chatMessage().trim() || isLoading()) return;
-
-        const currentSessionId = sessionId();
-        console.log('🔍 sendChatMessage - Current session ID:', currentSessionId);
-        console.log('🔍 sendChatMessage - Session storage:', sessionStorage.getItem('completedStreamingSession'));
-        console.log('🔍 sendChatMessage - Streaming data present:', !!streamingData());
-        
-        // If no session ID in signal, try to extract from session storage as fallback
-        let workingSessionId = currentSessionId;
-        if (!workingSessionId) {
-            console.log('No session ID in signal, trying session storage fallback...');
-            const storedSession = sessionStorage.getItem('completedStreamingSession');
-            if (storedSession) {
-                try {
-                    const session = JSON.parse(storedSession);
-                    workingSessionId = session.sessionId || session.data?.session_id || session.data?.sessionId;
-                    if (workingSessionId) {
-                        console.log('✅ Found session ID in storage fallback:', workingSessionId);
-                        setSessionId(workingSessionId); // Update the signal
-                    }
-                } catch (error) {
-                    console.error('Error parsing stored session for fallback:', error);
-                }
-            }
-        }
-        
-        if (!workingSessionId) {
-            console.log('No session ID found after fallback attempts, starting new session...');
-            
-            // Check if we have streaming data to work with
-            const streaming = streamingData();
-            if (streaming && streaming.activities) {
-                console.log('Have streaming data, starting new session for chat...');
-                
-                // Add a message showing we're starting a new session
-                setChatHistory(prev => [...prev, { 
-                    type: 'assistant', 
-                    content: 'Starting a new session to continue your conversation...',
-                    timestamp: new Date() 
-                }]);
-                
-                // Start new session with the user message
-                await startNewSession(userMessage);
-                return;
-            } else {
-                // No streaming data available
-                setChatHistory(prev => [...prev, {
-                    type: 'error',
-                    content: 'No active session found. Please refresh the page to start a new conversation.',
-                    timestamp: new Date()
-                }]);
-                return;
-            }
-        }
-
-        const userMessage = chatMessage().trim();
-        setChatMessage('');
-        setIsLoading(true);
-        setIsUpdatingItinerary(false);
-
-        // Add user message to chat history
-        setChatHistory(prev => [...prev, { type: 'user', content: userMessage, timestamp: new Date() }]);
-
-        let eventSource = null;
-
-        try {
-            // Create request payload
-            const requestPayload = {
-                message: userMessage,
-                user_location: null // Add user location if available
-            };
-
-            // Try to continue the existing session
-            console.log('🚀 Making request to continue session:', workingSessionId);
-            const response = await fetch(`${API_BASE_URL}/llm/prompt-response/chat/sessions/${workingSessionId}/continue`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${localStorage.getItem('access_token') || sessionStorage.getItem('access_token') || ''}`,
-                },
-                body: JSON.stringify(requestPayload)
-            });
-
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-
-            // Handle Server-Sent Events (SSE) streaming response
-            const reader = response.body?.getReader();
-            if (!reader) {
-                throw new Error('Response body is not readable');
-            }
-
-            const decoder = new TextDecoder();
-            let assistantMessage = '';
-            let isComplete = false;
-            let needsNewSession = false;
-
-            try {
-                while (!isComplete) {
-                    const { done, value } = await reader.read();
-                    if (done) break;
-
-                    const chunk = decoder.decode(value, { stream: true });
-                    const lines = chunk.split('\n');
-
-                    for (const line of lines) {
-                        if (line.startsWith('data: ')) {
-                            try {
-                                const eventData = JSON.parse(line.slice(6));
-                                console.log('Received SSE event:', eventData);
-
-                                // Handle different event types
-                                switch (eventData.Type || eventData.type) {
-                                    case 'start':
-                                        // Extract session ID from start event when a new session is created
-                                        const startData = eventData.Data || eventData.data;
-                                        if (startData && startData.session_id) {
-                                            console.log('New session started with ID:', startData.session_id);
-                                            setSessionId(startData.session_id);
-                                            
-                                            // Update session storage with new session ID - ensure consistency
-                                            const storedSession = sessionStorage.getItem('completedStreamingSession');
-                                            if (storedSession) {
-                                                try {
-                                                    const session = JSON.parse(storedSession);
-                                                    session.sessionId = startData.session_id;
-                                                    // Also store in data.session_id for consistency
-                                                    if (session.data) {
-                                                        session.data.session_id = startData.session_id;
-                                                        session.data.sessionId = startData.session_id;
-                                                    }
-                                                    sessionStorage.setItem('completedStreamingSession', JSON.stringify(session));
-                                                    console.log('✅ Updated session storage with session ID:', startData.session_id);
-                                                } catch (error) {
-                                                    console.error('Error updating session storage with new session ID:', error);
-                                                }
-                                            } else {
-                                                // Create a new session storage entry if none exists
-                                                const newSession = {
-                                                    sessionId: startData.session_id,
-                                                    data: {
-                                                        session_id: startData.session_id,
-                                                        sessionId: startData.session_id
-                                                    }
-                                                };
-                                                sessionStorage.setItem('completedStreamingSession', JSON.stringify(newSession));
-                                                console.log('✅ Created new session storage with session ID:', startData.session_id);
-                                            }
-                                        }
-                                        break;
-                                        
-                                    case 'session_validated':
-                                        console.log('Session validated:', eventData.Data || eventData.data);
-                                        break;
-                                        
-                                    case 'progress':
-                                        // Show progress updates
-                                        const progressData = eventData.Data || eventData.data;
-                                        console.log('Progress:', progressData);
-                                        
-                                        // Set updating indicator for POI-related progress
-                                        if (typeof progressData === 'string' && 
-                                            (progressData.includes('Adding Point of Interest') || 
-                                             progressData.includes('extracting_poi_name') ||
-                                             progressData.includes('generating_poi_data'))) {
-                                            setIsUpdatingItinerary(true);
-                                        }
-                                        break;
-                                    
-                                    case 'intent_classified':
-                                        console.log('Intent classified:', eventData.Data || eventData.data);
-                                        break;
-                                        
-                                    case 'semantic_context_generated':
-                                        console.log('Semantic context generated:', eventData.Data || eventData.data);
-                                        break;
-                                    
-                                    case 'itinerary':
-                                        // This is the key event - update the itinerary data
-                                        const itineraryData = eventData.Data || eventData.data;
-                                        const message = eventData.Message || eventData.message;
-                                        
-                                        console.log('Received itinerary update:', itineraryData);
-                                        console.log('Itinerary message:', message);
-                                        
-                                        if (itineraryData) {
-                                            // Batch all related updates to prevent multiple re-renders
-                                            batch(() => {
-                                                // Temporarily disable map during updates
-                                                setMapDisabled(true);
-                                                
-                                                // Show update indicator
-                                                setIsUpdatingItinerary(true);
-                                                
-                                                // Update the streaming data with new itinerary information
-                                                setStreamingData(prev => {
-                                                    if (!prev) return itineraryData;
-                                                    
-                                                    return {
-                                                        ...prev,
-                                                        // Update general city data if provided
-                                                        ...(itineraryData.general_city_data && {
-                                                            general_city_data: itineraryData.general_city_data
-                                                        }),
-                                                        // Update points of interest if provided
-                                                        ...(itineraryData.points_of_interest && {
-                                                            points_of_interest: itineraryData.points_of_interest
-                                                        }),
-                                                        // Update itinerary response if provided
-                                                        ...(itineraryData.itinerary_response && {
-                                                            itinerary_response: itineraryData.itinerary_response
-                                                        })
-                                                    };
-                                                });
-                                                
-                                                // Trigger POI update without causing full re-render
-                                                setPoisUpdateTrigger(prev => prev + 1);
-                                            });
-                                            
-                                            // Re-enable map after a short delay
-                                            setTimeout(() => {
-                                                setMapDisabled(false);
-                                            }, 300);
-                                            
-                                            // Use the message from the server if available
-                                            if (message) {
-                                                assistantMessage += message + ' ';
-                                            } else {
-                                                assistantMessage += 'Your itinerary has been updated. ';
-                                            }
-                                            
-                                            console.log('Itinerary updated successfully');
-                                        }
-                                        break;
-                                    
-                                    case 'complete':
-                                        isComplete = true;
-                                        const completeMessage = eventData.Message || eventData.message;
-                                        if (completeMessage && completeMessage !== 'Turn completed.') {
-                                            assistantMessage += completeMessage;
-                                        }
-                                        console.log('Streaming complete');
-                                        break;
-                                    
-                                    case 'error':
-                                        const errorMessage = eventData.Error || eventData.error || 'Unknown error occurred';
-                                        console.error('🚨 Received error event:', errorMessage);
-                                        console.log('🔍 Full error event data:', eventData);
-                                        
-                                        // Only treat as session error if it's SPECIFICALLY about session not being found
-                                        // Be very specific to avoid false positives
-                                        if ((errorMessage.includes('failed to get session') && errorMessage.includes('no rows in result set')) ||
-                                            (errorMessage.includes('session') && errorMessage.includes('not found') && errorMessage.includes('database'))) {
-                                            console.log('❌ Confirmed session database error detected, attempting to start new session...');
-                                            
-                                            // Set flags to trigger new session creation
-                                            needsNewSession = true;
-                                            isComplete = true;
-                                            assistantMessage += 'Session expired. Starting new session... ';
-                                            
-                                            // We'll handle the new session creation after this stream ends
-                                            // Don't throw error here, let it complete gracefully
-                                            break;
-                                        }
-                                        
-                                        // For other errors (like POI processing errors), just log them but continue
-                                        console.log('⚠️  Non-session error, continuing processing:', errorMessage);
-                                        assistantMessage += `Note: ${errorMessage} `;
-                                        break;
-                                    
-                                    default:
-                                        // Handle other event types or partial responses
-                                        if (eventData.Message || eventData.message) {
-                                            assistantMessage += eventData.Message || eventData.message;
-                                        }
-                                        console.log('Unhandled event type:', eventData.Type || eventData.type, eventData);
-                                        break;
-                                }
-                            } catch (parseError) {
-                                console.warn('Failed to parse SSE data:', line, parseError);
-                            }
-                        }
-                    }
-                }
-            } finally {
-                reader.releaseLock();
-            }
-
-            // Check if we need to start a new session
-            if (needsNewSession) {
-                console.log('Starting new session after session not found error...');
-                await startNewSession(userMessage);
-                return; // Exit early, new session will handle the response
-            }
-
-            // Add final assistant response to chat history
-            if (assistantMessage.trim()) {
-                setChatHistory(prev => [...prev, {
-                    type: 'assistant',
-                    content: assistantMessage.trim(),
-                    timestamp: new Date()
-                }]);
-            } else {
-                // If no specific message, provide a generic success message
-                setChatHistory(prev => [...prev, {
-                    type: 'assistant',
-                    content: 'Your request has been processed successfully.',
-                    timestamp: new Date()
-                }]);
-            }
-
-        } catch (error) {
-            console.error('Error sending message:', error);
-            setChatHistory(prev => [...prev, {
-                type: 'error',
-                content: `Sorry, there was an error processing your request: ${error.message}`,
-                timestamp: new Date()
-            }]);
-        } finally {
-            if (eventSource) {
-                eventSource.close();
-            }
-            setIsLoading(false);
-            setIsUpdatingItinerary(false);
-        }
-    };
-
-    const handleKeyPress = (e) => {
-        if (e.key === 'Enter' && !e.shiftKey) {
-            e.preventDefault();
-            sendChatMessage();
-        }
-    };
-
-    // Function to start a new session when the old one is not found
-    const startNewSession = async (userMessage: string) => {
-        try {
-            console.log('Starting new chat session...');
-            
-            const streaming = streamingData();
-            const cityName = streaming?.activities[0]?.city || 'Unknown';
-            
-            // Get user ID from auth context
-            const userId = auth.user()?.id;
-            if (!userId) {
-                throw new Error('User not authenticated - cannot start new session');
-            }
-            
-            const newSessionPayload = {
-                message: `Continue planning for ${cityName}. ${userMessage}`,
-                user_location: null
-            };
-            
-            const response = await fetch(`${API_BASE_URL}/llm/prompt-response/chat/sessions/stream/${userId}`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${localStorage.getItem('access_token') || sessionStorage.getItem('access_token') || ''}`,
-                },
-                body: JSON.stringify(newSessionPayload)
-            });
-
-            if (!response.ok) {
-                throw new Error(`New session failed with status: ${response.status}`);
-            }
-            
-            console.log('New session started successfully');
-            
-            // Process the new session's streaming response
-            const reader = response.body?.getReader();
-            if (!reader) {
-                throw new Error('Response body is not readable for new session');
-            }
-
-            const decoder = new TextDecoder();
-            let newSessionMessage = '';
-            let isComplete = false;
-
-            try {
-                while (!isComplete) {
-                    const { done, value } = await reader.read();
-                    if (done) break;
-
-                    const chunk = decoder.decode(value, { stream: true });
-                    const lines = chunk.split('\n');
-
-                    for (const line of lines) {
-                        if (line.startsWith('data: ')) {
-                            try {
-                                const eventData = JSON.parse(line.slice(6));
-                                console.log('New session event:', eventData);
-
-                                // Handle events similar to the main function, but focused on key events
-                                switch (eventData.Type || eventData.type) {
-                                    case 'start':
-                                        const startData = eventData.Data || eventData.data;
-                                        if (startData && startData.session_id) {
-                                            console.log('New session ID:', startData.session_id);
-                                            setSessionId(startData.session_id);
-                                            
-                                            // Update session storage with consistent data structure
-                                            const storedSession = sessionStorage.getItem('completedStreamingSession');
-                                            if (storedSession) {
-                                                try {
-                                                    const session = JSON.parse(storedSession);
-                                                    session.sessionId = startData.session_id;
-                                                    // Also store in data.session_id for consistency
-                                                    if (session.data) {
-                                                        session.data.session_id = startData.session_id;
-                                                        session.data.sessionId = startData.session_id;
-                                                    }
-                                                    sessionStorage.setItem('completedStreamingSession', JSON.stringify(session));
-                                                    console.log('✅ Updated session storage in new session with ID:', startData.session_id);
-                                                } catch (error) {
-                                                    console.error('Error updating session storage in new session:', error);
-                                                }
-                                            } else {
-                                                // Create a new session storage entry if none exists
-                                                const newSession = {
-                                                    sessionId: startData.session_id,
-                                                    data: {
-                                                        session_id: startData.session_id,
-                                                        sessionId: startData.session_id
-                                                    }
-                                                };
-                                                sessionStorage.setItem('completedStreamingSession', JSON.stringify(newSession));
-                                                console.log('✅ Created new session storage in new session with ID:', startData.session_id);
-                                            }
-                                        }
-                                        break;
-                                        
-                                    case 'itinerary':
-                                        const itineraryData = eventData.Data || eventData.data;
-                                        const message = eventData.Message || eventData.message;
-                                        
-                                        if (itineraryData) {
-                                            setStreamingData(prev => ({
-                                                ...prev,
-                                                ...(itineraryData.general_city_data && {
-                                                    general_city_data: itineraryData.general_city_data
-                                                }),
-                                                ...(itineraryData.points_of_interest && {
-                                                    points_of_interest: itineraryData.points_of_interest
-                                                }),
-                                                ...(itineraryData.itinerary_response && {
-                                                    itinerary_response: itineraryData.itinerary_response
-                                                })
-                                            }));
-                                            
-                                            if (message) {
-                                                newSessionMessage += message + ' ';
-                                            }
-                                        }
-                                        break;
-                                        
-                                    case 'complete':
-                                        isComplete = true;
-                                        const completeMessage = eventData.Message || eventData.message;
-                                        if (completeMessage && completeMessage !== 'Turn completed.') {
-                                            newSessionMessage += completeMessage;
-                                        }
-                                        break;
-                                        
-                                    case 'error':
-                                        throw new Error(eventData.Error || eventData.error || 'New session error');
-                                }
-                            } catch (parseError) {
-                                console.warn('Failed to parse new session SSE data:', line, parseError);
-                            }
-                        }
-                    }
-                }
-            } finally {
-                reader.releaseLock();
-            }
-
-            // Add response from new session to chat
-            if (newSessionMessage.trim()) {
-                setChatHistory(prev => [...prev, {
-                    type: 'assistant',
-                    content: `New session started. ${newSessionMessage.trim()}`,
-                    timestamp: new Date()
-                }]);
-            } else {
-                setChatHistory(prev => [...prev, {
-                    type: 'assistant',
-                    content: 'New session started successfully.',
-                    timestamp: new Date()
-                }]);
-            }
-            
-        } catch (error) {
-            console.error('Error starting new session:', error);
-            setChatHistory(prev => [...prev, {
-                type: 'error',
-                content: `Failed to start new session: ${error.message}`,
-                timestamp: new Date()
-            }]);
-        }
-    };
+    // All chat logic is now handled by the useChatSession hook
 
     const filterOptions = {
         categories: [
@@ -889,84 +393,6 @@ export default function ActivitiesPage() {
         </Show>
     );
 
-    const renderChatInterface = () => (
-        <Show when={showChat()}>
-            <div class="fixed bottom-6 right-6 w-96 h-[500px] bg-white rounded-lg shadow-2xl border border-gray-200 flex flex-col z-50">
-                <div class="flex items-center justify-between p-4 border-b border-gray-200 bg-green-600 text-white rounded-t-lg">
-                    <div class="flex items-center gap-2">
-                        <MessageCircle class="w-5 h-5" />
-                        <span class="font-medium">Activity Recommendations</span>
-                    </div>
-                    <button
-                        onClick={() => setShowChat(false)}
-                        class="p-1 hover:bg-green-700 rounded"
-                    >
-                        <X class="w-4 h-4" />
-                    </button>
-                </div>
-
-                <div class="flex-1 overflow-y-auto p-4 space-y-4">
-                    <Show when={chatHistory().length === 0}>
-                        <div class="text-center text-gray-500 py-8">
-                            <Compass class="w-12 h-12 mx-auto mb-4 text-gray-300" />
-                            <p class="text-sm">Ask me for activity recommendations!</p>
-                            <p class="text-xs mt-2 text-gray-400">
-                                Try: "Museums in the city center" or "Outdoor activities for families"
-                            </p>
-                        </div>
-                    </Show>
-
-                    <For each={chatHistory()}>
-                        {(message) => (
-                            <div class={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}>
-                                <div class={`max-w-[80%] p-3 rounded-lg text-sm ${message.type === 'user'
-                                    ? 'bg-green-600 text-white'
-                                    : message.type === 'error'
-                                        ? 'bg-red-100 text-red-800 border border-red-200'
-                                        : 'bg-gray-100 text-gray-800'
-                                    }`}>
-                                    <p class="whitespace-pre-wrap">{message.content}</p>
-                                    <p class={`text-xs mt-1 opacity-70 ${message.type === 'user' ? 'text-green-100' : 'text-gray-500'}`}>
-                                        {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                    </p>
-                                </div>
-                            </div>
-                        )}
-                    </For>
-
-                    <Show when={isLoading()}>
-                        <div class="flex justify-start">
-                            <div class="bg-gray-100 p-3 rounded-lg flex items-center gap-2 text-sm text-gray-600">
-                                <Loader2 class="w-4 h-4 animate-spin" />
-                                <span>Finding amazing activities...</span>
-                            </div>
-                        </div>
-                    </Show>
-                </div>
-
-                <div class="p-4 border-t border-gray-200">
-                    <div class="flex items-end gap-2">
-                        <textarea
-                            value={chatMessage()}
-                            onInput={(e) => setChatMessage(e.target.value)}
-                            onKeyPress={handleKeyPress}
-                            placeholder="Ask for activity recommendations..."
-                            class="flex-1 resize-none border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                            rows="2"
-                            disabled={isLoading()}
-                        />
-                        <button
-                            onClick={sendChatMessage}
-                            disabled={!chatMessage().trim() || isLoading()}
-                            class="p-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                        >
-                            <Send class="w-4 h-4" />
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </Show>
-    );
 
     // Get display location
     const displayLocation = () => {
@@ -1040,7 +466,7 @@ export default function ActivitiesPage() {
                             {/* Action Buttons */}
                             <div class="flex flex-col gap-2 sm:flex-row sm:gap-3">
                                 <button
-                                    onClick={() => setShowChat(true)}
+                                    onClick={() => chatSession.setShowChat(true)}
                                     class="flex items-center justify-center gap-2 px-4 py-2 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-lg hover:from-green-700 hover:to-green-800 transition-all shadow-sm text-sm font-medium"
                                 >
                                     <MessageCircle class="w-4 h-4" />
@@ -1147,17 +573,26 @@ export default function ActivitiesPage() {
             </div>
 
             {/* Chat Interface */}
-            {renderChatInterface()}
-
-            {/* Floating Chat Button */}
-            <Show when={!showChat()}>
-                <button
-                    onClick={() => setShowChat(true)}
-                    class="fixed bottom-4 right-4 w-12 h-12 bg-green-600 text-white rounded-full shadow-lg hover:bg-green-700 transition-all hover:scale-105 flex items-center justify-center z-40 sm:bottom-6 sm:right-6 sm:w-14 sm:h-14"
-                >
-                    <Compass class="w-5 h-5 sm:w-6 sm:h-6" />
-                </button>
-            </Show>
+            <ChatInterface
+                showChat={chatSession.showChat()}
+                chatMessage={chatSession.chatMessage()}
+                chatHistory={chatSession.chatHistory()}
+                isLoading={chatSession.isLoading()}
+                setShowChat={chatSession.setShowChat}
+                setChatMessage={chatSession.setChatMessage}
+                sendChatMessage={chatSession.sendChatMessage}
+                handleKeyPress={chatSession.handleKeyPress}
+                title="Activity Recommendations"
+                placeholder="Ask for activity recommendations..."
+                emptyStateIcon={Compass}
+                emptyStateTitle="Ask me for activity recommendations!"
+                emptyStateSubtitle='Try: "Museums in the city center" or "Outdoor activities for families"'
+                loadingMessage="Finding amazing activities..."
+                headerColor="bg-green-600"
+                userMessageColor="bg-green-600"
+                floatingButtonColor="bg-green-600 hover:bg-green-700"
+                focusRingColor="focus:ring-green-500"
+            />
 
             {/* Selected Activity Details Modal */}
             <Show when={selectedActivity()}>
