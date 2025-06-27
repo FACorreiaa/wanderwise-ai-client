@@ -1,4 +1,4 @@
-import { createSignal, createEffect, For, Show, onMount } from 'solid-js';
+import { createSignal, createEffect, For, Show, onMount, batch } from 'solid-js';
 import { useLocation } from '@solidjs/router';
 import mapboxgl from 'mapbox-gl';
 import { MapPin, Clock, Star, Filter, Heart, Share2, Download, Edit3, Plus, X, Navigation, Calendar, Users, DollarSign, Camera, Coffee, Utensils, Building, TreePine, ShoppingBag, Loader2, MessageCircle, Send, Compass, Palette, Cloud } from 'lucide-solid';
@@ -21,6 +21,9 @@ export default function ItineraryResultsPage() {
     const [currentItineraryId, setCurrentItineraryId] = createSignal(null);
     const [streamingData, setStreamingData] = createSignal(null);
     const [fromChat, setFromChat] = createSignal(false);
+    
+    // Separate signal for POI updates to prevent map re-render issues
+    const [poisUpdateTrigger, setPoisUpdateTrigger] = createSignal(0);
     const [showAllGeneralPOIs, setShowAllGeneralPOIs] = createSignal(false);
 
     // Chat functionality
@@ -290,6 +293,9 @@ export default function ItineraryResultsPage() {
 
     // POIs for the MAP - these should be the curated itinerary POIs
     const mapPointsOfInterest = () => {
+        // Include poisUpdateTrigger to react to updates
+        poisUpdateTrigger(); // Access trigger to create dependency
+        
         const streaming = streamingData();
 
         console.log('=== MAP POIs DEBUG ===');
@@ -566,25 +572,35 @@ export default function ItineraryResultsPage() {
                                         console.log('Itinerary message:', message);
                                         
                                         if (itineraryData) {
-                                            // Show update indicator
-                                            setIsUpdatingItinerary(true);
-                                            
-                                            // Update the streaming data with new itinerary information
-                                            setStreamingData(prev => ({
-                                                ...prev,
-                                                // Update general city data if provided
-                                                ...(itineraryData.general_city_data && {
-                                                    general_city_data: itineraryData.general_city_data
-                                                }),
-                                                // Update points of interest if provided
-                                                ...(itineraryData.points_of_interest && {
-                                                    points_of_interest: itineraryData.points_of_interest
-                                                }),
-                                                // Update itinerary response if provided
-                                                ...(itineraryData.itinerary_response && {
-                                                    itinerary_response: itineraryData.itinerary_response
-                                                })
-                                            }));
+                                            // Batch all related updates to prevent multiple re-renders
+                                            batch(() => {
+                                                // Show update indicator
+                                                setIsUpdatingItinerary(true);
+                                                
+                                                // Update the streaming data with new itinerary information
+                                                setStreamingData(prev => {
+                                                    if (!prev) return itineraryData;
+                                                    
+                                                    return {
+                                                        ...prev,
+                                                        // Update general city data if provided
+                                                        ...(itineraryData.general_city_data && {
+                                                            general_city_data: itineraryData.general_city_data
+                                                        }),
+                                                        // Update points of interest if provided
+                                                        ...(itineraryData.points_of_interest && {
+                                                            points_of_interest: itineraryData.points_of_interest
+                                                        }),
+                                                        // Update itinerary response if provided
+                                                        ...(itineraryData.itinerary_response && {
+                                                            itinerary_response: itineraryData.itinerary_response
+                                                        })
+                                                    };
+                                                });
+                                                
+                                                // Trigger POI update without causing full re-render
+                                                setPoisUpdateTrigger(prev => prev + 1);
+                                            });
                                             
                                             // Use the message from the server if available
                                             if (message) {

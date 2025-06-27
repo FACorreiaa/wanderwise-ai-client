@@ -339,34 +339,46 @@ export default function MapComponent({ center, zoom, minZoom, maxZoom, pointsOfI
         });
     });
 
-    // React to POI changes
+    // React to POI changes with debouncing
     createEffect(() => {
         console.log('=== MAP COMPONENT EFFECT ===');
         console.log('POIs changed:', pointsOfInterest);
 
-        if (map && map.isStyleLoaded()) {
-            try {
-                // Add a small delay to prevent race conditions
-                setTimeout(() => {
-                    if (map && map.isStyleLoaded()) {
-                        addMarkers(pointsOfInterest);
-                    }
-                }, 100);
-            } catch (error) {
-                console.error('Error updating markers:', error);
-            }
-        } else if (map) {
-            // If map exists but style isn't loaded yet, wait for it
-            const onStyleLoad = () => {
+        // Debounce rapid updates to prevent map conflicts
+        const updateTimeout = setTimeout(() => {
+            if (map && map.isStyleLoaded() && map.loaded()) {
                 try {
                     addMarkers(pointsOfInterest);
                 } catch (error) {
-                    console.error('Error adding markers on style load:', error);
+                    console.error('Error updating markers:', error);
+                    // If there's an error, try to recover by clearing and re-adding
+                    try {
+                        clearMarkers();
+                        setTimeout(() => {
+                            if (map && map.isStyleLoaded()) {
+                                addMarkers(pointsOfInterest);
+                            }
+                        }, 200);
+                    } catch (recoveryError) {
+                        console.error('Recovery attempt failed:', recoveryError);
+                    }
                 }
-                map.off('style.load', onStyleLoad); // Remove listener after use
-            };
-            map.on('style.load', onStyleLoad);
-        }
+            } else if (map) {
+                // If map exists but isn't ready, wait for it
+                const onMapReady = () => {
+                    try {
+                        addMarkers(pointsOfInterest);
+                    } catch (error) {
+                        console.error('Error adding markers on map ready:', error);
+                    }
+                    map.off('idle', onMapReady); // Remove listener after use
+                };
+                map.on('idle', onMapReady);
+            }
+        }, 150); // Debounce for 150ms
+
+        // Cleanup function to cancel timeout if effect runs again
+        return () => clearTimeout(updateTimeout);
     });
 
     onCleanup(() => {
