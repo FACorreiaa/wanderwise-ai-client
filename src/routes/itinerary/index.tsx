@@ -7,9 +7,12 @@ import { useItineraries, useItinerary, useUpdateItineraryMutation, useSaveItiner
 import type { AiCityResponse, POIDetail } from '~/lib/api/types';
 import { ItineraryResults } from '~/components/results';
 import { TypingAnimation } from '~/components/TypingAnimation';
+import { API_BASE_URL } from '~/lib/api/shared';
+import { useAuth } from '~/contexts/AuthContext';
 
 export default function ItineraryResultsPage() {
     const location = useLocation();
+    const auth = useAuth();
     const [map, setMap] = createSignal(null);
     const [selectedPOI, setSelectedPOI] = createSignal(null);
     const [showFilters, setShowFilters] = createSignal(false);
@@ -25,7 +28,8 @@ export default function ItineraryResultsPage() {
     const [chatMessage, setChatMessage] = createSignal('');
     const [chatHistory, setChatHistory] = createSignal([]);
     const [isLoading, setIsLoading] = createSignal(false);
-    const [sessionId, setSessionId] = createSignal('your-session-id');
+    const [sessionId, setSessionId] = createSignal(null);
+    const [isUpdatingItinerary, setIsUpdatingItinerary] = createSignal(false);
 
     // API hooks
     const itinerariesQuery = useItineraries();
@@ -47,7 +51,7 @@ export default function ItineraryResultsPage() {
         console.log('=== ITINERARY PAGE MOUNT ===');
         console.log('Location state:', location.state);
         console.log('Session storage keys:', Object.keys(sessionStorage));
-        
+
         // Check for streaming data from route state
         if (location.state?.streamingData) {
             console.log('Found streaming data in route state');
@@ -56,17 +60,24 @@ export default function ItineraryResultsPage() {
             console.log('Received streaming data from chat:', location.state.streamingData);
             console.log('Points of interest:', location.state.streamingData.points_of_interest);
             console.log('Itinerary POIs:', location.state.streamingData.itinerary_response?.points_of_interest);
+            
+            // Extract session ID from streaming data if available
+            if (location.state?.sessionId) {
+                setSessionId(location.state.sessionId);
+                console.log('Found session ID from route state:', location.state.sessionId);
+            }
         } else {
             console.log('No streaming data in route state, checking session storage');
             // Try to get data from session storage
             const storedSession = sessionStorage.getItem('completedStreamingSession');
             console.log('Session storage content:', storedSession);
-            
+
             if (storedSession) {
                 try {
                     const session = JSON.parse(storedSession);
                     console.log('Parsed session:', session);
-                    
+                    console.log('Session keys:', Object.keys(session));
+
                     if (session.data) {
                         console.log('Setting streaming data from session storage');
                         setStreamingData(session.data);
@@ -77,6 +88,40 @@ export default function ItineraryResultsPage() {
                     } else {
                         console.log('No data found in session');
                     }
+                    
+                    // Extract session ID from stored session - check multiple possible locations
+                    let extractedSessionId = null;
+                    
+                    console.log('🔍 Extracting session ID from stored session...');
+                    console.log('Session object keys:', Object.keys(session));
+                    console.log('Session.sessionId:', session.sessionId);
+                    console.log('Session.data:', session.data);
+                    if (session.data) {
+                        console.log('Session.data keys:', Object.keys(session.data));
+                        console.log('Session.data.session_id:', session.data.session_id);
+                        console.log('Session.data.sessionId:', session.data.sessionId);
+                    }
+                    
+                    if (session.sessionId) {
+                        extractedSessionId = session.sessionId;
+                        console.log('✅ Found session ID from session.sessionId:', extractedSessionId);
+                    } else if (session.data?.session_id) {
+                        extractedSessionId = session.data.session_id;
+                        console.log('✅ Found session ID from session.data.session_id:', extractedSessionId);
+                    } else if (session.data?.sessionId) {
+                        extractedSessionId = session.data.sessionId;
+                        console.log('✅ Found session ID from session.data.sessionId:', extractedSessionId);
+                    } else {
+                        console.warn('❌ No session ID found in stored session. Available keys:', Object.keys(session));
+                        if (session.data) {
+                            console.warn('Session data keys:', Object.keys(session.data));
+                        }
+                    }
+                    
+                    if (extractedSessionId) {
+                        setSessionId(extractedSessionId);
+                        console.log('Set session ID:', extractedSessionId);
+                    }
                 } catch (error) {
                     console.error('Error parsing stored session:', error);
                 }
@@ -84,25 +129,73 @@ export default function ItineraryResultsPage() {
                 console.log('No stored session found');
             }
         }
-        
-        // Debug current streaming data state
+
+        // Debug current streaming data state and session ID
         setTimeout(() => {
             console.log('=== STREAMING DATA STATE AFTER MOUNT ===');
             console.log('Current streamingData():', streamingData());
+            console.log('Current sessionId():', sessionId());
             console.log('Map POIs:', mapPointsOfInterest());
             console.log('Filtered Map POIs:', filteredMapPOIs());
+            
+            // If we have streaming data but no session ID, only warn (don't auto-create)
+            if (streamingData() && !sessionId()) {
+                console.warn('Have streaming data but no session ID - user will need to start new session if they want to chat');
+            }
         }, 100);
     });
+
+    // Fallback function to create a new session when session ID is missing
+    const createFallbackSession = async () => {
+        const streaming = streamingData();
+        if (!streaming || !streaming.general_city_data?.city) {
+            console.warn('Cannot create fallback session - missing city data');
+            return;
+        }
+
+        try {
+            console.log('Creating fallback session for city:', streaming.general_city_data.city);
+            
+            // Create a fallback session ID (UUID v4)
+            const fallbackSessionId = crypto.randomUUID();
+            setSessionId(fallbackSessionId);
+            
+            console.log('Generated fallback session ID:', fallbackSessionId);
+            
+            // Update session storage with the new session ID
+            const storedSession = sessionStorage.getItem('completedStreamingSession');
+            if (storedSession) {
+                try {
+                    const session = JSON.parse(storedSession);
+                    session.sessionId = fallbackSessionId;
+                    sessionStorage.setItem('completedStreamingSession', JSON.stringify(session));
+                    console.log('Updated session storage with fallback session ID');
+                } catch (error) {
+                    console.error('Error updating session storage:', error);
+                }
+            }
+        } catch (error) {
+            console.error('Error creating fallback session:', error);
+            // Fallback to a simple UUID if crypto.randomUUID is not available
+            const simpleUuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+                const r = Math.random() * 16 | 0;
+                const v = c == 'x' ? r : (r & 0x3 | 0x8);
+                return v.toString(16);
+            });
+            setSessionId(simpleUuid);
+            console.log('Created simple fallback session ID:', simpleUuid);
+        }
+    };
 
     // Get current itinerary data from streaming data, API, or fallback
     const itinerary = () => {
         const streaming = streamingData();
-        
+
         if (streaming && streaming.general_city_data) {
             // Map streaming data to itinerary format
             const itineraryName = streaming.itinerary_response?.itinerary_name;
             console.log('Raw itinerary name:', itineraryName);
-            
+
             // Handle case where itinerary_name might be a JSON string or object
             let parsedName = itineraryName;
             if (typeof itineraryName === 'string' && itineraryName.startsWith('{')) {
@@ -116,9 +209,9 @@ export default function ItineraryResultsPage() {
             } else if (typeof itineraryName === 'object' && itineraryName?.itinerary_name) {
                 parsedName = itineraryName.itinerary_name;
             }
-            
+
             console.log('Parsed itinerary name:', parsedName);
-            
+
             return {
                 name: parsedName || `${streaming.general_city_data.city} Adventure`,
                 description: streaming.itinerary_response?.overall_description || streaming.general_city_data.description,
@@ -131,11 +224,11 @@ export default function ItineraryResultsPage() {
                 streamingData: streaming
             };
         }
-        
+
         if (itineraryQuery.data) {
             return itineraryQuery.data;
         }
-        
+
         // Fallback data for demo
         return {
             name: "Porto's Charms: Sightseeing & Local Delights (Dog-Friendly)",
@@ -198,19 +291,19 @@ export default function ItineraryResultsPage() {
     // POIs for the MAP - these should be the curated itinerary POIs
     const mapPointsOfInterest = () => {
         const streaming = streamingData();
-        
+
         console.log('=== MAP POIs DEBUG ===');
         console.log('Streaming data:', streaming);
-        
+
         if (streaming) {
             // Use ITINERARY POIs for the map (these are the curated selection)
             const itineraryPois = streaming.itinerary_response?.points_of_interest;
-            
+
             console.log('Raw itinerary POIs:', itineraryPois);
             console.log('Itinerary POIs type:', typeof itineraryPois);
             console.log('Itinerary POIs is array:', Array.isArray(itineraryPois));
             console.log('Itinerary POIs length:', itineraryPois?.length);
-            
+
             if (itineraryPois && Array.isArray(itineraryPois) && itineraryPois.length > 0) {
                 console.log('Processing each POI for map:');
                 const convertedPOIs = itineraryPois.map((poi, index) => {
@@ -225,18 +318,18 @@ export default function ItineraryResultsPage() {
                 console.log('Final converted POIs for MAP:', convertedPOIs);
                 return convertedPOIs;
             }
-            
+
             console.log('No itinerary POIs found for map - checking fallbacks');
             const generalPois = streaming.points_of_interest;
             console.log('General POIs as fallback:', generalPois);
-            
+
             if (generalPois && Array.isArray(generalPois) && generalPois.length > 0) {
                 const convertedPOIs = generalPois.map(convertPOIToItineraryFormat);
                 console.log('Using GENERAL POIs as fallback for MAP:', convertedPOIs);
                 return convertedPOIs;
             }
         }
-        
+
         console.log('Returning empty array for map POIs');
         return [];
     };
@@ -244,38 +337,38 @@ export default function ItineraryResultsPage() {
     // POIs for the CARDS - these should be the general POIs for context
     const cardPointsOfInterest = () => {
         const streaming = streamingData();
-        
+
         if (streaming) {
             // Use GENERAL POIs for the cards (these provide more context)
             const generalPois = streaming.points_of_interest;
             const itineraryPois = streaming.itinerary_response?.points_of_interest;
-            
+
             console.log('Cards - General POIs:', generalPois);
             console.log('Cards - Itinerary POIs:', itineraryPois);
-            
+
             // Combine both general and itinerary POIs for cards, but prioritize itinerary
             let allPois = [];
-            
+
             if (itineraryPois && Array.isArray(itineraryPois)) {
                 allPois = [...itineraryPois];
             }
-            
+
             if (generalPois && Array.isArray(generalPois)) {
                 // Add general POIs that aren't already in itinerary
                 const itineraryNames = new Set(allPois.map(poi => poi.name));
                 const additionalPois = generalPois.filter(poi => !itineraryNames.has(poi.name));
                 allPois = [...allPois, ...additionalPois];
             }
-            
+
             if (allPois.length > 0) {
                 const convertedPOIs = allPois.map(convertPOIToItineraryFormat);
                 console.log('Using COMBINED POIs for CARDS:', convertedPOIs);
                 return convertedPOIs;
             }
-            
+
             console.log('No POIs found for cards');
         }
-        
+
         console.log('Returning fallback POIs for cards');
         return itinerary().pois || [];
     };
@@ -288,54 +381,456 @@ export default function ItineraryResultsPage() {
     const sendChatMessage = async () => {
         if (!chatMessage().trim() || isLoading()) return;
 
+        const currentSessionId = sessionId();
+        console.log('🔍 sendChatMessage - Current session ID:', currentSessionId);
+        
+        if (!currentSessionId) {
+            console.log('No session ID found, attempting to start new session...');
+            
+            // Check if we have streaming data to work with
+            const streaming = streamingData();
+            if (streaming && streaming.general_city_data?.city) {
+                console.log('Have streaming data, starting new session for chat...');
+                
+                // Add a message showing we're starting a new session
+                setChatHistory(prev => [...prev, { 
+                    type: 'assistant', 
+                    content: 'Starting a new session to continue your conversation...', 
+                    timestamp: new Date() 
+                }]);
+                
+                // Start new session with the user message
+                await startNewSession(userMessage);
+                return;
+            } else {
+                // No streaming data available
+                setChatHistory(prev => [...prev, {
+                    type: 'error',
+                    content: 'No active session found. Please refresh the page to start a new conversation.',
+                    timestamp: new Date()
+                }]);
+                return;
+            }
+        }
+
         const userMessage = chatMessage().trim();
         setChatMessage('');
         setIsLoading(true);
+        setIsUpdatingItinerary(false);
 
         // Add user message to chat history
         setChatHistory(prev => [...prev, { type: 'user', content: userMessage, timestamp: new Date() }]);
 
+        let eventSource = null;
+
         try {
-            // Call your continue session API
-            const response = await fetch('/api/continue-session', {
+            // Create request payload
+            const requestPayload = {
+                message: userMessage,
+                user_location: null // Add user location if available
+            };
+
+            // Try to continue the existing session
+            const response = await fetch(`${API_BASE_URL}/llm/prompt-response/chat/sessions/${currentSessionId}/continue`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('access_token') || sessionStorage.getItem('access_token') || ''}`,
                 },
-                body: JSON.stringify({
-                    sessionId: sessionId(),
-                    message: userMessage
-                })
+                body: JSON.stringify(requestPayload)
             });
 
-            const data = await response.json();
-
-            // Add AI response to chat history
-            setChatHistory(prev => [...prev, {
-                type: 'assistant',
-                content: data.response,
-                timestamp: new Date()
-            }]);
-
-            // Update itinerary data if provided
-            if (data.updatedItinerary) {
-                setItinerary(data.updatedItinerary);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
             }
 
-            // Update POIs if provided
-            if (data.updatedPOIs) {
-                setPointsOfInterest(data.updatedPOIs);
+            // Handle Server-Sent Events (SSE) streaming response
+            const reader = response.body?.getReader();
+            if (!reader) {
+                throw new Error('Response body is not readable');
+            }
+
+            const decoder = new TextDecoder();
+            let assistantMessage = '';
+            let isComplete = false;
+            let needsNewSession = false;
+
+            try {
+                while (!isComplete) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+
+                    const chunk = decoder.decode(value, { stream: true });
+                    const lines = chunk.split('\n');
+
+                    for (const line of lines) {
+                        if (line.startsWith('data: ')) {
+                            try {
+                                const eventData = JSON.parse(line.slice(6));
+                                console.log('Received SSE event:', eventData);
+
+                                // Handle different event types
+                                switch (eventData.Type || eventData.type) {
+                                    case 'start':
+                                        // Extract session ID from start event when a new session is created
+                                        const startData = eventData.Data || eventData.data;
+                                        if (startData && startData.session_id) {
+                                            console.log('New session started with ID:', startData.session_id);
+                                            setSessionId(startData.session_id);
+                                            
+                                            // Update session storage with new session ID - ensure consistency
+                                            const storedSession = sessionStorage.getItem('completedStreamingSession');
+                                            if (storedSession) {
+                                                try {
+                                                    const session = JSON.parse(storedSession);
+                                                    session.sessionId = startData.session_id;
+                                                    // Also store in data.session_id for consistency
+                                                    if (session.data) {
+                                                        session.data.session_id = startData.session_id;
+                                                        session.data.sessionId = startData.session_id;
+                                                    }
+                                                    sessionStorage.setItem('completedStreamingSession', JSON.stringify(session));
+                                                    console.log('✅ Updated session storage with session ID:', startData.session_id);
+                                                } catch (error) {
+                                                    console.error('Error updating session storage with new session ID:', error);
+                                                }
+                                            } else {
+                                                // Create a new session storage entry if none exists
+                                                const newSession = {
+                                                    sessionId: startData.session_id,
+                                                    data: {
+                                                        session_id: startData.session_id,
+                                                        sessionId: startData.session_id
+                                                    }
+                                                };
+                                                sessionStorage.setItem('completedStreamingSession', JSON.stringify(newSession));
+                                                console.log('✅ Created new session storage with session ID:', startData.session_id);
+                                            }
+                                        }
+                                        break;
+                                        
+                                    case 'session_validated':
+                                        console.log('Session validated:', eventData.Data || eventData.data);
+                                        break;
+                                        
+                                    case 'progress':
+                                        // Show progress updates
+                                        const progressData = eventData.Data || eventData.data;
+                                        console.log('Progress:', progressData);
+                                        
+                                        // Set updating indicator for POI-related progress
+                                        if (typeof progressData === 'string' && 
+                                            (progressData.includes('Adding Point of Interest') || 
+                                             progressData.includes('extracting_poi_name') ||
+                                             progressData.includes('generating_poi_data'))) {
+                                            setIsUpdatingItinerary(true);
+                                        }
+                                        break;
+                                    
+                                    case 'intent_classified':
+                                        console.log('Intent classified:', eventData.Data || eventData.data);
+                                        break;
+                                        
+                                    case 'semantic_context_generated':
+                                        console.log('Semantic context generated:', eventData.Data || eventData.data);
+                                        break;
+                                    
+                                    case 'itinerary':
+                                        // This is the key event - update the itinerary data
+                                        const itineraryData = eventData.Data || eventData.data;
+                                        const message = eventData.Message || eventData.message;
+                                        
+                                        console.log('Received itinerary update:', itineraryData);
+                                        console.log('Itinerary message:', message);
+                                        
+                                        if (itineraryData) {
+                                            // Show update indicator
+                                            setIsUpdatingItinerary(true);
+                                            
+                                            // Update the streaming data with new itinerary information
+                                            setStreamingData(prev => ({
+                                                ...prev,
+                                                // Update general city data if provided
+                                                ...(itineraryData.general_city_data && {
+                                                    general_city_data: itineraryData.general_city_data
+                                                }),
+                                                // Update points of interest if provided
+                                                ...(itineraryData.points_of_interest && {
+                                                    points_of_interest: itineraryData.points_of_interest
+                                                }),
+                                                // Update itinerary response if provided
+                                                ...(itineraryData.itinerary_response && {
+                                                    itinerary_response: itineraryData.itinerary_response
+                                                })
+                                            }));
+                                            
+                                            // Use the message from the server if available
+                                            if (message) {
+                                                assistantMessage += message + ' ';
+                                            } else {
+                                                assistantMessage += 'Your itinerary has been updated. ';
+                                            }
+                                            
+                                            console.log('Itinerary updated successfully');
+                                        }
+                                        break;
+                                    
+                                    case 'complete':
+                                        isComplete = true;
+                                        const completeMessage = eventData.Message || eventData.message;
+                                        if (completeMessage && completeMessage !== 'Turn completed.') {
+                                            assistantMessage += completeMessage;
+                                        }
+                                        console.log('Streaming complete');
+                                        break;
+                                    
+                                    case 'error':
+                                        const errorMessage = eventData.Error || eventData.error || 'Unknown error occurred';
+                                        console.error('🚨 Received error event:', errorMessage);
+                                        console.log('🔍 Full error event data:', eventData);
+                                        
+                                        // Only treat as session error if it's SPECIFICALLY about session not being found
+                                        // Be very specific to avoid false positives
+                                        if ((errorMessage.includes('failed to get session') && errorMessage.includes('no rows in result set')) ||
+                                            (errorMessage.includes('session') && errorMessage.includes('not found') && errorMessage.includes('database'))) {
+                                            console.log('❌ Confirmed session database error detected, attempting to start new session...');
+                                            
+                                            // Set flags to trigger new session creation
+                                            needsNewSession = true;
+                                            isComplete = true;
+                                            assistantMessage += 'Session expired. Starting new session... ';
+                                            
+                                            // We'll handle the new session creation after this stream ends
+                                            // Don't throw error here, let it complete gracefully
+                                            break;
+                                        }
+                                        
+                                        // For other errors (like POI processing errors), just log them but continue
+                                        console.log('⚠️  Non-session error, continuing processing:', errorMessage);
+                                        assistantMessage += `Note: ${errorMessage} `;
+                                        break;
+                                    
+                                    default:
+                                        // Handle other event types or partial responses
+                                        if (eventData.Message || eventData.message) {
+                                            assistantMessage += eventData.Message || eventData.message;
+                                        }
+                                        console.log('Unhandled event type:', eventData.Type || eventData.type, eventData);
+                                        break;
+                                }
+                            } catch (parseError) {
+                                console.warn('Failed to parse SSE data:', line, parseError);
+                            }
+                        }
+                    }
+                }
+            } finally {
+                reader.releaseLock();
+            }
+
+            // Check if we need to start a new session
+            if (needsNewSession) {
+                console.log('Starting new session after session not found error...');
+                await startNewSession(userMessage);
+                return; // Exit early, new session will handle the response
+            }
+
+            // Add final assistant response to chat history
+            if (assistantMessage.trim()) {
+                setChatHistory(prev => [...prev, {
+                    type: 'assistant',
+                    content: assistantMessage.trim(),
+                    timestamp: new Date()
+                }]);
+            } else {
+                // If no specific message, provide a generic success message
+                setChatHistory(prev => [...prev, {
+                    type: 'assistant',
+                    content: 'Your request has been processed successfully.',
+                    timestamp: new Date()
+                }]);
             }
 
         } catch (error) {
             console.error('Error sending message:', error);
             setChatHistory(prev => [...prev, {
                 type: 'error',
-                content: 'Sorry, there was an error processing your request. Please try again.',
+                content: `Sorry, there was an error processing your request: ${error.message}`,
                 timestamp: new Date()
             }]);
         } finally {
+            if (eventSource) {
+                eventSource.close();
+            }
             setIsLoading(false);
+            setIsUpdatingItinerary(false);
+        }
+    };
+
+    // Function to start a new session when the old one is not found
+    const startNewSession = async (userMessage: string) => {
+        try {
+            console.log('Starting new chat session...');
+            
+            const streaming = streamingData();
+            const cityName = streaming?.general_city_data?.city || 'Unknown';
+            
+            // Get user ID from auth context
+            const userId = auth.user()?.id;
+            if (!userId) {
+                throw new Error('User not authenticated - cannot start new session');
+            }
+            
+            const newSessionPayload = {
+                message: `Continue planning for ${cityName}. ${userMessage}`,
+                user_location: null
+            };
+            
+            const response = await fetch(`${API_BASE_URL}/llm/prompt-response/chat/sessions/stream/${userId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('access_token') || sessionStorage.getItem('access_token') || ''}`,
+                },
+                body: JSON.stringify(newSessionPayload)
+            });
+
+            if (!response.ok) {
+                throw new Error(`New session failed with status: ${response.status}`);
+            }
+            
+            console.log('New session started successfully');
+            
+            // Process the new session's streaming response
+            const reader = response.body?.getReader();
+            if (!reader) {
+                throw new Error('Response body is not readable for new session');
+            }
+
+            const decoder = new TextDecoder();
+            let newSessionMessage = '';
+            let isComplete = false;
+
+            try {
+                while (!isComplete) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+
+                    const chunk = decoder.decode(value, { stream: true });
+                    const lines = chunk.split('\n');
+
+                    for (const line of lines) {
+                        if (line.startsWith('data: ')) {
+                            try {
+                                const eventData = JSON.parse(line.slice(6));
+                                console.log('New session event:', eventData);
+
+                                // Handle events similar to the main function, but focused on key events
+                                switch (eventData.Type || eventData.type) {
+                                    case 'start':
+                                        const startData = eventData.Data || eventData.data;
+                                        if (startData && startData.session_id) {
+                                            console.log('New session ID:', startData.session_id);
+                                            setSessionId(startData.session_id);
+                                            
+                                            // Update session storage with consistent data structure
+                                            const storedSession = sessionStorage.getItem('completedStreamingSession');
+                                            if (storedSession) {
+                                                try {
+                                                    const session = JSON.parse(storedSession);
+                                                    session.sessionId = startData.session_id;
+                                                    // Also store in data.session_id for consistency
+                                                    if (session.data) {
+                                                        session.data.session_id = startData.session_id;
+                                                        session.data.sessionId = startData.session_id;
+                                                    }
+                                                    sessionStorage.setItem('completedStreamingSession', JSON.stringify(session));
+                                                    console.log('✅ Updated session storage in new session with ID:', startData.session_id);
+                                                } catch (error) {
+                                                    console.error('Error updating session storage in new session:', error);
+                                                }
+                                            } else {
+                                                // Create a new session storage entry if none exists
+                                                const newSession = {
+                                                    sessionId: startData.session_id,
+                                                    data: {
+                                                        session_id: startData.session_id,
+                                                        sessionId: startData.session_id
+                                                    }
+                                                };
+                                                sessionStorage.setItem('completedStreamingSession', JSON.stringify(newSession));
+                                                console.log('✅ Created new session storage in new session with ID:', startData.session_id);
+                                            }
+                                        }
+                                        break;
+                                        
+                                    case 'itinerary':
+                                        const itineraryData = eventData.Data || eventData.data;
+                                        const message = eventData.Message || eventData.message;
+                                        
+                                        if (itineraryData) {
+                                            setStreamingData(prev => ({
+                                                ...prev,
+                                                ...(itineraryData.general_city_data && {
+                                                    general_city_data: itineraryData.general_city_data
+                                                }),
+                                                ...(itineraryData.points_of_interest && {
+                                                    points_of_interest: itineraryData.points_of_interest
+                                                }),
+                                                ...(itineraryData.itinerary_response && {
+                                                    itinerary_response: itineraryData.itinerary_response
+                                                })
+                                            }));
+                                            
+                                            if (message) {
+                                                newSessionMessage += message + ' ';
+                                            }
+                                        }
+                                        break;
+                                        
+                                    case 'complete':
+                                        isComplete = true;
+                                        const completeMessage = eventData.Message || eventData.message;
+                                        if (completeMessage && completeMessage !== 'Turn completed.') {
+                                            newSessionMessage += completeMessage;
+                                        }
+                                        break;
+                                        
+                                    case 'error':
+                                        throw new Error(eventData.Error || eventData.error || 'New session error');
+                                }
+                            } catch (parseError) {
+                                console.warn('Failed to parse new session SSE data:', line, parseError);
+                            }
+                        }
+                    }
+                }
+            } finally {
+                reader.releaseLock();
+            }
+
+            // Add response from new session to chat
+            if (newSessionMessage.trim()) {
+                setChatHistory(prev => [...prev, {
+                    type: 'assistant',
+                    content: `New session started. ${newSessionMessage.trim()}`,
+                    timestamp: new Date()
+                }]);
+            } else {
+                setChatHistory(prev => [...prev, {
+                    type: 'assistant',
+                    content: 'New session started successfully.',
+                    timestamp: new Date()
+                }]);
+            }
+            
+        } catch (error) {
+            console.error('Error starting new session:', error);
+            setChatHistory(prev => [...prev, {
+                type: 'error',
+                content: `Failed to start new session: ${error.message}`,
+                timestamp: new Date()
+            }]);
         }
     };
 
@@ -391,47 +886,47 @@ export default function ItineraryResultsPage() {
     const filteredCardPOIs = () => {
         const pois = cardPointsOfInterest();
         console.log('Filtering Card POIs:', pois);
-        
+
         const filtered = pois.filter(poi => {
             const filters = activeFilters();
-            
+
             // Dog-friendly filter
             if (filters.dogFriendly && !poi.dogFriendly) return false;
-            
+
             // Category filter - make it more flexible for streaming data
             if (filters.categories.length > 0) {
                 const poiCategory = poi.category?.toLowerCase() || '';
                 const poiTags = poi.tags?.map(tag => tag.toLowerCase()) || [];
-                
+
                 const hasMatchingCategory = filters.categories.some(filterCategory => {
                     const lowerFilterCategory = filterCategory.toLowerCase();
-                    
+
                     // Direct match
                     if (poiTags.includes(lowerFilterCategory) || poiCategory.includes(lowerFilterCategory)) {
                         return true;
                     }
-                    
+
                     // Fuzzy matching for common categories
                     if (lowerFilterCategory.includes('historic') && (poiCategory.includes('historic') || poiCategory.includes('heritage') || poiCategory.includes('monument'))) return true;
                     if (lowerFilterCategory.includes('cuisine') && (poiCategory.includes('restaurant') || poiCategory.includes('food') || poiCategory.includes('market'))) return true;
                     if (lowerFilterCategory.includes('museum') && poiCategory.includes('museum')) return true;
                     if (lowerFilterCategory.includes('architecture') && (poiCategory.includes('building') || poiCategory.includes('palace') || poiCategory.includes('cathedral'))) return true;
-                    
+
                     return false;
                 });
-                
+
                 if (!hasMatchingCategory) return false;
             }
-            
+
             // Time to spend filter
             if (filters.timeToSpend.length > 0 && !filters.timeToSpend.includes(poi.timeToSpend)) return false;
-            
+
             // Budget filter
             if (filters.budget.length > 0 && !filters.budget.includes(poi.budget)) return false;
-            
+
             return true;
         });
-        
+
         console.log('Filtered Card POIs result:', filtered);
         return filtered;
     };
@@ -440,7 +935,7 @@ export default function ItineraryResultsPage() {
     const filteredMapPOIs = () => {
         const pois = mapPointsOfInterest();
         console.log('Filtering Map POIs:', pois);
-        
+
         // For now, don't filter map POIs too heavily - show the full itinerary
         // You can add filtering here if needed
         console.log('Map POIs (unfiltered):', pois);
@@ -493,22 +988,22 @@ export default function ItineraryResultsPage() {
                         <div class="flex items-start justify-between mb-2">
                             <div class="flex-1 min-w-0">
                                 <h3 class="font-semibold text-gray-900 text-base mb-1">{poi.name}</h3>
-                                
+
                                 {/* Enhanced Filter Labels */}
                                 <div class="flex flex-wrap items-center gap-2 mb-2">
                                     {/* POI Category Label */}
                                     <span class="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-medium">
                                         📍 {poi.category}
                                     </span>
-                                    
+
                                     {/* Budget/Price Range with Enhanced Styling */}
-                                    <span class={`px-3 py-1 rounded-full text-xs font-bold border ${getBudgetColor(poi.budget).includes('green') ? 'bg-green-50 text-green-700 border-green-200' : 
+                                    <span class={`px-3 py-1 rounded-full text-xs font-bold border ${getBudgetColor(poi.budget).includes('green') ? 'bg-green-50 text-green-700 border-green-200' :
                                         getBudgetColor(poi.budget).includes('blue') ? 'bg-blue-50 text-blue-700 border-blue-200' :
-                                        getBudgetColor(poi.budget).includes('orange') ? 'bg-orange-50 text-orange-700 border-orange-200' :
-                                        'bg-red-50 text-red-700 border-red-200'}`}>
+                                            getBudgetColor(poi.budget).includes('orange') ? 'bg-orange-50 text-orange-700 border-orange-200' :
+                                                'bg-red-50 text-red-700 border-red-200'}`}>
                                         {poi.budget} {poi.budget === 'Free' ? 'Entry' : poi.budget === '€' ? 'Budget' : poi.budget === '€€' ? 'Moderate' : 'Premium'}
                                     </span>
-                                    
+
                                     {/* Rating/Popularity Label */}
                                     <Show when={poi.rating >= 4.5}>
                                         <span class="px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs font-medium">
@@ -520,19 +1015,19 @@ export default function ItineraryResultsPage() {
                                             ✓ Recommended
                                         </span>
                                     </Show>
-                                    
+
                                     {/* Time to Spend Label */}
                                     <span class="px-2 py-1 bg-purple-100 text-purple-700 rounded-full text-xs">
                                         🕒 {poi.timeToSpend}
                                     </span>
-                                    
+
                                     {/* Priority Label */}
                                     <Show when={poi.priority === 1}>
                                         <span class="px-2 py-1 bg-red-100 text-red-700 rounded-full text-xs">
                                             🔥 Priority
                                         </span>
                                     </Show>
-                                    
+
                                     {/* Dog Friendly Label */}
                                     <Show when={poi.dogFriendly}>
                                         <span class="px-2 py-1 bg-amber-100 text-amber-700 rounded-full text-xs">
@@ -541,16 +1036,16 @@ export default function ItineraryResultsPage() {
                                     </Show>
                                 </div>
                             </div>
-                            
+
                             {/* Rating Badge */}
                             <div class="flex items-center gap-1 bg-yellow-50 px-2 py-1 rounded-full border border-yellow-200">
                                 <Star class="w-3 h-3 text-yellow-500 fill-current" />
                                 <span class="text-yellow-800 font-medium text-xs">{poi.rating}</span>
                             </div>
                         </div>
-                        
+
                         <p class="text-sm text-gray-600 mb-3 line-clamp-2">{poi.description}</p>
-                        
+
                         {/* Enhanced Footer with Better Visual Hierarchy */}
                         <div class="flex items-center justify-between">
                             <div class="flex items-center gap-3">
@@ -558,7 +1053,7 @@ export default function ItineraryResultsPage() {
                                     {poi.budget}
                                 </div>
                             </div>
-                            
+
                             {/* Control Buttons */}
                             <div class="flex items-center gap-2">
                                 <button
@@ -845,7 +1340,7 @@ export default function ItineraryResultsPage() {
                                 </button>
 
                                 <div class="flex gap-2">
-                                    <button 
+                                    <button
                                         onClick={saveItinerary}
                                         disabled={saveItineraryMutation.isPending}
                                         class="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors text-sm sm:flex-initial disabled:opacity-50"
@@ -941,7 +1436,7 @@ export default function ItineraryResultsPage() {
                                     </div>
                                 </div>
                             </div>
-                            
+
                             {/* Quick Stats */}
                             <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
                                 <h3 class="font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
@@ -968,7 +1463,7 @@ export default function ItineraryResultsPage() {
                                 </div>
                             </div>
                         </div>
-                        
+
                         {/* General POIs Summary */}
                         <Show when={streamingData()?.points_of_interest && streamingData().points_of_interest.length > 0}>
                             <div class="mt-6">
@@ -1008,12 +1503,12 @@ export default function ItineraryResultsPage() {
                                 </div>
                                 <Show when={streamingData()?.points_of_interest?.length > 6}>
                                     <div class="mt-4 text-center">
-                                        <button 
+                                        <button
                                             onClick={() => setShowAllGeneralPOIs(!showAllGeneralPOIs())}
                                             class="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium transition-colors"
                                         >
-                                            {showAllGeneralPOIs() 
-                                                ? 'Show less places ↑' 
+                                            {showAllGeneralPOIs()
+                                                ? 'Show less places ↑'
                                                 : `View all ${streamingData().points_of_interest.length - 6} remaining places →`
                                             }
                                         </button>
@@ -1036,7 +1531,7 @@ export default function ItineraryResultsPage() {
                                 console.log('Map POIs being passed to MapComponent:', mapPOIs);
                                 console.log('Map POIs length:', mapPOIs.length);
                                 console.log('Center coordinates:', [itinerary().centerLng, itinerary().centerLat]);
-                                
+
                                 return (
                                     <MapComponent
                                         center={[itinerary().centerLng, itinerary().centerLat]}
@@ -1056,7 +1551,15 @@ export default function ItineraryResultsPage() {
                             <div class="space-y-4">
                                 <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                                     <div>
-                                        <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Your Curated Itinerary</h2>
+                                        <div class="flex items-center gap-2">
+                                            <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Your Curated Itinerary</h2>
+                                            <Show when={isUpdatingItinerary()}>
+                                                <div class="flex items-center gap-2 text-sm text-blue-600 dark:text-blue-400">
+                                                    <Loader2 class="w-4 h-4 animate-spin" />
+                                                    <span>Updating...</span>
+                                                </div>
+                                            </Show>
+                                        </div>
                                         <p class="text-sm text-gray-600 dark:text-gray-300">Personalized places to visit based on your preferences</p>
                                     </div>
                                     <button class="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 flex items-center gap-1 self-start sm:self-auto">
@@ -1064,7 +1567,7 @@ export default function ItineraryResultsPage() {
                                         Customize Order
                                     </button>
                                 </div>
-                                <ItineraryResults 
+                                <ItineraryResults
                                     pois={filteredPOIs().map(poi => ({
                                         name: poi.name,
                                         latitude: poi.latitude,
