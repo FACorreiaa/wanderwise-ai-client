@@ -6,6 +6,8 @@ import MapComponent from '~/components/features/Map/Map';
 import type { DiningResponse, RestaurantDetailedInfo } from '~/lib/api/types';
 import { RestaurantResults } from '~/components/results';
 import { TypingAnimation } from '~/components/TypingAnimation';
+import { API_BASE_URL } from '~/lib/api/shared';
+import { useAuth } from '~/contexts/AuthContext';
 
 export default function RestaurantsPage() {
     const location = useLocation();

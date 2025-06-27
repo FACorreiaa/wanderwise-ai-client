@@ -21,9 +21,10 @@ export default function ItineraryResultsPage() {
     const [currentItineraryId, setCurrentItineraryId] = createSignal(null);
     const [streamingData, setStreamingData] = createSignal(null);
     const [fromChat, setFromChat] = createSignal(false);
-    
+
     // Separate signal for POI updates to prevent map re-render issues
     const [poisUpdateTrigger, setPoisUpdateTrigger] = createSignal(0);
+    const [mapDisabled, setMapDisabled] = createSignal(false);
     const [showAllGeneralPOIs, setShowAllGeneralPOIs] = createSignal(false);
 
     // Chat functionality
@@ -63,7 +64,7 @@ export default function ItineraryResultsPage() {
             console.log('Received streaming data from chat:', location.state.streamingData);
             console.log('Points of interest:', location.state.streamingData.points_of_interest);
             console.log('Itinerary POIs:', location.state.streamingData.itinerary_response?.points_of_interest);
-            
+
             // Extract session ID from streaming data if available
             if (location.state?.sessionId) {
                 setSessionId(location.state.sessionId);
@@ -91,10 +92,10 @@ export default function ItineraryResultsPage() {
                     } else {
                         console.log('No data found in session');
                     }
-                    
+
                     // Extract session ID from stored session - check multiple possible locations
                     let extractedSessionId = null;
-                    
+
                     console.log('🔍 Extracting session ID from stored session...');
                     console.log('Session object keys:', Object.keys(session));
                     console.log('Session.sessionId:', session.sessionId);
@@ -104,7 +105,7 @@ export default function ItineraryResultsPage() {
                         console.log('Session.data.session_id:', session.data.session_id);
                         console.log('Session.data.sessionId:', session.data.sessionId);
                     }
-                    
+
                     if (session.sessionId) {
                         extractedSessionId = session.sessionId;
                         console.log('✅ Found session ID from session.sessionId:', extractedSessionId);
@@ -120,7 +121,7 @@ export default function ItineraryResultsPage() {
                             console.warn('Session data keys:', Object.keys(session.data));
                         }
                     }
-                    
+
                     if (extractedSessionId) {
                         setSessionId(extractedSessionId);
                         console.log('Set session ID:', extractedSessionId);
@@ -140,7 +141,7 @@ export default function ItineraryResultsPage() {
             console.log('Current sessionId():', sessionId());
             console.log('Map POIs:', mapPointsOfInterest());
             console.log('Filtered Map POIs:', filteredMapPOIs());
-            
+
             // If we have streaming data but no session ID, only warn (don't auto-create)
             if (streamingData() && !sessionId()) {
                 console.warn('Have streaming data but no session ID - user will need to start new session if they want to chat');
@@ -158,13 +159,13 @@ export default function ItineraryResultsPage() {
 
         try {
             console.log('Creating fallback session for city:', streaming.general_city_data.city);
-            
+
             // Create a fallback session ID (UUID v4)
             const fallbackSessionId = crypto.randomUUID();
             setSessionId(fallbackSessionId);
-            
+
             console.log('Generated fallback session ID:', fallbackSessionId);
-            
+
             // Update session storage with the new session ID
             const storedSession = sessionStorage.getItem('completedStreamingSession');
             if (storedSession) {
@@ -180,7 +181,7 @@ export default function ItineraryResultsPage() {
         } catch (error) {
             console.error('Error creating fallback session:', error);
             // Fallback to a simple UUID if crypto.randomUUID is not available
-            const simpleUuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+            const simpleUuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
                 const r = Math.random() * 16 | 0;
                 const v = c == 'x' ? r : (r & 0x3 | 0x8);
                 return v.toString(16);
@@ -295,7 +296,7 @@ export default function ItineraryResultsPage() {
     const mapPointsOfInterest = () => {
         // Include poisUpdateTrigger to react to updates
         poisUpdateTrigger(); // Access trigger to create dependency
-        
+
         const streaming = streamingData();
 
         console.log('=== MAP POIs DEBUG ===');
@@ -391,7 +392,7 @@ export default function ItineraryResultsPage() {
         console.log('🔍 sendChatMessage - Current session ID:', currentSessionId);
         console.log('🔍 sendChatMessage - Session storage:', sessionStorage.getItem('completedStreamingSession'));
         console.log('🔍 sendChatMessage - Streaming data present:', !!streamingData());
-        
+
         // If no session ID in signal, try to extract from session storage as fallback
         let workingSessionId = currentSessionId;
         if (!workingSessionId) {
@@ -410,22 +411,22 @@ export default function ItineraryResultsPage() {
                 }
             }
         }
-        
+
         if (!workingSessionId) {
             console.log('No session ID found after fallback attempts, starting new session...');
-            
+
             // Check if we have streaming data to work with
             const streaming = streamingData();
             if (streaming && streaming.general_city_data?.city) {
                 console.log('Have streaming data, starting new session for chat...');
-                
+
                 // Add a message showing we're starting a new session
-                setChatHistory(prev => [...prev, { 
-                    type: 'assistant', 
-                    content: 'Starting a new session to continue your conversation...', 
-                    timestamp: new Date() 
+                setChatHistory(prev => [...prev, {
+                    type: 'assistant',
+                    content: 'Starting a new session to continue your conversation...',
+                    timestamp: new Date()
                 }]);
-                
+
                 // Start new session with the user message
                 await startNewSession(userMessage);
                 return;
@@ -505,7 +506,7 @@ export default function ItineraryResultsPage() {
                                         if (startData && startData.session_id) {
                                             console.log('New session started with ID:', startData.session_id);
                                             setSessionId(startData.session_id);
-                                            
+
                                             // Update session storage with new session ID - ensure consistency
                                             const storedSession = sessionStorage.getItem('completedStreamingSession');
                                             if (storedSession) {
@@ -536,51 +537,54 @@ export default function ItineraryResultsPage() {
                                             }
                                         }
                                         break;
-                                        
+
                                     case 'session_validated':
                                         console.log('Session validated:', eventData.Data || eventData.data);
                                         break;
-                                        
+
                                     case 'progress':
                                         // Show progress updates
                                         const progressData = eventData.Data || eventData.data;
                                         console.log('Progress:', progressData);
-                                        
+
                                         // Set updating indicator for POI-related progress
-                                        if (typeof progressData === 'string' && 
-                                            (progressData.includes('Adding Point of Interest') || 
-                                             progressData.includes('extracting_poi_name') ||
-                                             progressData.includes('generating_poi_data'))) {
+                                        if (typeof progressData === 'string' &&
+                                            (progressData.includes('Adding Point of Interest') ||
+                                                progressData.includes('extracting_poi_name') ||
+                                                progressData.includes('generating_poi_data'))) {
                                             setIsUpdatingItinerary(true);
                                         }
                                         break;
-                                    
+
                                     case 'intent_classified':
                                         console.log('Intent classified:', eventData.Data || eventData.data);
                                         break;
-                                        
+
                                     case 'semantic_context_generated':
                                         console.log('Semantic context generated:', eventData.Data || eventData.data);
                                         break;
-                                    
+
                                     case 'itinerary':
                                         // This is the key event - update the itinerary data
                                         const itineraryData = eventData.Data || eventData.data;
                                         const message = eventData.Message || eventData.message;
-                                        
+
                                         console.log('Received itinerary update:', itineraryData);
                                         console.log('Itinerary message:', message);
-                                        
+
                                         if (itineraryData) {
                                             // Batch all related updates to prevent multiple re-renders
                                             batch(() => {
+                                                // Temporarily disable map during updates
+                                                setMapDisabled(true);
+
                                                 // Show update indicator
                                                 setIsUpdatingItinerary(true);
-                                                
+
                                                 // Update the streaming data with new itinerary information
                                                 setStreamingData(prev => {
                                                     if (!prev) return itineraryData;
-                                                    
+
                                                     return {
                                                         ...prev,
                                                         // Update general city data if provided
@@ -597,22 +601,27 @@ export default function ItineraryResultsPage() {
                                                         })
                                                     };
                                                 });
-                                                
+
                                                 // Trigger POI update without causing full re-render
                                                 setPoisUpdateTrigger(prev => prev + 1);
                                             });
-                                            
+
+                                            // Re-enable map after a short delay
+                                            setTimeout(() => {
+                                                setMapDisabled(false);
+                                            }, 1000);
+
                                             // Use the message from the server if available
                                             if (message) {
                                                 assistantMessage += message + ' ';
                                             } else {
                                                 assistantMessage += 'Your itinerary has been updated. ';
                                             }
-                                            
+
                                             console.log('Itinerary updated successfully');
                                         }
                                         break;
-                                    
+
                                     case 'complete':
                                         isComplete = true;
                                         const completeMessage = eventData.Message || eventData.message;
@@ -621,33 +630,33 @@ export default function ItineraryResultsPage() {
                                         }
                                         console.log('Streaming complete');
                                         break;
-                                    
+
                                     case 'error':
                                         const errorMessage = eventData.Error || eventData.error || 'Unknown error occurred';
                                         console.error('🚨 Received error event:', errorMessage);
                                         console.log('🔍 Full error event data:', eventData);
-                                        
+
                                         // Only treat as session error if it's SPECIFICALLY about session not being found
                                         // Be very specific to avoid false positives
                                         if ((errorMessage.includes('failed to get session') && errorMessage.includes('no rows in result set')) ||
                                             (errorMessage.includes('session') && errorMessage.includes('not found') && errorMessage.includes('database'))) {
                                             console.log('❌ Confirmed session database error detected, attempting to start new session...');
-                                            
+
                                             // Set flags to trigger new session creation
                                             needsNewSession = true;
                                             isComplete = true;
                                             assistantMessage += 'Session expired. Starting new session... ';
-                                            
+
                                             // We'll handle the new session creation after this stream ends
                                             // Don't throw error here, let it complete gracefully
                                             break;
                                         }
-                                        
+
                                         // For other errors (like POI processing errors), just log them but continue
                                         console.log('⚠️  Non-session error, continuing processing:', errorMessage);
                                         assistantMessage += `Note: ${errorMessage} `;
                                         break;
-                                    
+
                                     default:
                                         // Handle other event types or partial responses
                                         if (eventData.Message || eventData.message) {
@@ -709,21 +718,21 @@ export default function ItineraryResultsPage() {
     const startNewSession = async (userMessage: string) => {
         try {
             console.log('Starting new chat session...');
-            
+
             const streaming = streamingData();
             const cityName = streaming?.general_city_data?.city || 'Unknown';
-            
+
             // Get user ID from auth context
             const userId = auth.user()?.id;
             if (!userId) {
                 throw new Error('User not authenticated - cannot start new session');
             }
-            
+
             const newSessionPayload = {
                 message: `Continue planning for ${cityName}. ${userMessage}`,
                 user_location: null
             };
-            
+
             const response = await fetch(`${API_BASE_URL}/llm/prompt-response/chat/sessions/stream/${userId}`, {
                 method: 'POST',
                 headers: {
@@ -736,9 +745,9 @@ export default function ItineraryResultsPage() {
             if (!response.ok) {
                 throw new Error(`New session failed with status: ${response.status}`);
             }
-            
+
             console.log('New session started successfully');
-            
+
             // Process the new session's streaming response
             const reader = response.body?.getReader();
             if (!reader) {
@@ -770,7 +779,7 @@ export default function ItineraryResultsPage() {
                                         if (startData && startData.session_id) {
                                             console.log('New session ID:', startData.session_id);
                                             setSessionId(startData.session_id);
-                                            
+
                                             // Update session storage with consistent data structure
                                             const storedSession = sessionStorage.getItem('completedStreamingSession');
                                             if (storedSession) {
@@ -801,11 +810,11 @@ export default function ItineraryResultsPage() {
                                             }
                                         }
                                         break;
-                                        
+
                                     case 'itinerary':
                                         const itineraryData = eventData.Data || eventData.data;
                                         const message = eventData.Message || eventData.message;
-                                        
+
                                         if (itineraryData) {
                                             setStreamingData(prev => ({
                                                 ...prev,
@@ -819,13 +828,13 @@ export default function ItineraryResultsPage() {
                                                     itinerary_response: itineraryData.itinerary_response
                                                 })
                                             }));
-                                            
+
                                             if (message) {
                                                 newSessionMessage += message + ' ';
                                             }
                                         }
                                         break;
-                                        
+
                                     case 'complete':
                                         isComplete = true;
                                         const completeMessage = eventData.Message || eventData.message;
@@ -833,7 +842,7 @@ export default function ItineraryResultsPage() {
                                             newSessionMessage += completeMessage;
                                         }
                                         break;
-                                        
+
                                     case 'error':
                                         throw new Error(eventData.Error || eventData.error || 'New session error');
                                 }
@@ -861,7 +870,7 @@ export default function ItineraryResultsPage() {
                     timestamp: new Date()
                 }]);
             }
-            
+
         } catch (error) {
             console.error('Error starting new session:', error);
             setChatHistory(prev => [...prev, {
@@ -1569,6 +1578,18 @@ export default function ItineraryResultsPage() {
                                 console.log('Map POIs being passed to MapComponent:', mapPOIs);
                                 console.log('Map POIs length:', mapPOIs.length);
                                 console.log('Center coordinates:', [itinerary().centerLng, itinerary().centerLat]);
+
+                                // Don't render map during POI updates to prevent symbol layer errors
+                                if (mapDisabled()) {
+                                    return (
+                                        <div class="w-full h-full bg-gray-100 rounded-lg flex items-center justify-center">
+                                            <div class="text-center">
+                                                <Loader2 class="w-8 h-8 animate-spin mx-auto mb-2 text-blue-600" />
+                                                <p class="text-sm text-gray-600">Updating map...</p>
+                                            </div>
+                                        </div>
+                                    );
+                                }
 
                                 return (
                                     <MapComponent

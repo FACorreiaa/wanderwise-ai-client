@@ -56,17 +56,19 @@ export default function MapComponent({ center, zoom, minZoom, maxZoom, pointsOfI
         }
     };
 
+
+
     // Function to add markers to the map
     const addMarkers = (pois) => {
         console.log('=== MAP COMPONENT addMarkers ===');
         console.log('Input POIs:', pois);
         console.log('POIs length:', pois?.length);
         console.log('Map instance:', map);
-
-        if (!map) {
-            console.log('Map not ready, cannot add markers');
+        if (!map || !map.isStyleLoaded() || !map.loaded()) {
+            console.log('Map not fully loaded, skipping marker update');
             return;
         }
+
 
         if (!pois || !Array.isArray(pois) || pois.length === 0) {
             console.log('No valid POIs provided');
@@ -205,7 +207,8 @@ export default function MapComponent({ center, zoom, minZoom, maxZoom, pointsOfI
                         source: 'route',
                         layout: {
                             'line-join': 'round',
-                            'line-cap': 'round'
+                            'line-cap': 'round',
+                            'symbol-z-elevate': true
                         },
                         paint: {
                             'line-color': '#3b82f6',
@@ -283,6 +286,7 @@ export default function MapComponent({ center, zoom, minZoom, maxZoom, pointsOfI
 
         map.on('load', () => {
             console.log('Map loaded successfully');
+            console.log('Current layers:', map.getStyle().layers);
 
             // Test with hardcoded marker to verify map is working
             console.log('Adding test marker at map center');
