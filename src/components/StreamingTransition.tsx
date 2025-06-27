@@ -59,6 +59,7 @@ export default function StreamingTransition(props: StreamingTransitionProps) {
       navigate(route, { 
         state: { 
           streamingData: data,
+          sessionId: session.sessionId,
           fromChat: true 
         } 
       });
