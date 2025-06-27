@@ -38,15 +38,21 @@ export default function MapComponent({ center, zoom, minZoom, maxZoom, pointsOfI
 
     // Function to clear existing markers and route
     const clearMarkers = () => {
-        currentMarkers.forEach(marker => marker.remove());
-        currentMarkers = [];
+        try {
+            currentMarkers.forEach(marker => marker.remove());
+            currentMarkers = [];
 
-        // Clear route layer and source if they exist
-        if (map && map.getSource('route')) {
-            if (map.getLayer('route')) {
-                map.removeLayer('route');
+            // Clear route layer and source if they exist
+            if (map && map.isStyleLoaded() && map.getSource('route')) {
+                if (map.getLayer('route')) {
+                    map.removeLayer('route');
+                }
+                map.removeSource('route');
             }
-            map.removeSource('route');
+        } catch (error) {
+            console.error('Error clearing markers:', error);
+            // Reset markers array even if there was an error
+            currentMarkers = [];
         }
     };
 
@@ -164,47 +170,56 @@ export default function MapComponent({ center, zoom, minZoom, maxZoom, pointsOfI
 
         // Create optimized route line
         if (optimizedPOIs.length > 1) {
-            const isMobile = mapContainer.offsetWidth < 768;
+            try {
+                const isMobile = mapContainer.offsetWidth < 768;
 
-            const coordinates = optimizedPOIs.map(poi => {
-                const lat = typeof poi.latitude === 'string' ? parseFloat(poi.latitude) : poi.latitude;
-                const lng = typeof poi.longitude === 'string' ? parseFloat(poi.longitude) : poi.longitude;
-                return [lng, lat];
-            });
+                const coordinates = optimizedPOIs.map(poi => {
+                    const lat = typeof poi.latitude === 'string' ? parseFloat(poi.latitude) : poi.latitude;
+                    const lng = typeof poi.longitude === 'string' ? parseFloat(poi.longitude) : poi.longitude;
+                    return [lng, lat];
+                });
 
-            console.log('Route coordinates:', coordinates);
+                console.log('Route coordinates:', coordinates);
 
-            map.addSource('route', {
-                type: 'geojson',
-                data: {
-                    type: 'Feature',
-                    properties: {},
-                    geometry: {
-                        type: 'LineString',
-                        coordinates: coordinates
-                    }
+                // Only add route if map is ready and style is loaded
+                if (map.isStyleLoaded()) {
+                    map.addSource('route', {
+                        type: 'geojson',
+                        data: {
+                            type: 'Feature',
+                            properties: {},
+                            geometry: {
+                                type: 'LineString',
+                                coordinates: coordinates
+                            }
+                        }
+                    });
+
+                    // Add the route layer with responsive styling
+                    const routeWidth = isMobile ? 2 : 3;
+                    const dashArray = isMobile ? [2, 2] : [3, 3];
+
+                    map.addLayer({
+                        id: 'route',
+                        type: 'line',
+                        source: 'route',
+                        layout: {
+                            'line-join': 'round',
+                            'line-cap': 'round'
+                        },
+                        paint: {
+                            'line-color': '#3b82f6',
+                            'line-width': routeWidth,
+                            'line-dasharray': dashArray,
+                            'line-opacity': 0.7
+                        }
+                    });
+                } else {
+                    console.warn('Map style not loaded, skipping route creation');
                 }
-            });
-
-            // Add the route layer with responsive styling
-            const routeWidth = isMobile ? 2 : 3;
-            const dashArray = isMobile ? [2, 2] : [3, 3];
-
-            map.addLayer({
-                id: 'route',
-                type: 'line',
-                source: 'route',
-                layout: {
-                    'line-join': 'round',
-                    'line-cap': 'round'
-                },
-                paint: {
-                    'line-color': '#3b82f6',
-                    'line-width': routeWidth,
-                    'line-dasharray': dashArray,
-                    'line-opacity': 0.7
-                }
-            });
+            } catch (error) {
+                console.error('Error creating route:', error);
+            }
         }
 
         // Fit map to show all markers with padding
@@ -330,12 +345,27 @@ export default function MapComponent({ center, zoom, minZoom, maxZoom, pointsOfI
         console.log('POIs changed:', pointsOfInterest);
 
         if (map && map.isStyleLoaded()) {
-            addMarkers(pointsOfInterest);
+            try {
+                // Add a small delay to prevent race conditions
+                setTimeout(() => {
+                    if (map && map.isStyleLoaded()) {
+                        addMarkers(pointsOfInterest);
+                    }
+                }, 100);
+            } catch (error) {
+                console.error('Error updating markers:', error);
+            }
         } else if (map) {
             // If map exists but style isn't loaded yet, wait for it
-            map.on('style.load', () => {
-                addMarkers(pointsOfInterest);
-            });
+            const onStyleLoad = () => {
+                try {
+                    addMarkers(pointsOfInterest);
+                } catch (error) {
+                    console.error('Error adding markers on style load:', error);
+                }
+                map.off('style.load', onStyleLoad); // Remove listener after use
+            };
+            map.on('style.load', onStyleLoad);
         }
     });
 
