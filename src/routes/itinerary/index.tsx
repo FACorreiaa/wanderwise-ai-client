@@ -383,9 +383,30 @@ export default function ItineraryResultsPage() {
 
         const currentSessionId = sessionId();
         console.log('🔍 sendChatMessage - Current session ID:', currentSessionId);
+        console.log('🔍 sendChatMessage - Session storage:', sessionStorage.getItem('completedStreamingSession'));
+        console.log('🔍 sendChatMessage - Streaming data present:', !!streamingData());
         
-        if (!currentSessionId) {
-            console.log('No session ID found, attempting to start new session...');
+        // If no session ID in signal, try to extract from session storage as fallback
+        let workingSessionId = currentSessionId;
+        if (!workingSessionId) {
+            console.log('No session ID in signal, trying session storage fallback...');
+            const storedSession = sessionStorage.getItem('completedStreamingSession');
+            if (storedSession) {
+                try {
+                    const session = JSON.parse(storedSession);
+                    workingSessionId = session.sessionId || session.data?.session_id || session.data?.sessionId;
+                    if (workingSessionId) {
+                        console.log('✅ Found session ID in storage fallback:', workingSessionId);
+                        setSessionId(workingSessionId); // Update the signal
+                    }
+                } catch (error) {
+                    console.error('Error parsing stored session for fallback:', error);
+                }
+            }
+        }
+        
+        if (!workingSessionId) {
+            console.log('No session ID found after fallback attempts, starting new session...');
             
             // Check if we have streaming data to work with
             const streaming = streamingData();
@@ -431,7 +452,8 @@ export default function ItineraryResultsPage() {
             };
 
             // Try to continue the existing session
-            const response = await fetch(`${API_BASE_URL}/llm/prompt-response/chat/sessions/${currentSessionId}/continue`, {
+            console.log('🚀 Making request to continue session:', workingSessionId);
+            const response = await fetch(`${API_BASE_URL}/llm/prompt-response/chat/sessions/${workingSessionId}/continue`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
