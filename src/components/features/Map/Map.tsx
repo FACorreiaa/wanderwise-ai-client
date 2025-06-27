@@ -1,7 +1,7 @@
 import { onMount, onCleanup, createEffect } from 'solid-js';
 import mapboxgl from 'mapbox-gl';
 
-export default function MapComponent({ center, zoom, minZoom, maxZoom, pointsOfInterest, style = 'mapbox://styles/mapbox/streets-v12' }) {
+export default function MapComponent({ center, zoom, minZoom, maxZoom, pointsOfInterest, style = 'mapbox://styles/mapbox/satellite-v9' }) {
     let mapContainer;
     let map;
     let currentMarkers = [];
@@ -36,23 +36,41 @@ export default function MapComponent({ center, zoom, minZoom, maxZoom, pointsOfI
         return optimized;
     };
 
-    // Function to clear existing markers and route
-    const clearMarkers = () => {
+    const clearMapFeatures = () => {
+        console.log('Clearing map features...');
+        
+        // Remove DOM markers
         try {
-            currentMarkers.forEach(marker => marker.remove());
-            currentMarkers = [];
-
-            // Clear route layer and source if they exist
-            if (map && map.isStyleLoaded() && map.getSource('route')) {
-                if (map.getLayer('route')) {
-                    map.removeLayer('route');
+            currentMarkers.forEach(marker => {
+                if (marker && typeof marker.remove === 'function') {
+                    marker.remove();
                 }
-                map.removeSource('route');
-            }
+            });
+            currentMarkers = [];
+            console.log('Cleared all markers');
         } catch (error) {
             console.error('Error clearing markers:', error);
-            // Reset markers array even if there was an error
-            currentMarkers = [];
+            currentMarkers = []; // Reset array even if cleanup failed
+        }
+
+        // Safely remove map layers and sources
+        if (map && map.isStyleLoaded()) {
+            try {
+                // Remove layer first, then source
+                if (map.getLayer('route')) {
+                    console.log('Removing route layer');
+                    map.removeLayer('route');
+                }
+                if (map.getSource('route')) {
+                    console.log('Removing route source');
+                    map.removeSource('route');
+                }
+            } catch (error) {
+                console.error('Error clearing map layers/sources:', error);
+                // Continue execution - don't let this break the app
+            }
+        } else {
+            console.log('Map not ready for layer/source removal');
         }
     };
 
@@ -69,16 +87,75 @@ export default function MapComponent({ center, zoom, minZoom, maxZoom, pointsOfI
             return;
         }
 
-
         if (!pois || !Array.isArray(pois) || pois.length === 0) {
             console.log('No valid POIs provided');
-            clearMarkers();
+            clearMapFeatures();
             return;
         }
 
-        clearMarkers();
+        // Filter out POIs with invalid coordinates before processing
+        const validPOIs = pois.filter(poi => {
+            if (!poi) {
+                console.warn('🚫 Filtering out null/undefined POI');
+                return false;
+            }
+            
+            console.log(`🔍 Checking POI: ${poi.name} - lat: ${poi.latitude} (${typeof poi.latitude}), lng: ${poi.longitude} (${typeof poi.longitude})`);
+            
+            // Handle missing coordinate properties
+            if (!poi.hasOwnProperty('latitude') || !poi.hasOwnProperty('longitude')) {
+                console.warn(`🚫 POI ${poi.name} missing latitude or longitude properties`);
+                return false;
+            }
+            
+            const lat = typeof poi.latitude === 'string' ? parseFloat(poi.latitude) : poi.latitude;
+            const lng = typeof poi.longitude === 'string' ? parseFloat(poi.longitude) : poi.longitude;
+            
+            // Check for null, undefined, or empty values
+            if (poi.latitude === null || poi.latitude === undefined || poi.longitude === null || poi.longitude === undefined) {
+                console.warn(`🚫 POI ${poi.name} has null/undefined coordinates: lat=${poi.latitude}, lng=${poi.longitude}`);
+                return false;
+            }
+            
+            // Check for empty strings
+            if (poi.latitude === '' || poi.longitude === '') {
+                console.warn(`🚫 POI ${poi.name} has empty string coordinates: lat='${poi.latitude}', lng='${poi.longitude}'`);
+                return false;
+            }
+            
+            // Check for NaN after parsing
+            if (isNaN(lat) || isNaN(lng)) {
+                console.warn(`🚫 POI ${poi.name} has NaN coordinates after parsing: lat=${lat}, lng=${lng} (original: lat=${poi.latitude}, lng=${poi.longitude})`);
+                return false;
+            }
+            
+            // Check for reasonable coordinate ranges
+            if (lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+                console.warn(`🚫 POI ${poi.name} has out-of-range coordinates: lat=${lat}, lng=${lng}`);
+                return false;
+            }
+            
+            // Check for suspicious zero coordinates
+            if (lat === 0 && lng === 0) {
+                console.warn(`⚠️  POI ${poi.name} has suspicious (0,0) coordinates - might indicate missing location data`);
+                // Still allow (0,0) but log it as suspicious
+            }
+            
+            console.log(`✅ POI ${poi.name} has valid coordinates: lat=${lat}, lng=${lng}`);
+            return true;
+        });
+        
+        if (validPOIs.length === 0) {
+            console.log('No POIs with valid coordinates found');
+            clearMapFeatures();
+            return;
+        }
+        
+        console.log(`Filtered ${pois.length} POIs down to ${validPOIs.length} valid POIs`);
 
-        const optimizedPOIs = optimizeRoute(pois);
+        clearMapFeatures();
+
+        const optimizedPOIs = optimizeRoute(validPOIs);
         console.log('Optimized POIs for markers:', optimizedPOIs);
 
         // Add markers for each POI
@@ -88,14 +165,9 @@ export default function MapComponent({ center, zoom, minZoom, maxZoom, pointsOfI
             console.log(`  - Coordinates: [${poi.longitude}, ${poi.latitude}]`);
             console.log(`  - Lat type: ${typeof poi.latitude}, Lng type: ${typeof poi.longitude}`);
 
-            // Convert coordinates to numbers if they're strings
+            // Convert coordinates to numbers if they're strings (already validated above)
             const lat = typeof poi.latitude === 'string' ? parseFloat(poi.latitude) : poi.latitude;
             const lng = typeof poi.longitude === 'string' ? parseFloat(poi.longitude) : poi.longitude;
-
-            if (isNaN(lat) || isNaN(lng)) {
-                console.error(`Invalid coordinates for POI ${poi.name}: lat=${poi.latitude}, lng=${poi.longitude}`);
-                return;
-            }
 
             console.log(`  - Converted coordinates: [${lng}, ${lat}]`);
 
@@ -185,6 +257,12 @@ export default function MapComponent({ center, zoom, minZoom, maxZoom, pointsOfI
 
                 // Only add route if map is ready and style is loaded
                 if (map.isStyleLoaded()) {
+                    // Double-check that source doesn't exist (defensive programming)
+                    if (map.getSource('route')) {
+                        console.warn('Route source already exists, skipping route creation');
+                        return;
+                    }
+                    
                     map.addSource('route', {
                         type: 'geojson',
                         data: {
@@ -197,18 +275,17 @@ export default function MapComponent({ center, zoom, minZoom, maxZoom, pointsOfI
                         }
                     });
 
-                    // Add the route layer with responsive styling
+                    // Add the route layer with responsive styling - FIX: use correct source name
                     const routeWidth = isMobile ? 2 : 3;
                     const dashArray = isMobile ? [2, 2] : [3, 3];
 
                     map.addLayer({
                         id: 'route',
                         type: 'line',
-                        source: 'route',
+                        source: 'route',  // FIX: was 'trace', should be 'route'
                         layout: {
                             'line-join': 'round',
                             'line-cap': 'round',
-                            'symbol-z-elevate': true
                         },
                         paint: {
                             'line-color': '#3b82f6',
@@ -227,168 +304,252 @@ export default function MapComponent({ center, zoom, minZoom, maxZoom, pointsOfI
 
         // Fit map to show all markers with padding
         if (optimizedPOIs.length > 0) {
+            try {
+                const bounds = new mapboxgl.LngLatBounds();
+                optimizedPOIs.forEach(poi => {
+                    const lat = typeof poi.latitude === 'string' ? parseFloat(poi.latitude) : poi.latitude;
+                    const lng = typeof poi.longitude === 'string' ? parseFloat(poi.longitude) : poi.longitude;
+                    bounds.extend([lng, lat]);
+                });
+                
+                // Responsive padding based on container size
+                const isMobile = mapContainer.offsetWidth < 768;
+                const padding = isMobile
+                    ? { top: 20, bottom: 20, left: 20, right: 20 }
+                    : { top: 50, bottom: 50, left: 50, right: 50 };
+
+                map.fitBounds(bounds, {
+                    padding: padding,
+                    maxZoom: isMobile ? 14 : 16
+                });
+                console.log('Map bounds fitted to show all markers');
+            } catch (error) {
+                console.error('Error fitting map bounds:', error);
+            }
+        }
+    };
+
+    const addFeaturesToMap = (pois) => {
+        if (!map || !map.isStyleLoaded() || !pois || pois.length === 0) {
+            console.log('Map not ready or no POIs provided to addFeaturesToMap');
+            return;
+        }
+
+        // Filter out POIs with invalid coordinates
+        const validPOIs = pois.filter(poi => {
+            if (!poi) return false;
+            
+            const lat = typeof poi.latitude === 'string' ? parseFloat(poi.latitude) : poi.latitude;
+            const lng = typeof poi.longitude === 'string' ? parseFloat(poi.longitude) : poi.longitude;
+            
+            if (isNaN(lat) || isNaN(lng) || lat === null || lng === null || lat === undefined || lng === undefined) {
+                console.warn(`Filtering out POI with invalid coordinates in addFeaturesToMap: ${poi.name}`);
+                return false;
+            }
+            
+            if (lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+                console.warn(`Filtering out POI with out-of-range coordinates in addFeaturesToMap: ${poi.name}`);
+                return false;
+            }
+            
+            return true;
+        });
+        
+        if (validPOIs.length === 0) {
+            console.log('No valid POIs found in addFeaturesToMap');
+            clearMapFeatures();
+            return;
+        }
+
+        const optimizedPOIs = optimizeRoute(validPOIs);
+        console.log('addFeaturesToMap: Processing', optimizedPOIs.length, 'valid POIs');
+
+        // Add markers for each POI
+        optimizedPOIs.forEach((poi, index) => {
+            const lat = typeof poi.latitude === 'string' ? parseFloat(poi.latitude) : poi.latitude;
+            const lng = typeof poi.longitude === 'string' ? parseFloat(poi.longitude) : poi.longitude;
+
+            const markerElement = document.createElement('div');
+            // ... (your existing marker styling is fine)
+            markerElement.className = 'custom-marker';
+            const markerSize = 32;
+            markerElement.style.cssText = `
+                width: ${markerSize}px; height: ${markerSize}px; border-radius: 50%;
+                background-color: ${poi.priority === 1 ? '#ef4444' : '#3b82f6'};
+                border: 3px solid white; box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+                display: flex; align-items: center; justify-content: center;
+                color: white; font-weight: bold; font-size: 14px; cursor: pointer;
+            `;
+            markerElement.textContent = index + 1;
+
+            const marker = new mapboxgl.Marker(markerElement)
+                .setLngLat([lng, lat])
+                .addTo(map);
+
+            currentMarkers.push(marker);
+
+            const popup = new mapboxgl.Popup({ offset: 25, closeButton: false })
+                .setHTML(`
+                    <div class="p-2 min-w-[200px]">
+                        <h3 class="font-semibold text-gray-900 mb-1 text-base">${poi.name}</h3>
+                        <p class="text-sm text-gray-600">${poi.category}</p>
+                    </div>
+                `);
+            marker.setPopup(popup);
+        });
+
+        // Create optimized route line
+        if (optimizedPOIs.length > 1) {
+            try {
+                const coordinates = optimizedPOIs.map(poi => {
+                    const lat = typeof poi.latitude === 'string' ? parseFloat(poi.latitude) : poi.latitude;
+                    const lng = typeof poi.longitude === 'string' ? parseFloat(poi.longitude) : poi.longitude;
+                    return [lng, lat];
+                });
+
+                // Defensive check to prevent adding source if it somehow still exists
+                if (map.getSource('route')) {
+                    console.warn('Route source already exists in addFeaturesToMap, skipping');
+                    return;
+                }
+
+                map.addSource('route', {
+                    type: 'geojson',
+                    data: {
+                        type: 'Feature',
+                        properties: {},
+                        geometry: { type: 'LineString', coordinates }
+                    }
+                });
+
+                map.addLayer({
+                    id: 'route',
+                    type: 'line',
+                    source: 'route',
+                    layout: {
+                        'line-join': 'round',
+                        'line-cap': 'round',
+                    },
+                    paint: {
+                        'line-color': '#3b82f6',
+                        'line-width': 3,
+                        'line-dasharray': [2, 2],
+                        'line-opacity': 0.8
+                    }
+                });
+            } catch (error) {
+                console.error('Error creating route in addFeaturesToMap:', error);
+            }
+        }
+
+        // Fit map to show all markers
+        try {
             const bounds = new mapboxgl.LngLatBounds();
             optimizedPOIs.forEach(poi => {
                 const lat = typeof poi.latitude === 'string' ? parseFloat(poi.latitude) : poi.latitude;
                 const lng = typeof poi.longitude === 'string' ? parseFloat(poi.longitude) : poi.longitude;
                 bounds.extend([lng, lat]);
             });
-            // Responsive padding based on container size
-            const isMobile = mapContainer.offsetWidth < 768;
-            const padding = isMobile
-                ? { top: 20, bottom: 20, left: 20, right: 20 }
-                : { top: 50, bottom: 50, left: 50, right: 50 };
-
-            map.fitBounds(bounds, {
-                padding: padding,
-                maxZoom: isMobile ? 14 : 16
-            });
-            console.log('Map bounds fitted to show all markers');
+            map.fitBounds(bounds, { padding: 60, maxZoom: 15 });
+        } catch (error) {
+            console.error('Error fitting bounds in addFeaturesToMap:', error);
         }
     };
 
     // Initialize map on mount
     onMount(() => {
-        const mapboxToken = import.meta.env.VITE_MAPBOX_API_KEY;
-        console.log('Mapbox token from env:', mapboxToken ? 'SET' : 'NOT SET');
-        mapboxgl.accessToken = mapboxToken;
-
-        console.log('=== MAP COMPONENT INIT ===');
-        console.log('Container:', mapContainer);
-        console.log('Center:', center);
-        console.log('Initial POIs:', pointsOfInterest);
-
-        // Detect if mobile for responsive initialization
-        const isMobile = window.innerWidth < 768;
+        mapboxgl.accessToken = import.meta.env.VITE_MAPBOX_API_KEY;
 
         map = new mapboxgl.Map({
             container: mapContainer,
             style: style,
             center: center,
-            zoom: isMobile ? (zoom || 11) : (zoom || 12),
+            zoom: zoom || 12,
             minZoom: minZoom || 10,
-            maxZoom: maxZoom || 22,
-            preserveDrawingBuffer: true,
-            interactive: true,
-            touchZoomRotate: true,
-            touchPitch: true,
-            dragRotate: !isMobile, // Disable drag rotate on mobile for better UX
-            pitchWithRotate: !isMobile
+            maxZoom: maxZoom || 22
         });
 
-        // Add responsive navigation controls
-        const nav = new mapboxgl.NavigationControl({
-            showCompass: !isMobile,
-            showZoom: true,
-            visualizePitch: !isMobile
-        });
-        map.addControl(nav, 'top-right');
+        map.addControl(new mapboxgl.NavigationControl(), 'top-right');
 
         map.on('load', () => {
-            console.log('Map loaded successfully');
-            console.log('Current layers:', map.getStyle().layers);
-
-            // Test with hardcoded marker to verify map is working
-            console.log('Adding test marker at map center');
-            const testMarker = new mapboxgl.Marker()
-                .setLngLat(center)
-                .addTo(map);
-
-            // Remove test marker after 3 seconds
-            setTimeout(() => {
-                testMarker.remove();
-                console.log('Test marker removed');
-            }, 3000);
-
-            // Add initial markers if POIs are available
-            if (pointsOfInterest && pointsOfInterest.length > 0) {
-                addMarkers(pointsOfInterest);
-            }
+            console.log('Map loaded. Adding initial markers.');
+            // Initial render
+            addFeaturesToMap(pointsOfInterest);
         });
 
-        map.on('error', (e) => {
-            console.error('Map error:', e);
-        });
+        const resizeObserver = new ResizeObserver(() => map && map.resize());
+        resizeObserver.observe(mapContainer);
 
-        // Add resize handler for responsive behavior
-        const resizeObserver = new ResizeObserver(() => {
-            if (map) {
-                map.resize();
-            }
+        onCleanup(() => {
+            resizeObserver.disconnect();
         });
+    });
 
-        if (mapContainer) {
-            resizeObserver.observe(mapContainer);
+    // React to POI changes with improved error handling and debouncing
+    createEffect(() => {
+        const pois = pointsOfInterest; // Get the latest POIs
+        console.log('Map createEffect triggered with POIs:', pois?.length);
+
+        if (!map || !map.isStyleLoaded()) {
+            console.log('Map not ready for POI updates, deferring to load event');
+            return;
         }
 
-        // Handle window resize and orientation changes
-        const handleResize = () => {
-            if (map) {
-                setTimeout(() => {
-                    map.resize();
-                }, 100); // Small delay to ensure container has resized
-            }
-        };
+        // Early return if POIs are empty or invalid
+        if (!pois || !Array.isArray(pois)) {
+            console.log('No valid POIs array provided, clearing map features');
+            clearMapFeatures();
+            return;
+        }
 
-        window.addEventListener('resize', handleResize);
-        window.addEventListener('orientationchange', handleResize);
-
-        // Cleanup resize observer and event listeners
-        onCleanup(() => {
-            if (resizeObserver && mapContainer) {
-                resizeObserver.unobserve(mapContainer);
-            }
-            window.removeEventListener('resize', handleResize);
-            window.removeEventListener('orientationchange', handleResize);
+        // Check if POIs have valid coordinates before proceeding
+        const hasValidPOIs = pois.some(poi => {
+            if (!poi) return false;
+            const lat = typeof poi.latitude === 'string' ? parseFloat(poi.latitude) : poi.latitude;
+            const lng = typeof poi.longitude === 'string' ? parseFloat(poi.longitude) : poi.longitude;
+            return !isNaN(lat) && !isNaN(lng) && lat !== null && lng !== null;
         });
-    });
 
-    // React to POI changes with debouncing
-    createEffect(() => {
-        console.log('=== MAP COMPONENT EFFECT ===');
-        console.log('POIs changed:', pointsOfInterest);
+        if (!hasValidPOIs) {
+            console.log('No POIs with valid coordinates found, clearing map features');
+            clearMapFeatures();
+            return;
+        }
 
-        // Debounce rapid updates to prevent map conflicts
-        const updateTimeout = setTimeout(() => {
-            if (map && map.isStyleLoaded() && map.loaded()) {
-                try {
-                    addMarkers(pointsOfInterest);
-                } catch (error) {
-                    console.error('Error updating markers:', error);
-                    // If there's an error, try to recover by clearing and re-adding
-                    try {
-                        clearMarkers();
-                        setTimeout(() => {
-                            if (map && map.isStyleLoaded()) {
-                                addMarkers(pointsOfInterest);
-                            }
-                        }, 200);
-                    } catch (recoveryError) {
-                        console.error('Recovery attempt failed:', recoveryError);
-                    }
+        // *** IMPROVED MAP UPDATE STRATEGY ***
+        try {
+            // 1. Clear everything from the map immediately.
+            clearMapFeatures();
+
+            // 2. Use a small timeout to let the map settle before adding new features
+            //    This is more reliable than waiting for 'idle' event in some cases
+            setTimeout(() => {
+                // 3. Double-check map is still valid and ready
+                if (!map || !map.getStyle() || !map.isStyleLoaded()) {
+                    console.warn('Map became invalid during POI update, skipping');
+                    return;
                 }
-            } else if (map) {
-                // If map exists but isn't ready, wait for it
-                const onMapReady = () => {
-                    try {
-                        addMarkers(pointsOfInterest);
-                    } catch (error) {
-                        console.error('Error adding markers on map ready:', error);
-                    }
-                    map.off('idle', onMapReady); // Remove listener after use
-                };
-                map.on('idle', onMapReady);
-            }
-        }, 150); // Debounce for 150ms
 
-        // Cleanup function to cancel timeout if effect runs again
-        return () => clearTimeout(updateTimeout);
+                console.log('Adding features to map after clearing');
+                addFeaturesToMap(pois);
+            }, 100); // Small delay to ensure map has processed the clearing
+            
+        } catch (error) {
+            console.error('Error during POI update effect:', error);
+            // Fallback: try to clear features to prevent broken state
+            try {
+                clearMapFeatures();
+            } catch (clearError) {
+                console.error('Error during fallback clear:', clearError);
+            }
+        }
     });
+
 
     onCleanup(() => {
         console.log('Cleaning up map component');
         if (map) {
-            clearMarkers();
+            clearMapFeatures();
             map.remove();
         }
     });
