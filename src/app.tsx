@@ -5,12 +5,11 @@ import Nav from "~/components/Nav";
 import Footer from "~/components/Footer"; // Import the new component
 import PWAInstall from "~/components/PWAInstall";
 import "./app.css";
-import { QueryClient, QueryClientProvider } from "@tanstack/solid-query";
+import { QueryClientProvider } from "@tanstack/solid-query";
 import { AuthProvider } from "~/contexts/AuthContext";
 import { ThemeProvider } from "~/contexts/ThemeContext";
 import { LocationProvider } from "~/contexts/LocationContext";
-
-const queryClient = new QueryClient();
+import queryClient from "~/lib/query-client";
 
 export default function App() {
   return (

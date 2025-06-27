@@ -573,12 +573,29 @@ export interface HotelPreferences extends SearchParams {
   price_range_per_night?: { min: number; max: number };
   amenities?: string[];
   room_type?: string[];
+export interface RecentInteraction {
+    id: string;
+    user_id: string;
+    city_name: string;
+    city_id: string | null;
+    prompt: string;
+    response_text: string;
+    model_used: string;
+    latency_ms: number;
+    created_at: string;
+    pois: POIDetailedInfo[];
+    hotels: HotelDetailedInfo[];
+    restaurants: RestaurantDetailedInfo[];
 }
 
-export interface RestaurantPreferences extends SearchParams {
-  cuisine_types?: string[];
-  meal_types?: string[];
-  service_style?: string[];
-  price_range_per_person?: { min: number; max: number };
-  dietary_needs?: string[];
+export interface CityInteractions {
+    city_name: string;
+    interactions: RecentInteraction[];
+    poi_count: number;
+    last_activity: string;
+}
+
+export interface RecentInteractionsResponse {
+    cities: CityInteractions[];
+    total: number;
 }

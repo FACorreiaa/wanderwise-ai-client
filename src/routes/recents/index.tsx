@@ -1,236 +1,447 @@
-import { createSignal, createResource, For, Show, Suspense } from 'solid-js';
-import { Card } from '@/ui/card';
-import { Badge } from '@/ui/badge';
-import { Button } from '@/ui/button';
-import { A } from '@solidjs/router';
-import { TextField, TextFieldRoot } from '@/ui/textfield';
-import { MapPin, Clock, Eye, Search, Grid, List } from 'lucide-solid';
-import { fetchUserRecentInteractions } from '~/lib/api/recents';
+import { createSignal, For, Show, createEffect, onMount } from 'solid-js';
+import { A, useNavigate } from '@solidjs/router';
+import { Search, MapPin, Clock, Star, Filter, Grid, List, Calendar, TrendingUp, Sparkles, ChevronRight, Eye, Share2, Trash2, RotateCcw, SortAsc, SortDesc } from 'lucide-solid';
+import { useRecentInteractions, useCityDetails } from '~/lib/api/recents';
+import type { CityInteractions, POIDetailedInfo, HotelDetailedInfo, RestaurantDetailedInfo } from '~/lib/api/types';
 
-export default function Recents() {
+export default function RecentsPage() {
   const [searchQuery, setSearchQuery] = createSignal('');
-  const [viewMode, setViewMode] = createSignal<'grid' | 'list'>('grid');
+  const [viewMode, setViewMode] = createSignal('grid'); // 'grid', 'list'
+  const [sortBy, setSortBy] = createSignal('recent'); // 'recent', 'alphabetical', 'activity_count'
+  const [sortOrder, setSortOrder] = createSignal('desc');
+  const [showFilters, setShowFilters] = createSignal(false);
+  const [selectedTimeframe, setSelectedTimeframe] = createSignal('all'); // 'today', 'week', 'month', 'all'
+  
+  const navigate = useNavigate();
+  const recentsQuery = useRecentInteractions(50); // Get more cities for better overview
 
-  // Fetch recent interactions
-  const [recentInteractions] = createResource(fetchUserRecentInteractions);
+  const timeframeOptions = [
+    { id: 'all', label: 'All Time' },
+    { id: 'month', label: 'This Month' },
+    { id: 'week', label: 'This Week' },
+    { id: 'today', label: 'Today' }
+  ];
 
-  // Filter cities based on search query
+  const sortOptions = [
+    { id: 'recent', label: 'Most Recent' },
+    { id: 'alphabetical', label: 'Alphabetical' },
+    { id: 'activity_count', label: 'Activity Count' }
+  ];
+
+  // Filter cities based on search query and timeframe
   const filteredCities = () => {
-    const data = recentInteractions();
-    if (!data?.cities) return [];
+    if (!recentsQuery.data?.cities) return [];
+    
+    let filtered = recentsQuery.data?.cities || [];
 
-    const query = searchQuery().toLowerCase();
-    if (!query) return data.cities;
+    // Search filter
+    if (searchQuery()) {
+      const query = searchQuery().toLowerCase();
+      filtered = filtered.filter(city =>
+        city.city_name.toLowerCase().includes(query)
+      );
+    }
 
-    return data.cities.filter(city =>
-      city.city_name.toLowerCase().includes(query)
-    );
+    // Timeframe filter
+    if (selectedTimeframe() !== 'all') {
+      const now = new Date();
+      const timeframes = {
+        today: new Date(now.getFullYear(), now.getMonth(), now.getDate()),
+        week: new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000),
+        month: new Date(now.getFullYear(), now.getMonth(), 1)
+      };
+      
+      const cutoff = timeframes[selectedTimeframe()];
+      if (cutoff) {
+        filtered = filtered.filter(city => 
+          new Date(city.last_activity) >= cutoff
+        );
+      }
+    }
+
+    // Sort
+    filtered.sort((a, b) => {
+      let aVal, bVal;
+      switch (sortBy()) {
+        case 'alphabetical':
+          aVal = a.city_name.toLowerCase();
+          bVal = b.city_name.toLowerCase();
+          break;
+        case 'activity_count':
+          aVal = a.interactions.length;
+          bVal = b.interactions.length;
+          break;
+        case 'recent':
+        default:
+          aVal = new Date(a.last_activity);
+          bVal = new Date(b.last_activity);
+          break;
+      }
+
+      if (sortOrder() === 'asc') {
+        return aVal > bVal ? 1 : -1;
+      } else {
+        return aVal < bVal ? 1 : -1;
+      }
+    });
+
+    return filtered;
   };
 
-  const formatLastActivity = (dateString: string) => {
+  const getTotalInteractions = () => {
+    return recentsQuery.data?.cities?.reduce((total, city) => total + city.interactions.length, 0) || 0;
+  };
+
+  const getTotalPOIs = () => {
+    return recentsQuery.data?.cities?.reduce((total, city) => total + city.poi_count, 0) || 0;
+  };
+
+  const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     const now = new Date();
-    const diffInDays = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
+    const diffInHours = (now.getTime() - date.getTime()) / (1000 * 60 * 60);
 
-    if (diffInDays === 0) return 'Today';
-    if (diffInDays === 1) return 'Yesterday';
-    if (diffInDays < 7) return `${diffInDays} days ago`;
-    if (diffInDays < 30) return `${Math.floor(diffInDays / 7)} weeks ago`;
+    if (diffInHours < 1) return 'Just now';
+    if (diffInHours < 24) return `${Math.floor(diffInHours)} hours ago`;
+    if (diffInHours < 48) return 'Yesterday';
+    if (diffInHours < 168) return `${Math.floor(diffInHours / 24)} days ago`;
+    
     return date.toLocaleDateString();
   };
 
-  return (
-    <div class="min-h-screen bg-gradient-to-b from-blue-50 via-purple-50 to-white dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 transition-colors">
-      <div class="container mx-auto px-4 py-8">
-        {/* Header */}
-        <div class="text-center mb-12">
-          <div class="flex items-center justify-center gap-3 mb-4">
-            <div class="p-3 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 text-white">
-              <Clock class="w-8 h-8" />
+  const getActivityLevel = (interactionCount: number) => {
+    if (interactionCount >= 10) return { level: 'high', color: 'text-green-600 bg-green-50 dark:text-green-400 dark:bg-green-900', icon: '🔥' };
+    if (interactionCount >= 5) return { level: 'medium', color: 'text-orange-600 bg-orange-50 dark:text-orange-400 dark:bg-orange-900', icon: '⭐' };
+    return { level: 'low', color: 'text-blue-600 bg-blue-50 dark:text-blue-400 dark:bg-blue-900', icon: '📍' };
+  };
+
+  const handleCityClick = (cityName: string) => {
+    navigate(`/recents/${encodeURIComponent(cityName)}`);
+  };
+
+  const renderGridCard = (city: CityInteractions) => {
+    const activityInfo = getActivityLevel(city.interactions.length);
+    
+    return (
+      <div 
+        onClick={() => handleCityClick(city.city_name)}
+        class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden hover:shadow-md transition-all duration-200 cursor-pointer group"
+      >
+        {/* Header Image */}
+        <div class="relative h-32 bg-gradient-to-br from-blue-100 to-purple-100 dark:from-blue-900 dark:to-purple-900">
+          <div class="absolute inset-0 flex items-center justify-center text-3xl">
+            🏙️
+          </div>
+          
+          {/* Activity Badge */}
+          <div class="absolute top-3 left-3">
+            <span class={`px-2 py-1 rounded-full text-xs font-medium ${activityInfo.color}`}>
+              <span class="mr-1">{activityInfo.icon}</span>
+              {activityInfo.level === 'high' ? 'Very Active' : activityInfo.level === 'medium' ? 'Active' : 'Visited'}
+            </span>
+          </div>
+
+          {/* Navigation Arrow */}
+          <div class="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
+            <div class="p-1.5 bg-white/90 dark:bg-gray-800/90 rounded-lg">
+              <ChevronRight class="w-4 h-4 text-gray-600 dark:text-gray-400" />
             </div>
-            <h1 class="text-4xl font-bold text-gray-900 dark:text-white">Recent Interactions</h1>
-          </div>
-          <p class="text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
-            Revisit the cities you've explored and discover new places based on your previous searches
-          </p>
-        </div>
-
-        {/* Search and Controls */}
-        <div class="mb-8 flex flex-col sm:flex-row gap-4 items-center justify-between">
-          <TextFieldRoot class="relative flex-1 max-w-md">
-            <TextField
-              type="text"
-              placeholder="Search cities..."
-              value={searchQuery()}
-              onInput={(e) => setSearchQuery(e.currentTarget.value)}
-              class="pl-10 pr-4 py-2 w-full border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            />
-            <Search class="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-          </TextFieldRoot>
-
-          {/* View Mode Toggle */}
-          <div class="flex bg-gray-200 dark:bg-gray-700 rounded-lg p-1">
-            <Button
-              variant={viewMode() === 'grid' ? 'default' : 'ghost'}
-              size="sm"
-              onClick={() => setViewMode('grid')}
-              class="px-3 py-1"
-            >
-              <Grid class="w-4 h-4" />
-            </Button>
-            <Button
-              variant={viewMode() === 'list' ? 'default' : 'ghost'}
-              size="sm"
-              onClick={() => setViewMode('list')}
-              class="px-3 py-1"
-            >
-              <List class="w-4 h-4" />
-            </Button>
           </div>
         </div>
 
-        {/* Recent Interactions Content */}
-        <Suspense fallback={
-          <div class="flex items-center justify-center h-64">
-            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        {/* Content */}
+        <div class="p-4">
+          <div class="flex items-start justify-between mb-2">
+            <div class="flex-1 min-w-0">
+              <h3 class="font-semibold text-gray-900 dark:text-white text-lg mb-1 truncate">{city.city_name}</h3>
+              <p class="text-sm text-gray-600 dark:text-gray-400">
+                {city.interactions.length} interaction{city.interactions.length !== 1 ? 's' : ''}
+              </p>
+            </div>
           </div>
-        }>
-          <Show
-            when={recentInteractions.state === 'ready'}
-            fallback={
-              <Show when={recentInteractions.state === 'errored'}>
-                <div class="text-center py-12">
-                  <div class="text-red-500 dark:text-red-400 mb-4">
-                    <Clock class="w-16 h-16 mx-auto mb-4 opacity-50" />
-                    <h3 class="text-xl font-semibold mb-2">Failed to Load Recent Interactions</h3>
-                    <p>There was an error loading your recent interactions. Please try again.</p>
-                  </div>
-                  <Button onClick={() => recentInteractions.refetch()}>
-                    Try Again
-                  </Button>
-                </div>
+
+          {/* Stats */}
+          <div class="space-y-2 mb-3">
+            <div class="flex items-center justify-between text-sm">
+              <div class="flex items-center gap-1 text-gray-600 dark:text-gray-400">
+                <MapPin class="w-3 h-3" />
+                <span>{city.poi_count} places</span>
+              </div>
+              <div class="flex items-center gap-1 text-gray-600 dark:text-gray-400">
+                <Clock class="w-3 h-3" />
+                <span>{formatDate(city.last_activity)}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Preview of recent activity */}
+          <Show when={city.interactions.length > 0}>
+            <div class="pt-3 border-t border-gray-100 dark:border-gray-700">
+              <p class="text-xs text-gray-500 dark:text-gray-500 line-clamp-2">
+                Latest: {city.interactions[0]?.prompt || 'Recent activity'}
+              </p>
+            </div>
+          </Show>
+        </div>
+      </div>
+    );
+  };
+
+  const renderListItem = (city: CityInteractions) => {
+    const activityInfo = getActivityLevel(city.interactions.length);
+    
+    return (
+      <div 
+        onClick={() => handleCityClick(city.city_name)}
+        class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4 hover:shadow-md transition-all duration-200 cursor-pointer group"
+      >
+        <div class="flex items-center gap-4">
+          {/* City Icon */}
+          <div class="w-12 h-12 bg-gradient-to-br from-blue-100 to-purple-100 dark:from-blue-900 dark:to-purple-900 rounded-lg flex items-center justify-center text-xl flex-shrink-0">
+            🏙️
+          </div>
+
+          {/* Content */}
+          <div class="flex-1 min-w-0">
+            <div class="flex items-start justify-between mb-1">
+              <div class="flex-1 min-w-0">
+                <h3 class="font-semibold text-gray-900 dark:text-white text-base">{city.city_name}</h3>
+                <p class="text-sm text-gray-600 dark:text-gray-400">
+                  {city.interactions.length} interaction{city.interactions.length !== 1 ? 's' : ''} • {city.poi_count} places
+                </p>
+              </div>
+              <div class="flex items-center gap-2">
+                <span class={`px-2 py-1 rounded-full text-xs font-medium ${activityInfo.color}`}>
+                  <span class="mr-1">{activityInfo.icon}</span>
+                  {activityInfo.level === 'high' ? 'Very Active' : activityInfo.level === 'medium' ? 'Active' : 'Visited'}
+                </span>
+                <ChevronRight class="w-4 h-4 text-gray-400 group-hover:text-gray-600 dark:group-hover:text-gray-300 transition-colors" />
+              </div>
+            </div>
+
+            <div class="flex items-center gap-4 text-sm text-gray-500 dark:text-gray-500">
+              <div class="flex items-center gap-1">
+                <Clock class="w-3 h-3" />
+                <span>{formatDate(city.last_activity)}</span>
+              </div>
+              <Show when={city.interactions.length > 0}>
+                <span class="truncate max-w-xs">
+                  Latest: {city.interactions[0]?.prompt || 'Recent activity'}
+                </span>
               </Show>
-            }
-          >
-            <Show
-              when={filteredCities().length > 0}
-              fallback={
-                <div class="text-center py-12">
-                  <Clock class="w-16 h-16 mx-auto mb-4 text-gray-400 dark:text-gray-600" />
-                  <h3 class="text-xl font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                    {searchQuery() ? 'No matching cities found' : 'No recent interactions yet'}
-                  </h3>
-                  <p class="text-gray-500 dark:text-gray-400 mb-6">
-                    {searchQuery()
-                      ? 'Try adjusting your search terms.'
-                      : 'Start exploring cities to see your recent interactions here.'
-                    }
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  return (
+    <div class="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors">
+      {/* Header */}
+      <div class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <h1 class="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                <RotateCcw class="w-6 h-6 text-blue-600 dark:text-blue-400" />
+                Recent Activity
+              </h1>
+              <Show 
+                when={!recentsQuery.isLoading && recentsQuery.data}
+                fallback={<p class="text-gray-600 dark:text-gray-400 mt-1">Loading your recent activity...</p>}
+              >
+                <div class="flex items-center gap-4 mt-1">
+                  <p class="text-gray-600 dark:text-gray-400">
+                    {recentsQuery.data?.cities?.length || 0} cities explored
                   </p>
-                  <Show when={!searchQuery()}>
-                    <A href="/discover">
-                      <Button class="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700">
-                        <MapPin class="w-4 h-4 mr-2" />
-                        Start Exploring
-                      </Button>
-                    </A>
+                  <Show when={getTotalInteractions() > 0}>
+                    <div class="flex items-center gap-1 text-sm text-blue-600 dark:text-blue-400">
+                      <Sparkles class="w-4 h-4" />
+                      <span>{getTotalInteractions()} total interactions</span>
+                    </div>
                   </Show>
                 </div>
-              }
-            >
-              <div class={
-                viewMode() === 'grid'
-                  ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
-                  : "space-y-4"
-              }>
-                <For each={filteredCities()}>
-                  {(city) => (
-                    <Card class={`group hover:shadow-lg transition-all duration-300 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 ${viewMode() === 'list' ? 'flex flex-row items-center p-4' : 'p-6'
-                      }`}>
-                      <Show when={viewMode() === 'grid'}>
-                        <div class="flex items-center justify-between mb-4">
-                          <div class="flex items-center gap-3">
-                            <div class="p-2 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 text-white">
-                              <MapPin class="w-5 h-5" />
-                            </div>
-                            <h3 class="text-xl font-semibold text-gray-900 dark:text-white">
-                              {city.city_name}
-                            </h3>
-                          </div>
-                          <Badge variant="secondary" class="bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300">
-                            {city.poi_count} POIs
-                          </Badge>
-                        </div>
-
-                        <div class="space-y-3 mb-4">
-                          <div class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-                            <Clock class="w-4 h-4" />
-                            <span>Last visited {formatLastActivity(city.last_activity)}</span>
-                          </div>
-                          <div class="text-sm text-gray-600 dark:text-gray-400">
-                            {city.interactions.length} interaction{city.interactions.length !== 1 ? 's' : ''}
-                          </div>
-                        </div>
-
-                        <div class="space-y-2 mb-4">
-                          <Show when={city.interactions.length > 0}>
-                            <div class="text-sm text-gray-700 dark:text-gray-300">
-                              <span class="font-medium">Recent activity:</span>
-                              <p class="mt-1 text-gray-600 dark:text-gray-400 line-clamp-2">
-                                {city.interactions[0].prompt}
-                              </p>
-                            </div>
-                          </Show>
-                        </div>
-
-                        <A href={`/recents/city/${encodeURIComponent(city.city_name)}`}>
-                          <Button class="w-full group-hover:bg-gradient-to-r group-hover:from-blue-500 group-hover:to-purple-600 transition-all duration-300">
-                            <Eye class="w-4 h-4 mr-2" />
-                            View Details
-                          </Button>
-                        </A>
-                      </Show>
-
-                      <Show when={viewMode() === 'list'}>
-                        <div class="flex items-center gap-4 flex-1">
-                          <div class="p-2 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 text-white">
-                            <MapPin class="w-5 h-5" />
-                          </div>
-                          <div class="flex-1">
-                            <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
-                              {city.city_name}
-                            </h3>
-                            <div class="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
-                              <span>{city.poi_count} POIs</span>
-                              <span>{city.interactions.length} interactions</span>
-                              <span>Last visited {formatLastActivity(city.last_activity)}</span>
-                            </div>
-                          </div>
-                          <A href={`/recents/city/${encodeURIComponent(city.city_name)}`}>
-                            <Button size="sm">
-                              <Eye class="w-4 h-4 mr-2" />
-                              View Details
-                            </Button>
-                          </A>
-                        </div>
-                      </Show>
-                    </Card>
-                  )}
-                </For>
-              </div>
-            </Show>
-          </Show>
-        </Suspense>
-
-        {/* Statistics */}
-        <Show when={recentInteractions()?.cities?.length > 0}>
-          <div class="mt-12 text-center">
-            <div class="inline-flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-800 rounded-full shadow-md border border-gray-200 dark:border-gray-700">
-              <Clock class="w-4 h-4 text-blue-600" />
-              <span class="text-sm text-gray-600 dark:text-gray-400">
-                You've explored <span class="font-semibold text-blue-600">{recentInteractions()?.cities?.length}</span> cities
-              </span>
+              </Show>
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* Search and Filters */}
+      <div class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <div class="flex flex-col gap-4">
+            {/* Top row: Search */}
+            <div class="flex flex-col sm:flex-row sm:items-center gap-4">
+              {/* Search */}
+              <div class="relative flex-1 max-w-md">
+                <Search class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                <input
+                  type="text"
+                  placeholder="Search cities..."
+                  value={searchQuery()}
+                  onInput={(e) => setSearchQuery(e.target.value)}
+                  class="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+
+              {/* Mobile controls toggle */}
+              <div class="flex items-center gap-2 sm:hidden">
+                <button
+                  onClick={() => setShowFilters(!showFilters())}
+                  class="flex items-center gap-2 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-600"
+                >
+                  <Filter class="w-4 h-4" />
+                  Filters
+                </button>
+              </div>
+            </div>
+
+            {/* Controls - Always visible on desktop, collapsible on mobile */}
+            <div class={`${showFilters() ? 'block' : 'hidden'} sm:block`}>
+              <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                {/* Left side: Filters and Sort */}
+                <div class="flex flex-wrap items-center gap-4">
+                  {/* Timeframe Filter */}
+                  <div class="flex items-center gap-2">
+                    <label class="text-sm font-medium text-gray-700 dark:text-gray-300 whitespace-nowrap">
+                      Time:
+                    </label>
+                    <select
+                      value={selectedTimeframe()}
+                      onChange={(e) => setSelectedTimeframe(e.target.value)}
+                      class="min-w-[120px] px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                    >
+                      <For each={timeframeOptions}>
+                        {(option) => <option value={option.id}>{option.label}</option>}
+                      </For>
+                    </select>
+                  </div>
+
+                  {/* Sort Controls */}
+                  <div class="flex items-center gap-2">
+                    <label class="text-sm font-medium text-gray-700 dark:text-gray-300 whitespace-nowrap">
+                      Sort by:
+                    </label>
+                    <div class="flex items-center gap-1">
+                      <select
+                        value={sortBy()}
+                        onChange={(e) => setSortBy(e.target.value)}
+                        class="min-w-[140px] px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-l-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                      >
+                        <For each={sortOptions}>
+                          {(option) => <option value={option.id}>{option.label}</option>}
+                        </For>
+                      </select>
+                      <button
+                        onClick={() => setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc')}
+                        class="p-2 border border-l-0 border-gray-300 dark:border-gray-600 rounded-r-lg hover:bg-gray-50 dark:hover:bg-gray-700 bg-white dark:bg-gray-700 transition-colors"
+                        title={`Sort ${sortOrder() === 'asc' ? 'Descending' : 'Ascending'}`}
+                      >
+                        {sortOrder() === 'asc' ? <SortAsc class="w-4 h-4 text-gray-600 dark:text-gray-400" /> : <SortDesc class="w-4 h-4 text-gray-600 dark:text-gray-400" />}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Right side: View mode toggle */}
+                <div class="flex items-center gap-2">
+                  <label class="text-sm font-medium text-gray-700 dark:text-gray-300 whitespace-nowrap">
+                    View:
+                  </label>
+                  <div class="flex items-center border border-gray-300 dark:border-gray-600 rounded-lg p-1 bg-white dark:bg-gray-700">
+                    <button
+                      onClick={() => setViewMode('grid')}
+                      class={`p-2 rounded transition-colors ${viewMode() === 'grid' ? 'bg-blue-600 text-white' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-600'}`}
+                      title="Grid view"
+                    >
+                      <Grid class="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => setViewMode('list')}
+                      class={`p-2 rounded transition-colors ${viewMode() === 'list' ? 'bg-blue-600 text-white' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-600'}`}
+                      title="List view"
+                    >
+                      <List class="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Content */}
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <Show when={recentsQuery.isLoading}>
+          <div class="flex items-center justify-center py-12">
+            <div class="flex items-center gap-3">
+              <div class="w-6 h-6 border-3 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+              <span class="text-gray-600 dark:text-gray-400">Loading your recent activity...</span>
+            </div>
+          </div>
+        </Show>
+
+        <Show when={recentsQuery.isError}>
+          <div class="text-center py-12">
+            <div class="w-12 h-12 bg-red-100 dark:bg-red-900 rounded-full flex items-center justify-center mx-auto mb-4">
+              <TrendingUp class="w-6 h-6 text-red-600 dark:text-red-400" />
+            </div>
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">Unable to load recent activity</h3>
+            <p class="text-gray-600 dark:text-gray-400 mb-4">Please try again later</p>
+            <button 
+              onClick={() => recentsQuery.refetch()}
+              class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              Try Again
+            </button>
+          </div>
+        </Show>
+
+        <Show when={recentsQuery.isSuccess}>
+          <Show
+            when={filteredCities().length > 0}
+            fallback={
+              <div class="text-center py-12">
+                <RotateCcw class="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
+                <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                  {searchQuery() || selectedTimeframe() !== 'all' ? 'No cities found' : 'No recent activity'}
+                </h3>
+                <p class="text-gray-600 dark:text-gray-400 mb-4">
+                  {searchQuery() || selectedTimeframe() !== 'all'
+                    ? 'Try adjusting your search or time filter'
+                    : 'Start exploring cities to see your activity here!'
+                  }
+                </p>
+                <Show when={!searchQuery() && selectedTimeframe() === 'all'}>
+                  <A 
+                    href="/discover"
+                    class="inline-flex items-center gap-2 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                  >
+                    <Sparkles class="w-4 h-4" />
+                    Start Exploring
+                  </A>
+                </Show>
+              </div>
+            }
+          >
+            <div class="flex items-center justify-between mb-6">
+              <p class="text-gray-600 dark:text-gray-400">
+                {filteredCities().length} cit{filteredCities().length !== 1 ? 'ies' : 'y'} found
+              </p>
+            </div>
+
+            <div class={viewMode() === 'grid' 
+              ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6" 
+              : "space-y-4"
+            }>
+              <For each={filteredCities()}>
+                {(city) => viewMode() === 'grid' ? renderGridCard(city) : renderListItem(city)}
+              </For>
+            </div>
+          </Show>
         </Show>
       </div>
     </div>
