@@ -460,10 +460,42 @@ export default function MapComponent({ center, zoom, minZoom, maxZoom, pointsOfI
     onMount(() => {
         mapboxgl.accessToken = import.meta.env.VITE_MAPBOX_API_KEY;
 
+        // *** DEFENSIVE CENTER COORDINATE VALIDATION ***
+        let validCenter = center;
+        
+        // Validate and sanitize center coordinates before map creation
+        if (!center || !Array.isArray(center) || center.length !== 2) {
+            console.warn('🚫 Invalid center prop provided to Map:', center);
+            validCenter = [-8.6291, 41.1579]; // Default to Porto coordinates
+        } else {
+            const [lng, lat] = center;
+            
+            // Check for null, undefined, or NaN values
+            if (lng === null || lng === undefined || lat === null || lat === undefined || 
+                isNaN(lng) || isNaN(lat) || typeof lng !== 'number' || typeof lat !== 'number') {
+                console.warn(`🚫 Invalid center coordinates: lng=${lng} (${typeof lng}), lat=${lat} (${typeof lat})`);
+                validCenter = [-8.6291, 41.1579]; // Default to Porto coordinates
+            }
+            
+            // Check coordinate ranges
+            else if (lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+                console.warn(`🚫 Center coordinates out of range: lng=${lng}, lat=${lat}`);
+                validCenter = [-8.6291, 41.1579]; // Default to Porto coordinates
+            }
+            
+            // Log valid coordinates
+            else {
+                console.log(`✅ Valid center coordinates: lng=${lng}, lat=${lat}`);
+                validCenter = center;
+            }
+        }
+
+        console.log('🗺️ Initializing map with center:', validCenter);
+
         map = new mapboxgl.Map({
             container: mapContainer,
             style: style,
-            center: center,
+            center: validCenter,
             zoom: zoom || 12,
             minZoom: minZoom || 10,
             maxZoom: maxZoom || 22
@@ -505,9 +537,25 @@ export default function MapComponent({ center, zoom, minZoom, maxZoom, pointsOfI
         // Check if POIs have valid coordinates before proceeding
         const hasValidPOIs = pois.some(poi => {
             if (!poi) return false;
+            
+            // More comprehensive coordinate validation
             const lat = typeof poi.latitude === 'string' ? parseFloat(poi.latitude) : poi.latitude;
             const lng = typeof poi.longitude === 'string' ? parseFloat(poi.longitude) : poi.longitude;
-            return !isNaN(lat) && !isNaN(lng) && lat !== null && lng !== null;
+            
+            // Check for null, undefined, empty string, NaN
+            if (lat === null || lat === undefined || lng === null || lng === undefined ||
+                lat === '' || lng === '' || isNaN(lat) || isNaN(lng)) {
+                console.warn(`🚫 POI ${poi.name} has invalid coordinates in hasValidPOIs check: lat=${lat}, lng=${lng}`);
+                return false;
+            }
+            
+            // Check coordinate ranges
+            if (lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+                console.warn(`🚫 POI ${poi.name} has out-of-range coordinates in hasValidPOIs check: lat=${lat}, lng=${lng}`);
+                return false;
+            }
+            
+            return true;
         });
 
         if (!hasValidPOIs) {

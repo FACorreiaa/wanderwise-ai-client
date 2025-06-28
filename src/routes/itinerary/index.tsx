@@ -258,8 +258,79 @@ export default function ItineraryResultsPage() {
         };
     };
 
-    // Convert streaming POI data to itinerary format
-    const convertPOIToItineraryFormat = (poi: POIDetail) => {
+    // Convert streaming POI data to itinerary format with coordinate validation
+    const convertPOIToItineraryFormat = (poi: POIDetail, allowMissingCoordinates = false) => {
+        // Early validation of POI object
+        if (!poi) {
+            console.warn('convertPOIToItineraryFormat: null or undefined POI provided');
+            return null;
+        }
+
+        // Validate and sanitize coordinates with detailed logging
+        const validateCoordinates = (lat: any, lng: any) => {
+            console.log(`🔍 validateCoordinates input: lat=${lat} (type: ${typeof lat}), lng=${lng} (type: ${typeof lng})`);
+
+            // Handle completely missing values
+            if (lat === null || lat === undefined || lng === null || lng === undefined) {
+                console.warn(`❌ Null/undefined coordinates: lat=${lat}, lng=${lng}`);
+                return null;
+            }
+
+            // Handle empty strings
+            if (lat === '' || lng === '') {
+                console.warn(`❌ Empty string coordinates: lat='${lat}', lng='${lng}'`);
+                return null;
+            }
+
+            // Attempt to convert to numbers
+            let numLat: number;
+            let numLng: number;
+
+            if (typeof lat === 'string') {
+                numLat = parseFloat(lat.trim());
+            } else if (typeof lat === 'number') {
+                numLat = lat;
+            } else {
+                console.warn(`❌ Invalid latitude type: ${typeof lat}, value: ${lat}`);
+                return null;
+            }
+
+            if (typeof lng === 'string') {
+                numLng = parseFloat(lng.trim());
+            } else if (typeof lng === 'number') {
+                numLng = lng;
+            } else {
+                console.warn(`❌ Invalid longitude type: ${typeof lng}, value: ${lng}`);
+                return null;
+            }
+
+            // Check for NaN after conversion
+            if (isNaN(numLat) || isNaN(numLng)) {
+                console.warn(`❌ NaN coordinates after parsing: lat=${numLat}, lng=${numLng} (original: lat=${lat}, lng=${lng})`);
+                return null;
+            }
+
+            // Check for reasonable coordinate ranges
+            if (numLat < -90 || numLat > 90) {
+                console.warn(`❌ Latitude out of range: ${numLat} (must be between -90 and 90)`);
+                return null;
+            }
+
+            if (numLng < -180 || numLng > 180) {
+                console.warn(`❌ Longitude out of range: ${numLng} (must be between -180 and 180)`);
+                return null;
+            }
+
+            // Check for zero coordinates (often indicates missing data)
+            if (numLat === 0 && numLng === 0) {
+                console.warn(`⚠️  Suspicious zero coordinates detected for POI ${poi.name}, might indicate missing location data`);
+                // Don't return null for (0,0) as it might be valid, but log it as suspicious
+            }
+
+            console.log(`✅ Valid coordinates: lat=${numLat}, lng=${numLng}`);
+            return { latitude: numLat, longitude: numLng };
+        };
+
         // Infer time to spend based on category
         const getTimeToSpend = (category: string) => {
             const lowerCategory = category.toLowerCase();
@@ -285,13 +356,43 @@ export default function ItineraryResultsPage() {
             return 4.2 + (Math.random() * 0.6); // Random between 4.2 and 4.8
         };
 
+        const coordinates = validateCoordinates(poi.latitude, poi.longitude);
+        if (!coordinates) {
+            console.warn(`convertPOIToItineraryFormat: Invalid coordinates for POI ${poi.name}: lat=${poi.latitude}, lng=${poi.longitude}`);
+
+            if (allowMissingCoordinates) {
+                console.log(`📍 Creating POI without coordinates for cards: ${poi.name}`);
+                // Return POI without coordinates for card display only
+                return {
+                    id: poi.id || `poi-${Math.random().toString(36).substr(2, 9)}`,
+                    name: poi.name || 'Unknown Location',
+                    category: poi.category || 'Attraction',
+                    description: poi.description_poi || 'No description available',
+                    latitude: null, // Mark as missing
+                    longitude: null, // Mark as missing
+                    timeToSpend: getTimeToSpend(poi.category || ''),
+                    budget: getBudget(poi.category || ''),
+                    rating: Number(getRating(poi.category || '').toFixed(1)),
+                    tags: [poi.category || 'Attraction'],
+                    priority: 1,
+                    dogFriendly: true,
+                    address: poi.address || 'Address not available',
+                    website: poi.website || '',
+                    openingHours: poi.opening_hours || 'Hours not available',
+                    hasValidCoordinates: false // Flag to indicate missing coordinates
+                };
+            }
+
+            return null; // Return null for POIs with invalid coordinates when coordinates are required
+        }
+
         return {
             id: poi.id || `poi-${Math.random().toString(36).substr(2, 9)}`,
             name: poi.name || 'Unknown Location',
             category: poi.category || 'Attraction',
             description: poi.description_poi || 'No description available',
-            latitude: poi.latitude,
-            longitude: poi.longitude,
+            latitude: coordinates.latitude,
+            longitude: coordinates.longitude,
             timeToSpend: getTimeToSpend(poi.category || ''),
             budget: getBudget(poi.category || ''),
             rating: Number(getRating(poi.category || '').toFixed(1)),
@@ -300,7 +401,8 @@ export default function ItineraryResultsPage() {
             dogFriendly: true, // Default to true
             address: poi.address || 'Address not available',
             website: poi.website || '',
-            openingHours: poi.opening_hours || 'Hours not available'
+            openingHours: poi.opening_hours || 'Hours not available',
+            hasValidCoordinates: true // Flag to indicate valid coordinates
         };
     };
 
@@ -330,10 +432,11 @@ export default function ItineraryResultsPage() {
                     console.log(`  - Name: ${poi.name}`);
                     console.log(`  - Lat: ${poi.latitude} (${typeof poi.latitude})`);
                     console.log(`  - Lng: ${poi.longitude} (${typeof poi.longitude})`);
-                    const converted = convertPOIToItineraryFormat(poi);
+                    // For map, require valid coordinates (allowMissingCoordinates = false)
+                    const converted = convertPOIToItineraryFormat(poi, false);
                     console.log(`  - Converted:`, converted);
                     return converted;
-                });
+                }).filter(poi => poi !== null); // Filter out null values (invalid coordinates)
                 console.log('Final converted POIs for MAP:', convertedPOIs);
                 return convertedPOIs;
             }
@@ -343,7 +446,8 @@ export default function ItineraryResultsPage() {
             console.log('General POIs as fallback:', generalPois);
 
             if (generalPois && Array.isArray(generalPois) && generalPois.length > 0) {
-                const convertedPOIs = generalPois.map(convertPOIToItineraryFormat);
+                // For map, require valid coordinates (allowMissingCoordinates = false)
+                const convertedPOIs = generalPois.map(poi => convertPOIToItineraryFormat(poi, false)).filter(poi => poi !== null);
                 console.log('Using GENERAL POIs as fallback for MAP:', convertedPOIs);
                 return convertedPOIs;
             }
@@ -380,8 +484,9 @@ export default function ItineraryResultsPage() {
             }
 
             if (allPois.length > 0) {
-                const convertedPOIs = allPois.map(convertPOIToItineraryFormat);
-                console.log('Using COMBINED POIs for CARDS:', convertedPOIs);
+                // For cards, allow POIs without coordinates so they can still be displayed
+                const convertedPOIs = allPois.map(poi => convertPOIToItineraryFormat(poi, true)).filter(poi => poi !== null);
+                console.log('Using COMBINED POIs for CARDS (including those without coordinates):', convertedPOIs);
                 return convertedPOIs;
             }
 
@@ -551,6 +656,13 @@ export default function ItineraryResultsPage() {
                                     <span class="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-medium">
                                         📍 {poi.category}
                                     </span>
+
+                                    {/* Location Status Indicator */}
+                                    <Show when={poi.hasValidCoordinates === false}>
+                                        <span class="px-2 py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs">
+                                            📍 Location TBD
+                                        </span>
+                                    </Show>
 
                                     {/* Budget/Price Range with Enhanced Styling */}
                                     <span class={`px-3 py-1 rounded-full text-xs font-bold border ${getBudgetColor(poi.budget).includes('green') ? 'bg-green-50 text-green-700 border-green-200' :
@@ -1005,6 +1117,30 @@ export default function ItineraryResultsPage() {
                                 console.log('Map POIs length:', mapPOIs.length);
                                 console.log('Center coordinates:', [itinerary().centerLng, itinerary().centerLat]);
 
+                                // *** VALIDATE CENTER COORDINATES BEFORE PASSING TO MAP ***
+                                const rawCenter = [itinerary().centerLng, itinerary().centerLat];
+                                const validatedCenter = (() => {
+                                    const [lng, lat] = rawCenter;
+                                    
+                                    // Check for null, undefined, or NaN values
+                                    if (lng === null || lng === undefined || lat === null || lat === undefined || 
+                                        isNaN(lng) || isNaN(lat) || typeof lng !== 'number' || typeof lat !== 'number') {
+                                        console.warn(`🚫 Invalid center coordinates from itinerary: lng=${lng} (${typeof lng}), lat=${lat} (${typeof lat})`);
+                                        return [-8.6291, 41.1579]; // Default to Porto coordinates
+                                    }
+                                    
+                                    // Check coordinate ranges
+                                    if (lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+                                        console.warn(`🚫 Center coordinates out of range from itinerary: lng=${lng}, lat=${lat}`);
+                                        return [-8.6291, 41.1579]; // Default to Porto coordinates
+                                    }
+                                    
+                                    console.log(`✅ Valid center coordinates from itinerary: lng=${lng}, lat=${lat}`);
+                                    return rawCenter;
+                                })();
+                                
+                                console.log('Validated center coordinates:', validatedCenter);
+
                                 // Don't render map during POI updates to prevent symbol layer errors
                                 if (mapDisabled()) {
                                     return (
@@ -1019,7 +1155,7 @@ export default function ItineraryResultsPage() {
 
                                 return (
                                     <MapComponent
-                                        center={[itinerary().centerLng, itinerary().centerLat]}
+                                        center={validatedCenter}
                                         zoom={12}
                                         minZoom={10}
                                         maxZoom={22}

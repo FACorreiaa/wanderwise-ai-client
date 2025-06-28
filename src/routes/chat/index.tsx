@@ -10,6 +10,7 @@ import DetailedItemModal from '~/components/DetailedItemModal';
 import { createQuery, useQuery, useQueryClient } from '@tanstack/solid-query';
 import { useDefaultSearchProfile } from '~/lib/api/profiles';
 import { TypingAnimation } from '~/components/TypingAnimation';
+import { API_BASE_URL } from '~/lib/api/shared';
 
 export default function ChatPage() {
     const navigate = useNavigate();
@@ -87,6 +88,11 @@ export default function ChatPage() {
 
     // Initialize chat
     onMount(() => {
+        console.log('🚀 Chat page mounted - starting fresh session');
+        
+        // Don't automatically restore session data to avoid stale cache issues
+        // Sessions will be restored only when explicitly needed during message sending
+        
         // Add welcome message
         setMessages([
             {
@@ -116,108 +122,39 @@ export default function ChatPage() {
         setStreamProgress('Analyzing your request...');
 
         try {
-            // Detect domain from the message
-            const domain = detectDomain(messageContent);
-            console.log('Detected domain:', domain);
+            // Check if we have an existing session
+            let currentSessionId = sessionId();
+            console.log('🔍 Current session ID in memory:', currentSessionId);
 
-            // Create streaming session
-            const session = createStreamingSession(domain);
-            session.query = messageContent;
-            setStreamingSession(session);
-
-            // Store session in localStorage for persistence
-            sessionStorage.setItem('currentStreamingSession', JSON.stringify(session));
-
-            // Get current profile ID
-            const currentProfileId = profileId();
-            if (!currentProfileId) {
-                throw new Error('No default search profile found');
+            // If no session ID in memory, check session storage as fallback
+            if (!currentSessionId) {
+                const storedSession = sessionStorage.getItem('completedStreamingSession');
+                if (storedSession) {
+                    try {
+                        const session = JSON.parse(storedSession);
+                        if (session.sessionId) {
+                            console.log('🔄 Found session ID in storage:', session.sessionId);
+                            currentSessionId = session.sessionId;
+                            setSessionId(currentSessionId);
+                            setStreamingSession(session);
+                        }
+                    } catch (error) {
+                        console.error('Error parsing stored session:', error);
+                        // Clear corrupted session data
+                        sessionStorage.removeItem('completedStreamingSession');
+                    }
+                }
             }
 
-            // Start streaming request
-            const response = await sendUnifiedChatMessageStream({
-                profileId: currentProfileId,
-                message: messageContent,
-                userLocation: {
-                    userLat: userLatitude,
-                    userLon: userLongitude
-                }
-            });
-
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
+            if (currentSessionId) {
+                // Continue existing session
+                console.log('🔄 Continuing existing session:', currentSessionId);
+                await continueExistingSession(messageContent, currentSessionId);
+            } else {
+                // Start new session  
+                console.log('🆕 Starting new session');
+                await startNewSession(messageContent);
             }
-
-            // Set up streaming manager
-            streamingService.startStream(response, {
-                session,
-                onProgress: (updatedSession) => {
-                    setStreamingSession(updatedSession);
-
-                    // Update progress message based on domain and progress
-                    const domain = updatedSession.domain;
-                    if (updatedSession.data.general_city_data) {
-                        setStreamProgress(`Found information about ${updatedSession.data.general_city_data.city}...`);
-                    } else if (domain === 'accommodation') {
-                        setStreamProgress('Finding hotels...');
-                    } else if (domain === 'dining') {
-                        setStreamProgress('Searching restaurants...');
-                    } else if (domain === 'activities') {
-                        setStreamProgress('Discovering activities...');
-                    } else {
-                        setStreamProgress('Creating your itinerary...');
-                    }
-
-                    // Update session storage
-                    sessionStorage.setItem('currentStreamingSession', JSON.stringify(updatedSession));
-                },
-                onComplete: (completedSession) => {
-                    setStreamingSession(completedSession);
-                    setIsLoading(false);
-                    setStreamProgress('');
-
-                    // Add assistant message with results
-                    const assistantMessage = {
-                        id: `msg-${Date.now()}-response`,
-                        type: 'assistant',
-                        content: getCompletionMessage(completedSession.domain, completedSession.city),
-                        timestamp: new Date(),
-                        hasItinerary: true,
-                        streamingData: completedSession.data,
-                        showResults: true // New flag to show expanded results
-                    };
-
-                    setMessages(prev => [...prev, assistantMessage]);
-
-                    // Store completed session
-                    sessionStorage.setItem('completedStreamingSession', JSON.stringify(completedSession));
-
-                    // Invalidate chat sessions query to refresh the sidebar
-                    const currentProfileId = profileId();
-                    if (currentProfileId) {
-                        queryClient.invalidateQueries({
-                            queryKey: ['chatSessions', currentProfileId]
-                        });
-                    }
-                },
-                onError: (error) => {
-                    console.error('Streaming error:', error);
-                    setIsLoading(false);
-                    setStreamProgress('');
-
-                    const errorMessage = {
-                        id: `msg-${Date.now()}-error`,
-                        type: 'error',
-                        content: `Sorry, there was an error processing your request: ${error}`,
-                        timestamp: new Date()
-                    };
-                    setMessages(prev => [...prev, errorMessage]);
-                },
-                onRedirect: (domain, data) => {
-                    // This will be called when streaming completes
-                    console.log('Streaming complete, redirecting to:', domain, data);
-                }
-            });
 
         } catch (error) {
             console.error('Error sending message:', error);
@@ -231,6 +168,316 @@ export default function ChatPage() {
                 timestamp: new Date()
             };
             setMessages(prev => [...prev, errorMessage]);
+        }
+    };
+
+    // Function to start a new session (original logic)
+    const startNewSession = async (messageContent: string) => {
+        // Detect domain from the message
+        const domain = detectDomain(messageContent);
+        console.log('Detected domain:', domain);
+
+        // Create streaming session
+        const session = createStreamingSession(domain);
+        session.query = messageContent;
+        setStreamingSession(session);
+
+        // Store session in localStorage for persistence
+        sessionStorage.setItem('currentStreamingSession', JSON.stringify(session));
+
+        // Get current profile ID
+        const currentProfileId = profileId();
+        if (!currentProfileId) {
+            throw new Error('No default search profile found');
+        }
+
+        // Start streaming request
+        const response = await sendUnifiedChatMessageStream({
+            profileId: currentProfileId,
+            message: messageContent,
+            userLocation: {
+                userLat: userLatitude,
+                userLon: userLongitude
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        // Set up streaming manager
+        streamingService.startStream(response, {
+            session,
+            onProgress: (updatedSession) => {
+                setStreamingSession(updatedSession);
+
+                // Update progress message based on domain and progress
+                const domain = updatedSession.domain;
+                if (updatedSession.data.general_city_data) {
+                    setStreamProgress(`Found information about ${updatedSession.data.general_city_data.city}...`);
+                } else if (domain === 'accommodation') {
+                    setStreamProgress('Finding hotels...');
+                } else if (domain === 'dining') {
+                    setStreamProgress('Searching restaurants...');
+                } else if (domain === 'activities') {
+                    setStreamProgress('Discovering activities...');
+                } else {
+                    setStreamProgress('Creating your itinerary...');
+                }
+
+                // Update session storage
+                sessionStorage.setItem('currentStreamingSession', JSON.stringify(updatedSession));
+            },
+            onComplete: (completedSession) => {
+                setStreamingSession(completedSession);
+                setIsLoading(false);
+                setStreamProgress('');
+
+                // *** CAPTURE SESSION ID FROM NEW SESSION ***
+                if (completedSession.sessionId) {
+                    console.log('✅ Captured session ID from new session:', completedSession.sessionId);
+                    setSessionId(completedSession.sessionId);
+                }
+
+                // Add assistant message with results
+                const assistantMessage = {
+                    id: `msg-${Date.now()}-response`,
+                    type: 'assistant',
+                    content: getCompletionMessage(completedSession.domain, completedSession.city),
+                    timestamp: new Date(),
+                    hasItinerary: true,
+                    streamingData: completedSession.data,
+                    showResults: true // New flag to show expanded results
+                };
+
+                setMessages(prev => [...prev, assistantMessage]);
+
+                // Store completed session
+                sessionStorage.setItem('completedStreamingSession', JSON.stringify(completedSession));
+
+                // Invalidate chat sessions query to refresh the sidebar
+                const currentProfileId = profileId();
+                if (currentProfileId) {
+                    queryClient.invalidateQueries({
+                        queryKey: ['chatSessions', currentProfileId]
+                    });
+                }
+            },
+            onError: (error) => {
+                console.error('Streaming error:', error);
+                setIsLoading(false);
+                setStreamProgress('');
+
+                const errorMessage = {
+                    id: `msg-${Date.now()}-error`,
+                    type: 'error',
+                    content: `Sorry, there was an error processing your request: ${error}`,
+                    timestamp: new Date()
+                };
+                setMessages(prev => [...prev, errorMessage]);
+            },
+            onRedirect: (domain, data) => {
+                // This will be called when streaming completes
+                console.log('Streaming complete, redirecting to:', domain, data);
+            }
+        });
+    };
+
+    // Function to continue an existing session
+    const continueExistingSession = async (messageContent: string, sessionId: string) => {
+        setStreamProgress('Continuing conversation...');
+
+        // Create request payload
+        const requestPayload = {
+            message: messageContent,
+            user_location: {
+                userLat: userLatitude,
+                userLon: userLongitude
+            }
+        };
+
+        console.log('🚀 Making request to continue session:', sessionId);
+        const response = await fetch(`${API_BASE_URL}/llm/prompt-response/chat/sessions/${sessionId}/continue`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('access_token') || sessionStorage.getItem('access_token') || ''}`,
+            },
+            body: JSON.stringify(requestPayload)
+        });
+
+        if (!response.ok) {
+            if (response.status === 404) {
+                // Session not found, start a new one
+                console.log('Session not found, starting new session...');
+                setSessionId(null);
+                await startNewSession(messageContent);
+                return;
+            }
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        // Handle Server-Sent Events (SSE) streaming response
+        const reader = response.body?.getReader();
+        if (!reader) {
+            throw new Error('Response body is not readable');
+        }
+
+        const decoder = new TextDecoder();
+        let assistantMessage = '';
+        let isComplete = false;
+        let updatedData = null;
+
+        try {
+            while (!isComplete) {
+                const { done, value } = await reader.read();
+                if (done) break;
+
+                const chunk = decoder.decode(value, { stream: true });
+                const lines = chunk.split('\n');
+
+                for (const line of lines) {
+                    if (line.startsWith('data: ')) {
+                        try {
+                            const eventData = JSON.parse(line.slice(6));
+                            console.log('Continue session - received SSE event:', eventData);
+
+                            // Handle different event types
+                            switch (eventData.Type || eventData.type) {
+                                case 'progress':
+                                    const progressData = eventData.Data || eventData.data;
+                                    console.log('Progress:', progressData);
+                                    if (typeof progressData === 'string') {
+                                        setStreamProgress(progressData);
+                                    }
+                                    break;
+
+                                case 'itinerary':
+                                    // This is the key event - update the itinerary data
+                                    const itineraryData = eventData.Data || eventData.data;
+                                    const message = eventData.Message || eventData.message;
+
+                                    console.log('Received itinerary update:', itineraryData);
+                                    console.log('Itinerary message:', message);
+
+                                    if (itineraryData) {
+                                        setStreamProgress('Updating your itinerary...');
+
+                                        // *** INTELLIGENT DATA HANDLING FOR SESSION CONTINUATION ***
+                                        console.log('🔄 Processing itinerary update...');
+                                        console.log('New itinerary data from server:', itineraryData);
+                                        
+                                        // For session continuation, the server should return the COMPLETE updated data
+                                        // We should NOT merge with old client-side data to avoid duplicates
+                                        // The server maintains the session state and returns the full updated itinerary
+                                        
+                                        updatedData = itineraryData; // Use server data as-is (it's already complete)
+                                        
+                                        const currentSession = streamingSession();
+                                        if (currentSession) {
+                                            setStreamingSession({
+                                                ...currentSession,
+                                                data: itineraryData // Replace with fresh server data
+                                            });
+                                        }
+                                        
+                                        console.log('✅ Updated session with fresh server data:', itineraryData);
+                                    }
+
+                                    // Use the message from the server if available
+                                    if (message) {
+                                        assistantMessage += message + ' ';
+                                    } else {
+                                        assistantMessage += 'Your request has been processed successfully. ';
+                                    }
+                                    break;
+
+                                case 'complete':
+                                    isComplete = true;
+                                    const completeMessage = eventData.Message || eventData.message;
+                                    if (completeMessage && completeMessage !== 'Turn completed.') {
+                                        assistantMessage += completeMessage;
+                                    }
+                                    console.log('Continue session - streaming complete');
+                                    break;
+
+                                case 'error':
+                                    const errorMessage = eventData.Error || eventData.error || 'Unknown error occurred';
+                                    console.error('🚨 Continue session - received error event:', errorMessage);
+                                    throw new Error(errorMessage);
+
+                                default:
+                                    // Handle other event types or partial responses
+                                    if (eventData.Message || eventData.message) {
+                                        assistantMessage += eventData.Message || eventData.message;
+                                    }
+                                    console.log('Continue session - unhandled event type:', eventData.Type || eventData.type, eventData);
+                                    break;
+                            }
+                        } catch (parseError) {
+                            console.warn('Failed to parse continue session SSE data:', line, parseError);
+                        }
+                    }
+                }
+            }
+        } finally {
+            reader.releaseLock();
+        }
+
+        // Complete the loading state
+        setIsLoading(false);
+        setStreamProgress('');
+
+        // Add final assistant response to chat history with merged data
+        const finalStreamingData = updatedData || streamingSession()?.data;
+        const hasResults = !!(finalStreamingData && (
+            finalStreamingData.points_of_interest?.length > 0 ||
+            finalStreamingData.itinerary_response?.points_of_interest?.length > 0 ||
+            finalStreamingData.restaurants?.length > 0 ||
+            finalStreamingData.activities?.length > 0 ||
+            finalStreamingData.hotels?.length > 0
+        ));
+        
+        console.log('🎯 Final response data check:', {
+            updatedData,
+            streamingSessionData: streamingSession()?.data,
+            finalStreamingData,
+            hasResults
+        });
+
+        if (assistantMessage.trim()) {
+            const finalMessage = {
+                id: `msg-${Date.now()}-continue-response`,
+                type: 'assistant',
+                content: assistantMessage.trim(),
+                timestamp: new Date(),
+                hasItinerary: hasResults,
+                streamingData: finalStreamingData,
+                showResults: hasResults
+            };
+            setMessages(prev => [...prev, finalMessage]);
+        } else {
+            // If no specific message, provide a generic success message
+            const successMessage = {
+                id: `msg-${Date.now()}-continue-success`,
+                type: 'assistant',
+                content: 'Your request has been processed and added to your itinerary.',
+                timestamp: new Date(),
+                hasItinerary: hasResults,
+                streamingData: finalStreamingData,
+                showResults: hasResults
+            };
+            setMessages(prev => [...prev, successMessage]);
+        }
+
+        // Update session storage with merged data
+        if (finalStreamingData && streamingSession()) {
+            const updatedSession = {
+                ...streamingSession(),
+                data: finalStreamingData
+            };
+            sessionStorage.setItem('completedStreamingSession', JSON.stringify(updatedSession));
+            console.log('💾 Updated session storage with merged data:', updatedSession);
         }
     };
 
@@ -369,6 +616,8 @@ export default function ChatPage() {
     };
 
     const newChat = () => {
+        console.log('🔥 Starting new chat - clearing all session data');
+        
         setMessages([
             {
                 id: 'welcome-new',
@@ -379,8 +628,17 @@ export default function ChatPage() {
             }
         ]);
         setGeneratedItinerary(null);
-        setSessionId(null);
+        setSessionId(null); // Clear session ID to start fresh
         setSelectedSession(null);
+        setStreamingSession(null); // Clear streaming session
+        setStreamProgress('');
+        setExpandedResults(new Set()); // Clear expanded results
+        
+        // Clear all session storage to prevent cache issues
+        sessionStorage.removeItem('currentStreamingSession');
+        sessionStorage.removeItem('completedStreamingSession');
+        
+        console.log('✅ All session data cleared');
     };
 
     const loadSession = (session) => {
@@ -876,7 +1134,20 @@ export default function ChatPage() {
                         <div class="flex items-center gap-1 sm:gap-2 flex-shrink-0">
                             <span class="text-xs text-gray-500 dark:text-gray-400 hidden sm:inline">Using:</span>
                             <span class="text-xs font-medium text-blue-600 dark:text-blue-400 truncate max-w-20 sm:max-w-none">{activeProfile()}</span>
-
+                            {/* Session indicator and controls */}
+                            <Show when={sessionId()}>
+                                <div class="flex items-center gap-1 text-xs">
+                                    <div class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                                    <span class="text-green-600 dark:text-green-400 font-medium hidden sm:inline">Connected</span>
+                                    <button
+                                        onClick={newChat}
+                                        class="ml-1 px-2 py-1 text-xs text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded border border-red-200 dark:border-red-700"
+                                        title="Clear session and start fresh"
+                                    >
+                                        Clear
+                                    </button>
+                                </div>
+                            </Show>
                         </div>
                     </div>
                 </div>
