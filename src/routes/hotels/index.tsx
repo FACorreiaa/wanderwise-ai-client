@@ -1,16 +1,19 @@
 import { createSignal, createEffect, For, Show, onMount } from 'solid-js';
-import { useLocation } from '@solidjs/router';
+import { useLocation, useSearchParams } from '@solidjs/router';
 import { MapPin, Clock, Star, Filter, Heart, Share2, Download, Edit3, Plus, X, Navigation, Calendar, Users, DollarSign, Camera, Coffee, Utensils, Wifi, CreditCard, Loader2, MessageCircle, Send, Bed, Building2, Car, Waves, Dumbbell, UtensilsCrossed, Shield, Phone } from 'lucide-solid';
 import MapComponent from '~/components/features/Map/Map';
 // Removed old API imports - now using unified streaming endpoint only
 import type { AccommodationResponse, HotelDetailedInfo } from '~/lib/api/types';
 import { HotelResults } from '~/components/results';
 import { TypingAnimation } from '~/components/TypingAnimation';
+import { useChatSession } from '~/lib/hooks/useChatSession';
+import ChatInterface from '~/components/ui/ChatInterface';
 import { API_BASE_URL } from '~/lib/api/shared';
 import { useAuth } from '~/contexts/AuthContext';
 
 export default function HotelsPage() {
     const location = useLocation();
+    const [urlSearchParams] = useSearchParams();
     const auth = useAuth();
     const [selectedHotel, setSelectedHotel] = createSignal(null);
     const [showFilters, setShowFilters] = createSignal(false);
@@ -19,12 +22,21 @@ export default function HotelsPage() {
     const [streamingData, setStreamingData] = createSignal<AccommodationResponse | null>(null);
     const [fromChat, setFromChat] = createSignal(false);
 
-    // Chat functionality
-    const [showChat, setShowChat] = createSignal(false);
-    const [chatMessage, setChatMessage] = createSignal('');
-    const [chatHistory, setChatHistory] = createSignal([]);
-    const [isLoading, setIsLoading] = createSignal(false);
-    const [sessionId, setSessionId] = createSignal(null);
+    // Chat functionality using the reusable hook
+    const chatSession = useChatSession({
+        sessionIdPrefix: 'hotels',
+        getStreamingData: () => streamingData(),
+        setStreamingData: setStreamingData,
+        enableNavigation: true, // Enable URL navigation
+        onNavigationData: (navigation) => {
+            console.log('Navigation data received in hotels:', navigation);
+        },
+        onStreamingComplete: (data) => {
+            if (data && data.hotels) {
+                setFromChat(true);
+            }
+        }
+    });
     const [isUpdatingItinerary, setIsUpdatingItinerary] = createSignal(false);
 
     // Filter states
@@ -39,6 +51,33 @@ export default function HotelsPage() {
     onMount(() => {
         console.log('=== HOTELS PAGE MOUNT ===');
         console.log('Location state:', location.state);
+        console.log('URL search params:', urlSearchParams);
+        
+        // Check for URL parameters first (priority for deep linking)
+        const urlSessionId = urlSearchParams.sessionId;
+        const urlCityName = urlSearchParams.cityName;
+        const urlDomain = urlSearchParams.domain;
+        
+        if (urlSessionId) {
+            console.log('Found session ID in URL parameters:', urlSessionId);
+            chatSession.setSessionId(urlSessionId);
+            
+            // Try to retrieve session data based on URL parameters
+            const sessionKey = `session_${urlSessionId}`;
+            const storedSessionData = sessionStorage.getItem(sessionKey);
+            if (storedSessionData) {
+                try {
+                    const sessionData = JSON.parse(storedSessionData);
+                    console.log('Loading hotels session data from URL parameters:', sessionData);
+                    if (sessionData.hotels) {
+                        setStreamingData(sessionData);
+                        setFromChat(true);
+                    }
+                } catch (error) {
+                    console.error('Error parsing hotels session data from URL:', error);
+                }
+            }
+        }
         
         // Check for streaming data from route state  
         if (location.state?.streamingData) {

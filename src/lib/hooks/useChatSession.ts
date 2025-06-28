@@ -1,4 +1,5 @@
 import { createSignal, batch } from 'solid-js';
+import { useNavigate } from '@solidjs/router';
 import { useAuth } from '~/contexts/AuthContext';
 import { API_BASE_URL } from '~/lib/api/shared';
 
@@ -20,10 +21,13 @@ export interface UseChatSessionOptions {
   setMapDisabled?: (disabled: boolean) => void;
   poisUpdateTrigger?: () => void;
   setPoisUpdateTrigger?: (fn: (prev: number) => number) => void;
+  enableNavigation?: boolean; // New option to enable URL navigation
+  onNavigationData?: (navigation: any) => void; // Callback for navigation data
 }
 
 export function useChatSession(options: UseChatSessionOptions = {}) {
   const auth = useAuth();
+  const navigate = useNavigate();
   const [showChat, setShowChat] = createSignal(false);
   const [chatMessage, setChatMessage] = createSignal('');
   const [chatHistory, setChatHistory] = createSignal<ChatMessage[]>([]);
@@ -294,6 +298,24 @@ export function useChatSession(options: UseChatSessionOptions = {}) {
                     if (completeMessage && completeMessage !== 'Turn completed.') {
                       assistantMessage += completeMessage;
                     }
+                    
+                    // Handle navigation data if present
+                    const navigationData = eventData.Navigation || eventData.navigation;
+                    if (navigationData && options.enableNavigation) {
+                      console.log('Received navigation data:', navigationData);
+                      
+                      if (options.onNavigationData) {
+                        options.onNavigationData(navigationData);
+                      }
+                      
+                      // Navigate to the specified URL if present
+                      if (navigationData.url || navigationData.URL) {
+                        const targetUrl = navigationData.url || navigationData.URL;
+                        console.log('Navigating to:', targetUrl);
+                        navigate(targetUrl);
+                      }
+                    }
+                    
                     console.log('Streaming complete');
                     break;
 
@@ -526,6 +548,23 @@ export function useChatSession(options: UseChatSessionOptions = {}) {
                     const completeMessage = eventData.Message || eventData.message;
                     if (completeMessage && completeMessage !== 'Turn completed.') {
                       newSessionMessage += completeMessage;
+                    }
+                    
+                    // Handle navigation data if present for new session
+                    const navigationData = eventData.Navigation || eventData.navigation;
+                    if (navigationData && options.enableNavigation) {
+                      console.log('Received navigation data in new session:', navigationData);
+                      
+                      if (options.onNavigationData) {
+                        options.onNavigationData(navigationData);
+                      }
+                      
+                      // Navigate to the specified URL if present
+                      if (navigationData.url || navigationData.URL) {
+                        const targetUrl = navigationData.url || navigationData.URL;
+                        console.log('Navigating to (new session):', targetUrl);
+                        navigate(targetUrl);
+                      }
                     }
                     break;
 

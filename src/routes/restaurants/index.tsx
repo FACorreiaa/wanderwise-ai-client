@@ -1,5 +1,5 @@
 import { createSignal, createEffect, For, Show, onMount } from 'solid-js';
-import { useLocation } from '@solidjs/router';
+import { useLocation, useSearchParams } from '@solidjs/router';
 import { MapPin, Clock, Star, Filter, Heart, Share2, Download, Edit3, Plus, X, Navigation, Calendar, Users, DollarSign, Camera, Coffee, Utensils, Wifi, CreditCard, Loader2, MessageCircle, Send, ChefHat, Wine, UtensilsCrossed, Smartphone } from 'lucide-solid';
 import MapComponent from '~/components/features/Map/Map';
 // Removed old API imports - now using unified streaming endpoint only
@@ -12,6 +12,7 @@ import { useAuth } from '~/contexts/AuthContext';
 
 export default function RestaurantsPage() {
     const location = useLocation();
+    const [urlSearchParams] = useSearchParams();
     const [selectedRestaurant, setSelectedRestaurant] = createSignal(null);
     const [showFilters, setShowFilters] = createSignal(false);
     const [viewMode, setViewMode] = createSignal('split'); // 'map', 'list', 'split'
@@ -24,6 +25,10 @@ export default function RestaurantsPage() {
         sessionIdPrefix: 'restaurants',
         getStreamingData: () => streamingData(),
         setStreamingData: setStreamingData,
+        enableNavigation: true, // Enable URL navigation
+        onNavigationData: (navigation) => {
+            console.log('Navigation data received in restaurants:', navigation);
+        },
         onStreamingComplete: (data) => {
             if (data && data.restaurants) {
                 setFromChat(true);
@@ -55,6 +60,33 @@ export default function RestaurantsPage() {
     onMount(() => {
         console.log('=== RESTAURANTS PAGE MOUNT ===');
         console.log('Location state:', location.state);
+        console.log('URL search params:', urlSearchParams);
+        
+        // Check for URL parameters first (priority for deep linking)
+        const urlSessionId = urlSearchParams.sessionId;
+        const urlCityName = urlSearchParams.cityName;
+        const urlDomain = urlSearchParams.domain;
+        
+        if (urlSessionId) {
+            console.log('Found session ID in URL parameters:', urlSessionId);
+            chatSession.setSessionId(urlSessionId);
+            
+            // Try to retrieve session data based on URL parameters
+            const sessionKey = `session_${urlSessionId}`;
+            const storedSessionData = sessionStorage.getItem(sessionKey);
+            if (storedSessionData) {
+                try {
+                    const sessionData = JSON.parse(storedSessionData);
+                    console.log('Loading restaurants session data from URL parameters:', sessionData);
+                    if (sessionData.restaurants) {
+                        setStreamingData(sessionData);
+                        setFromChat(true);
+                    }
+                } catch (error) {
+                    console.error('Error parsing restaurants session data from URL:', error);
+                }
+            }
+        }
         
         // Check for streaming data from route state  
         if (location.state?.streamingData) {

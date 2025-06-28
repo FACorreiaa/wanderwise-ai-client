@@ -1,7 +1,7 @@
 import { Component, createSignal, Show } from 'solid-js';
 import { useNavigate } from '@solidjs/router';
 import { Send, Loader2, MessageCircle, MapPin } from 'lucide-solid';
-import { sendUnifiedChatMessageStream, detectDomain } from '~/lib/api/llm';
+import { sendUnifiedChatMessageStream, detectDomain, sendUnifiedChatMessageGraphQL } from '~/lib/api/llm';
 import { streamingService, createStreamingSession, getDomainRoute } from '~/lib/streaming-service';
 import type { StreamingSession } from '~/lib/api/types';
 import CTA from '~/components/features/Home/CTA';
@@ -59,7 +59,7 @@ const LandingPage: Component = () => {
     const { userLocation } = useUserLocation()
     const userLatitude = userLocation()?.latitude || 38.7223;
     const userLongitude = userLocation()?.longitude || -9.1393;
-    
+
     // Get default search profile
     const defaultProfileQuery = useDefaultSearchProfile();
     const profileId = () => defaultProfileQuery.data?.id;
@@ -98,7 +98,16 @@ const LandingPage: Component = () => {
                 throw new Error('No default search profile found');
             }
 
-            // Start streaming request
+            //Start streaming request
+            // const response = await sendUnifiedChatMessageStream({
+            //     profileId: currentProfileId,
+            //     message: messageContent,
+            //     userLocation: {
+            //         userLat: userLatitude,
+            //         userLon: userLongitude
+            //     }
+            // });
+
             const response = await sendUnifiedChatMessageStream({
                 profileId: currentProfileId,
                 message: messageContent,
@@ -108,9 +117,32 @@ const LandingPage: Component = () => {
                 }
             });
 
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
+            // Check for navigation data and handle redirect
+            // if (response.navigationData) {
+            //     console.log('🧭 Navigation data found, redirecting:', response.navigationData);
+            //     setIsLoading(false);
+            //     setStreamProgress('');
+
+            //     // Extract session data from GraphQL response for state passing
+            //     const sessionData = {
+            //         sessionId: response.data?.processUnifiedChatMessage?.sessionId,
+            //         events: response.data?.processUnifiedChatMessage?.events || [],
+            //         fromChat: true,
+            //         originalMessage: messageContent
+            //     };
+
+            //     // Navigate to the specified URL with session data
+            //     navigate(response.navigationData.url, {
+            //         state: {
+            //             streamingData: sessionData,
+            //             fromChat: true,
+            //             originalMessage: messageContent
+            //         }
+            //     });
+            //     return; // Exit early to prevent further processing
+            // }
+
+            console.log('No navigation data found, continuing with normal flow...');
 
             // Set up streaming manager
             streamingService.startStream(response, {
@@ -429,9 +461,9 @@ const LandingPage: Component = () => {
             <ContentGrid items={contentData} />
             <MobileAppAnnouncement />
             <CTA />
-            
+
             {/* Location Permission Prompt */}
-            <LocationPermissionPrompt 
+            <LocationPermissionPrompt
                 onPermissionGranted={() => {
                     console.log('Location permission granted');
                 }}

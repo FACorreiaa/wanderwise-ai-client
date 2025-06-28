@@ -1,5 +1,5 @@
 import { createSignal, createEffect, For, Show, onMount } from 'solid-js';
-import { useLocation } from '@solidjs/router';
+import { useLocation, useSearchParams } from '@solidjs/router';
 import { MapPin, Clock, Star, Filter, Heart, Share2, Download, Edit3, Plus, X, Navigation, Calendar, Users, DollarSign, Camera, Coffee, Utensils, Wifi, CreditCard, Loader2, MessageCircle, Send, Compass, Map, Zap, Mountain, Palette, Music } from 'lucide-solid';
 import MapComponent from '~/components/features/Map/Map';
 // Removed old API imports - now using unified streaming endpoint only
@@ -13,6 +13,7 @@ import { useAuth } from '~/contexts/AuthContext';
 
 export default function ActivitiesPage() {
     const location = useLocation();
+    const [urlSearchParams] = useSearchParams();
     const auth = useAuth();
     const [selectedActivity, setSelectedActivity] = createSignal(null);
     const [showFilters, setShowFilters] = createSignal(false);
@@ -26,6 +27,10 @@ export default function ActivitiesPage() {
         sessionIdPrefix: 'activities',
         getStreamingData: () => streamingData(),
         setStreamingData: setStreamingData,
+        enableNavigation: true, // Enable URL navigation
+        onNavigationData: (navigation) => {
+            console.log('Navigation data received in activities:', navigation);
+        },
         onStreamingComplete: (data) => {
             if (data && data.activities) {
                 setFromChat(true);
@@ -59,6 +64,33 @@ export default function ActivitiesPage() {
     onMount(() => {
         console.log('=== ACTIVITIES PAGE MOUNT ===');
         console.log('Location state:', location.state);
+        console.log('URL search params:', urlSearchParams);
+
+        // Check for URL parameters first (priority for deep linking)
+        const urlSessionId = urlSearchParams.sessionId;
+        const urlCityName = urlSearchParams.cityName;
+        const urlDomain = urlSearchParams.domain;
+        
+        if (urlSessionId) {
+            console.log('Found session ID in URL parameters:', urlSessionId);
+            chatSession.setSessionId(urlSessionId);
+            
+            // Try to retrieve session data based on URL parameters
+            const sessionKey = `session_${urlSessionId}`;
+            const storedSessionData = sessionStorage.getItem(sessionKey);
+            if (storedSessionData) {
+                try {
+                    const sessionData = JSON.parse(storedSessionData);
+                    console.log('Loading activities session data from URL parameters:', sessionData);
+                    if (sessionData.activities) {
+                        setStreamingData(sessionData);
+                        setFromChat(true);
+                    }
+                } catch (error) {
+                    console.error('Error parsing activities session data from URL:', error);
+                }
+            }
+        }
 
         // Check for streaming data from route state  
         if (location.state?.streamingData) {

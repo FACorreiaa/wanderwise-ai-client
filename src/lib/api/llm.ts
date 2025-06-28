@@ -2,6 +2,7 @@
 import { useMutation } from '@tanstack/solid-query';
 import { apiRequest, API_BASE_URL } from './shared';
 import { defaultLLMRateLimiter, RateLimitError, showRateLimitNotification } from '../rate-limiter';
+//import { createGraphQLClient, gql } from '@solid-primitives/graphql';
 import type { ChatSession, ChatMessage, ChatSessionResponse, StreamEvent, UnifiedChatResponse, ApiResponse, SessionPerformanceMetrics, SessionContentMetrics, SessionEngagementMetrics } from './types';
 
 // ==================
@@ -238,6 +239,97 @@ export const sendUnifiedChatMessageStream = async (request: UnifiedChatStreamReq
   }, endpoint);
 };
 
+// GraphQL alternative to streaming service
+// const PROCESS_UNIFIED_CHAT_MESSAGE = gql`
+//   mutation ProcessUnifiedChatMessage($profileId: String!, $input: ChatMessageInput!) {
+//     processUnifiedChatMessage(profileId: $profileId, input: $input) {
+//       sessionId
+//       success
+//       error
+//       events {
+//         type
+//         message
+//         data
+//         error
+//         timestamp
+//         eventId
+//         isFinal
+//         navigation {
+//           url
+//           routeType
+//           queryParams
+//         }
+//       }
+//     }
+//   }
+// `;
+
+// Create GraphQL client instance
+// const createAuthenticatedGraphQLClient = () => {
+//   const token = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
+
+//   return createGraphQLClient(`${API_BASE_URL}/graphql`, {
+//     headers: {
+//       'Content-Type': 'application/json',
+//       ...(token && { Authorization: `Bearer ${token}` }),
+//     },
+//   });
+// };
+
+// export const sendUnifiedChatMessageGraphQL = async (request: UnifiedChatStreamRequest): Promise<any> => {
+//   console.log('=== GRAPHQL API CALL ===');
+//   console.log('Request:', request);
+
+//   const client = createAuthenticatedGraphQLClient();
+
+//   try {
+//     const result = await client(PROCESS_UNIFIED_CHAT_MESSAGE, {
+//       profileId: request.profileId,
+//       input: {
+//         message: request.message,
+//         userLocation: request.userLocation,
+//       },
+//     });
+
+//     console.log('=== GRAPHQL RESPONSE ===');
+//     console.log('Result:', result);
+//     console.log('Result structure:', Object.keys(result || {}));
+
+//     // Extract navigation data from events for redirect
+//     const processResult = result?.data?.processUnifiedChatMessage;
+//     console.log('processUnifiedChatMessage:', processResult);
+
+//     const events = processResult?.events || [];
+//     console.log('GraphQL Events count:', events.length);
+//     console.log('First few events:', events.slice(0, 3));
+//     console.log('Last few events:', events.slice(-3));
+
+//     // Find navigation data in the complete event
+//     const navigationEvent = events.find((event: any) => event.navigation && event.navigation.url);
+//     if (navigationEvent) {
+//       console.log('🧭 GraphQL Navigation found:', navigationEvent.navigation);
+
+//       // Add navigation data to result for easy access
+//       result.navigationData = navigationEvent.navigation;
+//       console.log('✅ Navigation data added to result:', result.navigationData);
+//     } else {
+//       console.log('❌ No navigation event found');
+//       // Debug: check if any events have navigation
+//       const eventsWithNav = events.filter((event: any) => event.navigation);
+//       console.log('Events with navigation field:', eventsWithNav);
+
+//       // Additional debugging - check if result structure is different
+//       console.log('Full result keys:', Object.keys(result || {}));
+//       console.log('Result.data keys:', Object.keys(result?.data || {}));
+//     }
+
+//     return result;
+//   } catch (error) {
+//     console.error('GraphQL Error:', error);
+//     throw error;
+//   }
+// };
+
 // Domain detection utility (client-side)
 export const detectDomain = (message: string): import('./types').DomainType => {
   const lowerMessage = message.toLowerCase();
@@ -328,12 +420,12 @@ export const getUserChatSessions = async (profileId: string): Promise<ChatSessio
     }));
   } catch (error) {
     console.error('❌ Failed to fetch chat sessions:', error);
-    
+
     // Check if it's the specific SQL error
     if (error?.message?.includes('COALESCE types uuid and text cannot be matched')) {
       console.warn('🔧 Database type mismatch error detected - backend needs to fix COALESCE query');
     }
-    
+
     // Return empty array when backend endpoint has issues
     // This allows the chat to still work even if history loading fails
     return [];
@@ -349,20 +441,20 @@ const generateSessionTitle = (conversationHistory: ChatMessage[], cityName?: str
   // Use content metrics for smarter title generation
   if (contentMetrics) {
     const { dominant_categories, complexity_score, total_pois, total_hotels, total_restaurants } = contentMetrics;
-    
+
     // Generate title based on dominant categories
     if (dominant_categories.length > 0) {
       const primaryCategory = dominant_categories[0];
       const categoryNames = {
         'accommodation': 'Hotels',
-        'dining': 'Restaurants', 
+        'dining': 'Restaurants',
         'attractions': 'Attractions',
         'itinerary': 'Itinerary Planning'
       };
-      
+
       const categoryName = categoryNames[primaryCategory as keyof typeof categoryNames] || 'Recommendations';
       const cityPart = cityName ? ` in ${cityName}` : '';
-      
+
       // Add complexity indicator for rich sessions
       if (complexity_score >= 8) {
         return `Complete ${categoryName}${cityPart}`;
@@ -378,10 +470,10 @@ const generateSessionTitle = (conversationHistory: ChatMessage[], cityName?: str
   const firstUserMessage = conversationHistory.find(msg => msg.role === 'user' || msg.type === 'user');
   if (firstUserMessage) {
     const content = firstUserMessage.content || '';
-    
+
     // Try to detect the intent from the message content
     const lowerContent = content.toLowerCase();
-    
+
     // Check for specific intents and create meaningful titles
     if (lowerContent.includes('hotel') || lowerContent.includes('accommodation')) {
       return cityName ? `Hotels in ${cityName}` : 'Hotel Search';
@@ -395,15 +487,15 @@ const generateSessionTitle = (conversationHistory: ChatMessage[], cityName?: str
     if (lowerContent.includes('itinerary') || lowerContent.includes('plan') || lowerContent.includes('trip')) {
       return cityName ? `${cityName} Itinerary` : 'Trip Planning';
     }
-    
+
     // Fallback: Use first meaningful words + city
     const words = content.split(' ').filter(word => word.length > 2).slice(0, 3);
     const baseTitle = words.join(' ');
-    
+
     if (cityName && !baseTitle.toLowerCase().includes(cityName.toLowerCase())) {
       return `${baseTitle} - ${cityName}`;
     }
-    
+
     return baseTitle || (cityName ? `Trip to ${cityName}` : 'Chat Session');
   }
 

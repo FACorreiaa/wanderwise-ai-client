@@ -1,5 +1,5 @@
 import { createSignal, createEffect, For, Show, onMount, batch } from 'solid-js';
-import { useLocation } from '@solidjs/router';
+import { useLocation, useSearchParams } from '@solidjs/router';
 import mapboxgl from 'mapbox-gl';
 import { MapPin, Clock, Star, Filter, Heart, Share2, Download, Edit3, Plus, X, Navigation, Calendar, Users, DollarSign, Camera, Coffee, Utensils, Building, TreePine, ShoppingBag, Loader2, MessageCircle, Send, Compass, Palette, Cloud } from 'lucide-solid';
 // @ts-ignore - Map component type
@@ -54,6 +54,7 @@ interface FilterState {
 
 export default function ItineraryResultsPage() {
     const location = useLocation<LocationState>();
+    const [searchParams] = useSearchParams();
     const auth = useAuth();
     const [map, setMap] = createSignal(null);
     const [selectedPOI, setSelectedPOI] = createSignal(null);
@@ -78,6 +79,11 @@ export default function ItineraryResultsPage() {
         setPoisUpdateTrigger: setPoisUpdateTrigger,
         onUpdateStart: () => setIsUpdatingItinerary(true),
         onUpdateComplete: () => setIsUpdatingItinerary(false),
+        enableNavigation: true, // Enable URL navigation
+        onNavigationData: (navigation) => {
+            console.log('Navigation data received:', navigation);
+            // Additional navigation handling if needed
+        },
         onStreamingComplete: (data) => {
             setFromChat(true);
             // Trigger POI update for the map
@@ -107,7 +113,32 @@ export default function ItineraryResultsPage() {
     onMount(() => {
         console.log('=== ITINERARY PAGE MOUNT ===');
         console.log('Location state:', location.state);
+        console.log('Search params:', searchParams);
         console.log('Session storage keys:', Object.keys(sessionStorage));
+
+        // Check for URL parameters first (priority for deep linking)
+        const urlSessionId = searchParams.sessionId;
+        const urlCityName = searchParams.cityName;
+        const urlDomain = searchParams.domain;
+
+        if (urlSessionId) {
+            console.log('Found session ID in URL parameters:', urlSessionId);
+            chatSession.setSessionId(urlSessionId);
+
+            // Try to retrieve session data based on URL parameters
+            const sessionKey = `session_${urlSessionId}`;
+            const storedSessionData = sessionStorage.getItem(sessionKey);
+            if (storedSessionData) {
+                try {
+                    const sessionData = JSON.parse(storedSessionData);
+                    console.log('Loading session data from URL parameters:', sessionData);
+                    setStreamingData(sessionData);
+                    setFromChat(true);
+                } catch (error) {
+                    console.error('Error parsing session data from URL:', error);
+                }
+            }
+        }
 
         // Check for streaming data from route state
         if (location.state?.streamingData) {
@@ -652,7 +683,7 @@ export default function ItineraryResultsPage() {
             if (filterType === 'dogFriendly') {
                 return { ...prev, dogFriendly: !prev.dogFriendly };
             }
-            
+
             const currentArray = prev[filterType] as string[];
             return {
                 ...prev,
@@ -1162,24 +1193,24 @@ export default function ItineraryResultsPage() {
                                 const rawCenter = [itinerary().centerLng, itinerary().centerLat];
                                 const validatedCenter = (() => {
                                     const [lng, lat] = rawCenter;
-                                    
+
                                     // Check for null, undefined, or NaN values
-                                    if (lng === null || lng === undefined || lat === null || lat === undefined || 
+                                    if (lng === null || lng === undefined || lat === null || lat === undefined ||
                                         isNaN(lng) || isNaN(lat) || typeof lng !== 'number' || typeof lat !== 'number') {
                                         console.warn(`🚫 Invalid center coordinates from itinerary: lng=${lng} (${typeof lng}), lat=${lat} (${typeof lat})`);
                                         return [-8.6291, 41.1579]; // Default to Porto coordinates
                                     }
-                                    
+
                                     // Check coordinate ranges
                                     if (lat < -90 || lat > 90 || lng < -180 || lng > 180) {
                                         console.warn(`🚫 Center coordinates out of range from itinerary: lng=${lng}, lat=${lat}`);
                                         return [-8.6291, 41.1579]; // Default to Porto coordinates
                                     }
-                                    
+
                                     console.log(`✅ Valid center coordinates from itinerary: lng=${lng}, lat=${lat}`);
                                     return rawCenter;
                                 })();
-                                
+
                                 console.log('Validated center coordinates:', validatedCenter);
 
                                 // Don't render map during POI updates to prevent symbol layer errors
