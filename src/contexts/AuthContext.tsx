@@ -97,13 +97,13 @@ export const AuthProvider = (props: AuthProviderProps) => {
       } catch (error) {
         console.error('AuthProvider: Session validation failed:', error);
         console.error('AuthProvider: Error details:', {
-          message: error?.message,
-          status: error?.status,
-          name: error?.name
+          message: (error as any)?.message,
+          status: (error as any)?.status,
+          name: (error as any)?.name
         });
         
         // Don't clear token on network errors - could be temporary
-        if (error?.message === 'Unauthorized' || error?.status === 401) {
+        if ((error as any)?.message === 'Unauthorized' || (error as any)?.status === 401) {
           console.log('AuthProvider: Unauthorized error, clearing token');
           clearAuthToken();
           setUser(null);

@@ -1,13 +1,42 @@
 import { onMount, onCleanup, createEffect } from 'solid-js';
 import mapboxgl from 'mapbox-gl';
 
-export default function MapComponent({ center, zoom, minZoom, maxZoom, pointsOfInterest, style = 'mapbox://styles/mapbox/satellite-v9' }) {
-    let mapContainer;
-    let map;
-    let currentMarkers = [];
+interface POI {
+    id: string;
+    name: string;
+    category: string;
+    latitude: number | string;
+    longitude: number | string;
+    priority?: number;
+    rating?: number;
+    timeToSpend?: string;
+    budget?: string;
+    dogFriendly?: boolean;
+}
+
+interface MapComponentProps {
+    center: [number, number];
+    zoom?: number;
+    minZoom?: number;
+    maxZoom?: number;
+    pointsOfInterest: POI[];
+    style?: string;
+}
+
+export default function MapComponent({ 
+    center, 
+    zoom, 
+    minZoom, 
+    maxZoom, 
+    pointsOfInterest, 
+    style = 'mapbox://styles/mapbox/satellite-v9' 
+}: MapComponentProps) {
+    let mapContainer: HTMLDivElement | undefined;
+    let map: mapboxgl.Map | undefined;
+    let currentMarkers: mapboxgl.Marker[] = [];
 
     // Function to optimize route order (simple nearest neighbor algorithm)
-    const optimizeRoute = (pois) => {
+    const optimizeRoute = (pois: POI[]): POI[] => {
         if (pois.length <= 1) return pois;
 
         const optimized = [pois[0]]; // Start with first POI
@@ -77,7 +106,7 @@ export default function MapComponent({ center, zoom, minZoom, maxZoom, pointsOfI
 
 
     // Function to add markers to the map
-    const addMarkers = (pois) => {
+    const addMarkers = (pois: POI[]) => {
         console.log('=== MAP COMPONENT addMarkers ===');
         console.log('Input POIs:', pois);
         console.log('POIs length:', pois?.length);
@@ -159,7 +188,7 @@ export default function MapComponent({ center, zoom, minZoom, maxZoom, pointsOfI
         console.log('Optimized POIs for markers:', optimizedPOIs);
 
         // Add markers for each POI
-        optimizedPOIs.forEach((poi, index) => {
+        optimizedPOIs.forEach((poi: POI, index: number) => {
             console.log(`Creating marker ${index + 1}:`, poi);
             console.log(`  - Name: ${poi.name}`);
             console.log(`  - Coordinates: [${poi.longitude}, ${poi.latitude}]`);
@@ -175,7 +204,7 @@ export default function MapComponent({ center, zoom, minZoom, maxZoom, pointsOfI
             markerElement.className = 'custom-marker';
 
             // Responsive marker sizing
-            const isMobile = mapContainer.offsetWidth < 768;
+            const isMobile = mapContainer ? mapContainer.offsetWidth < 768 : true;
             const markerSize = isMobile ? 28 : 32;
             const fontSize = isMobile ? 12 : 14;
             const borderWidth = isMobile ? 2 : 3;
@@ -196,7 +225,7 @@ export default function MapComponent({ center, zoom, minZoom, maxZoom, pointsOfI
                 cursor: pointer;
                 transition: transform 0.2s ease;
             `;
-            markerElement.textContent = index + 1;
+            markerElement.textContent = String(index + 1);
 
             // Add hover effect
             markerElement.addEventListener('mouseenter', () => {
@@ -208,7 +237,7 @@ export default function MapComponent({ center, zoom, minZoom, maxZoom, pointsOfI
 
             const marker = new mapboxgl.Marker(markerElement)
                 .setLngLat([lng, lat])
-                .addTo(map);
+                .addTo(map!);
 
             console.log(`  - Marker created and added to map`);
             currentMarkers.push(marker);
@@ -245,9 +274,9 @@ export default function MapComponent({ center, zoom, minZoom, maxZoom, pointsOfI
         // Create optimized route line
         if (optimizedPOIs.length > 1) {
             try {
-                const isMobile = mapContainer.offsetWidth < 768;
+                const isMobile = mapContainer ? mapContainer.offsetWidth < 768 : true;
 
-                const coordinates = optimizedPOIs.map(poi => {
+                const coordinates = optimizedPOIs.map((poi: POI) => {
                     const lat = typeof poi.latitude === 'string' ? parseFloat(poi.latitude) : poi.latitude;
                     const lng = typeof poi.longitude === 'string' ? parseFloat(poi.longitude) : poi.longitude;
                     return [lng, lat];
@@ -306,14 +335,14 @@ export default function MapComponent({ center, zoom, minZoom, maxZoom, pointsOfI
         if (optimizedPOIs.length > 0) {
             try {
                 const bounds = new mapboxgl.LngLatBounds();
-                optimizedPOIs.forEach(poi => {
+                optimizedPOIs.forEach((poi: POI) => {
                     const lat = typeof poi.latitude === 'string' ? parseFloat(poi.latitude) : poi.latitude;
                     const lng = typeof poi.longitude === 'string' ? parseFloat(poi.longitude) : poi.longitude;
                     bounds.extend([lng, lat]);
                 });
                 
                 // Responsive padding based on container size
-                const isMobile = mapContainer.offsetWidth < 768;
+                const isMobile = mapContainer ? mapContainer.offsetWidth < 768 : true;
                 const padding = isMobile
                     ? { top: 20, bottom: 20, left: 20, right: 20 }
                     : { top: 50, bottom: 50, left: 50, right: 50 };
@@ -329,14 +358,14 @@ export default function MapComponent({ center, zoom, minZoom, maxZoom, pointsOfI
         }
     };
 
-    const addFeaturesToMap = (pois) => {
+    const addFeaturesToMap = (pois: POI[]) => {
         if (!map || !map.isStyleLoaded() || !pois || pois.length === 0) {
             console.log('Map not ready or no POIs provided to addFeaturesToMap');
             return;
         }
 
         // Filter out POIs with invalid coordinates
-        const validPOIs = pois.filter(poi => {
+        const validPOIs = pois.filter((poi: POI) => {
             if (!poi) return false;
             
             const lat = typeof poi.latitude === 'string' ? parseFloat(poi.latitude) : poi.latitude;
@@ -365,7 +394,7 @@ export default function MapComponent({ center, zoom, minZoom, maxZoom, pointsOfI
         console.log('addFeaturesToMap: Processing', optimizedPOIs.length, 'valid POIs');
 
         // Add markers for each POI
-        optimizedPOIs.forEach((poi, index) => {
+        optimizedPOIs.forEach((poi: POI, index: number) => {
             const lat = typeof poi.latitude === 'string' ? parseFloat(poi.latitude) : poi.latitude;
             const lng = typeof poi.longitude === 'string' ? parseFloat(poi.longitude) : poi.longitude;
 
@@ -380,11 +409,11 @@ export default function MapComponent({ center, zoom, minZoom, maxZoom, pointsOfI
                 display: flex; align-items: center; justify-content: center;
                 color: white; font-weight: bold; font-size: 14px; cursor: pointer;
             `;
-            markerElement.textContent = index + 1;
+            markerElement.textContent = String(index + 1);
 
             const marker = new mapboxgl.Marker(markerElement)
                 .setLngLat([lng, lat])
-                .addTo(map);
+                .addTo(map!);
 
             currentMarkers.push(marker);
 
@@ -401,7 +430,7 @@ export default function MapComponent({ center, zoom, minZoom, maxZoom, pointsOfI
         // Create optimized route line
         if (optimizedPOIs.length > 1) {
             try {
-                const coordinates = optimizedPOIs.map(poi => {
+                const coordinates = optimizedPOIs.map((poi: POI) => {
                     const lat = typeof poi.latitude === 'string' ? parseFloat(poi.latitude) : poi.latitude;
                     const lng = typeof poi.longitude === 'string' ? parseFloat(poi.longitude) : poi.longitude;
                     return [lng, lat];
@@ -445,7 +474,7 @@ export default function MapComponent({ center, zoom, minZoom, maxZoom, pointsOfI
         // Fit map to show all markers
         try {
             const bounds = new mapboxgl.LngLatBounds();
-            optimizedPOIs.forEach(poi => {
+            optimizedPOIs.forEach((poi: POI) => {
                 const lat = typeof poi.latitude === 'string' ? parseFloat(poi.latitude) : poi.latitude;
                 const lng = typeof poi.longitude === 'string' ? parseFloat(poi.longitude) : poi.longitude;
                 bounds.extend([lng, lat]);
@@ -493,7 +522,7 @@ export default function MapComponent({ center, zoom, minZoom, maxZoom, pointsOfI
         console.log('🗺️ Initializing map with center:', validCenter);
 
         map = new mapboxgl.Map({
-            container: mapContainer,
+            container: mapContainer!,
             style: style,
             center: validCenter,
             zoom: zoom || 12,
@@ -510,7 +539,7 @@ export default function MapComponent({ center, zoom, minZoom, maxZoom, pointsOfI
         });
 
         const resizeObserver = new ResizeObserver(() => map && map.resize());
-        resizeObserver.observe(mapContainer);
+        resizeObserver.observe(mapContainer!);
 
         onCleanup(() => {
             resizeObserver.disconnect();
@@ -535,7 +564,7 @@ export default function MapComponent({ center, zoom, minZoom, maxZoom, pointsOfI
         }
 
         // Check if POIs have valid coordinates before proceeding
-        const hasValidPOIs = pois.some(poi => {
+        const hasValidPOIs = pois.some((poi: POI) => {
             if (!poi) return false;
             
             // More comprehensive coordinate validation

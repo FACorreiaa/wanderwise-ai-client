@@ -27,7 +27,7 @@ export default function ReviewForm(props: ReviewFormProps) {
     const [content, setContent] = createSignal('');
     const [visitDate, setVisitDate] = createSignal('');
     const [travelType, setTravelType] = createSignal('');
-    const [photos, setPhotos] = createSignal([]);
+    const [photos, setPhotos] = createSignal<UploadedPhoto[]>([]);
     const [isSubmitting, setIsSubmitting] = createSignal(false);
 
     const travelTypes = [
@@ -58,7 +58,7 @@ export default function ReviewForm(props: ReviewFormProps) {
     };
 
     const handlePhotoUpload = (event: PhotoUploadEvent) => {
-        const files = Array.from(event.target.files);
+        const files = event.target.files ? Array.from(event.target.files) : [];
         // In a real app, you would upload these files
         const newPhotos = files.map((file, index) => ({
             id: `photo-${Date.now()}-${index}`,
@@ -112,7 +112,7 @@ export default function ReviewForm(props: ReviewFormProps) {
     };
 
     const getRatingLabel = (rating: number): string => {
-        const labels = {
+        const labels: Record<number, string> = {
             1: 'Terrible',
             2: 'Poor',
             3: 'Average',

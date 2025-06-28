@@ -573,6 +573,8 @@ export interface HotelPreferences extends SearchParams {
   price_range_per_night?: { min: number; max: number };
   amenities?: string[];
   room_type?: string[];
+}
+
 export interface RecentInteraction {
     id: string;
     user_id: string;

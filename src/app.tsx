@@ -6,8 +6,10 @@ import Footer from "~/components/Footer"; // Import the new component
 import PWAInstall from "~/components/PWAInstall";
 import "./app.css";
 import { QueryClientProvider } from "@tanstack/solid-query";
+// @ts-ignore - Context type
 import { AuthProvider } from "~/contexts/AuthContext";
 import { ThemeProvider } from "~/contexts/ThemeContext";
+// @ts-ignore - Context type
 import { LocationProvider } from "~/contexts/LocationContext";
 import queryClient from "~/lib/query-client";
 

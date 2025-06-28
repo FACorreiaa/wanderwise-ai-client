@@ -48,7 +48,7 @@ export default function ReviewCard(props: ReviewProps) {
     };
 
     const getTravelTypeIcon = (type: string) => {
-        const icons = {
+        const icons: Record<string, string> = {
             'solo': '🎒',
             'couple': '💑',
             'family': '👨‍👩‍👧‍👦',
@@ -119,12 +119,12 @@ export default function ReviewCard(props: ReviewProps) {
                             {review().visitDate && (
                                 <div class="flex items-center gap-1">
                                     <Calendar class="w-3 h-3" />
-                                    <span>Visited {formatDate(review().visitDate)}</span>
+                                    <span>Visited {formatDate(review().visitDate!)}</span>
                                 </div>
                             )}
                             {review().travelType && (
                                 <div class="flex items-center gap-1">
-                                    <span>{getTravelTypeIcon(review().travelType)}</span>
+                                    <span>{getTravelTypeIcon(review().travelType!)}</span>
                                     <span class="capitalize">{review().travelType} travel</span>
                                 </div>
                             )}

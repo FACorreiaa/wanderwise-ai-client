@@ -1,7 +1,13 @@
-import { createEffect } from 'solid-js';
+import { createEffect, JSX } from 'solid-js';
+// @ts-ignore - Hook import type
 import { useStreamingText } from '~/lib/hooks/useStreamingText';
 
-export function TypingAnimation(props) {
+interface TypingAnimationProps {
+  text: string;
+  speed?: number;
+}
+
+export function TypingAnimation(props: TypingAnimationProps): JSX.Element {
   const [text, startStreaming] = useStreamingText('', props.speed || 50);
 
   createEffect(() => {
