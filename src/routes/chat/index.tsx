@@ -29,6 +29,7 @@ export default function ChatPage() {
     const [expandedResults, setExpandedResults] = createSignal(new Set());
     const [selectedItem, setSelectedItem] = createSignal(null);
     const [showDetailModal, setShowDetailModal] = createSignal(false);
+    const [localSessionsVersion, setLocalSessionsVersion] = createSignal(0);
 
 
     const { userLocation } = useUserLocation()
@@ -44,7 +45,47 @@ export default function ChatPage() {
 
 
 
-    const sessions = () => chatSessionsQuery.data || [];
+    const sessions = () => {
+        // Include localSessionsVersion in the reactive dependency to trigger updates
+        const versionCheck = localSessionsVersion();
+        console.log('📂 Sessions function called, version:', versionCheck);
+        
+        const apiSessions = chatSessionsQuery.data || [];
+        
+        // Always try to merge API sessions with local sessions
+        try {
+            const localStorageData = localStorage.getItem('localChatSessions');
+            console.log('🔍 Raw localStorage data:', localStorageData);
+            
+            const localSessions = JSON.parse(localStorageData || '[]');
+            console.log('📂 API sessions:', apiSessions.length, 'Local sessions:', localSessions.length);
+            console.log('📂 API error status:', chatSessionsQuery.isError);
+            console.log('📂 API loading status:', chatSessionsQuery.isLoading);
+            console.log('📂 Local sessions data:', localSessions);
+            
+            // If API is working, merge with local sessions (but prioritize API)
+            if (!chatSessionsQuery.isError && apiSessions.length > 0) {
+                // Remove local sessions that might be duplicated in API
+                const apiSessionIds = new Set(apiSessions.map(s => s.id));
+                const uniqueLocalSessions = localSessions.filter(s => !apiSessionIds.has(s.id));
+                console.log('🔄 Merging API and local sessions');
+                console.log('🔄 Unique local sessions after dedup:', uniqueLocalSessions);
+                return [...apiSessions, ...uniqueLocalSessions];
+            }
+            
+            // If API fails or has no data, use local sessions
+            if (localSessions.length > 0) {
+                console.log('📱 Using local sessions as fallback');
+                return localSessions;
+            }
+            
+        } catch (error) {
+            console.warn('Failed to load local sessions:', error);
+        }
+        
+        console.log('📂 Returning API sessions:', apiSessions);
+        return apiSessions;
+    };
 
     const profiles = [
         { id: 'solo', name: 'Solo Explorer', icon: '🎒', description: 'Independent travel focused' },
@@ -237,6 +278,62 @@ export default function ChatPage() {
                 if (completedSession.sessionId) {
                     console.log('✅ Captured session ID from new session:', completedSession.sessionId);
                     setSessionId(completedSession.sessionId);
+                    
+                    // Store session locally as backup when backend chat history fails
+                    try {
+                        console.log('💾 Starting local session save process...');
+                        console.log('💾 Completed session data:', completedSession);
+                        console.log('💾 Session ID:', completedSession.sessionId);
+                        console.log('💾 Session city:', completedSession.city);
+                        
+                        const existingData = localStorage.getItem('localChatSessions');
+                        console.log('💾 Existing localStorage data:', existingData);
+                        
+                        const localSessions = JSON.parse(existingData || '[]');
+                        console.log('💾 Parsed existing sessions:', localSessions);
+                        
+                        const sessionSummary = {
+                            id: completedSession.sessionId,
+                            title: completedSession.data.itinerary_response?.itinerary_name || 
+                                   `Trip to ${completedSession.city}` || 
+                                   'New Conversation',
+                            preview: `Created an itinerary for ${completedSession.city || 'your destination'}`,
+                            timestamp: new Date().toISOString(),
+                            messageCount: 2, // Initial user message + response
+                            hasItinerary: !!(completedSession.data.points_of_interest || completedSession.data.itinerary_response),
+                            cityName: completedSession.city,
+                            isLocal: true // Mark as locally stored
+                        };
+                        
+                        console.log('💾 Created session summary:', sessionSummary);
+                        
+                        // Add to local sessions (keep max 10)
+                        localSessions.unshift(sessionSummary);
+                        if (localSessions.length > 10) {
+                            localSessions.splice(10);
+                        }
+                        
+                        console.log('💾 Updated local sessions array:', localSessions);
+                        
+                        localStorage.setItem('localChatSessions', JSON.stringify(localSessions));
+                        console.log('💾 Successfully saved session to localStorage');
+                        
+                        // Verify the save worked
+                        const verifyData = localStorage.getItem('localChatSessions');
+                        console.log('💾 Verification - localStorage now contains:', verifyData);
+                        
+                        // Force trigger a reactivity update by invalidating the query AND updating version
+                        // This will cause the sessions() function to be re-evaluated
+                        queryClient.invalidateQueries({
+                            queryKey: ['chatSessions', profileId()]
+                        });
+                        
+                        // Also increment version to trigger reactive updates in SolidJS
+                        setLocalSessionsVersion(prev => prev + 1);
+                        console.log('💾 Triggered query invalidation and version bump to refresh chat history');
+                    } catch (error) {
+                        console.error('💾 Failed to save session locally:', error);
+                    }
                 }
 
                 // Add assistant message with results
@@ -641,22 +738,170 @@ export default function ChatPage() {
         console.log('✅ All session data cleared');
     };
 
-    const loadSession = (session) => {
+    const loadSession = async (session) => {
+        console.log('📂 Loading chat session:', session);
+        
+        // Clear current session state first
         setSelectedSession(session);
-        // In a real app, you would load the session messages from the backend
-        const contextMessage = session.cityName
-            ? `Continuing our conversation about your trip to ${session.cityName}. We discussed "${session.title.toLowerCase()}" with ${session.messageCount} messages.`
-            : `Continuing our conversation about "${session.title}". We had ${session.messageCount} messages.`;
+        setMessages([]); // Clear existing messages
+        setCurrentMessage('');
+        setGeneratedItinerary(null);
+        setExpandedResults(new Set());
+        
+        // Clear old session storage
+        sessionStorage.removeItem('currentStreamingSession');
+        sessionStorage.removeItem('completedStreamingSession');
+        
+        setIsLoading(true);
+        setStreamProgress('Loading conversation history...');
 
-        setMessages([
-            {
-                id: 'session-loaded',
-                type: 'assistant',
-                content: `${contextMessage} How can I help you further${session.hasItinerary ? ' with your itinerary' : ''}?`,
-                timestamp: new Date(),
-                hasItinerary: session.hasItinerary
+        try {
+            // Try to get detailed session data
+            // First, try to find the session in our existing sessions list
+            const allSessions = sessions();
+            const fullSession = allSessions.find(s => s.id === session.id);
+            
+            let sessionData;
+            if (fullSession && fullSession.conversationHistory) {
+                console.log('📖 Using cached session data:', fullSession);
+                sessionData = {
+                    ...fullSession,
+                    conversation_history: fullSession.conversationHistory
+                };
+            } else if (session.isLocal) {
+                // Handle local sessions (no API data available)
+                console.log('📱 Loading local session:', session);
+                sessionData = {
+                    ...session,
+                    conversation_history: [] // Local sessions don't have full conversation history
+                };
+            } else {
+                // Fallback: try to load from API (this endpoint might not exist)
+                try {
+                    const response = await fetch(`${API_BASE_URL}/llm/prompt-response/chat/sessions/details/${session.id}`, {
+                        method: 'GET',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${localStorage.getItem('access_token') || sessionStorage.getItem('access_token') || ''}`,
+                        }
+                    });
+
+                    if (response.ok) {
+                        sessionData = await response.json();
+                        console.log('📖 Loaded session data from API:', sessionData);
+                    } else {
+                        throw new Error(`API responded with ${response.status}`);
+                    }
+                } catch (apiError) {
+                    console.log('⚠️ API load failed, using basic session data:', apiError);
+                    // Use the basic session info we have
+                    sessionData = {
+                        ...session,
+                        conversation_history: [] // We'll create a placeholder conversation
+                    };
+                }
             }
-        ]);
+
+            // Convert conversation history to our message format
+            let conversationMessages = [];
+            
+            if (sessionData.conversation_history && sessionData.conversation_history.length > 0) {
+                conversationMessages = sessionData.conversation_history.map((msg, index) => ({
+                    id: `session-${session.id}-msg-${index}`,
+                    type: msg.role === 'user' ? 'user' : 'assistant',
+                    content: msg.content || msg.message || 'No content available',
+                    timestamp: new Date(msg.timestamp || msg.created_at || sessionData.updated_at || sessionData.timestamp),
+                    hasItinerary: msg.role === 'assistant' && (msg.data || msg.streaming_data) ? true : false,
+                    streamingData: msg.data || msg.streaming_data || null,
+                    showResults: msg.role === 'assistant' && (msg.data || msg.streaming_data) ? true : false
+                }));
+            } else {
+                // Create placeholder messages if no conversation history
+                console.log('📝 No conversation history found, creating placeholder');
+                conversationMessages = [
+                    {
+                        id: `session-${session.id}-placeholder-user`,
+                        type: 'user',
+                        content: session.preview || 'Previous conversation',
+                        timestamp: new Date(session.timestamp),
+                        hasItinerary: false,
+                        streamingData: null,
+                        showResults: false
+                    },
+                    {
+                        id: `session-${session.id}-placeholder-assistant`,
+                        type: 'assistant',
+                        content: `I helped you with ${session.title.toLowerCase()}${session.cityName ? ` in ${session.cityName}` : ''}.`,
+                        timestamp: new Date(session.timestamp),
+                        hasItinerary: session.hasItinerary || false,
+                        streamingData: null,
+                        showResults: false
+                    }
+                ];
+            }
+
+            // Set the session ID and restore session state
+            setSessionId(session.id);
+            
+            // If there's session data from the last assistant message, restore it
+            const lastAssistantMessage = sessionData.conversation_history
+                ?.filter(msg => msg.role === 'assistant' && msg.data)
+                ?.pop();
+            
+            if (lastAssistantMessage?.data) {
+                console.log('🔄 Restoring session streaming data:', lastAssistantMessage.data);
+                const streamingSessionData = {
+                    sessionId: session.id,
+                    domain: lastAssistantMessage.data.domain || 'general',
+                    city: session.cityName || lastAssistantMessage.data.general_city_data?.city,
+                    query: '', // Will be set on next message
+                    data: lastAssistantMessage.data
+                };
+                
+                setStreamingSession(streamingSessionData);
+                
+                // Update session storage
+                sessionStorage.setItem('completedStreamingSession', JSON.stringify(streamingSessionData));
+            }
+
+            // Load all conversation messages
+            setMessages([
+                ...conversationMessages,
+                {
+                    id: 'session-loaded',
+                    type: 'assistant',
+                    content: `Welcome back! I've loaded our previous conversation${session.cityName ? ` about your trip to ${session.cityName}` : ''} with ${conversationMessages.length} messages. How can I help you continue planning?`,
+                    timestamp: new Date(),
+                    hasItinerary: false
+                }
+            ]);
+
+            console.log('✅ Session loaded successfully');
+
+        } catch (error) {
+            console.error('❌ Error loading session:', error);
+            
+            // Fallback to basic session info
+            const contextMessage = session.cityName
+                ? `I found your previous conversation about ${session.cityName}, but couldn't load the full history. Let's continue from here!`
+                : `I found your previous conversation, but couldn't load the full history. Let's continue from here!`;
+
+            setMessages([
+                {
+                    id: 'session-error',
+                    type: 'assistant',
+                    content: contextMessage,
+                    timestamp: new Date(),
+                    hasItinerary: session.hasItinerary || false
+                }
+            ]);
+
+            // Still set the session ID so we can continue the conversation
+            setSessionId(session.id);
+        } finally {
+            setIsLoading(false);
+            setStreamProgress('');
+        }
     };
 
     const formatTimestamp = (timestamp) => {
@@ -996,11 +1241,17 @@ export default function ChatPage() {
                         </Show>
 
                         <Show when={chatSessionsQuery.isError}>
-                            <div class="text-center py-4">
-                                <p class="text-xs text-red-500 dark:text-red-400">Failed to load chat history</p>
+                            <div class="text-center py-4 px-3">
+                                <div class="w-12 h-12 mx-auto mb-3 bg-red-100 dark:bg-red-900/20 rounded-full flex items-center justify-center">
+                                    <MessageCircle class="w-6 h-6 text-red-500 dark:text-red-400" />
+                                </div>
+                                <p class="text-xs text-red-600 dark:text-red-400 font-medium mb-1">Chat History Unavailable</p>
+                                <p class="text-xs text-gray-500 dark:text-gray-400 mb-3 leading-relaxed">
+                                    There's a temporary issue loading your chat history. You can still start new conversations.
+                                </p>
                                 <button
                                     onClick={() => chatSessionsQuery.refetch()}
-                                    class="text-xs text-blue-600 dark:text-blue-400 hover:underline mt-1"
+                                    class="text-xs text-blue-600 dark:text-blue-400 hover:underline"
                                 >
                                     Try again
                                 </button>
@@ -1039,12 +1290,20 @@ export default function ChatPage() {
                                     {(session) => (
                                         <button
                                             onClick={() => loadSession(session)}
-                                            class={`w-full text-left p-2 sm:p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors ${selectedSession()?.id === session.id ? 'bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700' : 'border border-transparent'
+                                            disabled={isLoading()}
+                                            class={`w-full text-left p-2 sm:p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${selectedSession()?.id === session.id ? 'bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700' : 'border border-transparent'
                                                 }`}
                                         >
                                             <div class="flex items-start justify-between mb-1">
                                                 <div class="flex-1 min-w-0">
-                                                    <h4 class="text-xs sm:text-sm font-medium text-gray-900 dark:text-white truncate">{session.title}</h4>
+                                                    <div class="flex items-center gap-1">
+                                                        <h4 class="text-xs sm:text-sm font-medium text-gray-900 dark:text-white truncate">{session.title}</h4>
+                                                        {session.isLocal && (
+                                                            <span class="text-xs bg-amber-100 text-amber-700 px-1 py-0.5 rounded" title="Stored locally (backend unavailable)">
+                                                                📱
+                                                            </span>
+                                                        )}
+                                                    </div>
                                                     <Show when={session.cityName}>
                                                         <div class="flex items-center gap-1 mt-0.5">
                                                             <MapPin class="w-3 h-3 text-gray-400 flex-shrink-0" />

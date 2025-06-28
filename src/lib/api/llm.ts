@@ -292,14 +292,21 @@ export interface ChatSessionSummary {
   performanceMetrics?: SessionPerformanceMetrics;
   contentMetrics?: SessionContentMetrics;
   engagementMetrics?: SessionEngagementMetrics;
+  // Include full conversation data for loading sessions
+  conversationHistory?: ChatMessage[];
+  created_at?: string;
+  updated_at?: string;
 }
 
 // Get chat sessions for a user
 export const getUserChatSessions = async (profileId: string): Promise<ChatSessionSummary[]> => {
   try {
+    console.log('🔍 Fetching chat sessions for profile:', profileId);
     const response = await apiRequest<ChatSessionResponse[]>(`/llm/prompt-response/chat/sessions/user/${profileId}`, {
       method: 'GET',
     });
+
+    console.log('✅ Successfully fetched chat sessions:', response?.length || 0);
 
     // Transform the response to our expected format
     return response.map((session: ChatSessionResponse) => ({
@@ -313,11 +320,22 @@ export const getUserChatSessions = async (profileId: string): Promise<ChatSessio
       cityName: session.city_name,
       performanceMetrics: session.performance_metrics,
       contentMetrics: session.content_metrics,
-      engagementMetrics: session.engagement_metrics
+      engagementMetrics: session.engagement_metrics,
+      // Include the conversation history for session loading
+      conversationHistory: session.conversation_history,
+      created_at: session.created_at,
+      updated_at: session.updated_at
     }));
   } catch (error) {
-    console.warn('Chat sessions endpoint not available, returning empty array');
-    // Return empty array when backend endpoint is not available
+    console.error('❌ Failed to fetch chat sessions:', error);
+    
+    // Check if it's the specific SQL error
+    if (error?.message?.includes('COALESCE types uuid and text cannot be matched')) {
+      console.warn('🔧 Database type mismatch error detected - backend needs to fix COALESCE query');
+    }
+    
+    // Return empty array when backend endpoint has issues
+    // This allows the chat to still work even if history loading fails
     return [];
   }
 };
