@@ -46,22 +46,8 @@ async function statisticsRequest<T>(endpoint: string): Promise<T> {
 }
 
 // API functions
-export const getMainPageStatistics = async (): Promise<MainPageStatistics> => {
-    return statisticsRequest<MainPageStatistics>('/statistics/main-page');
-};
-
 export const getDetailedPOIStatistics = async (): Promise<DetailedPOIStatistics> => {
     return statisticsRequest<DetailedPOIStatistics>('/statistics/poi/detailed');
-};
-
-// Custom hook for main page statistics
-export const useMainPageStatistics = () => {
-    return createQuery(() => ({
-        queryKey: ['statistics', 'main-page'],
-        queryFn: getMainPageStatistics,
-        refetchInterval: 60000, // Refetch every minute as fallback
-        staleTime: 30000, // Consider data stale after 30 seconds
-    }));
 };
 
 // Custom hook for detailed POI statistics

@@ -1,6 +1,6 @@
 import { Component, createSignal, onMount, onCleanup, Show } from 'solid-js';
 import { Badge } from "@/ui/badge";
-import { useMainPageStatistics, useRealTimeStatistics, type MainPageStatistics } from '~/lib/api/statistics';
+import { useRealTimeStatistics, type MainPageStatistics } from '~/lib/api/statistics';
 import { TrendingUp, Users, MapPin, Calendar } from 'lucide-solid';
 
 interface StatItem {
@@ -54,9 +54,7 @@ export default function RealTimeStats(props: RealTimeStatsProps): JSX.Element {
     const [animatedItineraries, setAnimatedItineraries] = createSignal(0);
     const [animatedPOIs, setAnimatedPOIs] = createSignal(0);
     const [lastUpdate, setLastUpdate] = createSignal<Date | null>(null);
-
-    // Fallback query for initial data and when SSE is not available
-    const statisticsQuery = useMainPageStatistics();
+    const [isLoading, setIsLoading] = createSignal(true);
 
     // Real-time SSE connection
     const sseConnection = useRealTimeStatistics(
@@ -66,6 +64,7 @@ export default function RealTimeStats(props: RealTimeStatsProps): JSX.Element {
             const previous = currentStats();
             setCurrentStats(newStats);
             setLastUpdate(new Date());
+            setIsLoading(false);
             
             // Animate number changes if we have previous data
             if (previous) {
@@ -88,19 +87,11 @@ export default function RealTimeStats(props: RealTimeStatsProps): JSX.Element {
         (error) => {
             console.error('SSE Error:', error);
             setIsConnected(false);
+            setIsLoading(false);
         }
     );
 
     onMount(() => {
-        // Use initial data from query if available
-        if (statisticsQuery.data) {
-            const initialStats = statisticsQuery.data;
-            setCurrentStats(initialStats);
-            setAnimatedUsers(initialStats.total_users_count);
-            setAnimatedItineraries(initialStats.total_itineraries_created);
-            setAnimatedPOIs(initialStats.total_unique_pois);
-        }
-
         // Start SSE connection
         sseConnection.connect();
         setIsConnected(sseConnection.isConnected());
@@ -116,8 +107,8 @@ export default function RealTimeStats(props: RealTimeStatsProps): JSX.Element {
         });
     });
 
-    // Use current stats or fallback to query data
-    const stats = () => currentStats() || statisticsQuery.data;
+    // Use current stats from SSE only
+    const stats = () => currentStats();
 
     const statsItems = (): StatItem[] => {
         const data = stats();
@@ -161,7 +152,7 @@ export default function RealTimeStats(props: RealTimeStatsProps): JSX.Element {
                 <h2 id="stats-heading" class="sr-only">Platform Statistics</h2>
                 
                 <Show 
-                    when={!statisticsQuery.isLoading && stats()} 
+                    when={!isLoading() && stats()} 
                     fallback={
                         <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 sm:gap-8 max-w-4xl mx-auto">
                             {Array.from({ length: 3 }).map(() => (
