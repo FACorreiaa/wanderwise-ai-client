@@ -1,12 +1,12 @@
 import { Component, createSignal, Show } from 'solid-js';
 import { useNavigate } from '@solidjs/router';
-import { Send, Loader2, MessageCircle, MapPin } from 'lucide-solid';
-import { sendUnifiedChatMessageStream, detectDomain, sendUnifiedChatMessageGraphQL } from '~/lib/api/llm';
+import { Send, Loader2, MapPin } from 'lucide-solid';
+import { sendUnifiedChatMessageStream, detectDomain } from '~/lib/api/llm';
 import { streamingService, createStreamingSession, getDomainRoute } from '~/lib/streaming-service';
 import type { StreamingSession } from '~/lib/api/types';
 import CTA from '~/components/features/Home/CTA';
 import ContentGrid from '~/components/features/Home/ContentGrid';
-import Stats from '~/components/features/Home/Stats';
+import RealTimeStats from '~/components/features/Home/RealTimeStats';
 import MobileAppAnnouncement from '~/components/features/Home/MobileAppAnnouncement';
 import LocationPermissionPrompt from '~/components/LocationPermissionPrompt';
 import { useUserLocation } from '~/contexts/LocationContext';
@@ -457,7 +457,7 @@ const LandingPage: Component = () => {
                 </div>
             </div>
 
-            <Stats badgeText={statsData.badgeText} items={statsData.items} />
+            <RealTimeStats badgeText={statsData.badgeText} />
             <ContentGrid items={contentData} />
             <MobileAppAnnouncement />
             <CTA />

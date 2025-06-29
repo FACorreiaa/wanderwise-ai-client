@@ -36,3 +36,6 @@ export * from './profiles';
 
 // Export city queries
 export * from './cities';
+
+// Export statistics queries
+export * from './statistics';
