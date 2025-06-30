@@ -17,7 +17,7 @@ const statsData = {
     badgeText: "This month on Loci",
     items: [
         { value: "69,420", label: "Users registered" },
-        { value: "12,109", label: "Personalized Itineraries Created" },
+        { value: "12,109", label: "Personalized Itineraries Saved" },
         { value: "41,004", label: "Unique Points of Interest" },
         // { value: "50+", label: "Supported Cities & Growing" },
     ]

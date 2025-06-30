@@ -71,8 +71,8 @@ export default function RealTimeStats(props: RealTimeStatsProps): JSX.Element {
                 if (previous.total_users_count !== newStats.total_users_count) {
                     animateNumber(previous.total_users_count, newStats.total_users_count, 1500, setAnimatedUsers);
                 }
-                if (previous.total_itineraries_created !== newStats.total_itineraries_created) {
-                    animateNumber(previous.total_itineraries_created, newStats.total_itineraries_created, 1500, setAnimatedItineraries);
+                if (previous.total_itineraries_saved !== newStats.total_itineraries_saved) {
+                    animateNumber(previous.total_itineraries_saved, newStats.total_itineraries_saved, 1500, setAnimatedItineraries);
                 }
                 if (previous.total_unique_pois !== newStats.total_unique_pois) {
                     animateNumber(previous.total_unique_pois, newStats.total_unique_pois, 1500, setAnimatedPOIs);
@@ -80,7 +80,7 @@ export default function RealTimeStats(props: RealTimeStatsProps): JSX.Element {
             } else {
                 // Initial load - set values immediately
                 setAnimatedUsers(newStats.total_users_count);
-                setAnimatedItineraries(newStats.total_itineraries_created);
+                setAnimatedItineraries(newStats.total_itineraries_saved);
                 setAnimatedPOIs(newStats.total_unique_pois);
             }
         },
@@ -122,7 +122,7 @@ export default function RealTimeStats(props: RealTimeStatsProps): JSX.Element {
             },
             {
                 value: formatNumber(animatedItineraries()),
-                label: "Personalized Itineraries Created",
+                label: "Personalized Itineraries Saved",
                 icon: Calendar,
             },
             {
