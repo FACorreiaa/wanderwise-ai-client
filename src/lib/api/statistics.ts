@@ -81,16 +81,9 @@ export class StatisticsSSE {
         try {
             // Get base URL from environment
             const baseURL = API_BASE_URL;
-            const token = getAuthToken(); // Use the same token retrieval as other API calls
-
-            if (!token) {
-                console.warn('No authentication token found for SSE connection');
-                return;
-            }
-
-            // Create EventSource with auth header (if your server supports it)
-            // Note: EventSource doesn't support custom headers, so we pass token as query param
-            const url = `${baseURL}/statistics/main-page/stream?token=${encodeURIComponent(token)}`;
+            
+            // Statistics endpoint is public - no authentication required for aggregate stats
+            const url = `${baseURL}/statistics/main-page/stream`;
 
             this.eventSource = new EventSource(url);
 
