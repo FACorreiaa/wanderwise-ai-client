@@ -1,18 +1,40 @@
 // LLM and chat queries and mutations
-import { useMutation } from '@tanstack/solid-query';
-import { apiRequest, API_BASE_URL } from './shared';
-import { defaultLLMRateLimiter, RateLimitError, showRateLimitNotification } from '../rate-limiter';
+import { useMutation } from "@tanstack/solid-query";
+import { apiRequest, API_BASE_URL } from "./shared";
+import {
+  defaultLLMRateLimiter,
+  RateLimitError,
+  showRateLimitNotification,
+} from "../rate-limiter";
 //import { createGraphQLClient, gql } from '@solid-primitives/graphql';
-import type { ChatSession, ChatMessage, ChatSessionResponse, StreamEvent, UnifiedChatResponse, ApiResponse, SessionPerformanceMetrics, SessionContentMetrics, SessionEngagementMetrics } from './types';
+import type {
+  ChatSession,
+  ChatMessage,
+  ChatSessionResponse,
+  StreamEvent,
+  UnifiedChatResponse,
+  ApiResponse,
+  SessionPerformanceMetrics,
+  SessionContentMetrics,
+  SessionEngagementMetrics,
+} from "./types";
 
 // ==================
 // CHAT/LLM TYPES
 // ==================
 
-export type ChatContextType = 'hotels' | 'restaurants' | 'itineraries' | 'general';
+export type ChatContextType =
+  | "hotels"
+  | "restaurants"
+  | "itineraries"
+  | "general";
 
 // Rate-limited fetch function for streaming endpoints
-async function rateLimitedFetch(url: string, options: RequestInit, endpoint: string): Promise<Response> {
+async function rateLimitedFetch(
+  url: string,
+  options: RequestInit,
+  endpoint: string,
+): Promise<Response> {
   // Apply client-side rate limiting for LLM endpoints
   const rateLimitCheck = await defaultLLMRateLimiter.checkRateLimit(endpoint);
   if (!rateLimitCheck.allowed) {
@@ -21,7 +43,7 @@ async function rateLimitedFetch(url: string, options: RequestInit, endpoint: str
     throw new RateLimitError(
       `Rate limit exceeded for ${endpoint}. Retry after ${retryAfter} seconds.`,
       retryAfter,
-      endpoint
+      endpoint,
     );
   }
 
@@ -29,12 +51,12 @@ async function rateLimitedFetch(url: string, options: RequestInit, endpoint: str
 
   // Handle server-side rate limiting
   if (response.status === 429) {
-    const retryAfter = parseInt(response.headers.get('Retry-After') || '60');
+    const retryAfter = parseInt(response.headers.get("Retry-After") || "60");
     showRateLimitNotification(retryAfter, endpoint);
     throw new RateLimitError(
       `Server rate limit exceeded for ${endpoint}. Retry after ${retryAfter} seconds.`,
       retryAfter,
-      endpoint
+      endpoint,
     );
   }
 
@@ -62,27 +84,42 @@ export interface ContinueChatRequest {
 export const useCreateChatSessionMutation = () => {
   return useMutation(() => ({
     mutationFn: (profileId: string) =>
-      apiRequest<ChatSession>(`/llm/prompt-response/chat/sessions/${profileId}`, { method: 'POST' }),
+      apiRequest<ChatSession>(
+        `/llm/prompt-response/chat/sessions/${profileId}`,
+        { method: "POST" },
+      ),
   }));
 };
 
 export const useSendMessageMutation = () => {
   return useMutation(() => ({
-    mutationFn: ({ sessionId, message }: { sessionId: string; message: string }) =>
-      apiRequest<ChatMessage>(`/llm/prompt-response/chat/sessions/${sessionId}/messages`, {
-        method: 'POST',
-        body: JSON.stringify({ message }),
-      }),
+    mutationFn: ({
+      sessionId,
+      message,
+    }: {
+      sessionId: string;
+      message: string;
+    }) =>
+      apiRequest<ChatMessage>(
+        `/llm/prompt-response/chat/sessions/${sessionId}/messages`,
+        {
+          method: "POST",
+          body: JSON.stringify({ message }),
+        },
+      ),
   }));
 };
 
 export const useGetRecommendationsMutation = () => {
   return useMutation(() => ({
     mutationFn: ({ profileId, query }: { profileId: string; query: string }) =>
-      apiRequest<UnifiedChatResponse>(`/llm/prompt-response/profile/${profileId}`, {
-        method: 'POST',
-        body: JSON.stringify({ query }),
-      }),
+      apiRequest<UnifiedChatResponse>(
+        `/llm/prompt-response/profile/${profileId}`,
+        {
+          method: "POST",
+          body: JSON.stringify({ query }),
+        },
+      ),
   }));
 };
 
@@ -90,11 +127,13 @@ export const useGetRecommendationsMutation = () => {
 // ENHANCED CHAT SERVICES
 // ==================
 
-export const StartChat = async (request: StartChatRequest): Promise<ChatSession> => {
-  const endpoint = getContextualEndpoint('sessions', request.contextType);
+export const StartChat = async (
+  request: StartChatRequest,
+): Promise<ChatSession> => {
+  const endpoint = getContextualEndpoint("sessions", request.contextType);
 
   return apiRequest<ChatSession>(`${endpoint}/${request.profileId}`, {
-    method: 'POST',
+    method: "POST",
     body: JSON.stringify({
       context_type: request.contextType,
       city_name: request.cityName,
@@ -103,30 +142,46 @@ export const StartChat = async (request: StartChatRequest): Promise<ChatSession>
   });
 };
 
-export const StartChatStream = async (request: StartChatRequest): Promise<Response> => {
-  const endpoint = getContextualEndpoint('sessions/stream', request.contextType);
-  const token = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
+export const StartChatStream = async (
+  request: StartChatRequest,
+): Promise<Response> => {
+  const endpoint = getContextualEndpoint(
+    "sessions/stream",
+    request.contextType,
+  );
+  const token =
+    localStorage.getItem("access_token") ||
+    sessionStorage.getItem("access_token");
   const fullEndpoint = `${endpoint}/${request.profileId}`;
 
-  return rateLimitedFetch(`${API_BASE_URL}/${fullEndpoint}`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      ...(token && { Authorization: `Bearer ${token}` }),
+  return rateLimitedFetch(
+    `${API_BASE_URL}/${fullEndpoint}`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...(token && { Authorization: `Bearer ${token}` }),
+      },
+      body: JSON.stringify({
+        context_type: request.contextType,
+        city_name: request.cityName,
+        initial_message: request.initialMessage,
+      }),
     },
-    body: JSON.stringify({
-      context_type: request.contextType,
-      city_name: request.cityName,
-      initial_message: request.initialMessage,
-    }),
-  }, fullEndpoint);
+    fullEndpoint,
+  );
 };
 
-export const ContinueChat = async (request: ContinueChatRequest): Promise<ChatMessage> => {
-  const endpoint = getContextualEndpoint(`sessions/${request.sessionId}/messages`, request.contextType);
+export const ContinueChat = async (
+  request: ContinueChatRequest,
+): Promise<ChatMessage> => {
+  const endpoint = getContextualEndpoint(
+    `sessions/${request.sessionId}/messages`,
+    request.contextType,
+  );
 
   return apiRequest<ChatMessage>(endpoint, {
-    method: 'POST',
+    method: "POST",
     body: JSON.stringify({
       message: request.message,
       city_name: request.cityName,
@@ -135,29 +190,43 @@ export const ContinueChat = async (request: ContinueChatRequest): Promise<ChatMe
   });
 };
 
-export const ContinueChatStream = async (request: ContinueChatRequest): Promise<Response> => {
-  const endpoint = getContextualEndpoint(`sessions/${request.sessionId}/messages/stream`, request.contextType);
-  const token = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
+export const ContinueChatStream = async (
+  request: ContinueChatRequest,
+): Promise<Response> => {
+  const endpoint = getContextualEndpoint(
+    `sessions/${request.sessionId}/messages/stream`,
+    request.contextType,
+  );
+  const token =
+    localStorage.getItem("access_token") ||
+    sessionStorage.getItem("access_token");
 
-  return rateLimitedFetch(`${API_BASE_URL}/${endpoint}`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      ...(token && { Authorization: `Bearer ${token}` }),
+  return rateLimitedFetch(
+    `${API_BASE_URL}/${endpoint}`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...(token && { Authorization: `Bearer ${token}` }),
+      },
+      body: JSON.stringify({
+        message: request.message,
+        city_name: request.cityName,
+        context_type: request.contextType,
+      }),
     },
-    body: JSON.stringify({
-      message: request.message,
-      city_name: request.cityName,
-      context_type: request.contextType,
-    }),
-  }, endpoint);
+    endpoint,
+  );
 };
 
 // ==================
 // HELPER FUNCTIONS
 // ==================
 
-function getContextualEndpoint(basePath: string, contextType: ChatContextType): string {
+function getContextualEndpoint(
+  basePath: string,
+  contextType: ChatContextType,
+): string {
   const contextMap = {
     hotels: `/llm/hotels/chat/${basePath}`,
     restaurants: `/llm/restaurants/chat/${basePath}`,
@@ -197,46 +266,91 @@ export interface UnifiedChatRequest {
   };
 }
 
-export interface UnifiedChatStreamRequest extends UnifiedChatRequest { }
+export interface UnifiedChatStreamRequest extends UnifiedChatRequest {}
 
 // Unified chat service - sends message and gets streaming response
-export const sendUnifiedChatMessage = async (request: UnifiedChatRequest): Promise<Response> => {
-  const token = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
+export const sendUnifiedChatMessage = async (
+  request: UnifiedChatRequest,
+): Promise<Response> => {
+  const token =
+    localStorage.getItem("access_token") ||
+    sessionStorage.getItem("access_token");
   const endpoint = `/llm/prompt-response/chat/sessions/${request.profileId}`;
 
-  return rateLimitedFetch(`${API_BASE_URL}${endpoint}`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      ...(token && { Authorization: `Bearer ${token}` }),
+  return rateLimitedFetch(
+    `${API_BASE_URL}${endpoint}`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...(token && { Authorization: `Bearer ${token}` }),
+      },
+      body: JSON.stringify({
+        message: request.message,
+        user_location: request.userLocation,
+      }),
     },
-    body: JSON.stringify({
-      message: request.message,
-      user_location: request.userLocation,
-    }),
-  }, endpoint);
+    endpoint,
+  );
 };
 
 // Unified chat streaming service
-export const sendUnifiedChatMessageStream = async (request: UnifiedChatStreamRequest): Promise<Response> => {
-  const token = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
+export const sendUnifiedChatMessageStream = async (
+  request: UnifiedChatStreamRequest,
+): Promise<Response> => {
+  const token =
+    localStorage.getItem("access_token") ||
+    sessionStorage.getItem("access_token");
   const endpoint = `/llm/prompt-response/chat/sessions/stream/${request.profileId}`;
 
-  console.log('=== STREAMING API CALL ===');
-  console.log('Token found:', !!token);
-  console.log('Request:', request);
+  console.log("=== STREAMING API CALL ===");
+  console.log("Token found:", !!token);
+  console.log("Request:", request);
 
-  return rateLimitedFetch(`${API_BASE_URL}${endpoint}`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      ...(token && { Authorization: `Bearer ${token}` }),
+  return rateLimitedFetch(
+    `${API_BASE_URL}${endpoint}`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...(token && { Authorization: `Bearer ${token}` }),
+      },
+      body: JSON.stringify({
+        message: request.message,
+        user_location: request.userLocation,
+      }),
     },
-    body: JSON.stringify({
-      message: request.message,
-      user_location: request.userLocation,
-    }),
-  }, endpoint);
+    endpoint,
+  );
+};
+
+export const sendUnifiedChatMessageStreamFree = async (
+  request: UnifiedChatStreamRequest,
+): Promise<Response> => {
+  //const token =
+  //  localStorage.getItem("access_token") ||
+  //  sessionStorage.getItem("access_token");
+  const endpoint = `/llm/chat/stream/free`;
+
+  console.log("=== STREAMING API CALL ===");
+  //console.log("Token found:", !!token);
+  console.log("Request:", request);
+
+  return rateLimitedFetch(
+    `${API_BASE_URL}${endpoint}`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        //...(token && { Authorization: `Bearer ${token}` }),
+      },
+      body: JSON.stringify({
+        message: request.message,
+        user_location: request.userLocation,
+      }),
+    },
+    endpoint,
+  );
 };
 
 // GraphQL alternative to streaming service
@@ -331,31 +445,47 @@ export const sendUnifiedChatMessageStream = async (request: UnifiedChatStreamReq
 // };
 
 // Domain detection utility (client-side)
-export const detectDomain = (message: string): import('./types').DomainType => {
+export const detectDomain = (message: string): import("./types").DomainType => {
   const lowerMessage = message.toLowerCase();
 
   // Accommodation domain keywords
-  if (/hotel|hostel|accommodation|stay|sleep|room|booking|airbnb|lodge|resort|guesthouse/.test(lowerMessage)) {
-    return 'accommodation';
+  if (
+    /hotel|hostel|accommodation|stay|sleep|room|booking|airbnb|lodge|resort|guesthouse/.test(
+      lowerMessage,
+    )
+  ) {
+    return "accommodation";
   }
 
   // Dining domain keywords
-  if (/restaurant|food|eat|dine|meal|cuisine|drink|cafe|bar|lunch|dinner|breakfast|brunch/.test(lowerMessage)) {
-    return 'dining';
+  if (
+    /restaurant|food|eat|dine|meal|cuisine|drink|cafe|bar|lunch|dinner|breakfast|brunch/.test(
+      lowerMessage,
+    )
+  ) {
+    return "dining";
   }
 
   // Activity domain keywords
-  if (/activity|museum|park|attraction|tour|visit|see|do|experience|adventure|shopping|nightlife/.test(lowerMessage)) {
-    return 'activities';
+  if (
+    /activity|museum|park|attraction|tour|visit|see|do|experience|adventure|shopping|nightlife/.test(
+      lowerMessage,
+    )
+  ) {
+    return "activities";
   }
 
   // Itinerary domain keywords
-  if (/itinerary|plan|schedule|trip|day|week|journey|route|organize|arrange/.test(lowerMessage)) {
-    return 'itinerary';
+  if (
+    /itinerary|plan|schedule|trip|day|week|journey|route|organize|arrange/.test(
+      lowerMessage,
+    )
+  ) {
+    return "itinerary";
   }
 
   // Default to general domain
-  return 'general';
+  return "general";
 };
 
 // ==================
@@ -391,23 +521,37 @@ export interface ChatSessionSummary {
 }
 
 // Get chat sessions for a user
-export const getUserChatSessions = async (profileId: string): Promise<ChatSessionSummary[]> => {
+export const getUserChatSessions = async (
+  profileId: string,
+): Promise<ChatSessionSummary[]> => {
   try {
-    console.log('🔍 Fetching chat sessions for profile:', profileId);
-    const response = await apiRequest<ChatSessionResponse[]>(`/llm/prompt-response/chat/sessions/user/${profileId}`, {
-      method: 'GET',
-    });
+    console.log("🔍 Fetching chat sessions for profile:", profileId);
+    const response = await apiRequest<ChatSessionResponse[]>(
+      `/llm/prompt-response/chat/sessions/user/${profileId}`,
+      {
+        method: "GET",
+      },
+    );
 
-    console.log('✅ Successfully fetched chat sessions:', response?.length || 0);
+    console.log(
+      "✅ Successfully fetched chat sessions:",
+      response?.length || 0,
+    );
 
     // Transform the response to our expected format
     return response.map((session: ChatSessionResponse) => ({
       id: session.id,
-      title: generateSessionTitle(session.conversation_history, session.city_name, session.content_metrics),
+      title: generateSessionTitle(
+        session.conversation_history,
+        session.city_name,
+        session.content_metrics,
+      ),
       preview: generatePreview(session.conversation_history),
       timestamp: session.updated_at || session.created_at,
       messageCount: session.conversation_history?.length || 0,
-      hasItinerary: session.content_metrics?.has_itinerary || hasItineraryInMessages(session.conversation_history),
+      hasItinerary:
+        session.content_metrics?.has_itinerary ||
+        hasItineraryInMessages(session.conversation_history),
       lastMessage: getLastMessage(session.conversation_history),
       cityName: session.city_name,
       performanceMetrics: session.performance_metrics,
@@ -416,14 +560,18 @@ export const getUserChatSessions = async (profileId: string): Promise<ChatSessio
       // Include the conversation history for session loading
       conversationHistory: session.conversation_history,
       created_at: session.created_at,
-      updated_at: session.updated_at
+      updated_at: session.updated_at,
     }));
   } catch (error) {
-    console.error('❌ Failed to fetch chat sessions:', error);
+    console.error("❌ Failed to fetch chat sessions:", error);
 
     // Check if it's the specific SQL error
-    if (error?.message?.includes('COALESCE types uuid and text cannot be matched')) {
-      console.warn('🔧 Database type mismatch error detected - backend needs to fix COALESCE query');
+    if (
+      error?.message?.includes("COALESCE types uuid and text cannot be matched")
+    ) {
+      console.warn(
+        "🔧 Database type mismatch error detected - backend needs to fix COALESCE query",
+      );
     }
 
     // Return empty array when backend endpoint has issues
@@ -433,27 +581,39 @@ export const getUserChatSessions = async (profileId: string): Promise<ChatSessio
 };
 
 // Helper function to generate session title from conversation
-const generateSessionTitle = (conversationHistory: ChatMessage[], cityName?: string, contentMetrics?: SessionContentMetrics): string => {
+const generateSessionTitle = (
+  conversationHistory: ChatMessage[],
+  cityName?: string,
+  contentMetrics?: SessionContentMetrics,
+): string => {
   if (!conversationHistory || conversationHistory.length === 0) {
-    return cityName ? `Trip to ${cityName}` : 'New Conversation';
+    return cityName ? `Trip to ${cityName}` : "New Conversation";
   }
 
   // Use content metrics for smarter title generation
   if (contentMetrics) {
-    const { dominant_categories, complexity_score, total_pois, total_hotels, total_restaurants } = contentMetrics;
+    const {
+      dominant_categories,
+      complexity_score,
+      total_pois,
+      total_hotels,
+      total_restaurants,
+    } = contentMetrics;
 
     // Generate title based on dominant categories
     if (dominant_categories.length > 0) {
       const primaryCategory = dominant_categories[0];
       const categoryNames = {
-        'accommodation': 'Hotels',
-        'dining': 'Restaurants',
-        'attractions': 'Attractions',
-        'itinerary': 'Itinerary Planning'
+        accommodation: "Hotels",
+        dining: "Restaurants",
+        attractions: "Attractions",
+        itinerary: "Itinerary Planning",
       };
 
-      const categoryName = categoryNames[primaryCategory as keyof typeof categoryNames] || 'Recommendations';
-      const cityPart = cityName ? ` in ${cityName}` : '';
+      const categoryName =
+        categoryNames[primaryCategory as keyof typeof categoryNames] ||
+        "Recommendations";
+      const cityPart = cityName ? ` in ${cityName}` : "";
 
       // Add complexity indicator for rich sessions
       if (complexity_score >= 8) {
@@ -467,97 +627,129 @@ const generateSessionTitle = (conversationHistory: ChatMessage[], cityName?: str
   }
 
   // Look for first user message (role can be 'user' or type can be 'user')
-  const firstUserMessage = conversationHistory.find(msg => msg.role === 'user' || msg.type === 'user');
+  const firstUserMessage = conversationHistory.find(
+    (msg) => msg.role === "user" || msg.type === "user",
+  );
   if (firstUserMessage) {
-    const content = firstUserMessage.content || '';
+    const content = firstUserMessage.content || "";
 
     // Try to detect the intent from the message content
     const lowerContent = content.toLowerCase();
 
     // Check for specific intents and create meaningful titles
-    if (lowerContent.includes('hotel') || lowerContent.includes('accommodation')) {
-      return cityName ? `Hotels in ${cityName}` : 'Hotel Search';
+    if (
+      lowerContent.includes("hotel") ||
+      lowerContent.includes("accommodation")
+    ) {
+      return cityName ? `Hotels in ${cityName}` : "Hotel Search";
     }
-    if (lowerContent.includes('restaurant') || lowerContent.includes('food') || lowerContent.includes('eat')) {
-      return cityName ? `Dining in ${cityName}` : 'Restaurant Search';
+    if (
+      lowerContent.includes("restaurant") ||
+      lowerContent.includes("food") ||
+      lowerContent.includes("eat")
+    ) {
+      return cityName ? `Dining in ${cityName}` : "Restaurant Search";
     }
-    if (lowerContent.includes('activity') || lowerContent.includes('visit') || lowerContent.includes('see')) {
-      return cityName ? `Activities in ${cityName}` : 'Activity Search';
+    if (
+      lowerContent.includes("activity") ||
+      lowerContent.includes("visit") ||
+      lowerContent.includes("see")
+    ) {
+      return cityName ? `Activities in ${cityName}` : "Activity Search";
     }
-    if (lowerContent.includes('itinerary') || lowerContent.includes('plan') || lowerContent.includes('trip')) {
-      return cityName ? `${cityName} Itinerary` : 'Trip Planning';
+    if (
+      lowerContent.includes("itinerary") ||
+      lowerContent.includes("plan") ||
+      lowerContent.includes("trip")
+    ) {
+      return cityName ? `${cityName} Itinerary` : "Trip Planning";
     }
 
     // Fallback: Use first meaningful words + city
-    const words = content.split(' ').filter(word => word.length > 2).slice(0, 3);
-    const baseTitle = words.join(' ');
+    const words = content
+      .split(" ")
+      .filter((word) => word.length > 2)
+      .slice(0, 3);
+    const baseTitle = words.join(" ");
 
     if (cityName && !baseTitle.toLowerCase().includes(cityName.toLowerCase())) {
       return `${baseTitle} - ${cityName}`;
     }
 
-    return baseTitle || (cityName ? `Trip to ${cityName}` : 'Chat Session');
+    return baseTitle || (cityName ? `Trip to ${cityName}` : "Chat Session");
   }
 
-  return cityName ? `Trip to ${cityName}` : 'Chat Session';
+  return cityName ? `Trip to ${cityName}` : "Chat Session";
 };
 
 // Helper function to generate preview from conversation
 const generatePreview = (conversationHistory: ChatMessage[]): string => {
   if (!conversationHistory || conversationHistory.length === 0) {
-    return 'Start a new conversation...';
+    return "Start a new conversation...";
   }
 
   // Get the last assistant message for preview
-  const lastAssistantMessage = [...conversationHistory].reverse().find(msg => msg.role === 'assistant' || msg.type === 'assistant');
+  const lastAssistantMessage = [...conversationHistory]
+    .reverse()
+    .find((msg) => msg.role === "assistant" || msg.type === "assistant");
   if (lastAssistantMessage) {
-    const content = lastAssistantMessage.content || '';
-    return content.length > 60 ? content.substring(0, 60) + '...' : content;
+    const content = lastAssistantMessage.content || "";
+    return content.length > 60 ? content.substring(0, 60) + "..." : content;
   }
 
   // Fallback to last message
   const lastMessage = conversationHistory[conversationHistory.length - 1];
   if (lastMessage) {
-    const content = lastMessage.content || '';
-    return content.length > 60 ? content.substring(0, 60) + '...' : content;
+    const content = lastMessage.content || "";
+    return content.length > 60 ? content.substring(0, 60) + "..." : content;
   }
 
-  return 'Continue conversation...';
+  return "Continue conversation...";
 };
 
 // Helper function to get last message
 const getLastMessage = (conversationHistory: ChatMessage[]): string => {
   if (!conversationHistory || conversationHistory.length === 0) {
-    return '';
+    return "";
   }
 
   const lastMessage = conversationHistory[conversationHistory.length - 1];
-  return lastMessage?.content || '';
+  return lastMessage?.content || "";
 };
 
 // Helper function to check if conversation contains itinerary content
-const hasItineraryInMessages = (conversationHistory: ChatMessage[]): boolean => {
+const hasItineraryInMessages = (
+  conversationHistory: ChatMessage[],
+): boolean => {
   if (!conversationHistory || conversationHistory.length === 0) {
     return false;
   }
 
   // Look for itinerary-related keywords in assistant messages
-  const itineraryKeywords = ['itinerary', 'recommendations', 'places to visit', 'day 1', 'day 2', 'restaurants', 'hotels', 'activities'];
+  const itineraryKeywords = [
+    "itinerary",
+    "recommendations",
+    "places to visit",
+    "day 1",
+    "day 2",
+    "restaurants",
+    "hotels",
+    "activities",
+  ];
 
   return conversationHistory.some((message: ChatMessage) => {
-    if (message.role === 'assistant' && message.content) {
+    if (message.role === "assistant" && message.content) {
       const content = message.content.toLowerCase();
-      return itineraryKeywords.some(keyword => content.includes(keyword));
+      return itineraryKeywords.some((keyword) => content.includes(keyword));
     }
     return false;
   });
 };
 
-
 // Query hook for getting chat sessions
 export const useGetChatSessionsQuery = (profileId: string | undefined) => {
   return {
-    queryKey: ['chatSessions', profileId],
+    queryKey: ["chatSessions", profileId],
     queryFn: () => {
       if (!profileId) {
         return Promise.resolve([]);

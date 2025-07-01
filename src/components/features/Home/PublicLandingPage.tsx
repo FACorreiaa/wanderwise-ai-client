@@ -1,6 +1,6 @@
-import { Component, createSignal } from 'solid-js';
+import { Component, createSignal, Show } from 'solid-js';
 import { useNavigate } from '@solidjs/router';
-import { Send } from 'lucide-solid';
+import { Send, MessageCircle, Loader2 } from 'lucide-solid';
 import CTA from '~/components/features/Home/CTA';
 import ContentGrid from '~/components/features/Home/ContentGrid';
 import RealTimeStats from '~/components/features/Home/RealTimeStats';
@@ -8,6 +8,9 @@ import MobileAppAnnouncement from '~/components/features/Home/MobileAppAnnouncem
 import LocationPermissionPrompt from '~/components/LocationPermissionPrompt';
 import { useUserLocation } from '~/contexts/LocationContext';
 import { useAuth } from '~/contexts/AuthContext';
+import { sendUnifiedChatMessageStreamFree } from '~/lib/api/llm';
+import { streamingService, createStreamingSession } from '~/lib/streaming-service';
+import type { StreamingSession } from '~/lib/api/types';
 
 const statsData = {
     badgeText: "This month on Loci",
@@ -49,15 +52,64 @@ const contentData = [
 export default function PublicLandingPage(): JSX.Element {
     const navigate = useNavigate();
     const [currentMessage, setCurrentMessage] = createSignal('');
+    const [isLoading, setIsLoading] = createSignal(false);
+    const [streamingSession, setStreamingSession] = createSignal<StreamingSession | null>(null);
+    const [showResults, setShowResults] = createSignal(false);
+    const { userLocation } = useUserLocation();
 
-    // For public users, redirect to signup when they try to use AI features
     const handleGetStarted = () => {
         navigate('/auth/signin');
     };
 
-    const handleSearchClick = () => {
-        // For public users, show what they would get and redirect to signup
-        handleGetStarted();
+    const handleSearchClick = async () => {
+        const message = currentMessage().trim();
+        if (!message || isLoading()) return;
+
+        setIsLoading(true);
+        setShowResults(true);
+
+        try {
+            // Create streaming session for free tier
+            const session = createStreamingSession('general');
+            session.query = message;
+            setStreamingSession(session);
+
+            // Start free streaming request
+            const response = await sendUnifiedChatMessageStreamFree({
+                profileId: 'free', // Use 'free' for free tier users
+                message: message,
+                userLocation: userLocation() ? {
+                    userLat: userLocation()!.latitude,
+                    userLon: userLocation()!.longitude
+                } : undefined
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            // Set up streaming manager
+            streamingService.startStream(response, {
+                session,
+                onProgress: (updatedSession) => {
+                    setStreamingSession(updatedSession);
+                },
+                onComplete: (completedSession) => {
+                    setStreamingSession(completedSession);
+                    setIsLoading(false);
+                },
+                onError: (error) => {
+                    console.error('Free streaming error:', error);
+                    setIsLoading(false);
+                }
+            });
+
+        } catch (error) {
+            console.error('Error starting free chat:', error);
+            setIsLoading(false);
+            // Show a user-friendly error message or fallback to signin
+            handleGetStarted();
+        }
     };
 
     return (
@@ -102,24 +154,100 @@ export default function PublicLandingPage(): JSX.Element {
                                 </div>
                                 <button
                                     onClick={handleSearchClick}
-                                    class="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-medium transition-colors flex items-center gap-2"
+                                    disabled={isLoading() || !currentMessage().trim()}
+                                    class="px-6 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white rounded-xl font-medium transition-colors flex items-center gap-2"
                                 >
-                                    <Send class="w-4 h-4" />
-                                    <span class="hidden sm:inline">Get Started</span>
+                                    <Show when={isLoading()} fallback={<Send class="w-4 h-4" />}>
+                                        <Loader2 class="w-4 h-4 animate-spin" />
+                                    </Show>
+                                    <span class="hidden sm:inline">
+                                        <Show when={isLoading()} fallback="Try Free">
+                                            Discovering...
+                                        </Show>
+                                    </span>
                                 </button>
                             </div>
 
                         </div>
 
+                        {/* Free Results Section */}
+                        <Show when={showResults()}>
+                            <div class="max-w-4xl mx-auto mt-8 mb-12">
+                                <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-xl border border-gray-200 dark:border-gray-700">
+                                    <div class="flex items-center gap-3 mb-4">
+                                        <MessageCircle class="w-5 h-5 text-blue-600" />
+                                        <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
+                                            AI Recommendations (Free Preview)
+                                        </h3>
+                                    </div>
+                                    
+                                    <Show when={isLoading()} fallback={
+                                        <Show when={streamingSession()}>
+                                            <div class="space-y-4">
+                                                <div class="prose prose-sm dark:prose-invert max-w-none">
+                                                    <p class="text-gray-700 dark:text-gray-300">
+                                                        {streamingSession()?.completedResponse || "Here are your AI-powered recommendations..."}
+                                                    </p>
+                                                </div>
+                                                
+                                                <div class="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-200 dark:border-blue-800">
+                                                    <div class="flex items-start gap-3">
+                                                        <div class="text-blue-600 text-lg">✨</div>
+                                                        <div>
+                                                            <h4 class="font-medium text-blue-900 dark:text-blue-100 mb-1">
+                                                                Want more personalized results?
+                                                            </h4>
+                                                            <p class="text-sm text-blue-700 dark:text-blue-300 mb-3">
+                                                                Sign up to get custom preferences, save favorites, create itineraries, and access premium features.
+                                                            </p>
+                                                            <button
+                                                                onClick={() => {
+                                            const suggestions = [
+                                                'Best food markets in Italy',
+                                                '3-day cultural tour of Rome', 
+                                                'Weekend nightlife in Barcelona'
+                                            ];
+                                            const buttonText = (event.currentTarget as HTMLElement).querySelector('h4')?.textContent;
+                                            if (buttonText) {
+                                                setCurrentMessage(buttonText);
+                                                handleSearchClick();
+                                            }
+                                        }}
+                                        disabled={isLoading()}
+                                                                class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors"
+                                                            >
+                                                                <Send class="w-3 h-3" />
+                                                                Sign Up for Full Access
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </Show>
+                                    }>
+                                        <div class="flex items-center gap-3 text-gray-600 dark:text-gray-400">
+                                            <Loader2 class="w-5 h-5 animate-spin" />
+                                            <span>AI is analyzing your request and finding the best recommendations...</span>
+                                        </div>
+                                    </Show>
+                                </div>
+                            </div>
+                        </Show>
+
                         {/* Quick suggestion buttons */}
-                        <div class="max-w-4xl mx-auto mt-12">
-                            <p class="text-gray-600 dark:text-gray-400 mb-6 font-medium">
-                                Sign up to discover amazing places like these:
-                            </p>
+                        <Show when={!showResults()}>
+                            <div class="max-w-4xl mx-auto mt-12">
+                                <p class="text-gray-600 dark:text-gray-400 mb-6 font-medium">
+                                    Try these popular searches for free:
+                                </p>
                                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                                     <button
-                                        onClick={handleGetStarted}
-                                        class="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border border-gray-200 dark:border-gray-700 hover:shadow-md hover:border-blue-300 dark:hover:border-blue-600 transition-all group text-left"
+                                        onClick={() => {
+                                            setCurrentMessage('Hidden gems in Paris');
+                                            handleSearchClick();
+                                        }}
+                                        disabled={isLoading()}
+                                        class="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border border-gray-200 dark:border-gray-700 hover:shadow-md hover:border-blue-300 dark:hover:border-blue-600 transition-all group text-left disabled:opacity-50 disabled:cursor-not-allowed"
                                     >
                                         <div class="flex items-start gap-3">
                                             <span class="text-2xl">🌟</span>
@@ -128,15 +256,27 @@ export default function PublicLandingPage(): JSX.Element {
                                                     Hidden gems in Paris
                                                 </h4>
                                                 <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                                                    Discover off-the-beaten-path spots
+                                                    Try free AI recommendations
                                                 </p>
                                             </div>
                                         </div>
                                     </button>
 
                                     <button
-                                        onClick={handleGetStarted}
-                                        class="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border border-gray-200 dark:border-gray-700 hover:shadow-md hover:border-blue-300 dark:hover:border-blue-600 transition-all group text-left"
+                                        onClick={() => {
+                                            const suggestions = [
+                                                'Best food markets in Italy',
+                                                '3-day cultural tour of Rome', 
+                                                'Weekend nightlife in Barcelona'
+                                            ];
+                                            const buttonText = (event.currentTarget as HTMLElement).querySelector('h4')?.textContent;
+                                            if (buttonText) {
+                                                setCurrentMessage(buttonText);
+                                                handleSearchClick();
+                                            }
+                                        }}
+                                        disabled={isLoading()}
+                                        class="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border border-gray-200 dark:border-gray-700 hover:shadow-md hover:border-blue-300 dark:hover:border-blue-600 transition-all group text-left disabled:opacity-50 disabled:cursor-not-allowed"
                                     >
                                         <div class="flex items-start gap-3">
                                             <span class="text-2xl">🍕</span>
@@ -145,15 +285,27 @@ export default function PublicLandingPage(): JSX.Element {
                                                     Best food markets in Italy
                                                 </h4>
                                                 <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                                                    Authentic local markets and food
+                                                    Try free AI recommendations
                                                 </p>
                                             </div>
                                         </div>
                                     </button>
 
                                     <button
-                                        onClick={handleGetStarted}
-                                        class="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border border-gray-200 dark:border-gray-700 hover:shadow-md hover:border-blue-300 dark:hover:border-blue-600 transition-all group text-left"
+                                        onClick={() => {
+                                            const suggestions = [
+                                                'Best food markets in Italy',
+                                                '3-day cultural tour of Rome', 
+                                                'Weekend nightlife in Barcelona'
+                                            ];
+                                            const buttonText = (event.currentTarget as HTMLElement).querySelector('h4')?.textContent;
+                                            if (buttonText) {
+                                                setCurrentMessage(buttonText);
+                                                handleSearchClick();
+                                            }
+                                        }}
+                                        disabled={isLoading()}
+                                        class="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border border-gray-200 dark:border-gray-700 hover:shadow-md hover:border-blue-300 dark:hover:border-blue-600 transition-all group text-left disabled:opacity-50 disabled:cursor-not-allowed"
                                     >
                                         <div class="flex items-start gap-3">
                                             <span class="text-2xl">🏛️</span>
@@ -162,15 +314,27 @@ export default function PublicLandingPage(): JSX.Element {
                                                     3-day cultural tour of Rome
                                                 </h4>
                                                 <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                                                    Museums, history, and architecture
+                                                    Try free AI recommendations
                                                 </p>
                                             </div>
                                         </div>
                                     </button>
 
                                     <button
-                                        onClick={handleGetStarted}
-                                        class="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border border-gray-200 dark:border-gray-700 hover:shadow-md hover:border-blue-300 dark:hover:border-blue-600 transition-all group text-left"
+                                        onClick={() => {
+                                            const suggestions = [
+                                                'Best food markets in Italy',
+                                                '3-day cultural tour of Rome', 
+                                                'Weekend nightlife in Barcelona'
+                                            ];
+                                            const buttonText = (event.currentTarget as HTMLElement).querySelector('h4')?.textContent;
+                                            if (buttonText) {
+                                                setCurrentMessage(buttonText);
+                                                handleSearchClick();
+                                            }
+                                        }}
+                                        disabled={isLoading()}
+                                        class="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border border-gray-200 dark:border-gray-700 hover:shadow-md hover:border-blue-300 dark:hover:border-blue-600 transition-all group text-left disabled:opacity-50 disabled:cursor-not-allowed"
                                     >
                                         <div class="flex items-start gap-3">
                                             <span class="text-2xl">🌃</span>
@@ -179,13 +343,14 @@ export default function PublicLandingPage(): JSX.Element {
                                                     Weekend nightlife in Barcelona
                                                 </h4>
                                                 <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                                                    Bars, clubs, and evening entertainment
+                                                    Try free AI recommendations
                                                 </p>
                                             </div>
                                         </div>
                                     </button>
                                 </div>
                             </div>
+                        </Show>
                     </div>
                 </div>
             </div>
