@@ -220,17 +220,23 @@ export const sendUnifiedChatMessage = async (request: UnifiedChatRequest): Promi
 // Unified chat streaming service
 export const sendUnifiedChatMessageStream = async (request: UnifiedChatStreamRequest): Promise<Response> => {
   const token = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
-  const endpoint = `/llm/prompt-response/chat/sessions/stream/${request.profileId}`;
+  
+  // Use different endpoints for authenticated vs guest users
+  const endpoint = token && request.profileId !== 'guest' 
+    ? `/llm/prompt-response/chat/sessions/stream/${request.profileId}`
+    : `/llm/guest/chat/stream`;
 
   console.log('=== STREAMING API CALL ===');
   console.log('Token found:', !!token);
+  console.log('Is guest request:', request.profileId === 'guest' || !token);
+  console.log('Endpoint:', endpoint);
   console.log('Request:', request);
 
   return rateLimitedFetch(`${API_BASE_URL}${endpoint}`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      ...(token && { Authorization: `Bearer ${token}` }),
+      ...(token && request.profileId !== 'guest' && { Authorization: `Bearer ${token}` }),
     },
     body: JSON.stringify({
       message: request.message,

@@ -63,7 +63,24 @@ export async function apiRequest<T>(
     }
 
     if (response.status === 401) {
-      // Clear both storage types on unauthorized
+      // Check if this is a guest-accessible endpoint
+      const guestAccessibleEndpoints = [
+        '/llm/guest/chat/stream',
+        '/cities',
+        '/statistics'
+      ];
+      
+      const isGuestAccessible = guestAccessibleEndpoints.some(guestEndpoint => 
+        endpoint.includes(guestEndpoint)
+      );
+      
+      if (isGuestAccessible) {
+        // Don't redirect for guest-accessible endpoints, just throw the error
+        console.log('Guest-accessible endpoint got 401, not redirecting:', endpoint);
+        throw new APIError('This feature requires authentication', 401, 'UNAUTHORIZED');
+      }
+      
+      // Clear both storage types on unauthorized and redirect
       localStorage.removeItem('access_token');
       sessionStorage.removeItem('access_token');
       window.location.href = '/auth/signin';

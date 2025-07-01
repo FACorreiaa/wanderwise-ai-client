@@ -394,12 +394,19 @@ export default function ChatPage() {
         };
 
         console.log('🚀 Making request to continue session:', sessionId);
+        const token = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
+        const headers: Record<string, string> = {
+            'Content-Type': 'application/json',
+        };
+        
+        // Only add Authorization header if token exists (for authenticated users)
+        if (token) {
+            headers.Authorization = `Bearer ${token}`;
+        }
+        
         const response = await fetch(`${API_BASE_URL}/llm/prompt-response/chat/sessions/${sessionId}/continue`, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${localStorage.getItem('access_token') || sessionStorage.getItem('access_token') || ''}`,
-            },
+            headers,
             body: JSON.stringify(requestPayload)
         });
 
@@ -778,12 +785,19 @@ export default function ChatPage() {
             } else {
                 // Fallback: try to load from API (this endpoint might not exist)
                 try {
+                    const token = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
+                    const headers: Record<string, string> = {
+                        'Content-Type': 'application/json',
+                    };
+                    
+                    // Only add Authorization header if token exists (for authenticated users)
+                    if (token) {
+                        headers.Authorization = `Bearer ${token}`;
+                    }
+                    
                     const response = await fetch(`${API_BASE_URL}/llm/prompt-response/chat/sessions/details/${session.id}`, {
                         method: 'GET',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Authorization': `Bearer ${localStorage.getItem('access_token') || sessionStorage.getItem('access_token') || ''}`,
-                        }
+                        headers
                     });
 
                     if (response.ok) {

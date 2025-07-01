@@ -26,11 +26,42 @@ export const useSearchProfile = (profileId: string) => {
   }));
 };
 
-// Get the default search profile
+// Get the default search profile (supports guest users)
 export const useDefaultSearchProfile = () => {
   return useQuery(() => ({
     queryKey: queryKeys.defaultProfile,
-    queryFn: () => apiRequest<SearchProfile>('/user/search-profile/default'),
+    queryFn: async () => {
+      // Check if user is authenticated
+      const token = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
+      
+      if (!token) {
+        // Return a default guest profile
+        return {
+          id: 'guest',
+          profile_name: 'Guest Profile',
+          is_default: true,
+          search_radius_km: 10.0,
+          preferred_time: 'any',
+          budget_level: 3,
+          preferred_pace: 'moderate',
+          prefer_accessible_pois: false,
+          prefer_outdoor_seating: false,
+          prefer_dog_friendly: false,
+          preferred_vibes: [],
+          preferred_transport: 'any',
+          dietary_needs: [],
+          interests: [],
+          tags: [],
+          user_latitude: null,
+          user_longitude: null,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        } as SearchProfile;
+      }
+      
+      // Authenticated user - fetch from API
+      return apiRequest<SearchProfile>('/user/search-profile/default');
+    },
     staleTime: 10 * 60 * 1000,
   }));
 };

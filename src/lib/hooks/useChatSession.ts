@@ -111,12 +111,19 @@ export function useChatSession(options: UseChatSessionOptions = {}) {
 
       // Try to continue the existing session
       console.log('🚀 Making request to continue session:', workingSessionId);
+      const token = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+      };
+      
+      // Only add Authorization header if token exists (for authenticated users)
+      if (token) {
+        headers.Authorization = `Bearer ${token}`;
+      }
+      
       const response = await fetch(`${API_BASE_URL}/llm/prompt-response/chat/sessions/${workingSessionId}/continue`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('access_token') || sessionStorage.getItem('access_token') || ''}`,
-        },
+        headers,
         body: JSON.stringify(requestPayload)
       });
 
@@ -422,23 +429,27 @@ export function useChatSession(options: UseChatSessionOptions = {}) {
                        streaming?.restaurants?.[0]?.city || 
                        'Unknown';
 
-      // Get user ID from auth context
-      const userId = auth.user()?.id;
-      if (!userId) {
-        throw new Error('User not authenticated - cannot start new session');
-      }
+      // Get user ID from auth context (use guest profile if not authenticated)
+      const userId = auth.user()?.id || 'guest';
 
       const newSessionPayload = {
         message: `Continue planning for ${cityName}. ${userMessage}`,
         user_location: null
       };
 
+      const token = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
+      const newHeaders: Record<string, string> = {
+        'Content-Type': 'application/json',
+      };
+      
+      // Only add Authorization header if token exists (for authenticated users)
+      if (token) {
+        newHeaders.Authorization = `Bearer ${token}`;
+      }
+      
       const response = await fetch(`${API_BASE_URL}/llm/prompt-response/chat/sessions/stream/${userId}`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('access_token') || sessionStorage.getItem('access_token') || ''}`,
-        },
+        headers: newHeaders,
         body: JSON.stringify(newSessionPayload)
       });
 
