@@ -123,7 +123,13 @@ export default function PublicLandingPage(): JSX.Element {
             completedSession.city,
           );
           if (route) {
-            navigate(route);
+            navigate(route, {
+              state: {
+                streamingData: completedSession.data,
+                sessionId: completedSession.sessionId,
+                originalMessage: message,
+              },
+            });
           }
         },
         onError: (error) => {
