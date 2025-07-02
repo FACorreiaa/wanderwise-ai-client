@@ -7,19 +7,20 @@ import type { UserSavedItinerary, PaginatedItinerariesResponse } from './types';
 // ITINERARY QUERIES
 // ====================
 
-export const useItineraries = (page: number = 1, limit: number = 10) => {
+export const useItineraries = (page: number = 1, limit: number = 10, options: { enabled?: boolean } = {}) => {
   return useQuery(() => ({
     queryKey: queryKeys.itineraries(page, limit),
     queryFn: () => apiRequest<PaginatedItinerariesResponse>(`/pois/itineraries?page=${page}&limit=${limit}`),
     staleTime: 5 * 60 * 1000,
+    enabled: options.enabled ?? true,
   }));
 };
 
-export const useItinerary = (itineraryId: string) => {
+export const useItinerary = (itineraryId: string, options: { enabled?: boolean } = {}) => {
   return useQuery(() => ({
     queryKey: queryKeys.itinerary(itineraryId),
     queryFn: () => apiRequest<UserSavedItinerary>(`/pois/itineraries/itinerary/${itineraryId}`),
-    enabled: !!itineraryId,
+    enabled: (options.enabled ?? true) && !!itineraryId,
   }));
 };
 

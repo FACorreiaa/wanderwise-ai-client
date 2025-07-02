@@ -7,14 +7,12 @@ import RealTimeStats from "~/components/features/Home/RealTimeStats";
 import MobileAppAnnouncement from "~/components/features/Home/MobileAppAnnouncement";
 import LocationPermissionPrompt from "~/components/LocationPermissionPrompt";
 import { useUserLocation } from "~/contexts/LocationContext";
-import { useAuth } from "~/contexts/AuthContext";
 import { sendUnifiedChatMessageStreamFree, detectDomain } from "~/lib/api/llm";
 import {
   streamingService,
   createStreamingSession,
   getDomainRoute,
 } from "~/lib/streaming-service";
-import type { StreamingSession } from "~/lib/api/types";
 
 const statsData = {
   badgeText: "This month on Loci",

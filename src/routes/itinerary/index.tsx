@@ -94,7 +94,7 @@ interface FilterState {
 export default function ItineraryResultsPage() {
   const location = useLocation<LocationState>();
   const [searchParams] = useSearchParams();
-  const auth = useAuth(); // TODO
+  const auth = useAuth();
   const [map, setMap] = createSignal(null);
   const [selectedPOI, setSelectedPOI] = createSignal(null);
   const [showFilters, setShowFilters] = createSignal(false);
@@ -133,9 +133,12 @@ export default function ItineraryResultsPage() {
   });
   const [isUpdatingItinerary, setIsUpdatingItinerary] = createSignal(false);
 
-  // API hooks
-  const itinerariesQuery = useItineraries();
-  const itineraryQuery = useItinerary(currentItineraryId() || "");
+  // Conditionally load authentication-dependent API hooks
+  const isAuthenticated = () => auth.isAuthenticated();
+  
+  // API hooks - only enabled for authenticated users
+  const itinerariesQuery = useItineraries(1, 10, { enabled: isAuthenticated() });
+  const itineraryQuery = useItinerary(currentItineraryId() || "", { enabled: isAuthenticated() && !!currentItineraryId() });
   const updateItineraryMutation = useUpdateItineraryMutation();
   const saveItineraryMutation = useSaveItineraryMutation();
 
@@ -432,80 +435,20 @@ export default function ItineraryResultsPage() {
       return null;
     }
 
-    // Validate and sanitize coordinates with detailed logging
+    // Simplified coordinate validation (similar to restaurants page)
     const validateCoordinates = (lat: any, lng: any) => {
       console.log(
         `🔍 validateCoordinates input: lat=${lat} (type: ${typeof lat}), lng=${lng} (type: ${typeof lng})`,
       );
 
-      // Handle completely missing values
-      if (
-        lat === null ||
-        lat === undefined ||
-        lng === null ||
-        lng === undefined
-      ) {
-        console.warn(`❌ Null/undefined coordinates: lat=${lat}, lng=${lng}`);
+      // Simple coordinate conversion
+      const numLat = typeof lat === 'string' ? parseFloat(lat) : lat;
+      const numLng = typeof lng === 'string' ? parseFloat(lng) : lng;
+
+      // Only filter out if coordinates are actually invalid (NaN or undefined/null)
+      if (isNaN(numLat) || isNaN(numLng) || numLat == null || numLng == null) {
+        console.warn(`❌ Invalid coordinates: lat=${numLat}, lng=${numLng} (original: lat=${lat}, lng=${lng})`);
         return null;
-      }
-
-      // Handle empty strings
-      if (lat === "" || lng === "") {
-        console.warn(`❌ Empty string coordinates: lat='${lat}', lng='${lng}'`);
-        return null;
-      }
-
-      // Attempt to convert to numbers
-      let numLat: number;
-      let numLng: number;
-
-      if (typeof lat === "string") {
-        numLat = parseFloat(lat.trim());
-      } else if (typeof lat === "number") {
-        numLat = lat;
-      } else {
-        console.warn(`❌ Invalid latitude type: ${typeof lat}, value: ${lat}`);
-        return null;
-      }
-
-      if (typeof lng === "string") {
-        numLng = parseFloat(lng.trim());
-      } else if (typeof lng === "number") {
-        numLng = lng;
-      } else {
-        console.warn(`❌ Invalid longitude type: ${typeof lng}, value: ${lng}`);
-        return null;
-      }
-
-      // Check for NaN after conversion
-      if (isNaN(numLat) || isNaN(numLng)) {
-        console.warn(
-          `❌ NaN coordinates after parsing: lat=${numLat}, lng=${numLng} (original: lat=${lat}, lng=${lng})`,
-        );
-        return null;
-      }
-
-      // Check for reasonable coordinate ranges
-      if (numLat < -90 || numLat > 90) {
-        console.warn(
-          `❌ Latitude out of range: ${numLat} (must be between -90 and 90)`,
-        );
-        return null;
-      }
-
-      if (numLng < -180 || numLng > 180) {
-        console.warn(
-          `❌ Longitude out of range: ${numLng} (must be between -180 and 180)`,
-        );
-        return null;
-      }
-
-      // Check for zero coordinates (often indicates missing data)
-      if (numLat === 0 && numLng === 0) {
-        console.warn(
-          `⚠️  Suspicious zero coordinates detected for POI ${poi.name}, might indicate missing location data`,
-        );
-        // Don't return null for (0,0) as it might be valid, but log it as suspicious
       }
 
       console.log(`✅ Valid coordinates: lat=${numLat}, lng=${numLng}`);
@@ -649,7 +592,11 @@ export default function ItineraryResultsPage() {
           })
           .filter((poi) => poi !== null); // Filter out null values (invalid coordinates)
         console.log("Final converted POIs for MAP:", convertedPOIs);
-        return convertedPOIs;
+        
+        // If we have converted POIs, return them
+        if (convertedPOIs.length > 0) {
+          return convertedPOIs;
+        }
       }
 
       console.log("No itinerary POIs found for map - checking fallbacks");
@@ -1186,6 +1133,41 @@ export default function ItineraryResultsPage() {
         </div>
       </Show>
 
+      {/* Non-authenticated user message */}
+      <Show when={!isAuthenticated()}>
+        <div class="bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-blue-200 px-4 py-4 sm:px-6">
+          <div class="max-w-7xl mx-auto">
+            <div class="flex items-center gap-4">
+              <div class="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center">
+                <Star class="w-5 h-5 text-white" />
+              </div>
+              <div class="flex-1">
+                <h3 class="text-lg font-semibold text-blue-900">
+                  🎉 Your free itinerary preview is ready!
+                </h3>
+                <p class="text-sm text-blue-700 mt-1">
+                  Create a free account to unlock full features: save favorites, share itineraries, continue planning with AI, and access your travel history.
+                </p>
+              </div>
+              <div class="flex gap-2">
+                <button
+                  onClick={() => window.location.href = '/auth/signup'}
+                  class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
+                >
+                  Sign Up Free
+                </button>
+                <button
+                  onClick={() => window.location.href = '/auth/signin'}
+                  class="px-4 py-2 border border-blue-300 text-blue-700 rounded-lg hover:bg-blue-50 transition-colors text-sm font-medium"
+                >
+                  Sign In
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </Show>
+
       {/* Header - Mobile First */}
       <div class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-4 py-3 sm:px-6 sm:py-4">
         <div class="max-w-7xl mx-auto">
@@ -1227,29 +1209,55 @@ export default function ItineraryResultsPage() {
 
               {/* Action Buttons - Stack on Mobile */}
               <div class="flex flex-col gap-2 sm:flex-row sm:gap-3">
-                <button
-                  onClick={() => chatSession.setShowChat(true)}
-                  class="flex items-center justify-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all shadow-sm text-sm font-medium"
-                >
-                  <MessageCircle class="w-4 h-4" />
-                  Continue Planning
-                </button>
+                <Show when={isAuthenticated()}>
+                  <button
+                    onClick={() => chatSession.setShowChat(true)}
+                    class="flex items-center justify-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all shadow-sm text-sm font-medium"
+                  >
+                    <MessageCircle class="w-4 h-4" />
+                    Continue Planning
+                  </button>
+                </Show>
 
                 <div class="flex gap-2">
-                  <button
-                    onClick={saveItinerary}
-                    disabled={saveItineraryMutation.isPending}
-                    class="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors text-sm sm:flex-initial disabled:opacity-50"
-                  >
-                    <Heart class="w-4 h-4" />
-                    <span class="hidden sm:inline">
-                      {saveItineraryMutation.isPending ? "Saving..." : "Save"}
-                    </span>
-                  </button>
-                  <button class="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors text-sm sm:flex-initial">
-                    <Share2 class="w-4 h-4" />
-                    <span class="hidden sm:inline">Share</span>
-                  </button>
+                  <Show when={isAuthenticated()} fallback={
+                    <button
+                      disabled
+                      class="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-gray-400 bg-gray-100 rounded-lg transition-colors text-sm sm:flex-initial disabled:cursor-not-allowed"
+                      title="Sign in to save itineraries"
+                    >
+                      <Heart class="w-4 h-4" />
+                      <span class="hidden sm:inline">Save</span>
+                    </button>
+                  }>
+                    <button
+                      onClick={saveItinerary}
+                      disabled={saveItineraryMutation.isPending}
+                      class="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors text-sm sm:flex-initial disabled:opacity-50"
+                    >
+                      <Heart class="w-4 h-4" />
+                      <span class="hidden sm:inline">
+                        {saveItineraryMutation.isPending ? "Saving..." : "Save"}
+                      </span>
+                    </button>
+                  </Show>
+                  
+                  <Show when={isAuthenticated()} fallback={
+                    <button
+                      disabled
+                      class="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-gray-400 bg-gray-100 rounded-lg transition-colors text-sm sm:flex-initial disabled:cursor-not-allowed"
+                      title="Sign in to share itineraries"
+                    >
+                      <Share2 class="w-4 h-4" />
+                      <span class="hidden sm:inline">Share</span>
+                    </button>
+                  }>
+                    <button class="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors text-sm sm:flex-initial">
+                      <Share2 class="w-4 h-4" />
+                      <span class="hidden sm:inline">Share</span>
+                    </button>
+                  </Show>
+                  
                   <button class="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm sm:flex-initial">
                     <Download class="w-4 h-4" />
                     <span class="hidden sm:inline">Export</span>
@@ -1584,6 +1592,7 @@ export default function ItineraryResultsPage() {
                     maxZoom={22}
                     pointsOfInterest={mapPOIs}
                     style="mapbox://styles/mapbox/streets-v12"
+                    showRoutes={true}
                   />
                 );
               })()}
@@ -1634,11 +1643,11 @@ export default function ItineraryResultsPage() {
                   compact={false}
                   showToggle={filteredPOIs().length > 5}
                   initialLimit={5}
-                  onFavoriteClick={(poi) => {
+                  onFavoriteClick={isAuthenticated() ? (poi) => {
                     console.log("Add to favorites:", poi.name);
                     // Add your favorite logic here
-                  }}
-                  onShareClick={(poi) => {
+                  } : undefined}
+                  onShareClick={isAuthenticated() ? (poi) => {
                     if (navigator.share) {
                       navigator.share({
                         title: poi.name,
@@ -1650,8 +1659,9 @@ export default function ItineraryResultsPage() {
                         `Check out ${poi.name}: ${poi.description_poi}`,
                       );
                     }
-                  }}
-                  favorites={[]} // Add your favorites state here
+                  } : undefined}
+                  favorites={isAuthenticated() ? [] : []} // Add your favorites state here
+                  showAuthMessage={!isAuthenticated()}
                 />
               </div>
             </div>
@@ -1659,26 +1669,28 @@ export default function ItineraryResultsPage() {
         </div>
       </div>
 
-      {/* Chat Interface - Mobile Optimized */}
-      <ChatInterface
-        showChat={chatSession.showChat()}
-        chatMessage={chatSession.chatMessage()}
-        chatHistory={chatSession.chatHistory()}
-        isLoading={chatSession.isLoading()}
-        setShowChat={chatSession.setShowChat}
-        setChatMessage={chatSession.setChatMessage}
-        sendChatMessage={chatSession.sendChatMessage}
-        handleKeyPress={chatSession.handleKeyPress}
-        title="Continue Planning"
-        placeholder="Ask me to modify your itinerary..."
-        emptyStateTitle="Ask me to modify your itinerary!"
-        emptyStateSubtitle='Try: "Add the Eiffel Tower" or "Remove expensive activities"'
-        loadingMessage="Updating your itinerary..."
-        headerColor="bg-blue-600"
-        userMessageColor="bg-blue-600"
-        floatingButtonColor="bg-blue-600 hover:bg-blue-700"
-        focusRingColor="focus:ring-blue-500"
-      />
+      {/* Chat Interface - Mobile Optimized - Only for authenticated users */}
+      <Show when={isAuthenticated()}>
+        <ChatInterface
+          showChat={chatSession.showChat()}
+          chatMessage={chatSession.chatMessage()}
+          chatHistory={chatSession.chatHistory()}
+          isLoading={chatSession.isLoading()}
+          setShowChat={chatSession.setShowChat}
+          setChatMessage={chatSession.setChatMessage}
+          sendChatMessage={chatSession.sendChatMessage}
+          handleKeyPress={chatSession.handleKeyPress}
+          title="Continue Planning"
+          placeholder="Ask me to modify your itinerary..."
+          emptyStateTitle="Ask me to modify your itinerary!"
+          emptyStateSubtitle='Try: "Add the Eiffel Tower" or "Remove expensive activities"'
+          loadingMessage="Updating your itinerary..."
+          headerColor="bg-blue-600"
+          userMessageColor="bg-blue-600"
+          floatingButtonColor="bg-blue-600 hover:bg-blue-700"
+          focusRingColor="focus:ring-blue-500"
+        />
+      </Show>
 
       {/* Selected POI Details - Mobile First Modal */}
       <Show when={selectedPOI()}>
