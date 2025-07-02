@@ -1,5 +1,15 @@
-import { For, Show, createSignal } from 'solid-js';
-import { Star, MapPin, Clock, Calendar, ChevronRight, ChevronDown, ChevronUp, Heart, Share2 } from 'lucide-solid';
+import { For, Show, createSignal } from "solid-js";
+import {
+  Star,
+  MapPin,
+  Clock,
+  Calendar,
+  ChevronRight,
+  ChevronDown,
+  ChevronUp,
+  Heart,
+  Share2,
+} from "lucide-solid";
 
 interface POI {
   name: string;
@@ -38,23 +48,25 @@ interface ItineraryResultsProps {
 
 export default function ItineraryResults(props: ItineraryResultsProps) {
   const [showAll, setShowAll] = createSignal(false);
-  
+
   const displayPOIs = () => {
     const pois = props.pois || props.itinerary?.points_of_interest || [];
     // Sort by priority if available
-    const sortedPOIs = [...pois].sort((a, b) => (a.priority || 999) - (b.priority || 999));
-    
+    const sortedPOIs = [...pois].sort(
+      (a, b) => (a.priority || 999) - (b.priority || 999),
+    );
+
     // If a fixed limit is provided (from parent), use it
     if (props.limit && !props.showToggle) {
       return sortedPOIs.slice(0, props.limit);
     }
-    
+
     // If showToggle is enabled, use initialLimit and showAll state
     if (props.showToggle) {
       const initialLimit = props.initialLimit || 5; // Higher default for POIs
       return showAll() ? sortedPOIs : sortedPOIs.slice(0, initialLimit);
     }
-    
+
     // Default: show all
     return sortedPOIs;
   };
@@ -69,9 +81,9 @@ export default function ItineraryResults(props: ItineraryResultsProps) {
     const pois = props.pois || props.itinerary?.points_of_interest || [];
     const initialLimit = props.initialLimit || 5;
     const remaining = pois.length - initialLimit;
-    
+
     if (showAll()) {
-      return 'Show Less';
+      return "Show Less";
     } else {
       return `Show ${remaining} More`;
     }
@@ -80,51 +92,59 @@ export default function ItineraryResults(props: ItineraryResultsProps) {
   const itineraryName = () => {
     const rawName = props.itinerary?.itinerary_name;
     if (!rawName) return "Custom Itinerary";
-    
+
     // Handle case where itinerary_name might be a JSON string or object
-    if (typeof rawName === 'string' && rawName.startsWith('{')) {
+    if (typeof rawName === "string" && rawName.startsWith("{")) {
       try {
         const parsed = JSON.parse(rawName);
         return parsed.itinerary_name || parsed.name || "Custom Itinerary";
       } catch (e) {
-        console.warn('Failed to parse itinerary name JSON:', e);
+        console.warn("Failed to parse itinerary name JSON:", e);
         return "Custom Itinerary";
       }
-    } else if (typeof rawName === 'object' && rawName?.itinerary_name) {
+    } else if (typeof rawName === "object" && rawName?.itinerary_name) {
       return rawName.itinerary_name;
     }
-    
+
     return rawName || "Custom Itinerary";
   };
   const description = () => props.itinerary?.overall_description;
 
   const getRatingColor = (rating: number) => {
-    if (rating >= 4.5) return 'text-green-600 dark:text-green-400';
-    if (rating >= 4.0) return 'text-blue-600 dark:text-blue-400';
-    if (rating >= 3.5) return 'text-yellow-600 dark:text-yellow-400';
-    return 'text-gray-600 dark:text-gray-400';
+    if (rating >= 4.5) return "text-green-600 dark:text-green-400";
+    if (rating >= 4.0) return "text-blue-600 dark:text-blue-400";
+    if (rating >= 3.5) return "text-yellow-600 dark:text-yellow-400";
+    return "text-gray-600 dark:text-gray-400";
   };
 
   const getPriorityColor = (priority: number) => {
-    if (priority === 1) return 'bg-red-500 dark:bg-red-600';
-    if (priority === 2) return 'bg-orange-500 dark:bg-orange-600';
-    if (priority === 3) return 'bg-yellow-500 dark:bg-yellow-600';
-    return 'bg-blue-500 dark:bg-blue-600';
+    if (priority === 1) return "bg-red-500 dark:bg-red-600";
+    if (priority === 2) return "bg-orange-500 dark:bg-orange-600";
+    if (priority === 3) return "bg-yellow-500 dark:bg-yellow-600";
+    return "bg-blue-500 dark:bg-blue-600";
   };
 
   const getCategoryEmoji = (category: string) => {
     const categoryLower = category.toLowerCase();
-    if (categoryLower.includes('museum')) return '🏛️';
-    if (categoryLower.includes('park') || categoryLower.includes('garden')) return '🌳';
-    if (categoryLower.includes('beach')) return '🏖️';
-    if (categoryLower.includes('historic') || categoryLower.includes('castle')) return '🏰';
-    if (categoryLower.includes('church') || categoryLower.includes('cathedral')) return '⛪';
-    if (categoryLower.includes('market')) return '🛒';
-    if (categoryLower.includes('restaurant') || categoryLower.includes('food')) return '🍽️';
-    if (categoryLower.includes('viewpoint') || categoryLower.includes('lookout')) return '👁️';
-    if (categoryLower.includes('landmark')) return '📍';
-    if (categoryLower.includes('shopping')) return '🛍️';
-    return '📍';
+    if (categoryLower.includes("museum")) return "🏛️";
+    if (categoryLower.includes("park") || categoryLower.includes("garden"))
+      return "🌳";
+    if (categoryLower.includes("beach")) return "🏖️";
+    if (categoryLower.includes("historic") || categoryLower.includes("castle"))
+      return "🏰";
+    if (categoryLower.includes("church") || categoryLower.includes("cathedral"))
+      return "⛪";
+    if (categoryLower.includes("market")) return "🛒";
+    if (categoryLower.includes("restaurant") || categoryLower.includes("food"))
+      return "🍽️";
+    if (
+      categoryLower.includes("viewpoint") ||
+      categoryLower.includes("lookout")
+    )
+      return "👁️";
+    if (categoryLower.includes("landmark")) return "📍";
+    if (categoryLower.includes("shopping")) return "🛍️";
+    return "📍";
   };
 
   return (
@@ -138,37 +158,39 @@ export default function ItineraryResults(props: ItineraryResultsProps) {
             {itineraryName()} ({displayPOIs().length} stops)
           </h3>
         </div>
-        
+
         <Show when={description() && !props.compact}>
           <p class="text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
             {description()}
           </p>
         </Show>
       </div>
-      
+
       <div class={props.compact ? "space-y-2" : "space-y-3"}>
         <For each={displayPOIs()}>
           {(poi, index) => (
-            <div 
+            <div
               class={`rounded-lg border border-gray-200 dark:border-gray-700 ${
-                props.compact 
-                  ? "p-3 bg-gray-50 dark:bg-gray-800" 
+                props.compact
+                  ? "p-3 bg-gray-50 dark:bg-gray-800"
                   : "p-4 bg-white dark:bg-gray-800 shadow-sm hover:shadow-md transition-shadow"
-              } ${props.onItemClick ? 'cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700' : ''}`}
+              } ${props.onItemClick ? "cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700" : ""}`}
               onClick={() => props.onItemClick?.(poi)}
             >
               <div class="flex items-start gap-3">
                 {/* Priority/Step Number */}
                 <div class="flex-shrink-0 mt-1">
-                  <Show 
-                    when={poi.priority} 
+                  <Show
+                    when={poi.priority}
                     fallback={
                       <div class="w-6 h-6 rounded-full bg-gray-400 dark:bg-gray-600 flex items-center justify-center text-white text-xs font-bold">
                         {index() + 1}
                       </div>
                     }
                   >
-                    <div class={`w-6 h-6 rounded-full ${getPriorityColor(poi.priority!)} flex items-center justify-center text-white text-xs font-bold`}>
+                    <div
+                      class={`w-6 h-6 rounded-full ${getPriorityColor(poi.priority!)} flex items-center justify-center text-white text-xs font-bold`}
+                    >
                       {poi.priority}
                     </div>
                   </Show>
@@ -178,9 +200,11 @@ export default function ItineraryResults(props: ItineraryResultsProps) {
                   <div class="flex items-start justify-between mb-2">
                     <div class="flex-1 min-w-0">
                       <div class="flex items-center gap-2">
-                        <h4 class={`font-medium text-gray-900 dark:text-white truncate ${
-                          props.compact ? "text-sm" : "text-base"
-                        }`}>
+                        <h4
+                          class={`font-medium text-gray-900 dark:text-white truncate ${
+                            props.compact ? "text-sm" : "text-base"
+                          }`}
+                        >
                           {poi.name}
                         </h4>
                         <Show when={poi.category}>
@@ -195,11 +219,15 @@ export default function ItineraryResults(props: ItineraryResultsProps) {
                         </p>
                       </Show>
                     </div>
-                    
+
                     <Show when={poi.rating}>
                       <div class="flex items-center gap-1 ml-2 flex-shrink-0">
-                        <Star class={`w-3 h-3 fill-current ${getRatingColor(poi.rating!)}`} />
-                        <span class={`text-xs font-medium ${getRatingColor(poi.rating!)}`}>
+                        <Star
+                          class={`w-3 h-3 fill-current ${getRatingColor(poi.rating!)}`}
+                        />
+                        <span
+                          class={`text-xs font-medium ${getRatingColor(poi.rating!)}`}
+                        >
                           {poi.rating}
                         </span>
                       </div>
@@ -219,20 +247,20 @@ export default function ItineraryResults(props: ItineraryResultsProps) {
                         <span>{poi.distance}km away</span>
                       </div>
                     </Show>
-                    
+
                     <Show when={poi.timeToSpend}>
                       <div class="flex items-center gap-1">
                         <Clock class="w-3 h-3" />
                         <span>{poi.timeToSpend}</span>
                       </div>
                     </Show>
-                    
+
                     <Show when={poi.budget}>
                       <span class="text-blue-600 dark:text-blue-400 font-medium">
                         {poi.budget}
                       </span>
                     </Show>
-                    
+
                     <Show when={poi.opening_hours && !props.compact}>
                       <div class="flex items-center gap-1">
                         <Calendar class="w-3 h-3" />
@@ -242,7 +270,12 @@ export default function ItineraryResults(props: ItineraryResultsProps) {
                   </div>
 
                   {/* Action Buttons */}
-                  <Show when={!props.compact && (props.onFavoriteClick || props.onShareClick)}>
+                  <Show
+                    when={
+                      !props.compact &&
+                      (props.onFavoriteClick || props.onShareClick)
+                    }
+                  >
                     <div class="flex items-center gap-2 mt-3">
                       <Show when={props.onFavoriteClick}>
                         <button
@@ -252,12 +285,14 @@ export default function ItineraryResults(props: ItineraryResultsProps) {
                           }}
                           class={`p-2 rounded-lg transition-colors ${
                             props.favorites?.includes(poi.name)
-                              ? 'text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/30'
-                              : 'text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20'
+                              ? "text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/30"
+                              : "text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
                           }`}
                           title="Add to favorites"
                         >
-                          <Heart class={`w-4 h-4 ${props.favorites?.includes(poi.name) ? 'fill-current' : ''}`} />
+                          <Heart
+                            class={`w-4 h-4 ${props.favorites?.includes(poi.name) ? "fill-current" : ""}`}
+                          />
                         </button>
                       </Show>
                       <Show when={props.onShareClick}>
@@ -277,9 +312,9 @@ export default function ItineraryResults(props: ItineraryResultsProps) {
 
                   <Show when={poi.website && !props.compact}>
                     <div class="mt-3 pt-3 border-t border-gray-100 dark:border-gray-700">
-                      <a 
-                        href={poi.website} 
-                        target="_blank" 
+                      <a
+                        href={poi.website}
+                        target="_blank"
                         rel="noopener noreferrer"
                         class="text-sm text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
                         onClick={(e) => e.stopPropagation()}
@@ -294,7 +329,7 @@ export default function ItineraryResults(props: ItineraryResultsProps) {
           )}
         </For>
       </div>
-      
+
       {/* Show More/Less Toggle */}
       <Show when={shouldShowToggle()}>
         <div class="text-center py-3">
@@ -303,19 +338,32 @@ export default function ItineraryResults(props: ItineraryResultsProps) {
             class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-700 transition-colors"
           >
             <span>{getToggleText()}</span>
-            {showAll() ? 
-              <ChevronUp class="w-4 h-4" /> : 
+            {showAll() ? (
+              <ChevronUp class="w-4 h-4" />
+            ) : (
               <ChevronDown class="w-4 h-4" />
-            }
+            )}
           </button>
         </div>
       </Show>
-      
+
       {/* Status indicator when using fixed limit */}
-      <Show when={props.limit && !props.showToggle && (props.pois?.length || props.itinerary?.points_of_interest?.length || 0) > props.limit}>
+      <Show
+        when={
+          props.limit &&
+          !props.showToggle &&
+          (props.pois?.length ||
+            props.itinerary?.points_of_interest?.length ||
+            0) > props.limit
+        }
+      >
         <div class="text-center py-2">
           <span class="text-sm text-gray-500 dark:text-gray-400">
-            Showing {props.limit} of {props.pois?.length || props.itinerary?.points_of_interest?.length || 0} places
+            Showing {props.limit} of{" "}
+            {props.pois?.length ||
+              props.itinerary?.points_of_interest?.length ||
+              0}{" "}
+            places
           </span>
         </div>
       </Show>

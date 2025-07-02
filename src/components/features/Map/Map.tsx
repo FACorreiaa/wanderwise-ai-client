@@ -22,6 +22,7 @@ interface MapComponentProps {
   pointsOfInterest: POI[];
   style?: string;
   showRoutes?: boolean; // New prop to control route lines
+  onMarkerClick?: (poi: POI, index: number) => void; // New prop for marker click handling
 }
 
 export default function MapComponent({
@@ -32,6 +33,7 @@ export default function MapComponent({
   pointsOfInterest,
   style = "mapbox://styles/mapbox/standard",
   showRoutes = true,
+  onMarkerClick,
 }: MapComponentProps) {
   let mapContainer: HTMLDivElement | undefined;
   let map: mapboxgl.Map | undefined;
@@ -271,6 +273,14 @@ export default function MapComponent({
       markerElement.addEventListener("mouseleave", () => {
         markerElement.style.transform = "scale(1)";
       });
+
+      // Add click event to trigger callback
+      if (onMarkerClick) {
+        markerElement.addEventListener("click", (e) => {
+          e.stopPropagation();
+          onMarkerClick(poi, index);
+        });
+      }
 
       const marker = new mapboxgl.Marker(markerElement)
         .setLngLat([lng, lat])
@@ -630,7 +640,8 @@ export default function MapComponent({
       container: mapContainer!,
       style: style,
       center: validCenter,
-      zoom: zoom || 12,
+      zoom: zoom || 20,
+      bearing: 30,
       minZoom: minZoom || 10,
       maxZoom: maxZoom || 22,
       config: {
@@ -645,8 +656,8 @@ export default function MapComponent({
 
     map.on("load", () => {
       console.log("Map loaded. Adding initial markers.");
-      // Initial render
-      addFeaturesToMap(pointsOfInterest);
+      // Use the main addMarkers function instead of addFeaturesToMap
+      addMarkers(pointsOfInterest);
     });
 
     const resizeObserver = new ResizeObserver(() => map && map.resize());
@@ -739,7 +750,7 @@ export default function MapComponent({
         }
 
         console.log("Adding features to map after clearing");
-        addFeaturesToMap(pois);
+        addMarkers(pois);
       }, 100); // Small delay to ensure map has processed the clearing
     } catch (error) {
       console.error("Error during POI update effect:", error);

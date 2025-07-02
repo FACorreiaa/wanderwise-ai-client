@@ -1511,14 +1511,14 @@ export default function ItineraryResultsPage() {
       {/* Main Content - Mobile First */}
       <div class="max-w-7xl mx-auto px-4 py-4 sm:px-6 sm:py-6">
         <div
-          class={`grid gap-4 sm:gap-6 ${viewMode() === "split" ? "grid-cols-1 lg:grid-cols-2" : "grid-cols-1"}`}
+          class={`${viewMode() === "split" ? "flex flex-col gap-4 sm:gap-6" : "grid grid-cols-1 gap-4 sm:gap-6"}`}
         >
           <Show when={viewMode() === "map" || viewMode() === "split"}>
             <div
               class={
                 viewMode() === "map"
-                  ? "col-span-full h-[400px] sm:h-[600px]"
-                  : "h-[300px] sm:h-[500px]"
+                  ? "w-full h-[400px] sm:h-[600px]"
+                  : "w-full h-[400px] sm:h-[500px]"
               }
             >
               {(() => {
@@ -1526,6 +1526,12 @@ export default function ItineraryResultsPage() {
                 console.log("=== RENDERING MAP COMPONENT ===");
                 console.log("Map POIs being passed to MapComponent:", mapPOIs);
                 console.log("Map POIs length:", mapPOIs.length);
+                
+                // Debug each POI's coordinates
+                mapPOIs.forEach((poi, index) => {
+                  console.log(`🗺️ Map POI ${index + 1}: ${poi.name} - lat: ${poi.latitude}, lng: ${poi.longitude}`);
+                });
+                
                 console.log("Center coordinates:", [
                   itinerary().centerLng,
                   itinerary().centerLat,
@@ -1593,6 +1599,15 @@ export default function ItineraryResultsPage() {
                     pointsOfInterest={mapPOIs}
                     style="mapbox://styles/mapbox/streets-v12"
                     showRoutes={true}
+                    onMarkerClick={(poi, index) => {
+                      console.log(`Marker clicked: ${poi.name} (index: ${index})`);
+                      // Find the corresponding POI in our filtered list and highlight it
+                      const matchingPOI = filteredCardPOIs().find(cardPoi => cardPoi.name === poi.name);
+                      if (matchingPOI) {
+                        setSelectedPOI(matchingPOI);
+                        console.log(`Set selected POI to: ${matchingPOI.name}`);
+                      }
+                    }}
                   />
                 );
               })()}
@@ -1600,7 +1615,7 @@ export default function ItineraryResultsPage() {
           </Show>
 
           <Show when={viewMode() === "list" || viewMode() === "split"}>
-            <div class={viewMode() === "list" ? "col-span-full" : ""}>
+            <div class="w-full">
               <div class="space-y-4">
                 <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                   <div>
