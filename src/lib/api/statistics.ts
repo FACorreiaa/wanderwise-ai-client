@@ -60,12 +60,12 @@ export const getMainPageStatistics = async (): Promise<MainPageStatistics> => {
 
 export const getDetailedPOIStatistics =
   async (): Promise<DetailedPOIStatistics> => {
-    return statisticsRequest<DetailedPOIStatistics>("/statistics/poi/detailed");
+    return statisticsRequest<DetailedPOIStatistics>("/user-statistics/poi/detailed");
   };
 
 export const getLandingPageStatistics =
   async (): Promise<LandingPageUserStats> => {
-    return statisticsRequest<LandingPageUserStats>("/statistics/landing-page");
+    return statisticsRequest<LandingPageUserStats>("/user-statistics/landing-page");
   };
 
 // Custom hooks for statistics
