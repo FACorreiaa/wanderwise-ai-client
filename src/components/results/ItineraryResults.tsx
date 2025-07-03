@@ -44,10 +44,18 @@ interface ItineraryResultsProps {
   onFavoriteClick?: (poi: POI) => void; // Callback for favorite button
   onShareClick?: (poi: POI) => void; // Callback for share button
   favorites?: string[]; // Array of favorite POI IDs
+  showAuthMessage?: boolean; // Whether to show auth message for non-authenticated users
+  onToggleFavorite?: (poiId: string, poi: POI) => void; // New callback for toggling favorites
+  isLoadingFavorites?: boolean; // Loading state for favorites
 }
 
 export default function ItineraryResults(props: ItineraryResultsProps) {
   const [showAll, setShowAll] = createSignal(false);
+
+  // Check if POI is in favorites
+  const isFavorite = (poiName: string) => {
+    return props.favorites?.includes(poiName) || false;
+  };
 
   const displayPOIs = () => {
     const pois = props.pois || props.itinerary?.points_of_interest || [];
@@ -222,12 +230,8 @@ export default function ItineraryResults(props: ItineraryResultsProps) {
 
                     <Show when={poi.rating}>
                       <div class="flex items-center gap-1 ml-2 flex-shrink-0">
-                        <Star
-                          class={`w-3 h-3 fill-current ${getRatingColor(poi.rating!)}`}
-                        />
-                        <span
-                          class={`text-xs font-medium ${getRatingColor(poi.rating!)}`}
-                        >
+                        <Star class="w-4 h-4 text-yellow-500 fill-current" />
+                        <span class="text-sm font-medium text-gray-900 dark:text-white">
                           {poi.rating}
                         </span>
                       </div>
@@ -270,43 +274,55 @@ export default function ItineraryResults(props: ItineraryResultsProps) {
                   </div>
 
                   {/* Action Buttons */}
-                  <Show
-                    when={
-                      !props.compact &&
-                      (props.onFavoriteClick || props.onShareClick)
-                    }
-                  >
+                  <Show when={!props.compact}>
                     <div class="flex items-center gap-2 mt-3">
-                      <Show when={props.onFavoriteClick}>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            props.onFavoriteClick?.(poi);
-                          }}
-                          class={`p-2 rounded-lg transition-colors ${
-                            props.favorites?.includes(poi.name)
-                              ? "text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/30"
-                              : "text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
-                          }`}
-                          title="Add to favorites"
+                      {/* Favorite Button - now uses star icon like discover page */}
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (props.onToggleFavorite) {
+                            props.onToggleFavorite(poi.name, poi);
+                          } else if (props.onFavoriteClick) {
+                            props.onFavoriteClick(poi);
+                          }
+                        }}
+                        disabled={props.isLoadingFavorites || (!props.onToggleFavorite && !props.onFavoriteClick)}
+                        data-poi-id={poi.name}
+                        class={`p-2 rounded-lg transition-colors ${
+                          (!props.onToggleFavorite && !props.onFavoriteClick)
+                            ? "text-gray-300 dark:text-gray-600 cursor-not-allowed bg-gray-50 dark:bg-gray-800"
+                            : isFavorite(poi.name)
+                              ? "text-yellow-600 dark:text-yellow-400 bg-yellow-50 dark:bg-yellow-900/20 hover:bg-yellow-100 dark:hover:bg-yellow-900/30"
+                              : "text-gray-400 hover:text-yellow-600 dark:hover:text-yellow-400 hover:bg-yellow-50 dark:hover:bg-yellow-900/20"
+                        } disabled:opacity-50 disabled:cursor-not-allowed`}
+                        title={isFavorite(poi.name) ? "Remove from favorites" : "Add to favorites"}
+                      >
+                        <Show
+                          when={!props.isLoadingFavorites}
+                          fallback={<div class="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin"></div>}
                         >
-                          <Heart
-                            class={`w-4 h-4 ${props.favorites?.includes(poi.name) ? "fill-current" : ""}`}
-                          />
-                        </button>
-                      </Show>
-                      <Show when={props.onShareClick}>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            props.onShareClick?.(poi);
-                          }}
-                          class="p-2 rounded-lg text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
-                          title="Share this place"
-                        >
-                          <Share2 class="w-4 h-4" />
-                        </button>
-                      </Show>
+                          <Star class={`w-4 h-4 ${isFavorite(poi.name) ? "fill-current" : ""}`} />
+                        </Show>
+                      </button>
+                      
+                      {/* Share Button - show always but disable if no callback */}
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (props.onShareClick) {
+                            props.onShareClick(poi);
+                          }
+                        }}
+                        disabled={!props.onShareClick}
+                        class={`p-2 rounded-lg transition-colors ${
+                          !props.onShareClick
+                            ? "text-gray-300 dark:text-gray-600 cursor-not-allowed bg-gray-50 dark:bg-gray-800"
+                            : "text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20"
+                        }`}
+                        title={props.onShareClick ? "Share this place" : props.showAuthMessage ? "Sign in to share this place" : "Share this place"}
+                      >
+                        <Share2 class="w-4 h-4" />
+                      </button>
                     </div>
                   </Show>
 

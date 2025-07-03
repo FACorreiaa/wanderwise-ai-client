@@ -34,6 +34,7 @@ export const useAddToFavoritesMutation = () => {
       console.log('🔄 Adding POI to favorites:', params);
       const requestBody = {
         poi_id: params.poiId,
+        is_llm_poi: true, // Since we're adding from itinerary, these are LLM-generated POIs
         ...(params.poiData && { poi_data: params.poiData })
       };
       console.log('📤 Request body:', requestBody);
@@ -79,7 +80,7 @@ export const useRemoveFromFavoritesMutation = () => {
       console.log('🔄 Removing POI from favorites:', poiId);
       const response = await apiRequest<{ message: string }>('/pois/favourites', {
         method: 'DELETE',
-        body: JSON.stringify({ poi_id: poiId }),
+        body: JSON.stringify({ poi_id: poiId, is_llm_poi: true }),
       });
       console.log('✅ Remove from favorites response:', response);
       return response;

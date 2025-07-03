@@ -45,6 +45,12 @@ import {
   useUpdateItineraryMutation,
   useSaveItineraryMutation,
 } from "~/lib/api/itineraries";
+// @ts-ignore - POI favorites API hooks type
+import {
+  useFavorites,
+  useAddToFavoritesMutation,
+  useRemoveFromFavoritesMutation,
+} from "~/lib/api/pois";
 // @ts-ignore - API types
 import type { AiCityResponse, POIDetail } from "~/lib/api/types";
 // @ts-ignore - Results component type
@@ -141,6 +147,11 @@ export default function ItineraryResultsPage() {
   const itineraryQuery = useItinerary(currentItineraryId() || "", { enabled: isAuthenticated() && !!currentItineraryId() });
   const updateItineraryMutation = useUpdateItineraryMutation();
   const saveItineraryMutation = useSaveItineraryMutation();
+  
+  // Favorites hooks
+  const favoritesQuery = useFavorites();
+  const addToFavoritesMutation = useAddToFavoritesMutation();
+  const removeFromFavoritesMutation = useRemoveFromFavoritesMutation();
 
   // Filter states - more inclusive when we have streaming data
   const [activeFilters, setActiveFilters] = createSignal<FilterState>({
@@ -1086,10 +1097,51 @@ export default function ItineraryResultsPage() {
   };
 
   const saveItinerary = () => {
+    // Get the current session ID from chat session or storage
+    const sessionId = chatSession.sessionId();
+    
+    if (!sessionId) {
+      console.error('No session ID available for saving itinerary');
+      // Try to get session ID from session storage as fallback
+      const storedSession = sessionStorage.getItem('completedStreamingSession');
+      if (storedSession) {
+        try {
+          const session = JSON.parse(storedSession);
+          const fallbackSessionId = session.sessionId || session.data?.session_id || session.data?.sessionId;
+          if (fallbackSessionId) {
+            console.log('Using fallback session ID from storage:', fallbackSessionId);
+            chatSession.setSessionId(fallbackSessionId);
+          } else {
+            console.error('No session ID found in storage either');
+            return;
+          }
+        } catch (error) {
+          console.error('Error parsing stored session:', error);
+          return;
+        }
+      } else {
+        console.error('No stored session found for fallback');
+        return;
+      }
+    }
+
+    const currentItinerary = itinerary();
+    const streaming = streamingData();
+    
+    // Extract primary city name from streaming data or use a fallback
+    const primaryCityName = streaming?.general_city_data?.city || currentItinerary.city || 'unknown';
+    
+    // Create the bookmark request with proper format
     const itineraryData = {
-      ...itinerary(),
-      pois: pointsOfInterest(),
+      session_id: sessionId,
+      primary_city_name: primaryCityName,
+      title: currentItinerary.name || `${primaryCityName} Adventure`,
+      description: currentItinerary.description || `Personalized itinerary for ${primaryCityName}`,
+      tags: [primaryCityName.toLowerCase(), 'ai-generated', 'personalized'],
+      is_public: false,
     };
+    
+    console.log('Saving itinerary with data:', itineraryData);
     saveItineraryMutation.mutate(itineraryData);
   };
 
@@ -1099,6 +1151,57 @@ export default function ItineraryResultsPage() {
         itineraryId: currentItineraryId(),
         data: updates,
       });
+    }
+  };
+
+  // Favorites functionality
+  const isFavorite = (poiName: string) => {
+    const favs = favoritesQuery.data || [];
+    return favs.some(poi => poi.name === poiName);
+  };
+
+  const toggleFavorite = (poiName: string, poi: any) => {
+    if (!isAuthenticated()) {
+      console.log("User not authenticated, cannot toggle favorite");
+      return;
+    }
+
+    console.log("Toggle favorite for POI:", { poiName, isFavorite: isFavorite(poiName) });
+
+    if (isFavorite(poiName)) {
+      console.log("Removing from favorites...");
+      // Find the POI ID from favorites to remove it
+      const favs = favoritesQuery.data || [];
+      const favPoi = favs.find(fav => fav.name === poiName);
+      if (favPoi) {
+        removeFromFavoritesMutation.mutate(favPoi.id);
+      }
+    } else {
+      console.log("Adding to favorites...");
+      // Convert the itinerary POI format to POIDetailedInfo format
+      const poiData = {
+        id: poi.name, // Use name as fallback ID
+        city: itinerary().city || "Unknown",
+        name: poi.name,
+        latitude: poi.latitude || 0,
+        longitude: poi.longitude || 0,
+        category: poi.category || "attraction",
+        description: poi.description_poi || "",
+        address: poi.address || "",
+        website: poi.website || "",
+        phone_number: "",
+        opening_hours: poi.opening_hours || "",
+        price_level: poi.budget || "Free",
+        amenities: [],
+        tags: [],
+        images: [],
+        rating: poi.rating || 4.0,
+        time_to_spend: poi.timeToSpend || "1-2 hours",
+        budget: poi.budget || "Free",
+        priority: poi.priority || 1,
+        llm_interaction_id: chatSession.sessionId() || "unknown"
+      };
+      addToFavoritesMutation.mutate({ poiId: poi.name, poiData });
     }
   };
 
@@ -1658,10 +1761,7 @@ export default function ItineraryResultsPage() {
                   compact={false}
                   showToggle={filteredPOIs().length > 5}
                   initialLimit={5}
-                  onFavoriteClick={isAuthenticated() ? (poi) => {
-                    console.log("Add to favorites:", poi.name);
-                    // Add your favorite logic here
-                  } : undefined}
+                  onToggleFavorite={isAuthenticated() ? toggleFavorite : undefined}
                   onShareClick={isAuthenticated() ? (poi) => {
                     if (navigator.share) {
                       navigator.share({
@@ -1675,7 +1775,8 @@ export default function ItineraryResultsPage() {
                       );
                     }
                   } : undefined}
-                  favorites={isAuthenticated() ? [] : []} // Add your favorites state here
+                  favorites={isAuthenticated() ? (favoritesQuery.data || []).map(fav => fav.name) : []}
+                  isLoadingFavorites={addToFavoritesMutation.isPending || removeFromFavoritesMutation.isPending}
                   showAuthMessage={!isAuthenticated()}
                 />
               </div>

@@ -601,3 +601,15 @@ export interface RecentInteractionsResponse {
     cities: CityInteractions[];
     total: number;
 }
+
+// Bookmark/Save Itinerary Request
+export interface BookmarkRequest {
+  llm_interaction_id?: string; // Optional - specific interaction ID if available
+  session_id?: string; // Optional - session ID to get latest interaction from
+  primary_city_id?: string; // Optional - UUID if available
+  primary_city_name: string; // City name to look up if primary_city_id not provided
+  title: string;
+  description?: string;
+  tags?: string[];
+  is_public?: boolean;
+}

@@ -12,6 +12,7 @@ import type { StreamingSession } from '~/lib/api/types';
 import { useUserLocation } from '~/contexts/LocationContext';
 import { useDefaultSearchProfile } from '~/lib/api/profiles';
 import { useAuth } from '~/contexts/AuthContext';
+import { useLandingPageStatistics } from '~/lib/api/statistics';
 
 interface QuickAction {
   id: string;
@@ -46,6 +47,9 @@ export default function LoggedInDashboard(): JSX.Element {
   // Get default search profile
   const defaultProfileQuery = useDefaultSearchProfile();
   const profileId = () => defaultProfileQuery.data?.id;
+
+  // Get user statistics (only if user is authenticated)
+  const userStatsQuery = useLandingPageStatistics();
 
   const quickActions: QuickAction[] = [
     {
@@ -267,7 +271,9 @@ export default function LoggedInDashboard(): JSX.Element {
               <div class="flex items-center justify-between">
                 <div>
                   <p class="text-sm text-gray-600 dark:text-gray-400">Saved Places</p>
-                  <p class="text-2xl font-bold text-gray-900 dark:text-white">23</p>
+                  <p class="text-2xl font-bold text-gray-900 dark:text-white">
+                    {userStatsQuery.isLoading ? '--' : (userStatsQuery.data?.saved_places ?? '0')}
+                  </p>
                 </div>
                 <Bookmark class="w-8 h-8 text-blue-500" />
               </div>
@@ -276,7 +282,9 @@ export default function LoggedInDashboard(): JSX.Element {
               <div class="flex items-center justify-between">
                 <div>
                   <p class="text-sm text-gray-600 dark:text-gray-400">Itineraries</p>
-                  <p class="text-2xl font-bold text-gray-900 dark:text-white">7</p>
+                  <p class="text-2xl font-bold text-gray-900 dark:text-white">
+                    {userStatsQuery.isLoading ? '--' : (userStatsQuery.data?.itineraries ?? '0')}
+                  </p>
                 </div>
                 <Calendar class="w-8 h-8 text-green-500" />
               </div>
@@ -285,7 +293,9 @@ export default function LoggedInDashboard(): JSX.Element {
               <div class="flex items-center justify-between">
                 <div>
                   <p class="text-sm text-gray-600 dark:text-gray-400">Cities Explored</p>
-                  <p class="text-2xl font-bold text-gray-900 dark:text-white">12</p>
+                  <p class="text-2xl font-bold text-gray-900 dark:text-white">
+                    {userStatsQuery.isLoading ? '--' : (userStatsQuery.data?.cities_explored ?? '0')}
+                  </p>
                 </div>
                 <Globe class="w-8 h-8 text-purple-500" />
               </div>
@@ -294,7 +304,9 @@ export default function LoggedInDashboard(): JSX.Element {
               <div class="flex items-center justify-between">
                 <div>
                   <p class="text-sm text-gray-600 dark:text-gray-400">Discoveries</p>
-                  <p class="text-2xl font-bold text-gray-900 dark:text-white">156</p>
+                  <p class="text-2xl font-bold text-gray-900 dark:text-white">
+                    {userStatsQuery.isLoading ? '--' : (userStatsQuery.data?.discoveries ?? '0')}
+                  </p>
                 </div>
                 <Sparkles class="w-8 h-8 text-orange-500" />
               </div>

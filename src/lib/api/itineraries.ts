@@ -1,7 +1,7 @@
 // Itineraries queries and mutations
 import { useQuery, useMutation, useQueryClient } from '@tanstack/solid-query';
 import { apiRequest, queryKeys } from './shared';
-import type { UserSavedItinerary, PaginatedItinerariesResponse } from './types';
+import type { UserSavedItinerary, PaginatedItinerariesResponse, BookmarkRequest } from './types';
 
 // ====================
 // ITINERARY QUERIES
@@ -48,8 +48,8 @@ export const useSaveItineraryMutation = () => {
   const queryClient = useQueryClient();
 
   return useMutation(() => ({
-    mutationFn: (itineraryData: any) =>
-      apiRequest<any>('/llm/prompt-response/bookmark', {
+    mutationFn: (itineraryData: BookmarkRequest) =>
+      apiRequest<UserSavedItinerary>('/llm/prompt-response/bookmark', {
         method: 'POST',
         body: JSON.stringify(itineraryData),
       }),
