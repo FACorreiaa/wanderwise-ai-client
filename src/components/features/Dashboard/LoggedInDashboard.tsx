@@ -144,9 +144,10 @@ export default function LoggedInDashboard(): JSX.Element {
     setStreamProgress('Analyzing your request...');
 
     try {
-      // Clear any previous session data
+      // Clear any previous session data to ensure fresh start
       sessionStorage.removeItem('currentStreamingSession');
       sessionStorage.removeItem('completedStreamingSession');
+      sessionStorage.removeItem('localChatSessions');
 
       // Detect domain from the message
       const domain = detectDomain(currentMessage());

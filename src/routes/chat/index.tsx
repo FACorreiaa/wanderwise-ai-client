@@ -198,8 +198,12 @@ export default function ChatPage() {
   onMount(() => {
     console.log("🚀 Chat page mounted - starting fresh session");
 
-    // Don't automatically restore session data to avoid stale cache issues
-    // Sessions will be restored only when explicitly needed during message sending
+    // Clear any previous session data to ensure fresh start
+    sessionStorage.removeItem('currentStreamingSession');
+    sessionStorage.removeItem('completedStreamingSession');
+    sessionStorage.removeItem('localChatSessions');
+    setSessionId(null);
+    setStreamingSession(null);
 
     // Add welcome message
     setMessages([
@@ -230,61 +234,12 @@ export default function ChatPage() {
     setStreamProgress("Analyzing your request...");
 
     try {
-      // Check if we have an existing session
-      let currentSessionId = sessionId();
-      console.log("🔍 Current session ID in memory:", currentSessionId);
-
-      // If no session ID in memory, check session storage as fallback
-      // but only if it's for the same city context to prevent data bleed
-      if (!currentSessionId) {
-        const storedSession = sessionStorage.getItem(
-          "completedStreamingSession",
-        );
-        if (storedSession) {
-          try {
-            const session = JSON.parse(storedSession);
-            if (session.sessionId) {
-              // Extract city from the current message to validate session relevance
-              const currentCityContext = message.toLowerCase();
-              const storedCityContext = session.data?.city_name?.toLowerCase() || 
-                                      session.data?.general_city_data?.city?.toLowerCase() ||
-                                      "";
-              
-              // Only restore session if it's for the same city or if we can't determine city context
-              const isSameCityContext = !storedCityContext || 
-                                       currentCityContext.includes(storedCityContext) ||
-                                       storedCityContext.includes(currentCityContext);
-              
-              if (isSameCityContext) {
-                console.log("🔄 Found relevant session ID in storage for same city context:", session.sessionId);
-                currentSessionId = session.sessionId;
-                setSessionId(currentSessionId);
-                setStreamingSession(session);
-              } else {
-                console.log("🚫 Clearing old session - different city context", 
-                          { stored: storedCityContext, current: currentCityContext });
-                // Clear old session data when switching cities
-                sessionStorage.removeItem("completedStreamingSession");
-                sessionStorage.removeItem("currentStreamingSession");
-              }
-            }
-          } catch (error) {
-            console.error("Error parsing stored session:", error);
-            // Clear corrupted session data
-            sessionStorage.removeItem("completedStreamingSession");
-          }
-        }
-      }
-
-      if (currentSessionId) {
-        // Continue existing session
-        console.log("🔄 Continuing existing session:", currentSessionId);
-        await continueExistingSession(messageContent, currentSessionId);
-      } else {
-        // Start new session
-        console.log("🆕 Starting new session");
-        await startNewSession(messageContent);
-      }
+      // For chat page, always start a new session (no session restoration)
+      // This ensures each visit to /chat creates a fresh conversation
+      console.log("🆕 Starting fresh chat session for message:", messageContent);
+      
+      // Always start new session for chat page
+      await startNewSession(messageContent);
     } catch (error) {
       console.error("Error sending message:", error);
       setIsLoading(false);

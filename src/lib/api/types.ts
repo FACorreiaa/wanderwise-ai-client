@@ -601,6 +601,28 @@ export interface CityInteractions {
     interactions: RecentInteraction[];
     poi_count: number;
     last_activity: string;
+    saved_itineraries?: UserSavedItinerary[];
+    favorite_pois?: POIDetailedInfo[];
+    total_interactions: number;
+    total_favorites: number;
+    total_itineraries: number;
+}
+
+export interface UserSavedItinerary {
+    id: string;
+    user_id: string;
+    source_llm_interaction_id?: string;
+    session_id?: string;
+    primary_city_id?: string;
+    title: string;
+    description?: string;
+    markdown_content: string;
+    tags: string[];
+    estimated_duration_days?: number;
+    estimated_cost_level?: number;
+    is_public: boolean;
+    created_at: string;
+    updated_at: string;
 }
 
 export interface RecentInteractionsResponse {

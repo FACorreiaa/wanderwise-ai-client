@@ -7,7 +7,7 @@ import type { RecentInteraction, POIDetailedInfo, HotelDetailedInfo, RestaurantD
 export default function CityDetailsPage() {
   const params = useParams();
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = createSignal('overview'); // 'overview', 'interactions', 'places'
+  const [activeTab, setActiveTab] = createSignal('overview'); // 'overview', 'interactions', 'places', 'favorites', 'itineraries'
   
   const cityDetailsQuery = useCityDetails(decodeURIComponent(params.city || ''));
 
@@ -310,6 +310,26 @@ export default function CityDetailsPage() {
             >
               Places ({allPlaces().pois.length + allPlaces().hotels.length + allPlaces().restaurants.length})
             </button>
+            <button
+              onClick={() => setActiveTab('favorites')}
+              class={`py-4 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${
+                activeTab() === 'favorites'
+                  ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                  : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+              }`}
+            >
+              Favorites ({cityDetailsQuery.data?.favorite_pois?.length || 0})
+            </button>
+            <button
+              onClick={() => setActiveTab('itineraries')}
+              class={`py-4 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${
+                activeTab() === 'itineraries'
+                  ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                  : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+              }`}
+            >
+              Saved Itineraries ({cityDetailsQuery.data?.saved_itineraries?.length || 0})
+            </button>
           </div>
         </div>
       </div>
@@ -346,7 +366,7 @@ export default function CityDetailsPage() {
           <Show when={activeTab() === 'overview'}>
             <div class="space-y-6">
               {/* Stats Cards */}
-              <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+              <div class="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
                 <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4">
                   <div class="flex items-center gap-3">
                     <div class="w-10 h-10 bg-blue-100 dark:bg-blue-900 rounded-lg flex items-center justify-center">
@@ -391,6 +411,30 @@ export default function CityDetailsPage() {
                     <div>
                       <p class="text-2xl font-bold text-gray-900 dark:text-white">{allPlaces().hotels.length}</p>
                       <p class="text-sm text-gray-600 dark:text-gray-400">Hotels</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4">
+                  <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 bg-yellow-100 dark:bg-yellow-900 rounded-lg flex items-center justify-center">
+                      <Star class="w-5 h-5 text-yellow-600 dark:text-yellow-400" />
+                    </div>
+                    <div>
+                      <p class="text-2xl font-bold text-gray-900 dark:text-white">{cityDetailsQuery.data?.total_favorites || 0}</p>
+                      <p class="text-sm text-gray-600 dark:text-gray-400">Favorites</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4">
+                  <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 bg-indigo-100 dark:bg-indigo-900 rounded-lg flex items-center justify-center">
+                      <Bookmark class="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+                    </div>
+                    <div>
+                      <p class="text-2xl font-bold text-gray-900 dark:text-white">{cityDetailsQuery.data?.total_itineraries || 0}</p>
+                      <p class="text-sm text-gray-600 dark:text-gray-400">Saved</p>
                     </div>
                   </div>
                 </div>
@@ -479,6 +523,111 @@ export default function CityDetailsPage() {
                   <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">No places found</h3>
                   <p class="text-gray-600 dark:text-gray-400">
                     No places were discovered in your interactions for this city.
+                  </p>
+                </div>
+              </Show>
+            </div>
+          </Show>
+
+          {/* Favorites Tab */}
+          <Show when={activeTab() === 'favorites'}>
+            <div class="space-y-6">
+              <Show when={cityDetailsQuery.data?.favorite_pois && cityDetailsQuery.data.favorite_pois.length > 0}>
+                <div>
+                  <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Your Favorites in {decodeURIComponent(params.city || '')}</h2>
+                  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <For each={cityDetailsQuery.data?.favorite_pois || []}>
+                      {(poi) => renderPlaceCard(poi, 'poi')}
+                    </For>
+                  </div>
+                </div>
+              </Show>
+
+              <Show when={!cityDetailsQuery.data?.favorite_pois || cityDetailsQuery.data.favorite_pois.length === 0}>
+                <div class="text-center py-12">
+                  <Star class="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
+                  <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">No favorites yet</h3>
+                  <p class="text-gray-600 dark:text-gray-400">
+                    Places you mark as favorites will appear here.
+                  </p>
+                </div>
+              </Show>
+            </div>
+          </Show>
+
+          {/* Saved Itineraries Tab */}
+          <Show when={activeTab() === 'itineraries'}>
+            <div class="space-y-6">
+              <Show when={cityDetailsQuery.data?.saved_itineraries && cityDetailsQuery.data.saved_itineraries.length > 0}>
+                <div>
+                  <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Saved Itineraries for {decodeURIComponent(params.city || '')}</h2>
+                  <div class="space-y-4">
+                    <For each={cityDetailsQuery.data?.saved_itineraries || []}>
+                      {(itinerary) => (
+                        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 hover:shadow-md transition-all duration-200">
+                          <div class="flex items-start justify-between mb-4">
+                            <div class="flex-1 min-w-0">
+                              <h3 class="font-semibold text-gray-900 dark:text-white text-lg mb-2">{itinerary.title}</h3>
+                              <Show when={itinerary.description}>
+                                <p class="text-gray-600 dark:text-gray-400 mb-3">{itinerary.description}</p>
+                              </Show>
+                              
+                              <div class="flex flex-wrap items-center gap-3 text-sm text-gray-500 dark:text-gray-500">
+                                <div class="flex items-center gap-1">
+                                  <Calendar class="w-4 h-4" />
+                                  <span>Saved {formatDate(itinerary.created_at)}</span>
+                                </div>
+                                <Show when={itinerary.estimated_duration_days}>
+                                  <div class="flex items-center gap-1">
+                                    <Clock class="w-4 h-4" />
+                                    <span>{itinerary.estimated_duration_days} days</span>
+                                  </div>
+                                </Show>
+                                <Show when={itinerary.is_public}>
+                                  <span class="px-2 py-1 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded-full text-xs">
+                                    Public
+                                  </span>
+                                </Show>
+                              </div>
+                            </div>
+                            
+                            <div class="flex items-center gap-2 ml-4">
+                              <button class="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors">
+                                <Eye class="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                              </button>
+                              <button class="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors">
+                                <Share2 class="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                              </button>
+                              <button class="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors">
+                                <Download class="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                              </button>
+                            </div>
+                          </div>
+
+                          <Show when={itinerary.tags && itinerary.tags.length > 0}>
+                            <div class="flex flex-wrap gap-2">
+                              <For each={itinerary.tags}>
+                                {(tag) => (
+                                  <span class="px-2 py-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full text-xs">
+                                    {tag}
+                                  </span>
+                                )}
+                              </For>
+                            </div>
+                          </Show>
+                        </div>
+                      )}
+                    </For>
+                  </div>
+                </div>
+              </Show>
+
+              <Show when={!cityDetailsQuery.data?.saved_itineraries || cityDetailsQuery.data.saved_itineraries.length === 0}>
+                <div class="text-center py-12">
+                  <Bookmark class="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
+                  <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">No saved itineraries</h3>
+                  <p class="text-gray-600 dark:text-gray-400">
+                    Itineraries you save will appear here for easy access.
                   </p>
                 </div>
               </Show>

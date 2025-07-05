@@ -1,6 +1,6 @@
 import { createSignal, For, Show, createEffect, onMount } from 'solid-js';
 import { A, useNavigate } from '@solidjs/router';
-import { Search, MapPin, Clock, Star, Filter, Grid, List, Calendar, TrendingUp, Sparkles, ChevronRight, Eye, Share2, Trash2, RotateCcw, SortAsc, SortDesc } from 'lucide-solid';
+import { Search, MapPin, Clock, Star, Filter, Grid, List, Calendar, TrendingUp, Sparkles, ChevronRight, Eye, Share2, Trash2, RotateCcw, SortAsc, SortDesc, Bookmark } from 'lucide-solid';
 import { useRecentInteractions, useCityDetails } from '~/lib/api/recents';
 import type { CityInteractions, POIDetailedInfo, HotelDetailedInfo, RestaurantDetailedInfo } from '~/lib/api/types';
 
@@ -96,6 +96,14 @@ export default function RecentsPage() {
     return recentsQuery.data?.cities?.reduce((total, city) => total + city.poi_count, 0) || 0;
   };
 
+  const getTotalFavorites = () => {
+    return recentsQuery.data?.cities?.reduce((total, city) => total + (city.total_favorites || 0), 0) || 0;
+  };
+
+  const getTotalItineraries = () => {
+    return recentsQuery.data?.cities?.reduce((total, city) => total + (city.total_itineraries || 0), 0) || 0;
+  };
+
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     const now = new Date();
@@ -172,6 +180,23 @@ export default function RecentsPage() {
                 <span>{formatDate(city.last_activity)}</span>
               </div>
             </div>
+            
+            <Show when={(city.total_favorites || 0) > 0 || (city.total_itineraries || 0) > 0}>
+              <div class="flex items-center gap-3 text-xs text-gray-500 dark:text-gray-500">
+                <Show when={(city.total_favorites || 0) > 0}>
+                  <div class="flex items-center gap-1">
+                    <Star class="w-3 h-3 text-yellow-500" />
+                    <span>{city.total_favorites} favorites</span>
+                  </div>
+                </Show>
+                <Show when={(city.total_itineraries || 0) > 0}>
+                  <div class="flex items-center gap-1">
+                    <Bookmark class="w-3 h-3 text-blue-500" />
+                    <span>{city.total_itineraries} saved</span>
+                  </div>
+                </Show>
+              </div>
+            </Show>
           </div>
 
           {/* Preview of recent activity */}
@@ -208,6 +233,8 @@ export default function RecentsPage() {
                 <h3 class="font-semibold text-gray-900 dark:text-white text-base">{city.city_name}</h3>
                 <p class="text-sm text-gray-600 dark:text-gray-400">
                   {city.interactions.length} interaction{city.interactions.length !== 1 ? 's' : ''} • {city.poi_count} places
+                  {(city.total_favorites || 0) > 0 && ` • ${city.total_favorites} favorites`}
+                  {(city.total_itineraries || 0) > 0 && ` • ${city.total_itineraries} saved`}
                 </p>
               </div>
               <div class="flex items-center gap-2">
@@ -258,7 +285,19 @@ export default function RecentsPage() {
                   <Show when={getTotalInteractions() > 0}>
                     <div class="flex items-center gap-1 text-sm text-blue-600 dark:text-blue-400">
                       <Sparkles class="w-4 h-4" />
-                      <span>{getTotalInteractions()} total interactions</span>
+                      <span>{getTotalInteractions()} interactions</span>
+                    </div>
+                  </Show>
+                  <Show when={getTotalFavorites() > 0}>
+                    <div class="flex items-center gap-1 text-sm text-yellow-600 dark:text-yellow-400">
+                      <Star class="w-4 h-4" />
+                      <span>{getTotalFavorites()} favorites</span>
+                    </div>
+                  </Show>
+                  <Show when={getTotalItineraries() > 0}>
+                    <div class="flex items-center gap-1 text-sm text-green-600 dark:text-green-400">
+                      <Bookmark class="w-4 h-4" />
+                      <span>{getTotalItineraries()} saved</span>
                     </div>
                   </Show>
                 </div>

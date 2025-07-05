@@ -1130,7 +1130,8 @@ export default function ItineraryResultsPage() {
     return savedItineraries.some(
       (saved) => {
         const titleMatch = saved.title === expectedTitle;
-        const sessionMatch = saved.source_llm_interaction_id && saved.source_llm_interaction_id === sessionId;
+        const sessionMatch = (saved.source_llm_interaction_id && saved.source_llm_interaction_id === sessionId) ||
+                           (saved.session_id && saved.session_id === sessionId);
         return titleMatch || sessionMatch;
       }
     );
@@ -1157,7 +1158,8 @@ export default function ItineraryResultsPage() {
     const foundItinerary = savedItineraries.find(
       (saved) => {
         const titleMatch = saved.title === expectedTitle;
-        const sessionMatch = saved.source_llm_interaction_id && saved.source_llm_interaction_id === sessionId;
+        const sessionMatch = (saved.source_llm_interaction_id && saved.source_llm_interaction_id === sessionId) ||
+                           (saved.session_id && saved.session_id === sessionId);
         return titleMatch || sessionMatch;
       }
     );
@@ -1170,11 +1172,6 @@ export default function ItineraryResultsPage() {
       // Remove bookmark
       const itineraryId = getBookmarkedItineraryId();
       if (itineraryId) {
-        console.log("Removing bookmark for itinerary:", itineraryId);
-        console.log("All saved itineraries:", allItinerariesQuery.data?.itineraries);
-        console.log("Looking for itinerary with ID:", itineraryId);
-        const targetItinerary = allItinerariesQuery.data?.itineraries?.find(it => it.id === itineraryId);
-        console.log("Target itinerary found:", targetItinerary);
         removeItineraryMutation.mutate(itineraryId);
       }
     } else {
@@ -1269,12 +1266,8 @@ export default function ItineraryResultsPage() {
 
     if (isFavorite(poiName)) {
       console.log("Removing from favorites...");
-      // Find the POI ID from favorites to remove it
-      const favs = favoritesQuery.data || [];
-      const favPoi = favs.find((fav) => fav.name === poiName);
-      if (favPoi) {
-        removeFromFavoritesMutation.mutate(favPoi.id);
-      }
+      // Use the same POI identifier (name) for removal as used for adding
+      removeFromFavoritesMutation.mutate(poiName);
     } else {
       console.log("Adding to favorites...");
       // Convert the itinerary POI format to POIDetailedInfo format
