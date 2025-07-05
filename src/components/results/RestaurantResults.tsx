@@ -1,5 +1,6 @@
 import { For, Show, createSignal } from 'solid-js';
 import { Star, MapPin, Clock, DollarSign, Utensils, ChevronDown, ChevronUp, Heart, Share2 } from 'lucide-solid';
+import AddToListButton from '~/components/lists/AddToListButton';
 
 interface Restaurant {
   name: string;
@@ -23,13 +24,21 @@ interface RestaurantResultsProps {
   showToggle?: boolean; // Whether to show the "Show More/Less" button
   initialLimit?: number; // Initial number to show before "Show More"
   onItemClick?: (restaurant: Restaurant) => void; // Callback for item clicks
-  onFavoriteClick?: (restaurant: Restaurant) => void; // Callback for favorite button
+  onFavoriteClick?: (restaurant: Restaurant) => void; // Callback for favorite button (legacy)
+  onToggleFavorite?: (restaurantId: string, restaurant: Restaurant) => void; // New callback for toggling favorites
   onShareClick?: (restaurant: Restaurant) => void; // Callback for share button
   favorites?: string[]; // Array of favorite restaurant IDs
+  showAuthMessage?: boolean; // Whether to show auth message for non-authenticated users
+  isLoadingFavorites?: boolean; // Loading state for favorites
 }
 
 export default function RestaurantResults(props: RestaurantResultsProps) {
   const [showAll, setShowAll] = createSignal(false);
+
+  // Check if restaurant is in favorites
+  const isFavorite = (restaurantName: string) => {
+    return props.favorites?.includes(restaurantName) || false;
+  };
   
   const displayRestaurants = () => {
     const restaurants = props.restaurants || [];
@@ -186,24 +195,47 @@ export default function RestaurantResults(props: RestaurantResultsProps) {
               </div>
 
               {/* Action Buttons */}
-              <Show when={!props.compact && (props.onFavoriteClick || props.onShareClick)}>
+              <Show when={!props.compact}>
                 <div class="flex items-center gap-2 mt-3">
-                  <Show when={props.onFavoriteClick}>
+                  <Show when={props.onFavoriteClick || props.onToggleFavorite}>
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        props.onFavoriteClick?.(restaurant);
+                        if (props.onToggleFavorite) {
+                          props.onToggleFavorite(restaurant.name, restaurant);
+                        } else if (props.onFavoriteClick) {
+                          props.onFavoriteClick(restaurant);
+                        }
                       }}
+                      disabled={props.isLoadingFavorites || (!props.onToggleFavorite && !props.onFavoriteClick)}
                       class={`p-2 rounded-lg transition-colors ${
-                        props.favorites?.includes(restaurant.name)
-                          ? 'text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/30'
-                          : 'text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20'
-                      }`}
-                      title="Add to favorites"
+                        (!props.onToggleFavorite && !props.onFavoriteClick)
+                          ? "text-gray-300 dark:text-gray-600 cursor-not-allowed bg-gray-50 dark:bg-gray-800"
+                          : isFavorite(restaurant.name)
+                            ? "text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/30"
+                            : "text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
+                      } disabled:opacity-50 disabled:cursor-not-allowed`}
+                      title={isFavorite(restaurant.name) ? "Remove from favorites" : "Add to favorites"}
                     >
-                      <Heart class={`w-4 h-4 ${props.favorites?.includes(restaurant.name) ? 'fill-current' : ''}`} />
+                      <Show
+                        when={!props.isLoadingFavorites}
+                        fallback={<div class="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin"></div>}
+                      >
+                        <Heart class={`w-4 h-4 ${isFavorite(restaurant.name) ? 'fill-current' : ''}`} />
+                      </Show>
                     </button>
                   </Show>
+                  
+                  {/* Add to List Button */}
+                  <AddToListButton
+                    itemId={restaurant.id || restaurant.name}
+                    contentType="restaurant"
+                    itemName={restaurant.name}
+                    variant="icon"
+                    size="md"
+                    sourceInteractionId={restaurant.llm_interaction_id}
+                    aiDescription={restaurant.description_poi}
+                  />
                   <Show when={props.onShareClick}>
                     <button
                       onClick={(e) => {

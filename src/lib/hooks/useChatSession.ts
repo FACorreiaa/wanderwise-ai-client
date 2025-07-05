@@ -615,7 +615,14 @@ export function useChatSession(options: UseChatSessionOptions = {}) {
 
   const clearChat = () => {
     setChatHistory([]);
+    // Clear all session-related storage to prevent data bleed between city searches
     sessionStorage.removeItem('completedStreamingSession');
+    sessionStorage.removeItem('currentStreamingSession');
+    sessionStorage.removeItem('localChatSessions');
+    sessionStorage.removeItem('lastKnownSessionId');
+    sessionStorage.removeItem('fallbackSessionId');
+    // Reset session ID to force new session creation
+    setSessionId("");
   };
 
   const toggleChat = () => {

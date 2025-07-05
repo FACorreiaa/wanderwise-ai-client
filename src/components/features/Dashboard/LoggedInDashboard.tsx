@@ -13,6 +13,7 @@ import { useUserLocation } from '~/contexts/LocationContext';
 import { useDefaultSearchProfile } from '~/lib/api/profiles';
 import { useAuth } from '~/contexts/AuthContext';
 import { useLandingPageStatistics } from '~/lib/api/statistics';
+import QuickSettingsModal from '~/components/modals/QuickSettingsModal';
 
 interface QuickAction {
   id: string;
@@ -39,6 +40,7 @@ export default function LoggedInDashboard(): JSX.Element {
   const [isLoading, setIsLoading] = createSignal(false);
   const [streamProgress, setStreamProgress] = createSignal('');
   const [streamingSession, setStreamingSession] = createSignal<StreamingSession | null>(null);
+  const [isQuickSettingsOpen, setIsQuickSettingsOpen] = createSignal(false);
 
   const { userLocation } = useUserLocation();
   const userLatitude = userLocation()?.latitude || 38.7223;
@@ -259,7 +261,11 @@ export default function LoggedInDashboard(): JSX.Element {
               </p>
             </div>
             <div class="flex items-center gap-3">
-              <button class="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+              <button 
+                onClick={() => setIsQuickSettingsOpen(true)}
+                class="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                title="Quick Settings"
+              >
                 <Settings class="w-5 h-5" />
               </button>
             </div>
@@ -508,6 +514,12 @@ export default function LoggedInDashboard(): JSX.Element {
           </div>
         </div>
       </div>
+      
+      {/* Quick Settings Modal */}
+      <QuickSettingsModal 
+        isOpen={isQuickSettingsOpen()} 
+        onClose={() => setIsQuickSettingsOpen(false)} 
+      />
     </div>
   );
 }

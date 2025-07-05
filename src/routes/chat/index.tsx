@@ -235,6 +235,7 @@ export default function ChatPage() {
       console.log("🔍 Current session ID in memory:", currentSessionId);
 
       // If no session ID in memory, check session storage as fallback
+      // but only if it's for the same city context to prevent data bleed
       if (!currentSessionId) {
         const storedSession = sessionStorage.getItem(
           "completedStreamingSession",
@@ -243,10 +244,29 @@ export default function ChatPage() {
           try {
             const session = JSON.parse(storedSession);
             if (session.sessionId) {
-              console.log("🔄 Found session ID in storage:", session.sessionId);
-              currentSessionId = session.sessionId;
-              setSessionId(currentSessionId);
-              setStreamingSession(session);
+              // Extract city from the current message to validate session relevance
+              const currentCityContext = message.toLowerCase();
+              const storedCityContext = session.data?.city_name?.toLowerCase() || 
+                                      session.data?.general_city_data?.city?.toLowerCase() ||
+                                      "";
+              
+              // Only restore session if it's for the same city or if we can't determine city context
+              const isSameCityContext = !storedCityContext || 
+                                       currentCityContext.includes(storedCityContext) ||
+                                       storedCityContext.includes(currentCityContext);
+              
+              if (isSameCityContext) {
+                console.log("🔄 Found relevant session ID in storage for same city context:", session.sessionId);
+                currentSessionId = session.sessionId;
+                setSessionId(currentSessionId);
+                setStreamingSession(session);
+              } else {
+                console.log("🚫 Clearing old session - different city context", 
+                          { stored: storedCityContext, current: currentCityContext });
+                // Clear old session data when switching cities
+                sessionStorage.removeItem("completedStreamingSession");
+                sessionStorage.removeItem("currentStreamingSession");
+              }
             }
           } catch (error) {
             console.error("Error parsing stored session:", error);
@@ -886,9 +906,12 @@ export default function ChatPage() {
     setStreamProgress("");
     setExpandedResults(new Set()); // Clear expanded results
 
-    // Clear all session storage to prevent cache issues
+    // Clear all session storage to prevent cache issues and data bleed between city searches
     sessionStorage.removeItem("currentStreamingSession");
     sessionStorage.removeItem("completedStreamingSession");
+    sessionStorage.removeItem("localChatSessions");
+    sessionStorage.removeItem("lastKnownSessionId");
+    sessionStorage.removeItem("fallbackSessionId");
 
     console.log("✅ All session data cleared");
   };

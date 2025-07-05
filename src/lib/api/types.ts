@@ -181,9 +181,15 @@ export interface ItineraryList {
 export interface UserSavedItinerary {
   id: string;
   user_id: string;
+  source_llm_interaction_id?: string; // Optional UUID for the source LLM interaction
+  primary_city_id?: string; // Optional UUID for the primary city
   title: string;
   description: string;
   markdown_content: string;
+  tags?: string[];
+  estimated_duration_days?: number;
+  estimated_cost_level?: number;
+  is_public: boolean;
   created_at: string;
   updated_at: string;
 }

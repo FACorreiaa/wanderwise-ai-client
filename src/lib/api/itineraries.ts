@@ -16,6 +16,16 @@ export const useItineraries = (page: number = 1, limit: number = 10, options: { 
   }));
 };
 
+// Query to get all user's saved itineraries (for bookmark checking)
+export const useAllUserItineraries = (options: { enabled?: boolean } = {}) => {
+  return useQuery(() => ({
+    queryKey: ['user-itineraries'],
+    queryFn: () => apiRequest<PaginatedItinerariesResponse>(`/pois/itineraries?page=1&limit=1000`), // Get all itineraries
+    staleTime: 2 * 60 * 1000, // Shorter stale time for bookmark checks
+    enabled: options.enabled ?? true,
+  }));
+};
+
 export const useItinerary = (itineraryId: string, options: { enabled?: boolean } = {}) => {
   return useQuery(() => ({
     queryKey: queryKeys.itinerary(itineraryId),
@@ -54,7 +64,9 @@ export const useSaveItineraryMutation = () => {
         body: JSON.stringify(itineraryData),
       }),
     onSuccess: () => {
+      // Invalidate both queries to ensure immediate UI updates
       queryClient.invalidateQueries({ queryKey: ['itineraries'] });
+      queryClient.invalidateQueries({ queryKey: ['user-itineraries'] });
     },
   }));
 };
@@ -66,7 +78,9 @@ export const useRemoveItineraryMutation = () => {
     mutationFn: (itineraryId: string) =>
       apiRequest<{ message: string }>(`/llm/prompt-response/bookmark/${itineraryId}`, { method: 'DELETE' }),
     onSuccess: () => {
+      // Invalidate both queries to ensure immediate UI updates
       queryClient.invalidateQueries({ queryKey: ['itineraries'] });
+      queryClient.invalidateQueries({ queryKey: ['user-itineraries'] });
     },
   }));
 };

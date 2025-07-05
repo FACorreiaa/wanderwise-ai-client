@@ -44,6 +44,8 @@ import {
   useItinerary,
   useUpdateItineraryMutation,
   useSaveItineraryMutation,
+  useRemoveItineraryMutation,
+  useAllUserItineraries,
 } from "~/lib/api/itineraries";
 // @ts-ignore - POI favorites API hooks type
 import {
@@ -141,13 +143,21 @@ export default function ItineraryResultsPage() {
 
   // Conditionally load authentication-dependent API hooks
   const isAuthenticated = () => auth.isAuthenticated();
-  
+
   // API hooks - only enabled for authenticated users
-  const itinerariesQuery = useItineraries(1, 10, { enabled: isAuthenticated() });
-  const itineraryQuery = useItinerary(currentItineraryId() || "", { enabled: isAuthenticated() && !!currentItineraryId() });
+  const itinerariesQuery = useItineraries(1, 10, {
+    enabled: isAuthenticated(),
+  });
+  const itineraryQuery = useItinerary(currentItineraryId() || "", {
+    enabled: isAuthenticated() && !!currentItineraryId(),
+  });
+  const allItinerariesQuery = useAllUserItineraries({
+    enabled: isAuthenticated(),
+  });
   const updateItineraryMutation = useUpdateItineraryMutation();
   const saveItineraryMutation = useSaveItineraryMutation();
-  
+  const removeItineraryMutation = useRemoveItineraryMutation();
+
   // Favorites hooks
   const favoritesQuery = useFavorites();
   const addToFavoritesMutation = useAddToFavoritesMutation();
@@ -453,12 +463,14 @@ export default function ItineraryResultsPage() {
       );
 
       // Simple coordinate conversion
-      const numLat = typeof lat === 'string' ? parseFloat(lat) : lat;
-      const numLng = typeof lng === 'string' ? parseFloat(lng) : lng;
+      const numLat = typeof lat === "string" ? parseFloat(lat) : lat;
+      const numLng = typeof lng === "string" ? parseFloat(lng) : lng;
 
       // Only filter out if coordinates are actually invalid (NaN or undefined/null)
       if (isNaN(numLat) || isNaN(numLng) || numLat == null || numLng == null) {
-        console.warn(`❌ Invalid coordinates: lat=${numLat}, lng=${numLng} (original: lat=${lat}, lng=${lng})`);
+        console.warn(
+          `❌ Invalid coordinates: lat=${numLat}, lng=${numLng} (original: lat=${lat}, lng=${lng})`,
+        );
         return null;
       }
 
@@ -603,7 +615,7 @@ export default function ItineraryResultsPage() {
           })
           .filter((poi) => poi !== null); // Filter out null values (invalid coordinates)
         console.log("Final converted POIs for MAP:", convertedPOIs);
-        
+
         // If we have converted POIs, return them
         if (convertedPOIs.length > 0) {
           return convertedPOIs;
@@ -1096,52 +1108,136 @@ export default function ItineraryResultsPage() {
     );
   };
 
+  // Check if current itinerary is bookmarked
+  const isCurrentItineraryBookmarked = () => {
+    if (!isAuthenticated() || !allItinerariesQuery.data) return false;
+
+    const sessionId = chatSession.sessionId();
+    if (!sessionId) return false;
+
+    const savedItineraries = allItinerariesQuery.data.itineraries;
+    // Add null safety check
+    if (!savedItineraries || !Array.isArray(savedItineraries)) return false;
+
+    // Use the same logic as getBookmarkedItineraryId to ensure consistency
+    const currentItinerary = itinerary();
+    const streaming = streamingData();
+    const primaryCityName =
+      streaming?.general_city_data?.city || currentItinerary.city || "unknown";
+    const expectedTitle =
+      currentItinerary.name || `${primaryCityName} Adventure`;
+
+    return savedItineraries.some(
+      (saved) => {
+        const titleMatch = saved.title === expectedTitle;
+        const sessionMatch = saved.source_llm_interaction_id && saved.source_llm_interaction_id === sessionId;
+        return titleMatch || sessionMatch;
+      }
+    );
+  };
+
+  // Get the bookmarked itinerary ID if it exists
+  const getBookmarkedItineraryId = () => {
+    if (!isAuthenticated() || !allItinerariesQuery.data) return null;
+
+    const sessionId = chatSession.sessionId();
+    if (!sessionId) return null;
+
+    const savedItineraries = allItinerariesQuery.data.itineraries;
+    // Add null safety check
+    if (!savedItineraries || !Array.isArray(savedItineraries)) return null;
+
+    const currentItinerary = itinerary();
+    const streaming = streamingData();
+    const primaryCityName =
+      streaming?.general_city_data?.city || currentItinerary.city || "unknown";
+    const expectedTitle =
+      currentItinerary.name || `${primaryCityName} Adventure`;
+
+    const foundItinerary = savedItineraries.find(
+      (saved) => {
+        const titleMatch = saved.title === expectedTitle;
+        const sessionMatch = saved.source_llm_interaction_id && saved.source_llm_interaction_id === sessionId;
+        return titleMatch || sessionMatch;
+      }
+    );
+
+    return foundItinerary?.id || null;
+  };
+
+  const toggleBookmark = () => {
+    if (isCurrentItineraryBookmarked()) {
+      // Remove bookmark
+      const itineraryId = getBookmarkedItineraryId();
+      if (itineraryId) {
+        console.log("Removing bookmark for itinerary:", itineraryId);
+        console.log("All saved itineraries:", allItinerariesQuery.data?.itineraries);
+        console.log("Looking for itinerary with ID:", itineraryId);
+        const targetItinerary = allItinerariesQuery.data?.itineraries?.find(it => it.id === itineraryId);
+        console.log("Target itinerary found:", targetItinerary);
+        removeItineraryMutation.mutate(itineraryId);
+      }
+    } else {
+      // Add bookmark
+      saveItinerary();
+    }
+  };
+
   const saveItinerary = () => {
     // Get the current session ID from chat session or storage
     const sessionId = chatSession.sessionId();
-    
+
     if (!sessionId) {
-      console.error('No session ID available for saving itinerary');
+      console.error("No session ID available for saving itinerary");
       // Try to get session ID from session storage as fallback
-      const storedSession = sessionStorage.getItem('completedStreamingSession');
+      const storedSession = sessionStorage.getItem("completedStreamingSession");
       if (storedSession) {
         try {
           const session = JSON.parse(storedSession);
-          const fallbackSessionId = session.sessionId || session.data?.session_id || session.data?.sessionId;
+          const fallbackSessionId =
+            session.sessionId ||
+            session.data?.session_id ||
+            session.data?.sessionId;
           if (fallbackSessionId) {
-            console.log('Using fallback session ID from storage:', fallbackSessionId);
+            console.log(
+              "Using fallback session ID from storage:",
+              fallbackSessionId,
+            );
             chatSession.setSessionId(fallbackSessionId);
           } else {
-            console.error('No session ID found in storage either');
+            console.error("No session ID found in storage either");
             return;
           }
         } catch (error) {
-          console.error('Error parsing stored session:', error);
+          console.error("Error parsing stored session:", error);
           return;
         }
       } else {
-        console.error('No stored session found for fallback');
+        console.error("No stored session found for fallback");
         return;
       }
     }
 
     const currentItinerary = itinerary();
     const streaming = streamingData();
-    
+
     // Extract primary city name from streaming data or use a fallback
-    const primaryCityName = streaming?.general_city_data?.city || currentItinerary.city || 'unknown';
-    
+    const primaryCityName =
+      streaming?.general_city_data?.city || currentItinerary.city || "unknown";
+
     // Create the bookmark request with proper format
     const itineraryData = {
       session_id: sessionId,
       primary_city_name: primaryCityName,
       title: currentItinerary.name || `${primaryCityName} Adventure`,
-      description: currentItinerary.description || `Personalized itinerary for ${primaryCityName}`,
-      tags: [primaryCityName.toLowerCase(), 'ai-generated', 'personalized'],
+      description:
+        currentItinerary.description ||
+        `Personalized itinerary for ${primaryCityName}`,
+      tags: [primaryCityName.toLowerCase(), "ai-generated", "personalized"],
       is_public: false,
     };
-    
-    console.log('Saving itinerary with data:', itineraryData);
+
+    console.log("Saving itinerary with data:", itineraryData);
     saveItineraryMutation.mutate(itineraryData);
   };
 
@@ -1157,7 +1253,7 @@ export default function ItineraryResultsPage() {
   // Favorites functionality
   const isFavorite = (poiName: string) => {
     const favs = favoritesQuery.data || [];
-    return favs.some(poi => poi.name === poiName);
+    return favs.some((poi) => poi.name === poiName);
   };
 
   const toggleFavorite = (poiName: string, poi: any) => {
@@ -1166,13 +1262,16 @@ export default function ItineraryResultsPage() {
       return;
     }
 
-    console.log("Toggle favorite for POI:", { poiName, isFavorite: isFavorite(poiName) });
+    console.log("Toggle favorite for POI:", {
+      poiName,
+      isFavorite: isFavorite(poiName),
+    });
 
     if (isFavorite(poiName)) {
       console.log("Removing from favorites...");
       // Find the POI ID from favorites to remove it
       const favs = favoritesQuery.data || [];
-      const favPoi = favs.find(fav => fav.name === poiName);
+      const favPoi = favs.find((fav) => fav.name === poiName);
       if (favPoi) {
         removeFromFavoritesMutation.mutate(favPoi.id);
       }
@@ -1199,11 +1298,15 @@ export default function ItineraryResultsPage() {
         time_to_spend: poi.timeToSpend || "1-2 hours",
         budget: poi.budget || "Free",
         priority: poi.priority || 1,
-        llm_interaction_id: chatSession.sessionId() || "unknown"
+        llm_interaction_id: chatSession.sessionId() || "unknown",
       };
       addToFavoritesMutation.mutate({ poiId: poi.name, poiData });
     }
   };
+  console.log(
+    "location.state?.originalMessage",
+    location.state?.originalMessage,
+  );
 
   return (
     <div class="min-h-screen bg-gray-50 dark:bg-gray-900">
@@ -1222,7 +1325,7 @@ export default function ItineraryResultsPage() {
                 </p>
                 <p class="text-xs text-green-700">
                   Generated from your chat: "
-                  {location.state?.originalMessage || "Walk in Madrid"}"
+                  {location.state?.originalMessage || "chat"}"
                 </p>
               </div>
               <button
@@ -1249,18 +1352,20 @@ export default function ItineraryResultsPage() {
                   🎉 Your free itinerary preview is ready!
                 </h3>
                 <p class="text-sm text-blue-700 mt-1">
-                  Create a free account to unlock full features: save favorites, share itineraries, continue planning with AI, and access your travel history.
+                  Create a free account to unlock full features: save favorites,
+                  share itineraries, continue planning with AI, and access your
+                  travel history.
                 </p>
               </div>
               <div class="flex gap-2">
                 <button
-                  onClick={() => window.location.href = '/auth/signup'}
+                  onClick={() => (window.location.href = "/auth/signup")}
                   class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
                 >
                   Sign Up Free
                 </button>
                 <button
-                  onClick={() => window.location.href = '/auth/signin'}
+                  onClick={() => (window.location.href = "/auth/signin")}
                   class="px-4 py-2 border border-blue-300 text-blue-700 rounded-lg hover:bg-blue-50 transition-colors text-sm font-medium"
                 >
                   Sign In
@@ -1323,44 +1428,71 @@ export default function ItineraryResultsPage() {
                 </Show>
 
                 <div class="flex gap-2">
-                  <Show when={isAuthenticated()} fallback={
+                  <Show
+                    when={isAuthenticated()}
+                    fallback={
+                      <button
+                        disabled
+                        class="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-gray-400 bg-gray-100 rounded-lg transition-colors text-sm sm:flex-initial disabled:cursor-not-allowed"
+                        title="Sign in to save itineraries"
+                      >
+                        <Heart class="w-4 h-4" />
+                        <span class="hidden sm:inline">Save</span>
+                      </button>
+                    }
+                  >
                     <button
-                      disabled
-                      class="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-gray-400 bg-gray-100 rounded-lg transition-colors text-sm sm:flex-initial disabled:cursor-not-allowed"
-                      title="Sign in to save itineraries"
+                      onClick={toggleBookmark}
+                      disabled={
+                        saveItineraryMutation.isPending ||
+                        removeItineraryMutation.isPending
+                      }
+                      class={`flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg transition-colors text-sm sm:flex-initial disabled:opacity-50 ${
+                        isCurrentItineraryBookmarked()
+                          ? "text-red-600 bg-red-50 hover:bg-red-100"
+                          : "text-gray-700 hover:bg-gray-100"
+                      }`}
+                      title={
+                        isCurrentItineraryBookmarked()
+                          ? "Remove from bookmarks"
+                          : "Save to bookmarks"
+                      }
                     >
-                      <Heart class="w-4 h-4" />
-                      <span class="hidden sm:inline">Save</span>
-                    </button>
-                  }>
-                    <button
-                      onClick={saveItinerary}
-                      disabled={saveItineraryMutation.isPending}
-                      class="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors text-sm sm:flex-initial disabled:opacity-50"
-                    >
-                      <Heart class="w-4 h-4" />
+                      <Heart
+                        class={`w-4 h-4 ${isCurrentItineraryBookmarked() ? "fill-current" : ""}`}
+                      />
                       <span class="hidden sm:inline">
-                        {saveItineraryMutation.isPending ? "Saving..." : "Save"}
+                        {saveItineraryMutation.isPending ||
+                        removeItineraryMutation.isPending
+                          ? isCurrentItineraryBookmarked()
+                            ? "Removing..."
+                            : "Saving..."
+                          : isCurrentItineraryBookmarked()
+                            ? "Saved"
+                            : "Save"}
                       </span>
                     </button>
                   </Show>
-                  
-                  <Show when={isAuthenticated()} fallback={
-                    <button
-                      disabled
-                      class="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-gray-400 bg-gray-100 rounded-lg transition-colors text-sm sm:flex-initial disabled:cursor-not-allowed"
-                      title="Sign in to share itineraries"
-                    >
-                      <Share2 class="w-4 h-4" />
-                      <span class="hidden sm:inline">Share</span>
-                    </button>
-                  }>
+
+                  <Show
+                    when={isAuthenticated()}
+                    fallback={
+                      <button
+                        disabled
+                        class="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-gray-400 bg-gray-100 rounded-lg transition-colors text-sm sm:flex-initial disabled:cursor-not-allowed"
+                        title="Sign in to share itineraries"
+                      >
+                        <Share2 class="w-4 h-4" />
+                        <span class="hidden sm:inline">Share</span>
+                      </button>
+                    }
+                  >
                     <button class="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors text-sm sm:flex-initial">
                       <Share2 class="w-4 h-4" />
                       <span class="hidden sm:inline">Share</span>
                     </button>
                   </Show>
-                  
+
                   <button class="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm sm:flex-initial">
                     <Download class="w-4 h-4" />
                     <span class="hidden sm:inline">Export</span>
@@ -1629,12 +1761,14 @@ export default function ItineraryResultsPage() {
                 console.log("=== RENDERING MAP COMPONENT ===");
                 console.log("Map POIs being passed to MapComponent:", mapPOIs);
                 console.log("Map POIs length:", mapPOIs.length);
-                
+
                 // Debug each POI's coordinates
                 mapPOIs.forEach((poi, index) => {
-                  console.log(`🗺️ Map POI ${index + 1}: ${poi.name} - lat: ${poi.latitude}, lng: ${poi.longitude}`);
+                  console.log(
+                    `🗺️ Map POI ${index + 1}: ${poi.name} - lat: ${poi.latitude}, lng: ${poi.longitude}`,
+                  );
                 });
-                
+
                 console.log("Center coordinates:", [
                   itinerary().centerLng,
                   itinerary().centerLat,
@@ -1703,9 +1837,13 @@ export default function ItineraryResultsPage() {
                     style="mapbox://styles/mapbox/streets-v12"
                     showRoutes={true}
                     onMarkerClick={(poi, index) => {
-                      console.log(`Marker clicked: ${poi.name} (index: ${index})`);
+                      console.log(
+                        `Marker clicked: ${poi.name} (index: ${index})`,
+                      );
                       // Find the corresponding POI in our filtered list and highlight it
-                      const matchingPOI = filteredCardPOIs().find(cardPoi => cardPoi.name === poi.name);
+                      const matchingPOI = filteredCardPOIs().find(
+                        (cardPoi) => cardPoi.name === poi.name,
+                      );
                       if (matchingPOI) {
                         setSelectedPOI(matchingPOI);
                         console.log(`Set selected POI to: ${matchingPOI.name}`);
@@ -1761,22 +1899,35 @@ export default function ItineraryResultsPage() {
                   compact={false}
                   showToggle={filteredPOIs().length > 5}
                   initialLimit={5}
-                  onToggleFavorite={isAuthenticated() ? toggleFavorite : undefined}
-                  onShareClick={isAuthenticated() ? (poi) => {
-                    if (navigator.share) {
-                      navigator.share({
-                        title: poi.name,
-                        text: `Check out ${poi.name} - ${poi.description_poi}`,
-                        url: window.location.href,
-                      });
-                    } else {
-                      navigator.clipboard.writeText(
-                        `Check out ${poi.name}: ${poi.description_poi}`,
-                      );
-                    }
-                  } : undefined}
-                  favorites={isAuthenticated() ? (favoritesQuery.data || []).map(fav => fav.name) : []}
-                  isLoadingFavorites={addToFavoritesMutation.isPending || removeFromFavoritesMutation.isPending}
+                  onToggleFavorite={
+                    isAuthenticated() ? toggleFavorite : undefined
+                  }
+                  onShareClick={
+                    isAuthenticated()
+                      ? (poi) => {
+                          if (navigator.share) {
+                            navigator.share({
+                              title: poi.name,
+                              text: `Check out ${poi.name} - ${poi.description_poi}`,
+                              url: window.location.href,
+                            });
+                          } else {
+                            navigator.clipboard.writeText(
+                              `Check out ${poi.name}: ${poi.description_poi}`,
+                            );
+                          }
+                        }
+                      : undefined
+                  }
+                  favorites={
+                    isAuthenticated()
+                      ? (favoritesQuery.data || []).map((fav) => fav.name)
+                      : []
+                  }
+                  isLoadingFavorites={
+                    addToFavoritesMutation.isPending ||
+                    removeFromFavoritesMutation.isPending
+                  }
                   showAuthMessage={!isAuthenticated()}
                 />
               </div>

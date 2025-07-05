@@ -560,20 +560,36 @@ export const createStreamingSession = (domain: DomainType = 'general'): Streamin
 };
 
 // Helper function to get route path based on domain
-export const getDomainRoute = (domain: DomainType): string => {
+export const getDomainRoute = (domain: DomainType, sessionId?: string, city?: string): string => {
+  let baseRoute: string;
+  
   switch (domain) {
     case 'itinerary':
     case 'general':
-      return '/itinerary';
+      baseRoute = '/itinerary';
+      break;
     case 'accommodation':
-      return '/hotels';
+      baseRoute = '/hotels';
+      break;
     case 'dining':
-      return '/restaurants';
+      baseRoute = '/restaurants';
+      break;
     case 'activities':
-      return '/activities';
+      baseRoute = '/activities';
+      break;
     default:
-      return '/itinerary';
+      baseRoute = '/itinerary';
+      break;
   }
+  
+  // Add query parameters if provided
+  const params = new URLSearchParams();
+  if (sessionId) params.append('sessionId', sessionId);
+  if (city) params.append('cityName', city);
+  if (domain) params.append('domain', domain);
+  
+  const queryString = params.toString();
+  return queryString ? `${baseRoute}?${queryString}` : baseRoute;
 };
 
 // Export singleton instance
