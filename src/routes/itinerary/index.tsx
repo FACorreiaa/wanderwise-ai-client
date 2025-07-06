@@ -1168,6 +1168,12 @@ export default function ItineraryResultsPage() {
   };
 
   const toggleBookmark = () => {
+    // Prevent multiple rapid calls while mutation is pending
+    if (removeItineraryMutation.isPending || saveItineraryMutation.isPending) {
+      console.log("Bookmark operation already in progress, ignoring duplicate call");
+      return;
+    }
+
     if (isCurrentItineraryBookmarked()) {
       // Remove bookmark
       const itineraryId = getBookmarkedItineraryId();
