@@ -1264,35 +1264,36 @@ export default function ItineraryResultsPage() {
       isFavorite: isFavorite(poiName),
     });
 
+    // Convert the itinerary POI format to POIDetailedInfo format
+    const poiData = {
+      id: poi.name, // Use name as fallback ID
+      city: itinerary().city || "Unknown",
+      name: poi.name,
+      latitude: poi.latitude || 0,
+      longitude: poi.longitude || 0,
+      category: poi.category || "attraction",
+      description: poi.description_poi || "",
+      address: poi.address || "",
+      website: poi.website || "",
+      phone_number: "",
+      opening_hours: poi.opening_hours || "",
+      price_level: poi.budget || "Free",
+      amenities: [],
+      tags: [],
+      images: [],
+      rating: poi.rating || 4.0,
+      time_to_spend: poi.timeToSpend || "1-2 hours",
+      budget: poi.budget || "Free",
+      priority: poi.priority || 1,
+      llm_interaction_id: chatSession.sessionId() || "unknown",
+    };
+
     if (isFavorite(poiName)) {
       console.log("Removing from favorites...");
-      // Use the same POI identifier (name) for removal as used for adding
-      removeFromFavoritesMutation.mutate(poiName);
+      // Include POI data for name-based removal fallback
+      removeFromFavoritesMutation.mutate({ poiId: poiName, poiData });
     } else {
       console.log("Adding to favorites...");
-      // Convert the itinerary POI format to POIDetailedInfo format
-      const poiData = {
-        id: poi.name, // Use name as fallback ID
-        city: itinerary().city || "Unknown",
-        name: poi.name,
-        latitude: poi.latitude || 0,
-        longitude: poi.longitude || 0,
-        category: poi.category || "attraction",
-        description: poi.description_poi || "",
-        address: poi.address || "",
-        website: poi.website || "",
-        phone_number: "",
-        opening_hours: poi.opening_hours || "",
-        price_level: poi.budget || "Free",
-        amenities: [],
-        tags: [],
-        images: [],
-        rating: poi.rating || 4.0,
-        time_to_spend: poi.timeToSpend || "1-2 hours",
-        budget: poi.budget || "Free",
-        priority: poi.priority || 1,
-        llm_interaction_id: chatSession.sessionId() || "unknown",
-      };
       addToFavoritesMutation.mutate({ poiId: poi.name, poiData });
     }
   };

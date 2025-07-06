@@ -264,7 +264,7 @@ export default function DiscoverPage() {
 
     const toggleFavorite = (poiId: string, poi?: POIDetailedInfo) => {
         if (isFavorite(poiId)) {
-            removeFromFavoritesMutation.mutate(poiId);
+            removeFromFavoritesMutation.mutate({ poiId, poiData: poi });
         } else {
             if (!poi) return; // Ensure poi is provided for adding
             addToFavoritesMutation.mutate({ poiId, poiData: poi });

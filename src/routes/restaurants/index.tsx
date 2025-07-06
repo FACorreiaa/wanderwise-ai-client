@@ -245,37 +245,37 @@ export default function RestaurantsPage() {
 
         console.log("Toggle favorite for restaurant:", { restaurantName, isFavorite: isFavorite(restaurantName) });
 
+        // Convert restaurant to POI format for consistency
+        const poiData = {
+            id: restaurant.name,
+            city: selectedCityData().city || "Unknown",
+            name: restaurant.name,
+            latitude: restaurant.latitude || 0,
+            longitude: restaurant.longitude || 0,
+            category: "restaurant",
+            description: restaurant.description_poi || restaurant.description || "",
+            rating: restaurant.rating || 4.0,
+            address: restaurant.address || "",
+            website: restaurant.website || "",
+            phone_number: restaurant.phone_number || "",
+            opening_hours: restaurant.opening_hours || {},
+            price_level: restaurant.price_level || "€€",
+            images: restaurant.images || [],
+            reviews: restaurant.reviews || [],
+            tags: restaurant.tags || [],
+            priority: restaurant.priority || 1,
+            cuisine_type: restaurant.cuisine_type || "",
+            llm_interaction_id: "",
+            city_id: selectedCityData().id || "",
+            distance: restaurant.distance || 0,
+            created_at: new Date().toISOString(),
+        };
+
         if (isFavorite(restaurantName)) {
             // Remove from favorites
-            const favs = favoritesQuery.data || [];
-            const favRestaurant = favs.find(fav => fav.name === restaurantName);
-            if (favRestaurant) {
-                removeFromFavoritesMutation.mutate(favRestaurant.id);
-            }
+            removeFromFavoritesMutation.mutate({ poiId: restaurant.name, poiData });
         } else {
-            // Add to favorites - convert restaurant to POI format
-            const poiData = {
-                id: restaurant.name,
-                city: selectedCityData().city || "Unknown",
-                name: restaurant.name,
-                latitude: restaurant.latitude || 0,
-                longitude: restaurant.longitude || 0,
-                category: "restaurant",
-                description: restaurant.description_poi || restaurant.description || "",
-                address: restaurant.address || "",
-                website: restaurant.website || "",
-                phone_number: "",
-                opening_hours: restaurant.opening_hours || "",
-                price_level: restaurant.priceRange || restaurant.price_range || "$$",
-                amenities: [],
-                tags: restaurant.cuisine_type ? [restaurant.cuisine_type] : [],
-                images: [],
-                rating: restaurant.rating || 4.0,
-                time_to_spend: "1-2 hours",
-                budget: restaurant.priceRange || restaurant.price_range || "$$",
-                priority: 1,
-                llm_interaction_id: "restaurant-search"
-            };
+            // Add to favorites
             addToFavoritesMutation.mutate({ poiId: restaurant.name, poiData });
         }
     };
