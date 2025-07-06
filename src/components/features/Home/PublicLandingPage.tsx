@@ -53,7 +53,7 @@ const contentData = [
   },
 ];
 
-export default function PublicLandingPage(): JSX.Element {
+export default function PublicLandingPage() {
   const navigate = useNavigate();
   const [currentMessage, setCurrentMessage] = createSignal("");
   const [isLoading, setIsLoading] = createSignal(false);

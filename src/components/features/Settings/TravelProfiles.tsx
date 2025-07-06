@@ -260,7 +260,7 @@ export default function TravelProfiles(props: TravelProfilesProps) {
       cancelEditing();
     } catch (error) {
       props.onNotification({ 
-        message: error?.message || 'Failed to save profile', 
+        message: (error as any)?.message || 'Failed to save profile', 
         type: 'error' 
       });
     }
@@ -273,7 +273,7 @@ export default function TravelProfiles(props: TravelProfilesProps) {
         props.onNotification({ message: 'Profile deleted successfully!', type: 'success' });
       } catch (error) {
         props.onNotification({ 
-          message: error?.message || 'Failed to delete profile', 
+          message: (error as any)?.message || 'Failed to delete profile', 
           type: 'error' 
         });
       }
@@ -286,7 +286,7 @@ export default function TravelProfiles(props: TravelProfilesProps) {
       props.onNotification({ message: `"${profileName}" set as default profile!`, type: 'success' });
     } catch (error) {
       props.onNotification({ 
-        message: error?.message || 'Failed to set default profile', 
+        message: (error as any)?.message || 'Failed to set default profile', 
         type: 'error' 
       });
     }
@@ -300,7 +300,7 @@ export default function TravelProfiles(props: TravelProfilesProps) {
     setFormData(prev => ({
       ...prev,
       [section]: {
-        ...prev[section as keyof TravelProfileFormData],
+        ...(prev[section as keyof TravelProfileFormData] as any),
         [field]: value
       }
     }));

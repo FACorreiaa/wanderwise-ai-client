@@ -156,7 +156,7 @@ export default function HotelResults(props: HotelResultsProps) {
 
               <Show when={hotel.amenities && hotel.amenities.length > 0 && !props.compact}>
                 <div class="flex items-center gap-2 mt-2 flex-wrap">
-                  <For each={hotel.amenities.slice(0, 4)}>
+                  <For each={hotel.amenities?.slice(0, 4) || []}>
                     {(amenity) => (
                       <div class="flex items-center gap-1 text-xs bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-2 py-1 rounded">
                         {getAmenityIcon(amenity)}
@@ -164,9 +164,9 @@ export default function HotelResults(props: HotelResultsProps) {
                       </div>
                     )}
                   </For>
-                  <Show when={hotel.amenities.length > 4}>
+                  <Show when={(hotel.amenities?.length || 0) > 4}>
                     <span class="text-xs text-gray-500 dark:text-gray-400">
-                      +{hotel.amenities.length - 4} more
+                      +{(hotel.amenities?.length || 0) - 4} more
                     </span>
                   </Show>
                 </div>

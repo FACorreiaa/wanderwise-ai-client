@@ -166,7 +166,7 @@ export const ErrorBoundary: Component<ErrorBoundaryProps> = (props) => {
   // Handle errors in child components
   return (
     <Show when={!errorInfo()} fallback={<ErrorDisplay />}>
-      <div onError={handleError}>
+      <div onError={(e: any) => handleError(e.error || new Error('Unknown error'))}>
         {props.children}
       </div>
     </Show>

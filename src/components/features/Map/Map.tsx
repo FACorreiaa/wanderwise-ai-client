@@ -53,8 +53,8 @@ export default function MapComponent({
 
       remaining.forEach((poi, index) => {
         const distance = Math.sqrt(
-          Math.pow(poi.latitude - current.latitude, 2) +
-            Math.pow(poi.longitude - current.longitude, 2),
+          Math.pow(Number(poi.latitude) - Number(current.latitude), 2) +
+            Math.pow(Number(poi.longitude) - Number(current.longitude), 2),
         );
         if (distance < nearestDistance) {
           nearestDistance = distance;
@@ -705,10 +705,10 @@ export default function MapComponent({
         lat === undefined ||
         lng === null ||
         lng === undefined ||
-        lat === "" ||
-        lng === "" ||
-        isNaN(lat) ||
-        isNaN(lng)
+        String(lat) === "" ||
+        String(lng) === "" ||
+        isNaN(Number(lat)) ||
+        isNaN(Number(lng))
       ) {
         console.warn(
           `🚫 POI ${poi.name} has invalid coordinates in hasValidPOIs check: lat=${lat}, lng=${lng}`,

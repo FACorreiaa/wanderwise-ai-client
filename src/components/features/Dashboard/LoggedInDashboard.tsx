@@ -33,7 +33,7 @@ interface RecentActivity {
   saved: boolean;
 }
 
-export default function LoggedInDashboard(): JSX.Element {
+export default function LoggedInDashboard() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [currentMessage, setCurrentMessage] = createSignal('');
@@ -187,7 +187,7 @@ export default function LoggedInDashboard(): JSX.Element {
         onProgress: (updatedSession) => {
           setStreamingSession(updatedSession);
           const domain = updatedSession.domain;
-          if (updatedSession.data.general_city_data) {
+          if (updatedSession.data && 'general_city_data' in updatedSession.data && updatedSession.data.general_city_data) {
             setStreamProgress(`Found information about ${updatedSession.data.general_city_data.city}...`);
           } else if (domain === 'accommodation') {
             setStreamProgress('Finding hotels...');
