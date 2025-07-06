@@ -76,29 +76,36 @@ export const useRemoveFromFavoritesMutation = () => {
   const queryClient = useQueryClient();
 
   return useMutation(() => ({
-    mutationFn: async (poiId: string) => {
-      console.log('🔄 Removing POI from favorites:', poiId);
+    mutationFn: async (params: { poiId: string; poiData?: POIDetailedInfo }) => {
+      console.log('🔄 Removing POI from favorites:', params);
+      const requestBody = {
+        poi_id: params.poiId,
+        is_llm_poi: true,
+        ...(params.poiData && { poi_data: params.poiData })
+      };
+      console.log('📤 Remove request body:', requestBody);
+      
       const response = await apiRequest<{ message: string }>('/pois/favourites', {
         method: 'DELETE',
-        body: JSON.stringify({ poi_id: poiId, is_llm_poi: true }),
+        body: JSON.stringify(requestBody),
       });
       console.log('✅ Remove from favorites response:', response);
       return response;
     },
-    onMutate: async (poiId) => {
-      console.log('🔄 Optimistically removing POI:', poiId);
+    onMutate: async (params) => {
+      console.log('🔄 Optimistically removing POI:', params.poiId);
       // Optimistically remove from favorites
       await queryClient.cancelQueries({ queryKey: queryKeys.favorites });
       const previousFavorites = queryClient.getQueryData(queryKeys.favorites);
 
       queryClient.setQueryData(queryKeys.favorites, (old: POI[] | undefined) => {
         const currentFavorites = old || [];
-        return currentFavorites.filter(poi => poi.id !== poiId);
+        return currentFavorites.filter(poi => poi.id !== params.poiId);
       });
 
       return { previousFavorites };
     },
-    onError: (err, poiId, context) => {
+    onError: (err, params, context) => {
       console.error('❌ Remove from favorites failed:', err);
       // Rollback on error
       if (context?.previousFavorites) {

@@ -16,6 +16,16 @@ export const useItineraries = (page: number = 1, limit: number = 10, options: { 
   }));
 };
 
+// Query to get all user's saved itineraries (for bookmark checking)
+export const useAllUserItineraries = (options: { enabled?: boolean } = {}) => {
+  return useQuery(() => ({
+    queryKey: queryKeys.userItineraries,
+    queryFn: () => apiRequest<PaginatedItinerariesResponse>(`/pois/itineraries?page=1&limit=1000`), // Get all itineraries
+    staleTime: 2 * 60 * 1000, // Shorter stale time for bookmark checks
+    enabled: options.enabled ?? true,
+  }));
+};
+
 export const useItinerary = (itineraryId: string, options: { enabled?: boolean } = {}) => {
   return useQuery(() => ({
     queryKey: queryKeys.itinerary(itineraryId),
@@ -54,7 +64,9 @@ export const useSaveItineraryMutation = () => {
         body: JSON.stringify(itineraryData),
       }),
     onSuccess: () => {
+      // Invalidate all itinerary-related queries to ensure immediate UI updates
       queryClient.invalidateQueries({ queryKey: ['itineraries'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.userItineraries });
     },
   }));
 };
@@ -65,8 +77,35 @@ export const useRemoveItineraryMutation = () => {
   return useMutation(() => ({
     mutationFn: (itineraryId: string) =>
       apiRequest<{ message: string }>(`/llm/prompt-response/bookmark/${itineraryId}`, { method: 'DELETE' }),
+    onMutate: async (itineraryId: string) => {
+      // Cancel any outgoing refetches (so they don't overwrite our optimistic update)
+      await queryClient.cancelQueries({ queryKey: queryKeys.userItineraries });
+
+      // Snapshot the previous value
+      const previousItineraries = queryClient.getQueryData(queryKeys.userItineraries);
+
+      // Optimistically update to remove the itinerary
+      queryClient.setQueryData(queryKeys.userItineraries, (old: any) => {
+        if (!old?.itineraries) return old;
+        return {
+          ...old,
+          itineraries: old.itineraries.filter((itinerary: any) => itinerary.id !== itineraryId)
+        };
+      });
+
+      // Return a context object with the snapshotted value
+      return { previousItineraries };
+    },
+    onError: (err, itineraryId, context) => {
+      // If the mutation fails, use the context to roll back
+      if (context?.previousItineraries) {
+        queryClient.setQueryData(queryKeys.userItineraries, context.previousItineraries);
+      }
+    },
     onSuccess: () => {
+      // Invalidate all itinerary-related queries to ensure data consistency
       queryClient.invalidateQueries({ queryKey: ['itineraries'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.userItineraries });
     },
   }));
 };

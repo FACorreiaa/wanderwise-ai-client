@@ -20,6 +20,11 @@ export interface UserProfileResponse {
   id?: string;
   username?: string;
   email?: string;
+  firstname?: string;
+  lastname?: string;
+  phone?: string;
+  city?: string;
+  country?: string;
   about_you?: string;
   location?: string;
   profile_image_url?: string;
@@ -88,14 +93,26 @@ export interface POI {
   id: string;
   name: string;
   category: string;
-  description: string;
+  description?: string;
+  description_poi?: string;
   latitude: number;
   longitude: number;
-  timeToSpend: string;
-  budget: string;
-  rating: number;
-  tags: string[];
-  priority: number;
+  timeToSpend?: string;
+  budget?: string;
+  rating?: number;
+  tags?: string[];
+  priority?: number;
+  address?: string;
+  website?: string;
+  phone_number?: string;
+  opening_hours?: string | null;
+  price_level?: string;
+  price_range?: string;
+  distance?: number;
+  city?: string;
+  city_id?: string;
+  llm_interaction_id?: string;
+  created_at?: string;
 }
 
 export interface ChatMessage {
@@ -181,9 +198,15 @@ export interface ItineraryList {
 export interface UserSavedItinerary {
   id: string;
   user_id: string;
+  source_llm_interaction_id?: string; // Optional UUID for the source LLM interaction
+  primary_city_id?: string; // Optional UUID for the primary city
   title: string;
   description: string;
   markdown_content: string;
+  tags?: string[];
+  estimated_duration_days?: number;
+  estimated_cost_level?: number;
+  is_public: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -214,16 +237,21 @@ export interface Hotel {
 export interface Restaurant {
   id: string;
   name: string;
-  cuisine: string;
+  cuisine?: string;
   description: string;
   latitude: number;
   longitude: number;
-  priceRange: string;
-  rating: number;
-  reviewCount: number;
-  address: string;
-  features: string[];
-  specialties: string[];
+  priceRange?: string;
+  rating?: number;
+  reviewCount?: number;
+  address?: string;
+  features?: string[];
+  specialties?: string[];
+  llm_interaction_id?: string;
+  website?: string;
+  phone_number?: string;
+  opening_hours?: string;
+  category?: string;
 }
 
 // Search Profile Types
@@ -438,25 +466,30 @@ export interface RestaurantDetailedInfo {
 
 export interface POIDetailedInfo {
   id: string;
-  city: string;
+  city?: string;
+  city_id?: string;
   name: string;
   latitude: number;
   longitude: number;
   category: string;
-  description: string;
+  description?: string;
+  description_poi?: string;
   address?: string;
   website?: string;
   phone_number?: string;
-  opening_hours?: string;
+  opening_hours?: string | null;
   price_level?: string;
+  price_range?: string;
   amenities?: string[];
-  tags: string[];
-  images: string[];
-  rating: number;
+  tags?: string[];
+  images?: string[];
+  rating?: number;
   time_to_spend?: string;
   budget?: string;
   priority?: number; // Popularity score 1-10
-  llm_interaction_id: string;
+  distance?: number;
+  llm_interaction_id?: string;
+  created_at?: string;
 }
 
 // Domain-specific response types
@@ -485,6 +518,7 @@ export interface StreamingSession {
   sessionId: string;
   domain: DomainType;
   city?: string;
+  query?: string;
   data: Partial<UnifiedChatResponse>;
   isComplete: boolean;
   error?: string;
@@ -595,6 +629,28 @@ export interface CityInteractions {
     interactions: RecentInteraction[];
     poi_count: number;
     last_activity: string;
+    saved_itineraries?: UserSavedItinerary[];
+    favorite_pois?: POIDetailedInfo[];
+    total_interactions: number;
+    total_favorites: number;
+    total_itineraries: number;
+}
+
+export interface UserSavedItinerary {
+    id: string;
+    user_id: string;
+    source_llm_interaction_id?: string;
+    session_id?: string;
+    primary_city_id?: string;
+    title: string;
+    description?: string;
+    markdown_content: string;
+    tags: string[];
+    estimated_duration_days?: number;
+    estimated_cost_level?: number;
+    is_public: boolean;
+    created_at: string;
+    updated_at: string;
 }
 
 export interface RecentInteractionsResponse {

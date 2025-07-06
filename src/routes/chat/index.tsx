@@ -198,8 +198,12 @@ export default function ChatPage() {
   onMount(() => {
     console.log("🚀 Chat page mounted - starting fresh session");
 
-    // Don't automatically restore session data to avoid stale cache issues
-    // Sessions will be restored only when explicitly needed during message sending
+    // Clear any previous session data to ensure fresh start
+    sessionStorage.removeItem('currentStreamingSession');
+    sessionStorage.removeItem('completedStreamingSession');
+    sessionStorage.removeItem('localChatSessions');
+    setSessionId(null);
+    setStreamingSession(null);
 
     // Add welcome message
     setMessages([
@@ -230,41 +234,12 @@ export default function ChatPage() {
     setStreamProgress("Analyzing your request...");
 
     try {
-      // Check if we have an existing session
-      let currentSessionId = sessionId();
-      console.log("🔍 Current session ID in memory:", currentSessionId);
-
-      // If no session ID in memory, check session storage as fallback
-      if (!currentSessionId) {
-        const storedSession = sessionStorage.getItem(
-          "completedStreamingSession",
-        );
-        if (storedSession) {
-          try {
-            const session = JSON.parse(storedSession);
-            if (session.sessionId) {
-              console.log("🔄 Found session ID in storage:", session.sessionId);
-              currentSessionId = session.sessionId;
-              setSessionId(currentSessionId);
-              setStreamingSession(session);
-            }
-          } catch (error) {
-            console.error("Error parsing stored session:", error);
-            // Clear corrupted session data
-            sessionStorage.removeItem("completedStreamingSession");
-          }
-        }
-      }
-
-      if (currentSessionId) {
-        // Continue existing session
-        console.log("🔄 Continuing existing session:", currentSessionId);
-        await continueExistingSession(messageContent, currentSessionId);
-      } else {
-        // Start new session
-        console.log("🆕 Starting new session");
-        await startNewSession(messageContent);
-      }
+      // For chat page, always start a new session (no session restoration)
+      // This ensures each visit to /chat creates a fresh conversation
+      console.log("🆕 Starting fresh chat session for message:", messageContent);
+      
+      // Always start new session for chat page
+      await startNewSession(messageContent);
     } catch (error) {
       console.error("Error sending message:", error);
       setIsLoading(false);
@@ -886,9 +861,12 @@ export default function ChatPage() {
     setStreamProgress("");
     setExpandedResults(new Set()); // Clear expanded results
 
-    // Clear all session storage to prevent cache issues
+    // Clear all session storage to prevent cache issues and data bleed between city searches
     sessionStorage.removeItem("currentStreamingSession");
     sessionStorage.removeItem("completedStreamingSession");
+    sessionStorage.removeItem("localChatSessions");
+    sessionStorage.removeItem("lastKnownSessionId");
+    sessionStorage.removeItem("fallbackSessionId");
 
     console.log("✅ All session data cleared");
   };

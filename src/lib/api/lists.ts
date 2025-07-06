@@ -83,3 +83,55 @@ export const useDeleteListMutation = () => {
     },
   }));
 };
+
+// ===============
+// LIST ITEMS MUTATIONS
+// ===============
+
+export interface AddToListItemData {
+  item_id: string;
+  content_type: 'poi' | 'restaurant' | 'hotel' | 'itinerary';
+  position?: number;
+  notes?: string;
+  day_number?: number;
+  time_slot?: string;
+  duration_minutes?: number;
+  source_llm_interaction_id?: string;
+  item_ai_description?: string;
+}
+
+export interface AddToListMutationData {
+  listId: string;
+  itemData: AddToListItemData;
+}
+
+export const useAddToListMutation = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation(() => ({
+    mutationFn: ({ listId, itemData }: AddToListMutationData) =>
+      apiRequest(`/itineraries/lists/${listId}/items`, {
+        method: 'POST',
+        body: JSON.stringify(itemData),
+      }),
+    onSuccess: (_, { listId }) => {
+      // Invalidate the specific list to refresh its items
+      queryClient.invalidateQueries({ queryKey: queryKeys.list(listId) });
+      // Also invalidate the lists overview to update item counts
+      queryClient.invalidateQueries({ queryKey: queryKeys.lists });
+    },
+  }));
+};
+
+export const useRemoveFromListMutation = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation(() => ({
+    mutationFn: ({ listId, itemId }: { listId: string; itemId: string }) =>
+      apiRequest(`/itineraries/lists/${listId}/items/${itemId}`, { method: 'DELETE' }),
+    onSuccess: (_, { listId }) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.list(listId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.lists });
+    },
+  }));
+};

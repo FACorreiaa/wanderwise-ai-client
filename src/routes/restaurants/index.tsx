@@ -9,6 +9,7 @@ import { TypingAnimation } from '~/components/TypingAnimation';
 import { useChatSession } from '~/lib/hooks/useChatSession';
 import ChatInterface from '~/components/ui/ChatInterface';
 import { useAuth } from '~/contexts/AuthContext';
+import { useFavorites, useAddToFavoritesMutation, useRemoveFromFavoritesMutation } from '~/lib/api/pois';
 
 export default function RestaurantsPage() {
     const location = useLocation();
@@ -16,7 +17,6 @@ export default function RestaurantsPage() {
     const [selectedRestaurant, setSelectedRestaurant] = createSignal(null);
     const [showFilters, setShowFilters] = createSignal(false);
     const [viewMode, setViewMode] = createSignal('split'); // 'map', 'list', 'split'
-    const [myFavorites, setMyFavorites] = createSignal([]); // Track favorite restaurants
     const [streamingData, setStreamingData] = createSignal<DiningResponse | null>(null);
     const [fromChat, setFromChat] = createSignal(false);
 
@@ -35,6 +35,12 @@ export default function RestaurantsPage() {
             }
         }
     });
+
+    // Auth and favorites hooks
+    const { isAuthenticated } = useAuth();
+    const favoritesQuery = useFavorites();
+    const addToFavoritesMutation = useAddToFavoritesMutation();
+    const removeFromFavoritesMutation = useRemoveFromFavoritesMutation();
 
     // Filter states
     const [activeFilters, setActiveFilters] = createSignal({
@@ -225,8 +231,53 @@ export default function RestaurantsPage() {
         }));
     };
 
-    const addToFavorites = (restaurant) => {
-        setMyFavorites(prev => prev.some(item => item.id === restaurant.id) ? prev : [...prev, restaurant]);
+    // Favorites functionality - use API instead of local state
+    const isFavorite = (restaurantName: string) => {
+        const favs = favoritesQuery.data || [];
+        return favs.some(poi => poi.name === restaurantName);
+    };
+
+    const toggleFavorite = (restaurantName: string, restaurant: any) => {
+        if (!isAuthenticated()) {
+            console.log("User not authenticated, cannot toggle favorite");
+            return;
+        }
+
+        console.log("Toggle favorite for restaurant:", { restaurantName, isFavorite: isFavorite(restaurantName) });
+
+        // Convert restaurant to POI format for consistency
+        const poiData = {
+            id: restaurant.name,
+            city: selectedCityData().city || "Unknown",
+            name: restaurant.name,
+            latitude: restaurant.latitude || 0,
+            longitude: restaurant.longitude || 0,
+            category: "restaurant",
+            description: restaurant.description_poi || restaurant.description || "",
+            rating: restaurant.rating || 4.0,
+            address: restaurant.address || "",
+            website: restaurant.website || "",
+            phone_number: restaurant.phone_number || "",
+            opening_hours: restaurant.opening_hours || {},
+            price_level: restaurant.price_level || "€€",
+            images: restaurant.images || [],
+            reviews: restaurant.reviews || [],
+            tags: restaurant.tags || [],
+            priority: restaurant.priority || 1,
+            cuisine_type: restaurant.cuisine_type || "",
+            llm_interaction_id: "",
+            city_id: selectedCityData().id || "",
+            distance: restaurant.distance || 0,
+            created_at: new Date().toISOString(),
+        };
+
+        if (isFavorite(restaurantName)) {
+            // Remove from favorites
+            removeFromFavoritesMutation.mutate({ poiId: restaurant.name, poiData });
+        } else {
+            // Add to favorites
+            addToFavoritesMutation.mutate({ poiId: restaurant.name, poiData });
+        }
     };
 
     const renderRestaurantCard = (restaurant) => {
@@ -588,9 +639,8 @@ export default function RestaurantsPage() {
                                         compact={false}
                                         showToggle={filteredRestaurants().length > 5}
                                         initialLimit={5}
-                                        onFavoriteClick={(restaurant) => {
-                                            console.log('Add to favorites:', restaurant.name);
-                                            addToFavorites(restaurant);
+                                        onToggleFavorite={(restaurantName, restaurant) => {
+                                            toggleFavorite(restaurantName, restaurant);
                                         }}
                                         onShareClick={(restaurant) => {
                                             if (navigator.share) {
@@ -603,7 +653,9 @@ export default function RestaurantsPage() {
                                                 navigator.clipboard.writeText(`Check out ${restaurant.name}: ${restaurant.description_poi}`);
                                             }
                                         }}
-                                        favorites={myFavorites().map(f => f.name)}
+                                        favorites={isAuthenticated() ? (favoritesQuery.data || []).map(fav => fav.name) : []}
+                                        isLoadingFavorites={addToFavoritesMutation.isPending || removeFromFavoritesMutation.isPending}
+                                        showAuthMessage={!isAuthenticated()}
                                     />
                                 </Show>
                             </div>
@@ -707,10 +759,28 @@ export default function RestaurantsPage() {
                                     </div>
                                     <div class="flex flex-col gap-2 sm:flex-row">
                                         <button
-                                            onClick={() => addToFavorites(selectedRestaurant())}
-                                            class={`px-4 py-2 rounded-lg text-sm font-medium ${myFavorites().some(item => item.id === selectedRestaurant().id) ? 'bg-red-600 text-white' : 'bg-orange-600 text-white hover:bg-orange-700'}`}
+                                            onClick={() => toggleFavorite(selectedRestaurant().name, selectedRestaurant())}
+                                            disabled={!isAuthenticated() || addToFavoritesMutation.isPending || removeFromFavoritesMutation.isPending}
+                                            class={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                                                !isAuthenticated() 
+                                                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed' 
+                                                    : isFavorite(selectedRestaurant().name) 
+                                                        ? 'bg-red-600 text-white hover:bg-red-700' 
+                                                        : 'bg-orange-600 text-white hover:bg-orange-700'
+                                            } disabled:opacity-50`}
                                         >
-                                            {myFavorites().some(item => item.id === selectedRestaurant().id) ? 'Favorited' : 'Add to Favorites'}
+                                            <Show 
+                                                when={!addToFavoritesMutation.isPending && !removeFromFavoritesMutation.isPending}
+                                                fallback={<Loader2 class="w-4 h-4 animate-spin inline mr-1" />}
+                                            >
+                                                <Heart class={`w-4 h-4 inline mr-1 ${isFavorite(selectedRestaurant().name) ? 'fill-current' : ''}`} />
+                                            </Show>
+                                            {!isAuthenticated() 
+                                                ? 'Login to Favorite' 
+                                                : isFavorite(selectedRestaurant().name) 
+                                                    ? 'Remove Favorite' 
+                                                    : 'Add to Favorites'
+                                            }
                                         </button>
                                         <button class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 text-sm">
                                             Make Reservation
