@@ -3,15 +3,23 @@ import { Bot, Loader2, MapPin, Calendar, Clock, Star, Users, Heart } from 'lucid
 import { useStreamingChat } from '~/lib/hooks/useStreamingChat';
 import type { DomainType } from '~/lib/api/types';
 
+interface StreamingResponse {
+  results?: any[];
+  session_id?: string;
+  city?: string;
+  domain?: DomainType;
+  [key: string]: any;
+}
+
 export interface StreamingChatMessageProps {
   url: string;
   requestBody: object;
-  onComplete?: (response: any) => void;
+  onComplete?: (response: StreamingResponse) => void;
   onRedirect?: (domain: DomainType, sessionId: string, city: string) => void;
 }
 
 export function StreamingChatMessage(props: StreamingChatMessageProps) {
-  const [accumulatedData, setAccumulatedData] = createSignal<any>({});
+  const [accumulatedData, setAccumulatedData] = createSignal<StreamingResponse>({});
   const [displayedResults, setDisplayedResults] = createSignal<any[]>([]);
 
   const { state, startStream, stopStream } = useStreamingChat({

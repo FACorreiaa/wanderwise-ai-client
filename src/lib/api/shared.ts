@@ -255,8 +255,8 @@ export const queryKeys = {
 
   // Recents
   recents: ["recents"] as const,
-  recentInteractions: (limit: number) =>
-    ["recents", "interactions", limit] as const,
+  recentInteractions: (page: number, limit: number) =>
+    ["recents", "interactions", page, limit] as const,
   cityDetails: (cityName: string) => ["recents", "city", cityName] as const,
 };
 

@@ -43,8 +43,6 @@ export interface UserProfileResponse {
   settings?: Record<string, unknown>;
 }
 
-
-
 // Define the processed profile data type
 export interface ProcessedProfileData {
   id?: string;
@@ -65,8 +63,6 @@ export interface ProcessedProfileData {
   };
 }
 
-
-
 export interface Interest {
   id: string;
   name: string;
@@ -74,7 +70,7 @@ export interface Interest {
   active?: boolean | null;
   created_at: string;
   updated_at?: string | null;
-  source: 'global' | 'custom';
+  source: "global" | "custom";
 }
 
 export interface PersonalTag {
@@ -83,7 +79,7 @@ export interface PersonalTag {
   name: string;
   tag_type: string;
   description?: string | null;
-  source?: 'global' | 'personal' | null;
+  source?: "global" | "personal" | null;
   active?: boolean | null;
   created_at: string;
   updated_at?: string | null;
@@ -117,8 +113,8 @@ export interface POI {
 
 export interface ChatMessage {
   id: string;
-  type: 'user' | 'assistant' | 'system';
-  role?: 'user' | 'assistant' | 'system'; // For backward compatibility
+  type: "user" | "assistant" | "system";
+  role?: "user" | "assistant" | "system"; // For backward compatibility
   content: string;
   timestamp: Date;
   hasItinerary?: boolean;
@@ -178,7 +174,7 @@ export interface SessionEngagementMetrics {
   assistant_message_count: number;
   avg_message_length: number;
   peak_activity_time?: string;
-  engagement_level: 'low' | 'medium' | 'high';
+  engagement_level: "low" | "medium" | "high";
 }
 
 export interface ItineraryList {
@@ -354,9 +350,24 @@ export interface TravelProfileFormData {
 // STREAMING TYPES
 // ==================
 
-export type DomainType = 'general' | 'itinerary' | 'accommodation' | 'dining' | 'activities';
+export type DomainType =
+  | "general"
+  | "itinerary"
+  | "accommodation"
+  | "dining"
+  | "activities";
 
-export type StreamEventType = 'start' | 'chunk' | 'complete' | 'error' | 'city_data' | 'general_pois' | 'itinerary' | 'hotels' | 'restaurants' | 'activities';
+export type StreamEventType =
+  | "start"
+  | "chunk"
+  | "complete"
+  | "error"
+  | "city_data"
+  | "general_pois"
+  | "itinerary"
+  | "hotels"
+  | "restaurants"
+  | "activities";
 
 // Streaming chunk data interfaces
 export interface StreamChunkData {
@@ -372,7 +383,16 @@ export interface StreamCompleteData {
 
 export interface StreamEvent {
   type: StreamEventType;
-  data?: UnifiedChatResponse | GeneralCityData | POIDetailedInfo[] | HotelDetailedInfo[] | RestaurantDetailedInfo[] | AIItineraryResponse | StreamChunkData | StreamCompleteData | string;
+  data?:
+    | UnifiedChatResponse
+    | GeneralCityData
+    | POIDetailedInfo[]
+    | HotelDetailedInfo[]
+    | RestaurantDetailedInfo[]
+    | AIItineraryResponse
+    | StreamChunkData
+    | StreamCompleteData
+    | string;
   error?: string;
   event_id?: string;
   timestamp?: string;
@@ -495,23 +515,27 @@ export interface POIDetailedInfo {
 // Domain-specific response types
 export interface AccommodationResponse {
   hotels: HotelDetailedInfo[];
-  domain: 'accommodation';
+  domain: "accommodation";
   session_id: string;
 }
 
 export interface DiningResponse {
   restaurants: RestaurantDetailedInfo[];
-  domain: 'dining';
+  domain: "dining";
   session_id: string;
 }
 
 export interface ActivitiesResponse {
   activities: POIDetailedInfo[];
-  domain: 'activities';
+  domain: "activities";
   session_id: string;
 }
 
-export type UnifiedChatResponse = AiCityResponse | AccommodationResponse | DiningResponse | ActivitiesResponse;
+export type UnifiedChatResponse =
+  | AiCityResponse
+  | AccommodationResponse
+  | DiningResponse
+  | ActivitiesResponse;
 
 // Streaming session management
 export interface StreamingSession {
@@ -536,7 +560,13 @@ export interface RecentSearch {
 
 export interface RecentActivity {
   id: string;
-  type: 'search' | 'poi_view' | 'hotel_view' | 'restaurant_view' | 'itinerary_save' | 'list_create';
+  type:
+    | "search"
+    | "poi_view"
+    | "hotel_view"
+    | "restaurant_view"
+    | "itinerary_save"
+    | "list_create";
   entity_id?: string;
   entity_name?: string;
   timestamp: string;
@@ -610,52 +640,56 @@ export interface HotelPreferences extends SearchParams {
 }
 
 export interface RecentInteraction {
-    id: string;
-    user_id: string;
-    city_name: string;
-    city_id: string | null;
-    prompt: string;
-    response_text: string;
-    model_used: string;
-    latency_ms: number;
-    created_at: string;
-    pois: POIDetailedInfo[];
-    hotels: HotelDetailedInfo[];
-    restaurants: RestaurantDetailedInfo[];
+  id: string;
+  user_id: string;
+  city_name: string;
+  city_id: string | null;
+  prompt: string;
+  response_text: string;
+  model_used: string;
+  latency_ms: number;
+  created_at: string;
+  pois: POIDetailedInfo[];
+  hotels: HotelDetailedInfo[];
+  restaurants: RestaurantDetailedInfo[];
 }
 
 export interface CityInteractions {
-    city_name: string;
-    interactions: RecentInteraction[];
-    poi_count: number;
-    last_activity: string;
-    saved_itineraries?: UserSavedItinerary[];
-    favorite_pois?: POIDetailedInfo[];
-    total_interactions: number;
-    total_favorites: number;
-    total_itineraries: number;
+  city_name: string;
+  session_id: string;
+  interactions: RecentInteraction[];
+  poi_count: number;
+  last_activity: string;
+  saved_itineraries?: UserSavedItinerary[];
+  favorite_pois?: POIDetailedInfo[];
+  total_interactions: number;
+  total_favorites: number;
+  total_itineraries: number;
 }
 
 export interface UserSavedItinerary {
-    id: string;
-    user_id: string;
-    source_llm_interaction_id?: string;
-    session_id?: string;
-    primary_city_id?: string;
-    title: string;
-    description?: string;
-    markdown_content: string;
-    tags: string[];
-    estimated_duration_days?: number;
-    estimated_cost_level?: number;
-    is_public: boolean;
-    created_at: string;
-    updated_at: string;
+  id: string;
+  user_id: string;
+  source_llm_interaction_id?: string;
+  session_id?: string;
+  primary_city_id?: string;
+  title: string;
+  description?: string;
+  markdown_content: string;
+  tags: string[];
+  estimated_duration_days?: number;
+  estimated_cost_level?: number;
+  is_public: boolean;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface RecentInteractionsResponse {
-    cities: CityInteractions[];
-    total: number;
+  cities: CityInteractions[];
+  total: number;
+  page: number;
+  limit: number;
+  has_more: boolean;
 }
 
 // Bookmark/Save Itinerary Request

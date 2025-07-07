@@ -3,6 +3,8 @@
 // the query-based functions from './api-queries.ts' which provide better caching,
 // optimistic updates, and error handling with @tanstack/solid-query.
 
+import type { UserProfile, Interest, POI } from './api/types';
+
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1';
 
 // Token management functions - moved to top to avoid circular dependency
@@ -173,7 +175,7 @@ export const authAPI = {
 // User Profile API
 export const profileAPI = {
   async getProfiles() {
-    return apiRequest<any[]>('/user/search-profile/');
+    return apiRequest<UserProfile[]>('/user/search-profile/');
   },
 
   async createProfile(profileData: any) {
@@ -214,7 +216,7 @@ export const profileAPI = {
 // Interests API
 export const interestsAPI = {
   async getInterests() {
-    return apiRequest<any[]>('/user/interests/');
+    return apiRequest<Interest[]>('/user/interests/');
   },
 
   async createInterest(name: string, description: string, active: boolean = true) {
@@ -327,7 +329,7 @@ export const chatAPI = {
 // POI & Favorites API
 export const poiAPI = {
   async getFavorites() {
-    return apiRequest<any[]>('/pois/favourites');
+    return apiRequest<POI[]>('/pois/favourites');
   },
 
   async addToFavorites(poiId: string) {

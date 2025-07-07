@@ -302,7 +302,7 @@ export const trackMigration = (feature: keyof typeof migrationStatus, action: 'e
 };
 
 // Performance comparison
-export const comparePer ­fo­rmance = async <T>(
+export const comparePerformance = async <T>(
   name: string,
   solidStartFn: () => Promise<T>,
   legacyFn: () => Promise<T>
