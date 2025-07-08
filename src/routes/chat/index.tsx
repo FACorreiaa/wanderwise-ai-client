@@ -22,12 +22,8 @@ import {
   ChevronDown,
   ChevronUp,
 } from "lucide-solid";
-import {
-  sendUnifiedChatMessageStream,
-  detectDomain,
-  getUserChatSessions,
-  useGetChatSessionsQuery,
-} from "~/lib/api/llm";
+import { sendUnifiedChatMessageStream, detectDomain } from "~/lib/api/llm";
+import { useChatSessions } from "~/lib/api/chat";
 import {
   streamingService,
   createStreamingSession,
@@ -46,13 +42,13 @@ import {
   ItineraryResults,
 } from "~/components/results";
 import DetailedItemModal from "~/components/DetailedItemModal";
+import Paginator from "~/components/Paginator";
 import { useQuery, useQueryClient } from "@tanstack/solid-query";
 import { useDefaultSearchProfile } from "~/lib/api/profiles";
 import { TypingAnimation } from "~/components/TypingAnimation";
 import { API_BASE_URL } from "~/lib/api/shared";
 
 export default function ChatPage() {
-  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [messages, setMessages] = createSignal([]);
   const [currentMessage, setCurrentMessage] = createSignal("");
@@ -61,7 +57,6 @@ export default function ChatPage() {
   const [activeProfile, setActiveProfile] = createSignal("Solo Explorer");
   const [showProfileSelector, setShowProfileSelector] = createSignal(false);
   const [generatedItinerary, setGeneratedItinerary] = createSignal(null);
-  const [chatSessions, setChatSessions] = createSignal([]);
   const [selectedSession, setSelectedSession] = createSignal(null);
   const [streamingSession, setStreamingSession] = createSignal(null);
   const [streamProgress, setStreamProgress] = createSignal("");
@@ -69,6 +64,11 @@ export default function ChatPage() {
   const [selectedItem, setSelectedItem] = createSignal(null);
   const [showDetailModal, setShowDetailModal] = createSignal(false);
   const [localSessionsVersion, setLocalSessionsVersion] = createSignal(0);
+
+  // Load more state for infinite scroll
+  const [isLoadingMore, setIsLoadingMore] = createSignal(false);
+  const [allSessions, setAllSessions] = createSignal([]);
+  const [hasLoadedAny, setHasLoadedAny] = createSignal(false);
 
   const { userLocation } = useUserLocation();
   const userLatitude = userLocation()?.latitude || 38.7223;
@@ -78,9 +78,11 @@ export default function ChatPage() {
   const defaultProfileQuery = useDefaultSearchProfile();
   const profileId = () => defaultProfileQuery.data?.id;
 
-  // Get chat sessions from API - only query when profileId is available
-  const chatSessionsQuery = useQuery(() =>
-    useGetChatSessionsQuery(profileId()),
+  // Get initial batch of chat sessions from API
+  const chatSessionsQuery = useChatSessions(
+    profileId,
+    () => 1, // Always load first page initially
+    () => 20, // Load more sessions at once for scrolling
   );
 
   const sessions = () => {
@@ -88,7 +90,13 @@ export default function ChatPage() {
     const versionCheck = localSessionsVersion();
     console.log("📂 Sessions function called, version:", versionCheck);
 
-    const apiSessions = chatSessionsQuery.data || [];
+    const apiResponse = chatSessionsQuery.data;
+    const apiSessions = apiResponse?.sessions || [];
+
+    // Set hasLoadedAny flag if we have API data
+    if (apiSessions.length > 0 && !hasLoadedAny()) {
+      setHasLoadedAny(true);
+    }
 
     // Always try to merge API sessions with local sessions
     try {
@@ -132,6 +140,12 @@ export default function ChatPage() {
 
     console.log("📂 Returning API sessions:", apiSessions);
     return apiSessions;
+  };
+
+  // Check if there are more sessions to load
+  const hasMoreSessions = () => {
+    const apiResponse = chatSessionsQuery.data;
+    return apiResponse?.has_more || false;
   };
 
   const profiles = [
@@ -199,9 +213,9 @@ export default function ChatPage() {
     console.log("🚀 Chat page mounted - starting fresh session");
 
     // Clear any previous session data to ensure fresh start
-    sessionStorage.removeItem('currentStreamingSession');
-    sessionStorage.removeItem('completedStreamingSession');
-    sessionStorage.removeItem('localChatSessions');
+    sessionStorage.removeItem("currentStreamingSession");
+    sessionStorage.removeItem("completedStreamingSession");
+    sessionStorage.removeItem("localChatSessions");
     setSessionId(null);
     setStreamingSession(null);
 
@@ -236,8 +250,11 @@ export default function ChatPage() {
     try {
       // For chat page, always start a new session (no session restoration)
       // This ensures each visit to /chat creates a fresh conversation
-      console.log("🆕 Starting fresh chat session for message:", messageContent);
-      
+      console.log(
+        "🆕 Starting fresh chat session for message:",
+        messageContent,
+      );
+
       // Always start new session for chat page
       await startNewSession(messageContent);
     } catch (error) {
@@ -387,7 +404,7 @@ export default function ChatPage() {
             // Force trigger a reactivity update by invalidating the query AND updating version
             // This will cause the sessions() function to be re-evaluated
             queryClient.invalidateQueries({
-              queryKey: ["chatSessions", profileId()],
+              queryKey: ["chatSessions", "list"],
             });
 
             // Also increment version to trigger reactive updates in SolidJS
@@ -426,7 +443,7 @@ export default function ChatPage() {
         const currentProfileId = profileId();
         if (currentProfileId) {
           queryClient.invalidateQueries({
-            queryKey: ["chatSessions", currentProfileId],
+            queryKey: ["chatSessions", "list"],
           });
         }
       },
@@ -1075,6 +1092,41 @@ export default function ChatPage() {
     });
   };
 
+  // Load more handler for infinite scroll
+  const loadMoreSessions = async () => {
+    if (isLoadingMore() || !hasMoreSessions() || !profileId()) return;
+
+    setIsLoadingMore(true);
+    try {
+      // Calculate next page based on current sessions count
+      const currentCount = sessions().length;
+      const nextPage = Math.floor(currentCount / 20) + 1;
+
+      // Fetch next page of sessions
+      const response = await fetch(
+        `/api/v1/llm/prompt-response/chat/sessions/user/${profileId()}?page=${nextPage}&limit=20`,
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("access_token") || sessionStorage.getItem("access_token") || ""}`,
+          },
+        }
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        // This will be handled by the existing query logic
+        queryClient.invalidateQueries({
+          queryKey: ["chatSessions", "list"],
+        });
+      }
+    } catch (error) {
+      console.error("Failed to load more sessions:", error);
+    } finally {
+      setIsLoadingMore(false);
+    }
+  };
+
   // Helper function to format message content for display
   const formatMessageContent = (content: string) => {
     // Handle prefixed responses like [city_data], [itinerary], etc.
@@ -1483,14 +1535,17 @@ export default function ChatPage() {
           </div>
         </div>
 
-        {/* Chat Sessions - Mobile First */}
-        <div class="flex-1 overflow-y-auto">
-          <div class="p-3 sm:p-4">
+        {/* Chat Sessions - Mobile First with Scrollable List */}
+        <div class="flex-1 flex flex-col min-h-0">
+          <div class="p-3 sm:p-4 pb-0 flex-shrink-0">
             <h3 class="text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 sm:mb-3">
               Recent Conversations
             </h3>
+          </div>
 
-            <Show when={chatSessionsQuery.isLoading}>
+          {/* Scrollable Sessions Container */}
+          <div class="flex-1 overflow-y-auto px-3 sm:px-4 pb-3 sm:pb-4">
+            <Show when={chatSessionsQuery.isLoading && !hasLoadedAny()}>
               <div class="flex items-center justify-center py-8">
                 <Loader2 class="w-5 h-5 animate-spin text-gray-400" />
               </div>
@@ -1518,10 +1573,10 @@ export default function ChatPage() {
             </Show>
 
             <Show
-              when={!chatSessionsQuery.isLoading && !chatSessionsQuery.isError}
+              when={!chatSessionsQuery.isError}
             >
               <div class="space-y-1 sm:space-y-2">
-                <Show when={sessions().length === 0}>
+                <Show when={sessions().length === 0 && !chatSessionsQuery.isLoading}>
                   <div class="text-center py-8 px-4">
                     <div class="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-blue-100 to-purple-100 dark:from-blue-900/20 dark:to-purple-900/20 rounded-full flex items-center justify-center">
                       <MessageCircle class="w-8 h-8 text-blue-500 dark:text-blue-400" />
@@ -1691,6 +1746,30 @@ export default function ChatPage() {
                     </button>
                   )}
                 </For>
+
+                {/* Load More Button - shows at bottom of list */}
+                <Show when={hasMoreSessions() && sessions().length > 0}>
+                  <div class="pt-2 sm:pt-3">
+                    <button
+                      onClick={loadMoreSessions}
+                      disabled={isLoadingMore()}
+                      class="w-full flex items-center justify-center gap-2 py-2 sm:py-3 px-3 text-xs sm:text-sm text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 bg-gray-50 dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 border border-gray-200 dark:border-gray-600 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <Show
+                        when={isLoadingMore()}
+                        fallback={
+                          <>
+                            <Plus class="w-3 h-3 sm:w-4 sm:h-4" />
+                            <span>Load More Conversations</span>
+                          </>
+                        }
+                      >
+                        <Loader2 class="w-3 h-3 sm:w-4 sm:h-4 animate-spin" />
+                        <span>Loading...</span>
+                      </Show>
+                    </button>
+                  </div>
+                </Show>
               </div>
             </Show>
           </div>

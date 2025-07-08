@@ -177,6 +177,15 @@ export interface SessionEngagementMetrics {
   engagement_level: "low" | "medium" | "high";
 }
 
+// Paginated response type for chat sessions
+export interface ChatSessionsResponse {
+  sessions: ChatSessionResponse[];
+  total: number;
+  page: number;
+  limit: number;
+  has_more: boolean;
+}
+
 export interface ItineraryList {
   id: string;
   name: string;

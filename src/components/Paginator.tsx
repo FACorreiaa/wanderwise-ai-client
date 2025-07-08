@@ -14,13 +14,13 @@ export default function Paginator(props: PaginatorProps) {
   const startItem = () => (props.currentPage - 1) * props.itemsPerPage + 1;
   const endItem = () => Math.min(props.currentPage * props.itemsPerPage, props.totalItems);
 
-  // Generate page numbers to display
+  // Generate page numbers to display - simplified for mobile
   const getPageNumbers = () => {
     const pages: (number | string)[] = [];
     const { currentPage, totalPages } = props;
 
-    if (totalPages <= 7) {
-      // Show all pages if total is 7 or less
+    if (totalPages <= 5) {
+      // Show all pages if total is 5 or less (mobile-friendly)
       for (let i = 1; i <= totalPages; i++) {
         pages.push(i);
       }
@@ -28,25 +28,23 @@ export default function Paginator(props: PaginatorProps) {
       // Always show first page
       pages.push(1);
 
-      if (currentPage <= 4) {
-        // Show first 5 pages, then ellipsis, then last page
-        for (let i = 2; i <= 5; i++) {
+      if (currentPage <= 3) {
+        // Show first 3 pages, then ellipsis, then last page
+        for (let i = 2; i <= 3; i++) {
           pages.push(i);
         }
         pages.push('...');
         pages.push(totalPages);
-      } else if (currentPage >= totalPages - 3) {
-        // Show first page, ellipsis, then last 5 pages
+      } else if (currentPage >= totalPages - 2) {
+        // Show first page, ellipsis, then last 3 pages
         pages.push('...');
-        for (let i = totalPages - 4; i <= totalPages; i++) {
+        for (let i = totalPages - 2; i <= totalPages; i++) {
           pages.push(i);
         }
       } else {
-        // Show first page, ellipsis, current page area, ellipsis, last page
+        // Show first page, ellipsis, current page, ellipsis, last page
         pages.push('...');
-        for (let i = currentPage - 1; i <= currentPage + 1; i++) {
-          pages.push(i);
-        }
+        pages.push(currentPage);
         pages.push('...');
         pages.push(totalPages);
       }
@@ -56,64 +54,50 @@ export default function Paginator(props: PaginatorProps) {
   };
 
   return (
-    <div class={`flex items-center justify-between bg-white dark:bg-gray-800 px-4 py-3 sm:px-6 border-t border-gray-200 dark:border-gray-700 ${props.className || ''}`}>
-      {/* Mobile pagination */}
-      <div class="flex flex-1 justify-between sm:hidden">
-        <button
-          onClick={() => props.currentPage > 1 && props.onPageChange(props.currentPage - 1)}
-          disabled={props.currentPage === 1}
-          class="relative inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          <ChevronLeft class="w-4 h-4 mr-1" />
-          Previous
-        </button>
-        <button
-          onClick={() => props.currentPage < props.totalPages && props.onPageChange(props.currentPage + 1)}
-          disabled={props.currentPage === props.totalPages}
-          class="relative ml-3 inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          Next
-          <ChevronRight class="w-4 h-4 ml-1" />
-        </button>
-      </div>
-
-      {/* Desktop pagination */}
-      <div class="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
-        <div>
-          <p class="text-sm text-gray-700 dark:text-gray-300">
-            Showing <span class="font-medium">{startItem()}</span> to <span class="font-medium">{endItem()}</span> of{' '}
-            <span class="font-medium">{props.totalItems}</span> results
-          </p>
+    <div class={`bg-white dark:bg-gray-800 ${props.className || ''}`}>
+      {/* Mobile-first compact pagination - Always visible */}
+      <div class="px-3 py-2 sm:px-4 sm:py-3">
+        {/* Page info - Mobile optimized */}
+        <div class="flex items-center justify-between text-xs sm:text-sm text-gray-600 dark:text-gray-400 mb-2 sm:mb-3">
+          <span>
+            Page {props.currentPage} of {props.totalPages}
+          </span>
+          <span class="hidden sm:inline">
+            {startItem()}-{endItem()} of {props.totalItems}
+          </span>
         </div>
-        <div>
-          <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
-            {/* Previous button */}
-            <button
-              onClick={() => props.currentPage > 1 && props.onPageChange(props.currentPage - 1)}
-              disabled={props.currentPage === 1}
-              class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <span class="sr-only">Previous</span>
-              <ChevronLeft class="w-5 h-5" />
-            </button>
 
-            {/* Page numbers */}
+        {/* Navigation controls - Mobile-first */}
+        <div class="flex items-center justify-between gap-2">
+          {/* Previous button */}
+          <button
+            onClick={() => props.currentPage > 1 && props.onPageChange(props.currentPage - 1)}
+            disabled={props.currentPage === 1}
+            class="flex items-center gap-1 px-2 py-1 sm:px-3 sm:py-2 text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-md hover:bg-gray-100 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            <ChevronLeft class="w-3 h-3 sm:w-4 sm:h-4" />
+            <span class="hidden sm:inline">Previous</span>
+            <span class="sm:hidden">Prev</span>
+          </button>
+
+          {/* Page numbers - Compact for mobile */}
+          <div class="flex items-center gap-1">
             <For each={getPageNumbers()}>
               {(page) => (
                 <Show
                   when={typeof page === 'number'}
                   fallback={
-                    <span class="relative inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium text-gray-700 dark:text-gray-300">
-                      <MoreHorizontal class="w-4 h-4" />
+                    <span class="px-2 py-1 text-xs sm:text-sm text-gray-400 dark:text-gray-500">
+                      ...
                     </span>
                   }
                 >
                   <button
                     onClick={() => props.onPageChange(page as number)}
-                    class={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
+                    class={`min-w-[28px] sm:min-w-[32px] h-7 sm:h-8 px-1 sm:px-2 text-xs sm:text-sm font-medium rounded border transition-colors ${
                       props.currentPage === page
-                        ? 'z-10 bg-blue-50 dark:bg-blue-900 border-blue-500 text-blue-600 dark:text-blue-400'
-                        : 'bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700'
+                        ? 'bg-blue-500 text-white border-blue-500'
+                        : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700'
                     }`}
                   >
                     {page}
@@ -121,17 +105,18 @@ export default function Paginator(props: PaginatorProps) {
                 </Show>
               )}
             </For>
+          </div>
 
-            {/* Next button */}
-            <button
-              onClick={() => props.currentPage < props.totalPages && props.onPageChange(props.currentPage + 1)}
-              disabled={props.currentPage === props.totalPages}
-              class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-medium text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <span class="sr-only">Next</span>
-              <ChevronRight class="w-5 h-5" />
-            </button>
-          </nav>
+          {/* Next button */}
+          <button
+            onClick={() => props.currentPage < props.totalPages && props.onPageChange(props.currentPage + 1)}
+            disabled={props.currentPage === props.totalPages}
+            class="flex items-center gap-1 px-2 py-1 sm:px-3 sm:py-2 text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-md hover:bg-gray-100 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            <span class="hidden sm:inline">Next</span>
+            <span class="sm:hidden">Next</span>
+            <ChevronRight class="w-3 h-3 sm:w-4 sm:h-4" />
+          </button>
         </div>
       </div>
     </div>

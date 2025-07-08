@@ -520,26 +520,49 @@ export interface ChatSessionSummary {
   updated_at?: string;
 }
 
-// Get chat sessions for a user
+// Paginated response type for transformed chat sessions
+export interface ChatSessionSummaryResponse {
+  sessions: ChatSessionSummary[];
+  total: number;
+  page: number;
+  limit: number;
+  has_more: boolean;
+}
+
+// Get paginated chat sessions for a user
 export const getUserChatSessions = async (
   profileId: string,
-): Promise<ChatSessionSummary[]> => {
+  page: number = 1,
+  limit: number = 10,
+): Promise<ChatSessionSummaryResponse> => {
   try {
-    console.log("🔍 Fetching chat sessions for profile:", profileId);
-    const response = await apiRequest<ChatSessionResponse[]>(
-      `/llm/prompt-response/chat/sessions/user/${profileId}`,
+    console.log("🔍 Fetching paginated chat sessions for profile:", profileId, { page, limit });
+    
+    const params = new URLSearchParams({
+      page: page.toString(),
+      limit: limit.toString(),
+    });
+    
+    const response = await apiRequest<ChatSessionsResponse>(
+      `/llm/prompt-response/chat/sessions/user/${profileId}?${params.toString()}`,
       {
         method: "GET",
       },
     );
 
     console.log(
-      "✅ Successfully fetched chat sessions:",
-      response?.length || 0,
+      "✅ Successfully fetched paginated chat sessions:",
+      {
+        sessions: response.sessions?.length || 0,
+        total: response.total,
+        page: response.page,
+        limit: response.limit,
+        hasMore: response.has_more,
+      }
     );
 
-    // Transform the response to our expected format
-    return response.map((session: ChatSessionResponse) => ({
+    // Transform the sessions to our expected format
+    const transformedSessions = response.sessions.map((session: ChatSessionResponse) => ({
       id: session.id,
       title: generateSessionTitle(
         session.conversation_history,
@@ -562,6 +585,14 @@ export const getUserChatSessions = async (
       created_at: session.created_at,
       updated_at: session.updated_at,
     }));
+
+    return {
+      sessions: transformedSessions,
+      total: response.total,
+      page: response.page,
+      limit: response.limit,
+      has_more: response.has_more,
+    };
   } catch (error) {
     console.error("❌ Failed to fetch chat sessions:", error);
 
@@ -574,9 +605,15 @@ export const getUserChatSessions = async (
       );
     }
 
-    // Return empty array when backend endpoint has issues
+    // Return empty paginated response when backend endpoint has issues
     // This allows the chat to still work even if history loading fails
-    return [];
+    return {
+      sessions: [],
+      total: 0,
+      page: 1,
+      limit: 10,
+      has_more: false,
+    };
   }
 };
 
@@ -746,16 +783,28 @@ const hasItineraryInMessages = (
   });
 };
 
-// Query hook for getting chat sessions
-export const useGetChatSessionsQuery = (profileId: string | undefined) => {
+// Query hook for getting paginated chat sessions
+export const useGetChatSessionsQuery = (
+  profileId: string | undefined,
+  page: number = 1,
+  limit: number = 10
+) => {
   return {
-    queryKey: ["chatSessions", profileId],
+    queryKey: ["chatSessions", profileId, page, limit],
     queryFn: () => {
       if (!profileId) {
-        return Promise.resolve([]);
+        return Promise.resolve({
+          sessions: [],
+          total: 0,
+          page: 1,
+          limit: 10,
+          has_more: false,
+        } as ChatSessionSummaryResponse);
       }
-      return getUserChatSessions(profileId);
+      return getUserChatSessions(profileId, page, limit);
     },
     enabled: !!profileId,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    keepPreviousData: true, // Excellent for pagination UX
   };
 };
