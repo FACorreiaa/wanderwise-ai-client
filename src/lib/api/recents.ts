@@ -7,7 +7,6 @@ export const queryKeys = {
   lists: () => [...queryKeys.all, "list"] as const,
   list: (page: number, limit: number) =>
     [...queryKeys.lists(), { page, limit }] as const,
-  // You'll need this for the details view
   details: () => [...queryKeys.all, "detail"] as const,
   detail: (cityName: string) => [...queryKeys.details(), cityName] as const,
 };
@@ -22,8 +21,7 @@ const fetchRecentInteractions = async (
   );
 };
 
-// The hook that your component uses.
-// It now accepts signals directly for reactivity.
+// accepts signals directly for reactivity.
 export const useRecentInteractions = (
   page: () => number, // Accept a signal/accessor for the page
   limit: () => number, // Accept a signal/accessor for the limit
