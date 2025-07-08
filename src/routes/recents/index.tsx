@@ -20,7 +20,7 @@ import {
   SortDesc,
   Bookmark,
 } from "lucide-solid";
-import { useRecentInteractions } from "~/lib/api/recents";
+import { useRecentInteractions, type RecentInteractionsFilter } from "~/lib/api/recents";
 import type {
   CityInteractions,
   POIDetailedInfo,
@@ -36,8 +36,24 @@ export default function RecentsPage() {
   const [currentPage, setCurrentPage] = createSignal(1);
   const [itemsPerPage, setItemsPerPage] = createSignal(10);
 
+  // Filter and sort state
+  const [sortBy, setSortBy] = createSignal("last_activity");
+  const [sortOrder, setSortOrder] = createSignal("desc");
+  const [searchQuery, setSearchQuery] = createSignal("");
+  const [minInteractions, setMinInteractions] = createSignal<number | undefined>(undefined);
+  const [maxInteractions, setMaxInteractions] = createSignal<number | undefined>(undefined);
+
+  // Create filter object
+  const filterOptions = (): RecentInteractionsFilter => ({
+    sortBy: sortBy(),
+    sortOrder: sortOrder(),
+    search: searchQuery(),
+    minInteractions: minInteractions(),
+    maxInteractions: maxInteractions(),
+  });
+
   const navigate = useNavigate();
-  const recentsQuery = useRecentInteractions(currentPage, itemsPerPage);
+  const recentsQuery = useRecentInteractions(currentPage, itemsPerPage, filterOptions);
 
   // Statistics for current page only (since we're using server-side pagination)
   const getCurrentPageInteractions = () => {
@@ -79,10 +95,37 @@ export default function RecentsPage() {
   // Pagination handlers
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
-    // Reset search when changing pages to avoid confusion
-    //if (searchQuery()) {
-    //setSearchQuery('');
-    //}
+  };
+
+  // Filter handlers
+  const handleSearch = (query: string) => {
+    setSearchQuery(query);
+    setCurrentPage(1); // Reset to first page when searching
+  };
+
+  const handleSortChange = (field: string) => {
+    if (sortBy() === field) {
+      setSortOrder(sortOrder() === "asc" ? "desc" : "asc");
+    } else {
+      setSortBy(field);
+      setSortOrder("desc");
+    }
+    setCurrentPage(1); // Reset to first page when sorting
+  };
+
+  const handleFilterChange = (min?: number, max?: number) => {
+    setMinInteractions(min);
+    setMaxInteractions(max);
+    setCurrentPage(1); // Reset to first page when filtering
+  };
+
+  const clearFilters = () => {
+    setSearchQuery("");
+    setMinInteractions(undefined);
+    setMaxInteractions(undefined);
+    setSortBy("last_activity");
+    setSortOrder("desc");
+    setCurrentPage(1);
   };
 
   const getTotalPages = () => {
@@ -357,31 +400,112 @@ export default function RecentsPage() {
         </div>
       </div>
 
-      {/* Search and Filters - Temporarily disabled for server-side pagination */}
-      {/* TODO: Implement server-side search, filtering, and sorting */}
+      {/* Search and Filters */}
       <div class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div class="flex justify-between items-center">
-            {/* Keep view mode toggle */}
-            <div class="flex items-center gap-2">
-              <label class="text-sm font-medium text-gray-700 dark:text-gray-300 whitespace-nowrap">
-                View:
-              </label>
-              <div class="flex items-center border border-gray-300 dark:border-gray-600 rounded-lg p-1 bg-white dark:bg-gray-700">
-                <button
-                  onClick={() => setViewMode("grid")}
-                  class={`p-2 rounded transition-colors ${viewMode() === "grid" ? "bg-blue-600 text-white" : "text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-600"}`}
-                  title="Grid view"
+          <div class="space-y-4">
+            {/* Search and Sort Controls */}
+            <div class="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
+              {/* Search */}
+              <div class="flex-1 max-w-md">
+                <div class="relative">
+                  <Search class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                  <input
+                    type="text"
+                    placeholder="Search cities..."
+                    value={searchQuery()}
+                    onInput={(e) => handleSearch(e.currentTarget.value)}
+                    class="w-full pl-9 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+              </div>
+
+              {/* Sort Controls */}
+              <div class="flex items-center gap-2">
+                <label class="text-sm font-medium text-gray-700 dark:text-gray-300 whitespace-nowrap">
+                  Sort by:
+                </label>
+                <select
+                  value={sortBy()}
+                  onChange={(e) => handleSortChange(e.currentTarget.value)}
+                  class="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 >
-                  <Grid class="w-4 h-4" />
-                </button>
+                  <option value="last_activity">Last Activity</option>
+                  <option value="city_name">City Name</option>
+                  <option value="interaction_count">Interactions</option>
+                  <option value="poi_count">POI Count</option>
+                </select>
                 <button
-                  onClick={() => setViewMode("list")}
-                  class={`p-2 rounded transition-colors ${viewMode() === "list" ? "bg-blue-600 text-white" : "text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-600"}`}
-                  title="List view"
+                  onClick={() => setSortOrder(sortOrder() === "asc" ? "desc" : "asc")}
+                  class="p-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
+                  title={`Sort ${sortOrder() === "asc" ? "descending" : "ascending"}`}
                 >
-                  <List class="w-4 h-4" />
+                  {sortOrder() === "asc" ? <SortAsc class="w-4 h-4" /> : <SortDesc class="w-4 h-4" />}
                 </button>
+              </div>
+            </div>
+
+            {/* Filters and View Controls */}
+            <div class="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
+              {/* Interaction Count Filter */}
+              <div class="flex items-center gap-2">
+                <label class="text-sm font-medium text-gray-700 dark:text-gray-300 whitespace-nowrap">
+                  Interactions:
+                </label>
+                <input
+                  type="number"
+                  placeholder="Min"
+                  value={minInteractions() !== undefined ? minInteractions().toString() : ""}
+                  onInput={(e) => {
+                    const value = e.currentTarget.value;
+                    const numValue = value === "" ? undefined : Number(value);
+                    handleFilterChange(numValue, maxInteractions());
+                  }}
+                  class="w-20 px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
+                />
+                <span class="text-gray-500">to</span>
+                <input
+                  type="number"
+                  placeholder="Max"
+                  value={maxInteractions() !== undefined ? maxInteractions().toString() : ""}
+                  onInput={(e) => {
+                    const value = e.currentTarget.value;
+                    const numValue = value === "" ? undefined : Number(value);
+                    handleFilterChange(minInteractions(), numValue);
+                  }}
+                  class="w-20 px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
+                />
+                <Show when={searchQuery() || minInteractions() !== undefined || maxInteractions() !== undefined || sortBy() !== "last_activity" || sortOrder() !== "desc"}>
+                  <button
+                    onClick={clearFilters}
+                    class="px-3 py-1 text-sm bg-gray-100 dark:bg-gray-600 text-gray-600 dark:text-gray-300 rounded hover:bg-gray-200 dark:hover:bg-gray-500 transition-colors"
+                  >
+                    Clear
+                  </button>
+                </Show>
+              </div>
+
+              {/* View Mode Toggle */}
+              <div class="flex items-center gap-2">
+                <label class="text-sm font-medium text-gray-700 dark:text-gray-300 whitespace-nowrap">
+                  View:
+                </label>
+                <div class="flex items-center border border-gray-300 dark:border-gray-600 rounded-lg p-1 bg-white dark:bg-gray-700">
+                  <button
+                    onClick={() => setViewMode("grid")}
+                    class={`p-2 rounded transition-colors ${viewMode() === "grid" ? "bg-blue-600 text-white" : "text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-600"}`}
+                    title="Grid view"
+                  >
+                    <Grid class="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => setViewMode("list")}
+                    class={`p-2 rounded transition-colors ${viewMode() === "list" ? "bg-blue-600 text-white" : "text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-600"}`}
+                    title="List view"
+                  >
+                    <List class="w-4 h-4" />
+                  </button>
+                </div>
               </div>
             </div>
           </div>
