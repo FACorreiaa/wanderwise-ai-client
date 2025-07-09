@@ -467,6 +467,39 @@ export default function RestaurantsPage() {
 
 
     // Get display location
+    // Get coordinates based on streaming data or fallback to search params
+    const getSearchCoordinates = () => {
+        const streaming = streamingData();
+        console.log('🍽️ RESTAURANTS getSearchCoordinates - streaming data:', streaming);
+        
+        if (streaming && streaming.restaurants && streaming.restaurants.length > 0) {
+            const firstRestaurant = streaming.restaurants[0];
+            console.log('🍽️ First restaurant:', firstRestaurant);
+            console.log('🍽️ First restaurant coordinates:', {
+                lat: firstRestaurant.latitude, 
+                lon: firstRestaurant.longitude,
+                city: firstRestaurant.city
+            });
+            
+            if (firstRestaurant.latitude && firstRestaurant.longitude) {
+                const coords = {
+                    lat: typeof firstRestaurant.latitude === 'string' ? parseFloat(firstRestaurant.latitude) : firstRestaurant.latitude,
+                    lon: typeof firstRestaurant.longitude === 'string' ? parseFloat(firstRestaurant.longitude) : firstRestaurant.longitude,
+                };
+                console.log('🍽️ Using dynamic coordinates:', coords);
+                return coords;
+            }
+        }
+        
+        // Fall back to search params or default
+        const fallbackCoords = {
+            lat: searchParams().centerLat || 41.1579,
+            lon: searchParams().centerLng || -8.6291,
+        };
+        console.log('🍽️ Using fallback coordinates:', fallbackCoords);
+        return fallbackCoords;
+    };
+
     const displayLocation = () => {
         const streaming = streamingData();
         if (streaming && streaming.restaurants && streaming.restaurants.length > 0) {
@@ -591,7 +624,7 @@ export default function RestaurantsPage() {
                     <Show when={viewMode() === 'map' || viewMode() === 'split'}>
                         <div class={viewMode() === 'map' ? 'col-span-full h-[400px] sm:h-[600px]' : 'h-[300px] sm:h-[500px]'}>
                             <MapComponent
-                                center={[searchParams().centerLng, searchParams().centerLat]}
+                                center={[getSearchCoordinates().lon, getSearchCoordinates().lat]}
                                 zoom={12}
                                 minZoom={10}
                                 maxZoom={22}

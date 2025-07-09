@@ -244,3 +244,247 @@ export const useSearchPOIs = (query: string, filters?: any) => {
     staleTime: 5 * 60 * 1000,
   }));
 };
+
+// ===============
+// DISCOVER CATEGORY APIs
+// ===============
+
+export const getNearbyRestaurants = async (
+  lat: number,
+  lon: number,
+  radiusMeters: number,
+): Promise<POIDetailedInfo[]> => {
+  try {
+    const params = new URLSearchParams({
+      lat: lat.toString(),
+      lon: lon.toString(),
+      distance: radiusMeters.toString(),
+    });
+
+    console.log("🍽️ getNearbyRestaurants params:", params.toString());
+    const response = await apiRequest<{ restaurants?: POIDetailedInfo[]; points_of_interest?: POIDetailedInfo[] }>(
+      `/pois/discover/restaurants?${params.toString()}`,
+      { method: "GET" },
+    );
+
+    console.log("🍽️ getNearbyRestaurants response:", response);
+    return response.restaurants || response.points_of_interest || [];
+  } catch (error) {
+    console.error("🍽️ getNearbyRestaurants error:", error);
+    // Return empty array on error to prevent UI breaking
+    return [];
+  }
+};
+
+export const getNearbyActivities = async (
+  lat: number,
+  lon: number,
+  radiusMeters: number,
+): Promise<POIDetailedInfo[]> => {
+  try {
+    const params = new URLSearchParams({
+      lat: lat.toString(),
+      lon: lon.toString(),
+      distance: radiusMeters.toString(),
+    });
+
+    console.log("🎯 getNearbyActivities params:", params.toString());
+    const response = await apiRequest<{ activities?: POIDetailedInfo[]; points_of_interest?: POIDetailedInfo[] }>(
+      `/pois/discover/activities?${params.toString()}`,
+      { method: "GET" },
+    );
+
+    console.log("🎯 getNearbyActivities response:", response);
+    return response.activities || response.points_of_interest || [];
+  } catch (error) {
+    console.error("🎯 getNearbyActivities error:", error);
+    // Return empty array on error to prevent UI breaking
+    return [];
+  }
+};
+
+export const getNearbyHotels = async (
+  lat: number,
+  lon: number,
+  radiusMeters: number,
+): Promise<POIDetailedInfo[]> => {
+  try {
+    const params = new URLSearchParams({
+      lat: lat.toString(),
+      lon: lon.toString(),
+      distance: radiusMeters.toString(),
+    });
+
+    console.log("🏨 getNearbyHotels params:", params.toString());
+    const response = await apiRequest<{ hotels?: POIDetailedInfo[]; points_of_interest?: POIDetailedInfo[] }>(
+      `/pois/discover/hotels?${params.toString()}`,
+      { method: "GET" },
+    );
+
+    console.log("🏨 getNearbyHotels response:", response);
+    return response.hotels || response.points_of_interest || [];
+  } catch (error) {
+    console.error("🏨 getNearbyHotels error:", error);
+    // Return empty array on error to prevent UI breaking
+    return [];
+  }
+};
+
+export const getNearbyAttractions = async (
+  lat: number,
+  lon: number,
+  radiusMeters: number,
+): Promise<POIDetailedInfo[]> => {
+  try {
+    const params = new URLSearchParams({
+      lat: lat.toString(),
+      lon: lon.toString(),
+      distance: radiusMeters.toString(),
+    });
+
+    console.log("🏛️ getNearbyAttractions params:", params.toString());
+    const response = await apiRequest<{ attractions?: POIDetailedInfo[]; points_of_interest?: POIDetailedInfo[] }>(
+      `/pois/discover/attractions?${params.toString()}`,
+      { method: "GET" },
+    );
+
+    console.log("🏛️ getNearbyAttractions response:", response);
+    return response.attractions || response.points_of_interest || [];
+  } catch (error) {
+    console.error("🏛️ getNearbyAttractions error:", error);
+    // Return empty array on error to prevent UI breaking
+    return [];
+  }
+};
+
+// ===============
+// DISCOVER CATEGORY HOOKS
+// ===============
+
+export function useNearbyRestaurants(
+  latFn: () => number | undefined,
+  lonFn: () => number | undefined,
+  radiusFn: () => number,
+) {
+  const [data, dataInfo] = createResource(
+    () => {
+      const lat = latFn();
+      const lon = lonFn();
+      const radiusMeters = radiusFn();
+      
+      if (lat === undefined || lon === undefined || radiusMeters <= 0) {
+        return null;
+      }
+      
+      return [lat, lon, radiusMeters];
+    },
+    async ([lat, lon, radiusMeters]: [number, number, number]) => {
+      return getNearbyRestaurants(lat, lon, radiusMeters);
+    },
+  );
+
+  return {
+    data,
+    isLoading: () => dataInfo.loading,
+    isError: () => !!dataInfo.error,
+    error: () => dataInfo.error,
+    isSuccess: () => !dataInfo.loading && !dataInfo.error && data() !== undefined,
+    refetch: dataInfo.refetch,
+  };
+}
+
+export function useNearbyActivities(
+  latFn: () => number | undefined,
+  lonFn: () => number | undefined,
+  radiusFn: () => number,
+) {
+  const [data, dataInfo] = createResource(
+    () => {
+      const lat = latFn();
+      const lon = lonFn();
+      const radiusMeters = radiusFn();
+      
+      if (lat === undefined || lon === undefined || radiusMeters <= 0) {
+        return null;
+      }
+      
+      return [lat, lon, radiusMeters];
+    },
+    async ([lat, lon, radiusMeters]: [number, number, number]) => {
+      return getNearbyActivities(lat, lon, radiusMeters);
+    },
+  );
+
+  return {
+    data,
+    isLoading: () => dataInfo.loading,
+    isError: () => !!dataInfo.error,
+    error: () => dataInfo.error,
+    isSuccess: () => !dataInfo.loading && !dataInfo.error && data() !== undefined,
+    refetch: dataInfo.refetch,
+  };
+}
+
+export function useNearbyHotels(
+  latFn: () => number | undefined,
+  lonFn: () => number | undefined,
+  radiusFn: () => number,
+) {
+  const [data, dataInfo] = createResource(
+    () => {
+      const lat = latFn();
+      const lon = lonFn();
+      const radiusMeters = radiusFn();
+      
+      if (lat === undefined || lon === undefined || radiusMeters <= 0) {
+        return null;
+      }
+      
+      return [lat, lon, radiusMeters];
+    },
+    async ([lat, lon, radiusMeters]: [number, number, number]) => {
+      return getNearbyHotels(lat, lon, radiusMeters);
+    },
+  );
+
+  return {
+    data,
+    isLoading: () => dataInfo.loading,
+    isError: () => !!dataInfo.error,
+    error: () => dataInfo.error,
+    isSuccess: () => !dataInfo.loading && !dataInfo.error && data() !== undefined,
+    refetch: dataInfo.refetch,
+  };
+}
+
+export function useNearbyAttractions(
+  latFn: () => number | undefined,
+  lonFn: () => number | undefined,
+  radiusFn: () => number,
+) {
+  const [data, dataInfo] = createResource(
+    () => {
+      const lat = latFn();
+      const lon = lonFn();
+      const radiusMeters = radiusFn();
+      
+      if (lat === undefined || lon === undefined || radiusMeters <= 0) {
+        return null;
+      }
+      
+      return [lat, lon, radiusMeters];
+    },
+    async ([lat, lon, radiusMeters]: [number, number, number]) => {
+      return getNearbyAttractions(lat, lon, radiusMeters);
+    },
+  );
+
+  return {
+    data,
+    isLoading: () => dataInfo.loading,
+    isError: () => !!dataInfo.error,
+    error: () => dataInfo.error,
+    isSuccess: () => !dataInfo.loading && !dataInfo.error && data() !== undefined,
+    refetch: dataInfo.refetch,
+  };
+}
