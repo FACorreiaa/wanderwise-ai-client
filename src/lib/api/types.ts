@@ -218,10 +218,9 @@ export interface UserSavedItinerary {
 
 export interface PaginatedItinerariesResponse {
   itineraries: UserSavedItinerary[];
-  total: number;
+  total_records: number;
   page: number;
-  limit: number;
-  has_more: boolean;
+  page_size: number;
 }
 
 export interface Hotel {

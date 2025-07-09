@@ -2,7 +2,7 @@ import { Badge } from "@/ui/badge";
 import { Button } from "@/ui/button";
 import { useLocation } from "@solidjs/router";
 import { A } from '@solidjs/router';
-import { Menu, X, User, Settings, LogOut, MessageCircle, Heart, List, MapPin, Sun, Moon, Clock } from "lucide-solid";
+import { Menu, X, User, Settings, LogOut, MessageCircle, Heart, List, MapPin, Sun, Moon, Clock, Bookmark } from "lucide-solid";
 import { createSignal, For, Show, onMount, onCleanup } from "solid-js";
 import { ImageRoot, ImageFallback, Image } from "@/ui/image";
 import { useAuth } from "~/contexts/AuthContext";
@@ -23,6 +23,7 @@ const authNavigationItems = [
   { name: 'Recents', href: '/recents', icon: Clock },
   { name: 'Chat', href: '/chat', icon: MessageCircle },
   { name: 'Favorites', href: '/favorites', icon: Heart },
+  { name: 'Bookmarks', href: '/bookmarks', icon: Bookmark },
   { name: 'Lists', href: '/lists', icon: List },
   { name: 'Profile', href: '/profile', icon: User }
 ];

@@ -1,19 +1,15 @@
 import { createSignal, For, Show, createEffect, onMount } from "solid-js";
-import { useLocation, useNavigate } from "@solidjs/router";
+import { useLocation } from "@solidjs/router";
 import {
   Search,
   Filter,
   MapPin,
   Star,
-  Heart,
-  Bookmark,
   Clock,
   DollarSign,
-  Users,
   Wifi,
   Camera,
   Grid,
-  List,
   SortAsc,
   SortDesc,
   X,
@@ -62,7 +58,6 @@ export default function DiscoverPage() {
     error: locationError,
   } = useUserLocation();
   const [searchRadius, setSearchRadius] = createSignal(10000);
-  const navigate = useNavigate();
   const location = useLocation();
 
   // API hooks

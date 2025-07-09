@@ -1,6 +1,6 @@
 import { createSignal, createEffect, For, Show, onMount } from 'solid-js';
 import { useLocation, useSearchParams } from '@solidjs/router';
-import { MapPin, Clock, Star, Filter, Heart, Share2, Download, Edit3, Plus, X, Navigation, Calendar, Users, DollarSign, Camera, Coffee, Utensils, Wifi, CreditCard, Loader2, MessageCircle, Send, ChefHat, Wine, UtensilsCrossed, Smartphone } from 'lucide-solid';
+import { MapPin, Clock, Star, Filter, Heart, Share2, X, DollarSign, Coffee, Utensils, Loader2, MessageCircle, ChefHat, Wine, UtensilsCrossed } from 'lucide-solid';
 import MapComponent from '~/components/features/Map/Map';
 // Removed old API imports - now using unified streaming endpoint only
 import type { DiningResponse, RestaurantDetailedInfo } from '~/lib/api/types';

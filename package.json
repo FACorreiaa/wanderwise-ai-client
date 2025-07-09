@@ -8,7 +8,11 @@
     "version": "vinxi version",
     "preview": "pnpm run build && npx wrangler dev",
     "deploy": "pnpm run build && wrangler deploy",
-    "cf-typegen": "wrangler types"
+    "cf-typegen": "wrangler types",
+    "check-unused": "unimported",
+    "check-unused-update": "unimported -u",
+    "lint": "eslint src --ext .ts,.tsx",
+    "lint:fix": "eslint src --ext .ts,.tsx --fix"
   },
   "dependencies": {
     "@kobalte/core": "^0.13.10",
@@ -29,12 +33,14 @@
     "workbox-window": "^7.3.0"
   },
   "devDependencies": {
+    "@eslint/js": "^9.30.1",
     "@tailwindcss/vite": "^4.1.8",
     "@types/node": "^24.0.1",
     "eslint": "^9.30.1",
     "eslint-plugin-solid": "^0.14.5",
     "nitropack": "^2.11.12",
     "tailwindcss": "^4.1.8",
+    "unimported": "^1.31.1",
     "wrangler": "^4.20.0"
   },
   "engines": {
