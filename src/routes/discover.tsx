@@ -32,7 +32,13 @@ import {
   useAddToFavoritesMutation,
   useRemoveFromFavoritesMutation,
 } from "~/lib/api/pois";
-import { Tabs, TabsList, TabsTrigger, TabsContent, TabsIndicator } from "@/ui/tabs";
+import {
+  Tabs,
+  TabsList,
+  TabsTrigger,
+  TabsContent,
+  TabsIndicator,
+} from "@/ui/tabs";
 import type { ActivitiesResponse, POIDetailedInfo } from "~/lib/api/types";
 import { useUserLocation } from "@/contexts/LocationContext";
 import MapComponent from "~/components/features/Map/Map";
@@ -49,7 +55,12 @@ export default function DiscoverPage() {
   const [fromChat, setFromChat] = createSignal(false);
   const [showOnlyFavorites, setShowOnlyFavorites] = createSignal(false);
   const [activeTab, setActiveTab] = createSignal("general");
-  const { userLocation, requestLocation, isLoadingLocation, error: locationError } = useUserLocation();
+  const {
+    userLocation,
+    requestLocation,
+    isLoadingLocation,
+    error: locationError,
+  } = useUserLocation();
   const [searchRadius, setSearchRadius] = createSignal(10000);
   const navigate = useNavigate();
   const location = useLocation();
@@ -128,25 +139,25 @@ export default function DiscoverPage() {
     () => userLocation()?.longitude,
     () => searchRadius(),
   );
-  
+
   const restaurantsQuery = useNearbyRestaurants(
     () => userLocation()?.latitude,
     () => userLocation()?.longitude,
     () => searchRadius(),
   );
-  
+
   const activitiesQuery = useNearbyActivities(
     () => userLocation()?.latitude,
     () => userLocation()?.longitude,
     () => searchRadius(),
   );
-  
+
   const hotelsQuery = useNearbyHotels(
     () => userLocation()?.latitude,
     () => userLocation()?.longitude,
     () => searchRadius(),
   );
-  
+
   const attractionsQuery = useNearbyAttractions(
     () => userLocation()?.latitude,
     () => userLocation()?.longitude,
@@ -211,11 +222,11 @@ export default function DiscoverPage() {
     const tabTitles = {
       general: "Nearby Places",
       restaurants: "Restaurants",
-      activities: "Activities", 
+      activities: "Activities",
       hotels: "Hotels",
-      attractions: "Attractions"
+      attractions: "Attractions",
     };
-    
+
     return tabTitles[activeTab()] || "Nearby Places";
   };
 
@@ -234,7 +245,7 @@ export default function DiscoverPage() {
         return poisQuery;
     }
   };
-  
+
   // Filter and sort POIs
   const filteredPois = () => {
     const currentQuery = getCurrentQuery();
@@ -586,7 +597,7 @@ export default function DiscoverPage() {
     console.log("getCurrentQuery().data():", getCurrentQuery().data());
     console.log("filteredPois():", filteredPois());
   });
-  
+
   createEffect(() => {
     console.log("=== poisQuery.data changed ===");
     console.log("poisQuery.data:", poisQuery.data());
@@ -777,21 +788,27 @@ export default function DiscoverPage() {
                   </Show>
                   <Show when={locationError()}>
                     <p class="text-red-600 dark:text-red-400 text-sm">
-                      📍 Location access denied. Please enable location in your browser.
+                      📍 Location access denied. Please enable location in your
+                      browser.
                     </p>
                   </Show>
                 </div>
               </Show>
               <Show when={userLocation() && getCurrentQuery().isLoading()}>
-                <p class="text-blue-600 dark:text-blue-400 text-sm">Loading nearby places...</p>
+                <p class="text-blue-600 dark:text-blue-400 text-sm">
+                  Loading nearby places...
+                </p>
               </Show>
               <Show when={getCurrentQuery().isError()}>
                 <div class="mt-2 p-3 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800">
                   <p class="text-red-600 dark:text-red-400 text-sm font-medium">
-                    Backend Error: {getCurrentQuery().error()?.message || "Failed to load data"}
+                    Backend Error:{" "}
+                    {getCurrentQuery().error()?.message ||
+                      "Failed to load data"}
                   </p>
                   <p class="text-red-500 dark:text-red-400 text-xs mt-1">
-                    This appears to be a server-side issue. Please try again later.
+                    This appears to be a server-side issue. Please try again
+                    later.
                   </p>
                   <button
                     onClick={() => getCurrentQuery().refetch()}
@@ -801,7 +818,9 @@ export default function DiscoverPage() {
                   </button>
                 </div>
               </Show>
-              <Show when={getCurrentQuery().isSuccess() && getCurrentQuery().data()}>
+              <Show
+                when={getCurrentQuery().isSuccess() && getCurrentQuery().data()}
+              >
                 <div class="flex items-center gap-4 mt-1">
                   <p class="text-gray-600 dark:text-gray-400">
                     {getCurrentQuery()?.data()?.length} amazing places to visit
@@ -818,31 +837,46 @@ export default function DiscoverPage() {
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <Tabs value={activeTab()} onChange={setActiveTab} class="w-full">
             <TabsList class="grid w-full grid-cols-5 lg:w-auto lg:grid-cols-none lg:inline-flex lg:h-10 lg:items-center lg:justify-center lg:rounded-md lg:bg-gray-100 lg:p-1 lg:text-gray-500 dark:lg:bg-gray-800 dark:lg:text-gray-400">
-              <TabsTrigger value="general" class="data-[state=active]:bg-white data-[state=active]:text-gray-900 data-[state=active]:shadow-sm dark:data-[state=active]:bg-gray-700 dark:data-[state=active]:text-gray-100">
+              <TabsTrigger
+                value="general"
+                class="data-[state=active]:bg-white data-[state=active]:text-gray-900 data-[state=active]:shadow-sm dark:data-[state=active]:bg-gray-700 dark:data-[state=active]:text-gray-100"
+              >
                 <div class="flex items-center gap-2">
                   <Compass class="w-4 h-4" />
                   <span class="hidden sm:inline">General</span>
                 </div>
               </TabsTrigger>
-              <TabsTrigger value="restaurants" class="data-[state=active]:bg-white data-[state=active]:text-gray-900 data-[state=active]:shadow-sm dark:data-[state=active]:bg-gray-700 dark:data-[state=active]:text-gray-100">
+              <TabsTrigger
+                value="restaurants"
+                class="data-[state=active]:bg-white data-[state=active]:text-gray-900 data-[state=active]:shadow-sm dark:data-[state=active]:bg-gray-700 dark:data-[state=active]:text-gray-100"
+              >
                 <div class="flex items-center gap-2">
                   <DollarSign class="w-4 h-4" />
                   <span class="hidden sm:inline">Restaurants</span>
                 </div>
               </TabsTrigger>
-              <TabsTrigger value="activities" class="data-[state=active]:bg-white data-[state=active]:text-gray-900 data-[state=active]:shadow-sm dark:data-[state=active]:bg-gray-700 dark:data-[state=active]:text-gray-100">
+              <TabsTrigger
+                value="activities"
+                class="data-[state=active]:bg-white data-[state=active]:text-gray-900 data-[state=active]:shadow-sm dark:data-[state=active]:bg-gray-700 dark:data-[state=active]:text-gray-100"
+              >
                 <div class="flex items-center gap-2">
                   <Camera class="w-4 h-4" />
                   <span class="hidden sm:inline">Activities</span>
                 </div>
               </TabsTrigger>
-              <TabsTrigger value="hotels" class="data-[state=active]:bg-white data-[state=active]:text-gray-900 data-[state=active]:shadow-sm dark:data-[state=active]:bg-gray-700 dark:data-[state=active]:text-gray-100">
+              <TabsTrigger
+                value="hotels"
+                class="data-[state=active]:bg-white data-[state=active]:text-gray-900 data-[state=active]:shadow-sm dark:data-[state=active]:bg-gray-700 dark:data-[state=active]:text-gray-100"
+              >
                 <div class="flex items-center gap-2">
                   <MapPin class="w-4 h-4" />
                   <span class="hidden sm:inline">Hotels</span>
                 </div>
               </TabsTrigger>
-              <TabsTrigger value="attractions" class="data-[state=active]:bg-white data-[state=active]:text-gray-900 data-[state=active]:shadow-sm dark:data-[state=active]:bg-gray-700 dark:data-[state=active]:text-gray-100">
+              <TabsTrigger
+                value="attractions"
+                class="data-[state=active]:bg-white data-[state=active]:text-gray-900 data-[state=active]:shadow-sm dark:data-[state=active]:bg-gray-700 dark:data-[state=active]:text-gray-100"
+              >
                 <div class="flex items-center gap-2">
                   <Star class="w-4 h-4" />
                   <span class="hidden sm:inline">Attractions</span>
@@ -850,302 +884,7 @@ export default function DiscoverPage() {
               </TabsTrigger>
               <TabsIndicator />
             </TabsList>
-            
-            <TabsContent value="general" class="mt-4">
-              <div class="space-y-4">
-                <div class="flex items-center justify-between">
-                  <p class="text-gray-600 dark:text-gray-400">
-                    {filteredPois().length} place
-                    {filteredPois().length !== 1 ? "s" : ""} found
-                  </p>
-                </div>
-                <div class="discover-content">
-                  <Show
-                    when={filteredPois().length > 0}
-                    fallback={
-                      <div class="text-center py-12">
-                        <Search class="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
-                        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                          No places found
-                        </h3>
-                        <p class="text-gray-600 dark:text-gray-400">
-                          Try adjusting your search criteria or filters
-                        </p>
-                      </div>
-                    }
-                  >
-                    {/* Map + Cards View */}
-                    <Show when={viewMode() === "map-cards"}>
-                      <div class="flex flex-col lg:flex-row gap-6 h-[700px]">
-                        {/* Map Section */}
-                        <div class="w-full lg:w-1/2 h-full rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700">
-                          <MapComponent
-                            center={[
-                              getSearchCoordinates().lon,
-                              getSearchCoordinates().lat,
-                            ]}
-                            zoom={12}
-                            pointsOfInterest={filteredPois()}
-                          />
-                        </div>
-                        {/* Cards Section */}
-                        <div class="w-full lg:w-1/2 h-full overflow-y-auto">
-                          <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-1 gap-4 pr-2">
-                            <For each={filteredPois()}>
-                              {(poi) => renderListItem(poi)}
-                            </For>
-                          </div>
-                        </div>
-                      </div>
-                    </Show>
-                    {/* Cards Only View */}
-                    <Show when={viewMode() === "cards"}>
-                      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                        <For each={filteredPois()}>{(poi) => renderGridCard(poi)}</For>
-                      </div>
-                    </Show>
-                    {/* Map Only View */}
-                    <Show when={viewMode() === "map"}>
-                      <div class="h-[700px] w-full rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700">
-                        <MapComponent
-                          center={[
-                            getSearchCoordinates().lon,
-                            getSearchCoordinates().lat,
-                          ]}
-                          zoom={12}
-                          pointsOfInterest={filteredPois()}
-                        />
-                      </div>
-                    </Show>
-                  </Show>
-                </div>
-              </div>
-            </TabsContent>
-            
-            <TabsContent value="restaurants" class="mt-4">
-              <div class="space-y-4">
-                <div class="flex items-center justify-between">
-                  <p class="text-gray-600 dark:text-gray-400">
-                    {restaurantsQuery?.data()?.length || 0} restaurant
-                    {(restaurantsQuery?.data()?.length || 0) !== 1 ? "s" : ""} found
-                  </p>
-                </div>
-                <Show
-                  when={restaurantsQuery?.data() && restaurantsQuery.data().length > 0}
-                  fallback={
-                    <div class="text-center py-12">
-                      <Show when={restaurantsQuery?.isLoading()} fallback={
-                        <div>
-                          <DollarSign class="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
-                          <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                            No restaurants found
-                          </h3>
-                          <p class="text-gray-600 dark:text-gray-400">
-                            Try adjusting your search criteria or location
-                          </p>
-                          <Show when={restaurantsQuery?.isError()}>
-                            <div class="mt-4 p-4 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800">
-                              <p class="text-red-600 dark:text-red-400 text-sm font-medium">
-                                Backend Error: {restaurantsQuery.error()?.message || "Failed to load restaurants"}
-                              </p>
-                              <p class="text-red-500 dark:text-red-400 text-xs mt-1">
-                                This appears to be a server-side issue. Please try again later or contact support.
-                              </p>
-                              <button
-                                onClick={() => restaurantsQuery.refetch()}
-                                class="mt-2 px-3 py-1 bg-red-600 text-white rounded text-xs hover:bg-red-700 transition-colors"
-                              >
-                                Retry
-                              </button>
-                            </div>
-                          </Show>
-                        </div>
-                      }>
-                        <div>
-                          <DollarSign class="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-4 animate-pulse" />
-                          <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                            Loading restaurants...
-                          </h3>
-                        </div>
-                      </Show>
-                    </div>
-                  }
-                >
-                  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                    <For each={restaurantsQuery.data()}>{(poi) => renderGridCard(poi)}</For>
-                  </div>
-                </Show>
-              </div>
-            </TabsContent>
-            
-            <TabsContent value="activities" class="mt-4">
-              <div class="space-y-4">
-                <div class="flex items-center justify-between">
-                  <p class="text-gray-600 dark:text-gray-400">
-                    {activitiesQuery?.data()?.length || 0} activit
-                    {(activitiesQuery?.data()?.length || 0) !== 1 ? "ies" : "y"} found
-                  </p>
-                </div>
-                <Show
-                  when={activitiesQuery?.data() && activitiesQuery.data().length > 0}
-                  fallback={
-                    <div class="text-center py-12">
-                      <Show when={activitiesQuery?.isLoading()} fallback={
-                        <div>
-                          <Camera class="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
-                          <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                            No activities found
-                          </h3>
-                          <p class="text-gray-600 dark:text-gray-400">
-                            Try adjusting your search criteria or location
-                          </p>
-                          <Show when={activitiesQuery?.isError()}>
-                            <div class="mt-4 p-4 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800">
-                              <p class="text-red-600 dark:text-red-400 text-sm font-medium">
-                                Backend Error: {activitiesQuery.error()?.message || "Failed to load activities"}
-                              </p>
-                              <p class="text-red-500 dark:text-red-400 text-xs mt-1">
-                                This appears to be a server-side issue. Please try again later or contact support.
-                              </p>
-                              <button
-                                onClick={() => activitiesQuery.refetch()}
-                                class="mt-2 px-3 py-1 bg-red-600 text-white rounded text-xs hover:bg-red-700 transition-colors"
-                              >
-                                Retry
-                              </button>
-                            </div>
-                          </Show>
-                        </div>
-                      }>
-                        <div>
-                          <Camera class="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-4 animate-pulse" />
-                          <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                            Loading activities...
-                          </h3>
-                        </div>
-                      </Show>
-                    </div>
-                  }
-                >
-                  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                    <For each={activitiesQuery.data()}>{(poi) => renderGridCard(poi)}</For>
-                  </div>
-                </Show>
-              </div>
-            </TabsContent>
-            
-            <TabsContent value="hotels" class="mt-4">
-              <div class="space-y-4">
-                <div class="flex items-center justify-between">
-                  <p class="text-gray-600 dark:text-gray-400">
-                    {hotelsQuery?.data()?.length || 0} hotel
-                    {(hotelsQuery?.data()?.length || 0) !== 1 ? "s" : ""} found
-                  </p>
-                </div>
-                <Show
-                  when={hotelsQuery?.data() && hotelsQuery.data().length > 0}
-                  fallback={
-                    <div class="text-center py-12">
-                      <Show when={hotelsQuery?.isLoading()} fallback={
-                        <div>
-                          <MapPin class="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
-                          <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                            No hotels found
-                          </h3>
-                          <p class="text-gray-600 dark:text-gray-400">
-                            Try adjusting your search criteria or location
-                          </p>
-                          <Show when={hotelsQuery?.isError()}>
-                            <div class="mt-4 p-4 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800">
-                              <p class="text-red-600 dark:text-red-400 text-sm font-medium">
-                                Backend Error: {hotelsQuery.error()?.message || "Failed to load hotels"}
-                              </p>
-                              <p class="text-red-500 dark:text-red-400 text-xs mt-1">
-                                This appears to be a server-side issue. Please try again later or contact support.
-                              </p>
-                              <button
-                                onClick={() => hotelsQuery.refetch()}
-                                class="mt-2 px-3 py-1 bg-red-600 text-white rounded text-xs hover:bg-red-700 transition-colors"
-                              >
-                                Retry
-                              </button>
-                            </div>
-                          </Show>
-                        </div>
-                      }>
-                        <div>
-                          <MapPin class="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-4 animate-pulse" />
-                          <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                            Loading hotels...
-                          </h3>
-                        </div>
-                      </Show>
-                    </div>
-                  }
-                >
-                  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                    <For each={hotelsQuery.data()}>{(poi) => renderGridCard(poi)}</For>
-                  </div>
-                </Show>
-              </div>
-            </TabsContent>
-            
-            <TabsContent value="attractions" class="mt-4">
-              <div class="space-y-4">
-                <div class="flex items-center justify-between">
-                  <p class="text-gray-600 dark:text-gray-400">
-                    {attractionsQuery?.data()?.length || 0} attraction
-                    {(attractionsQuery?.data()?.length || 0) !== 1 ? "s" : ""} found
-                  </p>
-                </div>
-                <Show
-                  when={attractionsQuery?.data() && attractionsQuery.data().length > 0}
-                  fallback={
-                    <div class="text-center py-12">
-                      <Show when={attractionsQuery?.isLoading()} fallback={
-                        <div>
-                          <Star class="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
-                          <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                            No attractions found
-                          </h3>
-                          <p class="text-gray-600 dark:text-gray-400">
-                            Try adjusting your search criteria or location
-                          </p>
-                          <Show when={attractionsQuery?.isError()}>
-                            <div class="mt-4 p-4 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800">
-                              <p class="text-red-600 dark:text-red-400 text-sm font-medium">
-                                Backend Error: {attractionsQuery.error()?.message || "Failed to load attractions"}
-                              </p>
-                              <p class="text-red-500 dark:text-red-400 text-xs mt-1">
-                                This appears to be a server-side issue. Please try again later or contact support.
-                              </p>
-                              <button
-                                onClick={() => attractionsQuery.refetch()}
-                                class="mt-2 px-3 py-1 bg-red-600 text-white rounded text-xs hover:bg-red-700 transition-colors"
-                              >
-                                Retry
-                              </button>
-                            </div>
-                          </Show>
-                        </div>
-                      }>
-                        <div>
-                          <Star class="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-4 animate-pulse" />
-                          <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                            Loading attractions...
-                          </h3>
-                        </div>
-                      </Show>
-                    </div>
-                  }
-                >
-                  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                    <For each={attractionsQuery.data()}>{(poi) => renderGridCard(poi)}</For>
-                  </div>
-                </Show>
-              </div>
-            </TabsContent>
-            
+
             {/* Search and Controls - Moved under tabs */}
             <div class="mt-4 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
               <div class="flex flex-col gap-4">
@@ -1217,138 +956,95 @@ export default function DiscoverPage() {
                           for="radius-select"
                           class="text-sm font-medium text-gray-700 dark:text-gray-300 whitespace-nowrap"
                         >
-                          Search Radius:
+                          Radius:
                         </label>
                         <select
                           id="radius-select"
                           value={searchRadius()}
                           onChange={(e) =>
-                            setSearchRadius(parseInt(e.target.value))
+                            setSearchRadius(Number(e.target.value))
                           }
-                          class="min-w-[100px] px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                          class="px-3 py-1 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                         >
                           <For each={radiusOptions}>
                             {(option) => (
-                              <option value={option.value}>{option.label}</option>
+                              <option value={option.value}>
+                                {option.label}
+                              </option>
                             )}
                           </For>
                         </select>
                       </div>
 
-                      {/* Favorites Filter */}
-                      <div class="flex items-center gap-2">
-                        <button
-                          onClick={() => setShowOnlyFavorites(!showOnlyFavorites())}
-                          class={`flex items-center gap-2 px-3 py-2 border rounded-lg text-sm transition-colors ${
-                            showOnlyFavorites()
-                              ? "bg-yellow-50 border-yellow-300 text-yellow-700 dark:bg-yellow-900/20 dark:border-yellow-700 dark:text-yellow-300"
-                              : "border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
-                          }`}
-                        >
-                          <Star
-                            class={`w-4 h-4 ${showOnlyFavorites() ? "fill-current" : ""}`}
-                          />
-                          <span class="hidden sm:inline">
-                            {showOnlyFavorites() ? "Show All" : "Favorites Only"}
-                          </span>
-                          <span class="sm:hidden">⭐</span>
-                        </button>
-                      </div>
-
                       {/* Sort Controls */}
                       <div class="flex items-center gap-2">
-                        <label class="text-sm font-medium text-gray-700 dark:text-gray-300 whitespace-nowrap">
-                          Sort by:
+                        <label
+                          for="sort-select"
+                          class="text-sm font-medium text-gray-700 dark:text-gray-300 whitespace-nowrap"
+                        >
+                          Sort:
                         </label>
-                        <div class="flex items-center gap-1">
-                          <select
-                            value={sortBy()}
-                            onChange={(e) => setSortBy(e.target.value)}
-                            class="min-w-[120px] px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-l-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-                          >
-                            <For each={sortOptions}>
-                              {(option) => (
-                                <option value={option.id}>{option.label}</option>
-                              )}
-                            </For>
-                          </select>
-                          <button
-                            onClick={() =>
-                              setSortOrder((prev) =>
-                                prev === "asc" ? "desc" : "asc",
-                              )
-                            }
-                            class="p-2 border border-l-0 border-gray-300 dark:border-gray-600 rounded-r-lg hover:bg-gray-50 dark:hover:bg-gray-700 bg-white dark:bg-gray-700 transition-colors"
-                            title={`Sort ${sortOrder() === "asc" ? "Descending" : "Ascending"}`}
-                          >
-                            {sortOrder() === "asc" ? (
-                              <SortAsc class="w-4 h-4 text-gray-600 dark:text-gray-400" />
-                            ) : (
-                              <SortDesc class="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                        <select
+                          id="sort-select"
+                          value={sortBy()}
+                          onChange={(e) => setSortBy(e.target.value)}
+                          class="px-3 py-1 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        >
+                          <For each={sortOptions}>
+                            {(option) => (
+                              <option value={option.id}>{option.label}</option>
                             )}
-                          </button>
-                        </div>
+                          </For>
+                        </select>
                       </div>
+
+                      {/* Sort Order */}
+                      <button
+                        onClick={() =>
+                          setSortOrder(sortOrder() === "asc" ? "desc" : "asc")
+                        }
+                        class="flex items-center gap-1 px-3 py-1 border border-gray-300 dark:border-gray-600 rounded-md text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-sm"
+                        title={`Sort ${sortOrder() === "asc" ? "Descending" : "Ascending"}`}
+                      >
+                        {sortOrder() === "asc" ? (
+                          <SortAsc class="w-4 h-4" />
+                        ) : (
+                          <SortDesc class="w-4 h-4" />
+                        )}
+                      </button>
+                    </div>
+
+                    {/* Right side: Secondary controls */}
+                    <div class="flex items-center gap-3">
+                      {/* Favorites Toggle */}
+                      <label class="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={showOnlyFavorites()}
+                          onChange={(e) =>
+                            setShowOnlyFavorites(e.target.checked)
+                          }
+                          class="rounded text-blue-600 focus:ring-blue-500"
+                        />
+                        <span class="text-sm text-gray-700 dark:text-gray-300">
+                          Favorites only
+                        </span>
+                      </label>
                     </div>
                   </div>
                 </div>
               </div>
             </div>
-          </Tabs>
-        </div>
-      </div>
-      {/* Main Content */}
-      <div class="max-w-7xl mx-auto px-4 py-4 sm:px-6 sm:py-6">
-        <div
-          class={`grid gap-4 sm:gap-6 ${viewMode() === "map-cards" ? "grid-cols-1 lg:grid-cols-2" : "grid-cols-1"}`}
-        >
-          <Show when={viewMode() === "map" || viewMode() === "map-cards"}>
-            <div
-              class={
-                viewMode() === "map"
-                  ? "col-span-full h-[400px] sm:h-[600px]"
-                  : "h-[300px] sm:h-[500px]"
-              }
-            >
-              <MapComponent
-                center={[
-                  getSearchCoordinates().lon,
-                  getSearchCoordinates().lat,
-                ]}
-                zoom={12}
-                pointsOfInterest={
-                  activeTab() === "general" ? filteredPois() :
-                  activeTab() === "restaurants" ? (restaurantsQuery?.data() || []) :
-                  activeTab() === "activities" ? (activitiesQuery?.data() || []) :
-                  activeTab() === "hotels" ? (hotelsQuery?.data() || []) :
-                  activeTab() === "attractions" ? (attractionsQuery?.data() || []) : []
-                }
-              />
-            </div>
-          </Show>
 
-          <Show when={viewMode() === "cards" || viewMode() === "map-cards"}>
-            <div class={viewMode() === "cards" ? "col-span-full" : ""}>
+            <TabsContent value="general" class="mt-4">
               <div class="space-y-4">
-                <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                  <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
-                    {activeTab() === "general" ? "General Places" : 
-                     activeTab() === "restaurants" ? "Restaurants" :
-                     activeTab() === "activities" ? "Activities" :
-                     activeTab() === "hotels" ? "Hotels" :
-                     activeTab() === "attractions" ? "Attractions" : "Places"}
-                  </h2>
-                  <p class="text-sm text-gray-600 self-start sm:self-auto">
-                    {activeTab() === "general" ? `${filteredPois().length} places` :
-                     activeTab() === "restaurants" ? `${restaurantsQuery?.data()?.length || 0} restaurants` :
-                     activeTab() === "activities" ? `${activitiesQuery?.data()?.length || 0} activities` :
-                     activeTab() === "hotels" ? `${hotelsQuery?.data()?.length || 0} hotels` :
-                     activeTab() === "attractions" ? `${attractionsQuery?.data()?.length || 0} attractions` : "0 places"}
+                <div class="flex items-center justify-between">
+                  <p class="text-gray-600 dark:text-gray-400">
+                    {filteredPois().length} place
+                    {filteredPois().length !== 1 ? "s" : ""} found
                   </p>
                 </div>
-                
-                {/* Content for each tab */}
-                <Show when={activeTab() === "general"}>
+                <div class="discover-content">
                   <Show
                     when={filteredPois().length > 0}
                     fallback={
@@ -1363,20 +1059,77 @@ export default function DiscoverPage() {
                       </div>
                     }
                   >
-                    <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-1 gap-4">
-                      <For each={filteredPois()}>
-                        {(poi) => renderListItem(poi)}
-                      </For>
-                    </div>
+                    {/* Map + Cards View */}
+                    <Show when={viewMode() === "map-cards"}>
+                      <div class="flex flex-col gap-6">
+                        {/* Map Section */}
+                        <div class="w-full h-[400px] rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700">
+                          <MapComponent
+                            center={[
+                              getSearchCoordinates().lon,
+                              getSearchCoordinates().lat,
+                            ]}
+                            zoom={12}
+                            pointsOfInterest={filteredPois()}
+                          />
+                        </div>
+                        {/* Cards Section */}
+                        <div class="w-full">
+                          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                            <For each={filteredPois()}>
+                              {(poi) => renderGridCard(poi)}
+                            </For>
+                          </div>
+                        </div>
+                      </div>
+                    </Show>
+                    {/* Cards Only View */}
+                    <Show when={viewMode() === "cards"}>
+                      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                        <For each={filteredPois()}>
+                          {(poi) => renderGridCard(poi)}
+                        </For>
+                      </div>
+                    </Show>
+                    {/* Map Only View */}
+                    <Show when={viewMode() === "map"}>
+                      <div class="h-[700px] w-full rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700">
+                        <MapComponent
+                          center={[
+                            getSearchCoordinates().lon,
+                            getSearchCoordinates().lat,
+                          ]}
+                          zoom={12}
+                          pointsOfInterest={filteredPois()}
+                        />
+                      </div>
+                    </Show>
                   </Show>
-                </Show>
+                </div>
+              </div>
+            </TabsContent>
 
-                <Show when={activeTab() === "restaurants"}>
-                  <Show
-                    when={restaurantsQuery?.data() && restaurantsQuery.data().length > 0}
-                    fallback={
-                      <div class="text-center py-12">
-                        <Show when={restaurantsQuery?.isLoading()} fallback={
+            <TabsContent value="restaurants" class="mt-4">
+              <div class="space-y-4">
+                <div class="flex items-center justify-between">
+                  <p class="text-gray-600 dark:text-gray-400">
+                    {restaurantsQuery?.data()?.length || 0} restaurant
+                    {(restaurantsQuery?.data()?.length || 0) !== 1
+                      ? "s"
+                      : ""}{" "}
+                    found
+                  </p>
+                </div>
+                <Show
+                  when={
+                    restaurantsQuery?.data() &&
+                    restaurantsQuery.data().length > 0
+                  }
+                  fallback={
+                    <div class="text-center py-12">
+                      <Show
+                        when={restaurantsQuery?.isLoading()}
+                        fallback={
                           <div>
                             <DollarSign class="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
                             <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">
@@ -1388,10 +1141,13 @@ export default function DiscoverPage() {
                             <Show when={restaurantsQuery?.isError()}>
                               <div class="mt-4 p-4 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800">
                                 <p class="text-red-600 dark:text-red-400 text-sm font-medium">
-                                  Backend Error: {restaurantsQuery.error()?.message || "Failed to load restaurants"}
+                                  Backend Error:{" "}
+                                  {restaurantsQuery.error()?.message ||
+                                    "Failed to load restaurants"}
                                 </p>
                                 <p class="text-red-500 dark:text-red-400 text-xs mt-1">
-                                  This appears to be a server-side issue. Please try again later or contact support.
+                                  This appears to be a server-side issue. Please
+                                  try again later or contact support.
                                 </p>
                                 <button
                                   onClick={() => restaurantsQuery.refetch()}
@@ -1402,29 +1158,87 @@ export default function DiscoverPage() {
                               </div>
                             </Show>
                           </div>
-                        }>
-                          <div>
-                            <DollarSign class="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-4 animate-pulse" />
-                            <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                              Loading restaurants...
-                            </h3>
-                          </div>
-                        </Show>
+                        }
+                      >
+                        <div>
+                          <DollarSign class="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-4 animate-pulse" />
+                          <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                            Loading restaurants...
+                          </h3>
+                        </div>
+                      </Show>
+                    </div>
+                  }
+                >
+                  {/* Map + Cards View */}
+                  <Show when={viewMode() === "map-cards"}>
+                    <div class="flex flex-col gap-6">
+                      {/* Map Section */}
+                      <div class="w-full h-[400px] rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700">
+                        <MapComponent
+                          center={[
+                            getSearchCoordinates().lon,
+                            getSearchCoordinates().lat,
+                          ]}
+                          zoom={12}
+                          pointsOfInterest={restaurantsQuery.data() || []}
+                        />
                       </div>
-                    }
-                  >
-                    <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-1 gap-4">
-                      <For each={restaurantsQuery.data()}>{(poi) => renderListItem(poi)}</For>
+                      {/* Cards Section */}
+                      <div class="w-full">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                          <For each={restaurantsQuery.data()}>
+                            {(poi) => renderGridCard(poi)}
+                          </For>
+                        </div>
+                      </div>
+                    </div>
+                  </Show>
+                  {/* Cards Only View */}
+                  <Show when={viewMode() === "cards"}>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                      <For each={restaurantsQuery.data()}>
+                        {(poi) => renderGridCard(poi)}
+                      </For>
+                    </div>
+                  </Show>
+                  {/* Map Only View */}
+                  <Show when={viewMode() === "map"}>
+                    <div class="h-[700px] w-full rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700">
+                      <MapComponent
+                        center={[
+                          getSearchCoordinates().lon,
+                          getSearchCoordinates().lat,
+                        ]}
+                        zoom={12}
+                        pointsOfInterest={restaurantsQuery.data() || []}
+                      />
                     </div>
                   </Show>
                 </Show>
+              </div>
+            </TabsContent>
 
-                <Show when={activeTab() === "activities"}>
-                  <Show
-                    when={activitiesQuery?.data() && activitiesQuery.data().length > 0}
-                    fallback={
-                      <div class="text-center py-12">
-                        <Show when={activitiesQuery?.isLoading()} fallback={
+            <TabsContent value="activities" class="mt-4">
+              <div class="space-y-4">
+                <div class="flex items-center justify-between">
+                  <p class="text-gray-600 dark:text-gray-400">
+                    {activitiesQuery?.data()?.length || 0} activit
+                    {(activitiesQuery?.data()?.length || 0) !== 1
+                      ? "ies"
+                      : "y"}{" "}
+                    found
+                  </p>
+                </div>
+                <Show
+                  when={
+                    activitiesQuery?.data() && activitiesQuery.data().length > 0
+                  }
+                  fallback={
+                    <div class="text-center py-12">
+                      <Show
+                        when={activitiesQuery?.isLoading()}
+                        fallback={
                           <div>
                             <Camera class="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
                             <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">
@@ -1436,10 +1250,13 @@ export default function DiscoverPage() {
                             <Show when={activitiesQuery?.isError()}>
                               <div class="mt-4 p-4 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800">
                                 <p class="text-red-600 dark:text-red-400 text-sm font-medium">
-                                  Backend Error: {activitiesQuery.error()?.message || "Failed to load activities"}
+                                  Backend Error:{" "}
+                                  {activitiesQuery.error()?.message ||
+                                    "Failed to load activities"}
                                 </p>
                                 <p class="text-red-500 dark:text-red-400 text-xs mt-1">
-                                  This appears to be a server-side issue. Please try again later or contact support.
+                                  This appears to be a server-side issue. Please
+                                  try again later or contact support.
                                 </p>
                                 <button
                                   onClick={() => activitiesQuery.refetch()}
@@ -1450,29 +1267,82 @@ export default function DiscoverPage() {
                               </div>
                             </Show>
                           </div>
-                        }>
-                          <div>
-                            <Camera class="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-4 animate-pulse" />
-                            <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                              Loading activities...
-                            </h3>
-                          </div>
-                        </Show>
+                        }
+                      >
+                        <div>
+                          <Camera class="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-4 animate-pulse" />
+                          <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                            Loading activities...
+                          </h3>
+                        </div>
+                      </Show>
+                    </div>
+                  }
+                >
+                  {/* Map + Cards View */}
+                  <Show when={viewMode() === "map-cards"}>
+                    <div class="flex flex-col gap-6">
+                      {/* Map Section */}
+                      <div class="w-full h-[400px] rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700">
+                        <MapComponent
+                          center={[
+                            getSearchCoordinates().lon,
+                            getSearchCoordinates().lat,
+                          ]}
+                          zoom={12}
+                          pointsOfInterest={activitiesQuery.data() || []}
+                        />
                       </div>
-                    }
-                  >
-                    <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-1 gap-4">
-                      <For each={activitiesQuery.data()}>{(poi) => renderListItem(poi)}</For>
+                      {/* Cards Section */}
+                      <div class="w-full">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                          <For each={activitiesQuery.data()}>
+                            {(poi) => renderGridCard(poi)}
+                          </For>
+                        </div>
+                      </div>
+                    </div>
+                  </Show>
+                  {/* Cards Only View */}
+                  <Show when={viewMode() === "cards"}>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                      <For each={activitiesQuery.data()}>
+                        {(poi) => renderGridCard(poi)}
+                      </For>
+                    </div>
+                  </Show>
+                  {/* Map Only View */}
+                  <Show when={viewMode() === "map"}>
+                    <div class="h-[700px] w-full rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700">
+                      <MapComponent
+                        center={[
+                          getSearchCoordinates().lon,
+                          getSearchCoordinates().lat,
+                        ]}
+                        zoom={12}
+                        pointsOfInterest={activitiesQuery.data() || []}
+                      />
                     </div>
                   </Show>
                 </Show>
+              </div>
+            </TabsContent>
 
-                <Show when={activeTab() === "hotels"}>
-                  <Show
-                    when={hotelsQuery?.data() && hotelsQuery.data().length > 0}
-                    fallback={
-                      <div class="text-center py-12">
-                        <Show when={hotelsQuery?.isLoading()} fallback={
+            <TabsContent value="hotels" class="mt-4">
+              <div class="space-y-4">
+                <div class="flex items-center justify-between">
+                  <p class="text-gray-600 dark:text-gray-400">
+                    {hotelsQuery?.data()?.length || 0} hotel
+                    {(hotelsQuery?.data()?.length || 0) !== 1 ? "s" : ""} found
+                  </p>
+                </div>
+                <Show
+                  when={hotelsQuery?.data() && hotelsQuery.data().length > 0}
+                  fallback={
+                    <div class="text-center py-12">
+                      <Show
+                        when={hotelsQuery?.isLoading()}
+                        fallback={
                           <div>
                             <MapPin class="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
                             <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">
@@ -1484,10 +1354,13 @@ export default function DiscoverPage() {
                             <Show when={hotelsQuery?.isError()}>
                               <div class="mt-4 p-4 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800">
                                 <p class="text-red-600 dark:text-red-400 text-sm font-medium">
-                                  Backend Error: {hotelsQuery.error()?.message || "Failed to load hotels"}
+                                  Backend Error:{" "}
+                                  {hotelsQuery.error()?.message ||
+                                    "Failed to load hotels"}
                                 </p>
                                 <p class="text-red-500 dark:text-red-400 text-xs mt-1">
-                                  This appears to be a server-side issue. Please try again later or contact support.
+                                  This appears to be a server-side issue. Please
+                                  try again later or contact support.
                                 </p>
                                 <button
                                   onClick={() => hotelsQuery.refetch()}
@@ -1498,29 +1371,88 @@ export default function DiscoverPage() {
                               </div>
                             </Show>
                           </div>
-                        }>
-                          <div>
-                            <MapPin class="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-4 animate-pulse" />
-                            <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                              Loading hotels...
-                            </h3>
-                          </div>
-                        </Show>
+                        }
+                      >
+                        <div>
+                          <MapPin class="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-4 animate-pulse" />
+                          <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                            Loading hotels...
+                          </h3>
+                        </div>
+                      </Show>
+                    </div>
+                  }
+                >
+                  {/* Map + Cards View */}
+                  <Show when={viewMode() === "map-cards"}>
+                    <div class="flex flex-col gap-6">
+                      {/* Map Section */}
+                      <div class="w-full h-[400px] rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700">
+                        <MapComponent
+                          center={[
+                            getSearchCoordinates().lon,
+                            getSearchCoordinates().lat,
+                          ]}
+                          zoom={12}
+                          pointsOfInterest={hotelsQuery.data() || []}
+                        />
                       </div>
-                    }
-                  >
-                    <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-1 gap-4">
-                      <For each={hotelsQuery.data()}>{(poi) => renderListItem(poi)}</For>
+                      {/* Cards Section */}
+                      <div class="w-full">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                          <For each={hotelsQuery.data()}>
+                            {(poi) => renderGridCard(poi)}
+                          </For>
+                        </div>
+                      </div>
+                    </div>
+                  </Show>
+                  {/* Cards Only View */}
+                  <Show when={viewMode() === "cards"}>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                      <For each={hotelsQuery.data()}>
+                        {(poi) => renderGridCard(poi)}
+                      </For>
+                    </div>
+                  </Show>
+                  {/* Map Only View */}
+                  <Show when={viewMode() === "map"}>
+                    <div class="h-[700px] w-full rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700">
+                      <MapComponent
+                        center={[
+                          getSearchCoordinates().lon,
+                          getSearchCoordinates().lat,
+                        ]}
+                        zoom={12}
+                        pointsOfInterest={hotelsQuery.data() || []}
+                      />
                     </div>
                   </Show>
                 </Show>
+              </div>
+            </TabsContent>
 
-                <Show when={activeTab() === "attractions"}>
-                  <Show
-                    when={attractionsQuery?.data() && attractionsQuery.data().length > 0}
-                    fallback={
-                      <div class="text-center py-12">
-                        <Show when={attractionsQuery?.isLoading()} fallback={
+            <TabsContent value="attractions" class="mt-4">
+              <div class="space-y-4">
+                <div class="flex items-center justify-between">
+                  <p class="text-gray-600 dark:text-gray-400">
+                    {attractionsQuery?.data()?.length || 0} attraction
+                    {(attractionsQuery?.data()?.length || 0) !== 1
+                      ? "s"
+                      : ""}{" "}
+                    found
+                  </p>
+                </div>
+                <Show
+                  when={
+                    attractionsQuery?.data() &&
+                    attractionsQuery.data().length > 0
+                  }
+                  fallback={
+                    <div class="text-center py-12">
+                      <Show
+                        when={attractionsQuery?.isLoading()}
+                        fallback={
                           <div>
                             <Star class="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
                             <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">
@@ -1532,10 +1464,13 @@ export default function DiscoverPage() {
                             <Show when={attractionsQuery?.isError()}>
                               <div class="mt-4 p-4 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800">
                                 <p class="text-red-600 dark:text-red-400 text-sm font-medium">
-                                  Backend Error: {attractionsQuery.error()?.message || "Failed to load attractions"}
+                                  Backend Error:{" "}
+                                  {attractionsQuery.error()?.message ||
+                                    "Failed to load attractions"}
                                 </p>
                                 <p class="text-red-500 dark:text-red-400 text-xs mt-1">
-                                  This appears to be a server-side issue. Please try again later or contact support.
+                                  This appears to be a server-side issue. Please
+                                  try again later or contact support.
                                 </p>
                                 <button
                                   onClick={() => attractionsQuery.refetch()}
@@ -1546,28 +1481,69 @@ export default function DiscoverPage() {
                               </div>
                             </Show>
                           </div>
-                        }>
-                          <div>
-                            <Star class="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-4 animate-pulse" />
-                            <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                              Loading attractions...
-                            </h3>
-                          </div>
-                        </Show>
+                        }
+                      >
+                        <div>
+                          <Star class="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-4 animate-pulse" />
+                          <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                            Loading attractions...
+                          </h3>
+                        </div>
+                      </Show>
+                    </div>
+                  }
+                >
+                  {/* Map + Cards View */}
+                  <Show when={viewMode() === "map-cards"}>
+                    <div class="flex flex-col gap-6">
+                      {/* Map Section */}
+                      <div class="w-full h-[400px] rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700">
+                        <MapComponent
+                          center={[
+                            getSearchCoordinates().lon,
+                            getSearchCoordinates().lat,
+                          ]}
+                          zoom={12}
+                          pointsOfInterest={attractionsQuery.data() || []}
+                        />
                       </div>
-                    }
-                  >
-                    <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-1 gap-4">
-                      <For each={attractionsQuery.data()}>{(poi) => renderListItem(poi)}</For>
+                      {/* Cards Section */}
+                      <div class="w-full">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                          <For each={attractionsQuery.data()}>
+                            {(poi) => renderGridCard(poi)}
+                          </For>
+                        </div>
+                      </div>
+                    </div>
+                  </Show>
+                  {/* Cards Only View */}
+                  <Show when={viewMode() === "cards"}>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                      <For each={attractionsQuery.data()}>
+                        {(poi) => renderGridCard(poi)}
+                      </For>
+                    </div>
+                  </Show>
+                  {/* Map Only View */}
+                  <Show when={viewMode() === "map"}>
+                    <div class="h-[700px] w-full rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700">
+                      <MapComponent
+                        center={[
+                          getSearchCoordinates().lon,
+                          getSearchCoordinates().lat,
+                        ]}
+                        zoom={12}
+                        pointsOfInterest={attractionsQuery.data() || []}
+                      />
                     </div>
                   </Show>
                 </Show>
               </div>
-            </div>
-          </Show>
+            </TabsContent>
+          </Tabs>
         </div>
       </div>
-
     </div>
   );
 }
