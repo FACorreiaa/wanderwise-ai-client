@@ -23,11 +23,14 @@ import {
   ChevronLeft,
   ChevronRight,
 } from "lucide-solid";
-import { useBookmarkedItineraries, useRemoveItineraryMutation, useSaveItineraryMutation } from "~/lib/api/itineraries";
+import { useRemoveItineraryMutation, useSaveItineraryMutation } from "~/lib/api/itineraries";
+import { useQuery } from '@tanstack/solid-query';
 import { Paginator } from "~/components/Paginator";
 import { A } from '@solidjs/router';
 
 export default function BookmarksPage() {
+  console.log("BookmarksPage component rendering");
+  
   const [viewMode, setViewMode] = createSignal("grid"); // 'grid', 'list'
   const [searchQuery, setSearchQuery] = createSignal("");
   const [sortBy, setSortBy] = createSignal("created_at"); // 'title', 'created_at', 'duration'
@@ -36,14 +39,43 @@ export default function BookmarksPage() {
   const [currentPage, setCurrentPage] = createSignal(1);
   const itemsPerPage = 12;
 
+  // Simple API request function
+  const fetchBookmarks = async (page: number, limit: number) => {
+    const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api/v1";
+    const token = localStorage.getItem("access_token") || sessionStorage.getItem("access_token");
+    
+    const response = await fetch(`${API_BASE_URL}/llm/prompt-response/bookmarks?page=${page}&limit=${limit}`, {
+      headers: {
+        "Content-Type": "application/json",
+        ...(token && { Authorization: `Bearer ${token}` }),
+      },
+    });
+    
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+    
+    return response.json();
+  };
+
   // API hooks
-  const bookmarksQuery = useBookmarkedItineraries(currentPage(), itemsPerPage);
+  const bookmarksQuery = useQuery(() => ({
+    queryKey: ['bookmarked-itineraries', currentPage(), itemsPerPage],
+    queryFn: () => fetchBookmarks(currentPage(), itemsPerPage),
+    staleTime: 5 * 60 * 1000,
+    enabled: true,
+  }));
   const removeItineraryMutation = useRemoveItineraryMutation();
   const saveItineraryMutation = useSaveItineraryMutation();
 
 
   // Get bookmarks from API or fallback to empty array
-  const bookmarks = () => bookmarksQuery.data?.itineraries || [];
+  const bookmarks = () => {
+    console.log('Bookmarks query data:', bookmarksQuery.data);
+    console.log('Bookmarks query isLoading:', bookmarksQuery.isLoading);
+    console.log('Bookmarks query error:', bookmarksQuery.error);
+    return bookmarksQuery.data?.itineraries || [];
+  };
   const totalRecords = () => bookmarksQuery.data?.total_records || 0;
   const totalPages = () => Math.ceil(totalRecords() / itemsPerPage);
 
@@ -154,16 +186,21 @@ export default function BookmarksPage() {
 
   const createTestBookmark = async () => {
     try {
-      await saveItineraryMutation.mutateAsync({
+      const bookmarkData = {
         title: "Test Bookmark",
         description: "This is a test bookmark to verify the feature works",
         primary_city_name: "Test City",
         tags: ["test", "bookmark"],
         is_public: false
-      });
+      };
+      console.log("Creating test bookmark with data:", bookmarkData);
+      await saveItineraryMutation.mutateAsync(bookmarkData);
       console.log("Test bookmark created successfully");
+      // Refresh the bookmarks query after creating
+      bookmarksQuery.refetch();
     } catch (error) {
       console.error("Failed to create test bookmark:", error);
+      console.error("Error details:", error);
     }
   };
 
@@ -501,12 +538,30 @@ export default function BookmarksPage() {
       {/* Content */}
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <Show
-          when={!bookmarksQuery.isLoading}
+          when={!bookmarksQuery.isLoading && !bookmarksQuery.error}
           fallback={
-            <div class="text-center py-12">
-              <div class="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-              <p class="text-gray-600">Loading bookmarks...</p>
-            </div>
+            <Show
+              when={bookmarksQuery.error}
+              fallback={
+                <div class="text-center py-12">
+                  <div class="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                  <p class="text-gray-600">Loading bookmarks...</p>
+                </div>
+              }
+            >
+              <div class="text-center py-12">
+                <div class="text-red-600 mb-4">❌ Error loading bookmarks</div>
+                <p class="text-gray-600 mb-4">
+                  {bookmarksQuery.error?.message || 'Failed to load bookmarks'}
+                </p>
+                <button 
+                  onClick={() => bookmarksQuery.refetch()} 
+                  class="cb-button cb-button-primary"
+                >
+                  Try Again
+                </button>
+              </div>
+            </Show>
           }
         >
           <Show
