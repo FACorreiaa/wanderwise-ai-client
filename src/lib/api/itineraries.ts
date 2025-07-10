@@ -16,6 +16,23 @@ export const useItineraries = (page: number = 1, limit: number = 10, options: { 
   }));
 };
 
+// ====================
+// BOOKMARK QUERIES
+// ====================
+
+export const useBookmarkedItineraries = (pageFn: () => number, limitFn: () => number, options: { enabled?: boolean } = {}) => {
+  return useQuery(() => ({
+    queryKey: queryKeys.bookmarkedItineraries(pageFn(), limitFn()),
+    queryFn: () => {
+      const page = pageFn();
+      const limit = limitFn();
+      return apiRequest<PaginatedItinerariesResponse>(`/llm/prompt-response/bookmarks?page=${page}&limit=${limit}`);
+    },
+    staleTime: 5 * 60 * 1000,
+    enabled: options.enabled ?? true,
+  }));
+};
+
 // Query to get all user's saved itineraries (for bookmark checking)
 export const useAllUserItineraries = (options: { enabled?: boolean } = {}) => {
   return useQuery(() => ({
@@ -67,6 +84,7 @@ export const useSaveItineraryMutation = () => {
       // Invalidate all itinerary-related queries to ensure immediate UI updates
       queryClient.invalidateQueries({ queryKey: ['itineraries'] });
       queryClient.invalidateQueries({ queryKey: queryKeys.userItineraries });
+      queryClient.invalidateQueries({ queryKey: ['bookmarked-itineraries'] });
     },
   }));
 };
@@ -106,6 +124,7 @@ export const useRemoveItineraryMutation = () => {
       // Invalidate all itinerary-related queries to ensure data consistency
       queryClient.invalidateQueries({ queryKey: ['itineraries'] });
       queryClient.invalidateQueries({ queryKey: queryKeys.userItineraries });
+      queryClient.invalidateQueries({ queryKey: ['bookmarked-itineraries'] });
     },
   }));
 };

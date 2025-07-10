@@ -1,6 +1,6 @@
 import { createSignal, createEffect, For, Show, onMount } from 'solid-js';
 import { useLocation, useSearchParams } from '@solidjs/router';
-import { MapPin, Clock, Star, Filter, Heart, Share2, Download, Edit3, Plus, X, Navigation, Calendar, Users, DollarSign, Camera, Coffee, Utensils, Wifi, CreditCard, Loader2, MessageCircle, Send, ChefHat, Wine, UtensilsCrossed, Smartphone } from 'lucide-solid';
+import { MapPin, Clock, Star, Filter, Heart, Share2, X, DollarSign, Coffee, Utensils, Loader2, MessageCircle, ChefHat, Wine, UtensilsCrossed } from 'lucide-solid';
 import MapComponent from '~/components/features/Map/Map';
 // Removed old API imports - now using unified streaming endpoint only
 import type { DiningResponse, RestaurantDetailedInfo } from '~/lib/api/types';
@@ -10,6 +10,7 @@ import { useChatSession } from '~/lib/hooks/useChatSession';
 import ChatInterface from '~/components/ui/ChatInterface';
 import { useAuth } from '~/contexts/AuthContext';
 import { useFavorites, useAddToFavoritesMutation, useRemoveFromFavoritesMutation } from '~/lib/api/pois';
+import { useSaveItineraryMutation, useRemoveItineraryMutation, useAllUserItineraries } from '~/lib/api/itineraries';
 
 export default function RestaurantsPage() {
     const location = useLocation();
@@ -38,9 +39,14 @@ export default function RestaurantsPage() {
 
     // Auth and favorites hooks
     const { isAuthenticated } = useAuth();
-    const favoritesQuery = useFavorites();
+    const favoritesQuery = useFavorites(() => 1, () => 1000); // Get all favorites for checking
     const addToFavoritesMutation = useAddToFavoritesMutation();
     const removeFromFavoritesMutation = useRemoveFromFavoritesMutation();
+    
+    // Bookmark hooks (for saving entire restaurant plans)
+    const allItinerariesQuery = useAllUserItineraries({ enabled: isAuthenticated() });
+    const saveItineraryMutation = useSaveItineraryMutation();
+    const removeItineraryMutation = useRemoveItineraryMutation();
 
     // Filter states
     const [activeFilters, setActiveFilters] = createSignal({
@@ -233,7 +239,7 @@ export default function RestaurantsPage() {
 
     // Favorites functionality - use API instead of local state
     const isFavorite = (restaurantName: string) => {
-        const favs = favoritesQuery.data || [];
+        const favs = favoritesQuery.data?.data || [];
         return favs.some(poi => poi.name === restaurantName);
     };
 
@@ -278,6 +284,85 @@ export default function RestaurantsPage() {
             // Add to favorites
             addToFavoritesMutation.mutate({ poiId: restaurant.name, poiData });
         }
+    };
+
+    // Bookmark plan functionality (save entire restaurant plan)
+    const isCurrentPlanBookmarked = () => {
+        if (!isAuthenticated() || !allItinerariesQuery.data) return false;
+        
+        const sessionId = chatSession.sessionId();
+        if (!sessionId) return false;
+        
+        const savedItineraries = allItinerariesQuery.data.itineraries || [];
+        const streaming = streamingData();
+        const cityName = streaming?.general_city_data?.city || "unknown";
+        const expectedTitle = `Restaurant Guide: ${cityName}`;
+        
+        return savedItineraries.some((saved) => {
+            return saved.title === expectedTitle || 
+                   (saved.source_llm_interaction_id && saved.source_llm_interaction_id === sessionId) ||
+                   (saved.session_id && saved.session_id === sessionId);
+        });
+    };
+
+    const getBookmarkedPlanId = () => {
+        if (!isAuthenticated() || !allItinerariesQuery.data) return null;
+        
+        const sessionId = chatSession.sessionId();
+        if (!sessionId) return null;
+        
+        const savedItineraries = allItinerariesQuery.data.itineraries || [];
+        const streaming = streamingData();
+        const cityName = streaming?.general_city_data?.city || "unknown";
+        const expectedTitle = `Restaurant Guide: ${cityName}`;
+        
+        const foundItinerary = savedItineraries.find((saved) => {
+            return saved.title === expectedTitle || 
+                   (saved.source_llm_interaction_id && saved.source_llm_interaction_id === sessionId) ||
+                   (saved.session_id && saved.session_id === sessionId);
+        });
+        
+        return foundItinerary?.id || null;
+    };
+
+    const toggleBookmarkPlan = () => {
+        if (removeItineraryMutation.isPending || saveItineraryMutation.isPending) {
+            return;
+        }
+
+        if (isCurrentPlanBookmarked()) {
+            // Remove bookmark
+            const planId = getBookmarkedPlanId();
+            if (planId) {
+                removeItineraryMutation.mutate(planId);
+            }
+        } else {
+            // Add bookmark
+            savePlan();
+        }
+    };
+
+    const savePlan = () => {
+        const sessionId = chatSession.sessionId();
+        if (!sessionId) {
+            console.error("No session ID available for saving restaurant plan");
+            return;
+        }
+
+        const streaming = streamingData();
+        const cityName = streaming?.general_city_data?.city || "unknown";
+        
+        const itineraryData = {
+            session_id: sessionId,
+            primary_city_name: cityName,
+            title: `Restaurant Guide: ${cityName}`,
+            description: `Curated restaurant recommendations for ${cityName}`,
+            tags: [cityName.toLowerCase(), "restaurants", "dining", "ai-generated"],
+            is_public: false,
+        };
+
+        console.log("Saving restaurant plan with data:", itineraryData);
+        saveItineraryMutation.mutate(itineraryData);
     };
 
     const renderRestaurantCard = (restaurant) => {
@@ -467,6 +552,39 @@ export default function RestaurantsPage() {
 
 
     // Get display location
+    // Get coordinates based on streaming data or fallback to search params
+    const getSearchCoordinates = () => {
+        const streaming = streamingData();
+        console.log('🍽️ RESTAURANTS getSearchCoordinates - streaming data:', streaming);
+        
+        if (streaming && streaming.restaurants && streaming.restaurants.length > 0) {
+            const firstRestaurant = streaming.restaurants[0];
+            console.log('🍽️ First restaurant:', firstRestaurant);
+            console.log('🍽️ First restaurant coordinates:', {
+                lat: firstRestaurant.latitude, 
+                lon: firstRestaurant.longitude,
+                city: firstRestaurant.city
+            });
+            
+            if (firstRestaurant.latitude && firstRestaurant.longitude) {
+                const coords = {
+                    lat: typeof firstRestaurant.latitude === 'string' ? parseFloat(firstRestaurant.latitude) : firstRestaurant.latitude,
+                    lon: typeof firstRestaurant.longitude === 'string' ? parseFloat(firstRestaurant.longitude) : firstRestaurant.longitude,
+                };
+                console.log('🍽️ Using dynamic coordinates:', coords);
+                return coords;
+            }
+        }
+        
+        // Fall back to search params or default
+        const fallbackCoords = {
+            lat: searchParams().centerLat || 41.1579,
+            lon: searchParams().centerLng || -8.6291,
+        };
+        console.log('🍽️ Using fallback coordinates:', fallbackCoords);
+        return fallbackCoords;
+    };
+
     const displayLocation = () => {
         const streaming = streamingData();
         if (streaming && streaming.restaurants && streaming.restaurants.length > 0) {
@@ -549,10 +667,51 @@ export default function RestaurantsPage() {
                                 </button>
 
                                 <div class="flex gap-2">
-                                    <button class="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors text-sm sm:flex-initial">
-                                        <Heart class="w-4 h-4" />
-                                        <span class="hidden sm:inline">Favorites</span>
-                                    </button>
+                                    <Show
+                                        when={isAuthenticated()}
+                                        fallback={
+                                            <button
+                                                disabled
+                                                class="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-gray-400 bg-gray-100 rounded-lg transition-colors text-sm sm:flex-initial disabled:cursor-not-allowed"
+                                                title="Sign in to bookmark restaurant plans"
+                                            >
+                                                <Heart class="w-4 h-4" />
+                                                <span class="hidden sm:inline">Bookmark</span>
+                                            </button>
+                                        }
+                                    >
+                                        <button
+                                            onClick={toggleBookmarkPlan}
+                                            disabled={
+                                                saveItineraryMutation.isPending ||
+                                                removeItineraryMutation.isPending
+                                            }
+                                            class={`flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg transition-colors text-sm sm:flex-initial disabled:opacity-50 ${
+                                                isCurrentPlanBookmarked()
+                                                    ? "text-red-600 bg-red-50 hover:bg-red-100"
+                                                    : "text-gray-700 hover:bg-gray-100"
+                                            }`}
+                                            title={
+                                                isCurrentPlanBookmarked()
+                                                    ? "Remove restaurant plan from bookmarks"
+                                                    : "Bookmark this restaurant plan"
+                                            }
+                                        >
+                                            <Heart
+                                                class={`w-4 h-4 ${isCurrentPlanBookmarked() ? "fill-current" : ""}`}
+                                            />
+                                            <span class="hidden sm:inline">
+                                                {saveItineraryMutation.isPending ||
+                                                removeItineraryMutation.isPending
+                                                    ? isCurrentPlanBookmarked()
+                                                        ? "Removing..."
+                                                        : "Saving..."
+                                                    : isCurrentPlanBookmarked()
+                                                        ? "Bookmarked"
+                                                        : "Bookmark Plan"}
+                                            </span>
+                                        </button>
+                                    </Show>
                                     <button class="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors text-sm sm:flex-initial">
                                         <Share2 class="w-4 h-4" />
                                         <span class="hidden sm:inline">Share</span>
@@ -591,7 +750,7 @@ export default function RestaurantsPage() {
                     <Show when={viewMode() === 'map' || viewMode() === 'split'}>
                         <div class={viewMode() === 'map' ? 'col-span-full h-[400px] sm:h-[600px]' : 'h-[300px] sm:h-[500px]'}>
                             <MapComponent
-                                center={[searchParams().centerLng, searchParams().centerLat]}
+                                center={[getSearchCoordinates().lon, getSearchCoordinates().lat]}
                                 zoom={12}
                                 minZoom={10}
                                 maxZoom={22}
@@ -653,7 +812,7 @@ export default function RestaurantsPage() {
                                                 navigator.clipboard.writeText(`Check out ${restaurant.name}: ${restaurant.description_poi}`);
                                             }
                                         }}
-                                        favorites={isAuthenticated() ? (favoritesQuery.data || []).map(fav => fav.name) : []}
+                                        favorites={isAuthenticated() ? (favoritesQuery.data?.data || []).map(fav => fav.name) : []}
                                         isLoadingFavorites={addToFavoritesMutation.isPending || removeFromFavoritesMutation.isPending}
                                         showAuthMessage={!isAuthenticated()}
                                     />

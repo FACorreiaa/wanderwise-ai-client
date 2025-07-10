@@ -1,0 +1,13 @@
+{
+  "entry": [
+    "src/app.tsx",
+    "src/routes/**/*.tsx",
+    "src/routes/**/*.ts"
+  ],
+  "extensions": [".ts", ".tsx"],
+  "ignorePatterns": [
+    "**/node_modules/**",
+    "**/dist/**",
+    "**/.vinxi/**"
+  ]
+}

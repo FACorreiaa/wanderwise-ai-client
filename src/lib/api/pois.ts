@@ -8,13 +8,21 @@ import { createResource } from "solid-js";
 // POI QUERIES
 // ===============
 
-export const useFavorites = () => {
+export const useFavorites = (pageFn: () => number, limitFn: () => number) => {
   return useQuery(() => ({
-    queryKey: queryKeys.favorites,
+    queryKey: [...queryKeys.favorites, pageFn(), limitFn()],
     queryFn: async () => {
-      console.log("🔄 Fetching user favorites...");
+      const page = pageFn();
+      const limit = limitFn();
+      console.log("🔄 Fetching user favorites...", { page, limit });
       try {
-        const response = await apiRequest<POI[]>("/pois/favourites");
+        const params = new URLSearchParams({
+          page: page.toString(),
+          limit: limit.toString(),
+        });
+        const response = await apiRequest<PaginatedResponse>(
+          `/pois/favourites?${params}`,
+        );
         console.log("✅ Favorites fetched:", response);
         return response;
       } catch (error) {
@@ -25,6 +33,18 @@ export const useFavorites = () => {
     staleTime: 5 * 60 * 1000,
   }));
 };
+
+interface PaginatedResponse {
+  data: POI[];
+  pagination: {
+    current_page: number;
+    per_page: number;
+    total: number;
+    total_pages: number;
+    has_next: boolean;
+    has_prev: boolean;
+  };
+}
 
 export const useAddToFavoritesMutation = () => {
   const queryClient = useQueryClient();
@@ -52,32 +72,15 @@ export const useAddToFavoritesMutation = () => {
       console.log("✅ Add to favorites response:", response);
       return response;
     },
-    onMutate: async (params) => {
-      // Cancel any outgoing refetches
-      await queryClient.cancelQueries({ queryKey: queryKeys.favorites });
-
-      // Snapshot the previous value
-      const previousFavorites = queryClient.getQueryData(queryKeys.favorites);
-
-      // Optimistically update to the new value
-      queryClient.setQueryData(
-        queryKeys.favorites,
-        (old: POI[] | undefined) => {
-          const currentFavorites = old || [];
-          // Add the POI if we have the data, otherwise add a minimal POI object
-          const newPOI =
-            params.poiData || ({ id: params.poiId, name: "POI" } as POI);
-          return [...currentFavorites, newPOI];
-        },
-      );
-
-      // Return a context object with the snapshotted value
-      return { previousFavorites };
+    onSuccess: () => {
+      // Invalidate all favorites queries to refetch data
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.favorites,
+        exact: false, // This will invalidate all favorites queries regardless of pagination params
+      });
     },
-    onError: (error, params, context) => {
+    onError: (error) => {
       console.error("❌ Add to favorites failed:", error);
-      // If the mutation fails, use the context returned from onMutate to roll back
-      queryClient.setQueryData(queryKeys.favorites, context?.previousFavorites);
     },
   }));
 };
@@ -108,31 +111,15 @@ export const useRemoveFromFavoritesMutation = () => {
       console.log("✅ Remove from favorites response:", response);
       return response;
     },
-    onMutate: async (params) => {
-      console.log("🔄 Optimistically removing POI:", params.poiId);
-      // Optimistically remove from favorites
-      await queryClient.cancelQueries({ queryKey: queryKeys.favorites });
-      const previousFavorites = queryClient.getQueryData(queryKeys.favorites);
-
-      queryClient.setQueryData(
-        queryKeys.favorites,
-        (old: POI[] | undefined) => {
-          const currentFavorites = old || [];
-          return currentFavorites.filter((poi) => poi.id !== params.poiId);
-        },
-      );
-
-      return { previousFavorites };
+    onSuccess: () => {
+      // Invalidate all favorites queries to refetch data
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.favorites,
+        exact: false, // This will invalidate all favorites queries regardless of pagination params
+      });
     },
-    onError: (err, params, context) => {
-      console.error("❌ Remove from favorites failed:", err);
-      // Rollback on error
-      if (context?.previousFavorites) {
-        queryClient.setQueryData(
-          queryKeys.favorites,
-          context.previousFavorites,
-        );
-      }
+    onError: (error) => {
+      console.error("❌ Remove from favorites failed:", error);
     },
   }));
 };
@@ -198,15 +185,17 @@ export function useNearbyPOIs(
       const lat = latFn();
       const lon = lonFn();
       const radiusMeters = radiusFn();
-      
+
       console.log("🔍 Checking coordinates:", { lat, lon, radiusMeters });
-      
+
       // Skip fetching if we don't have valid coordinates or radius
       if (lat === undefined || lon === undefined || radiusMeters <= 0) {
-        console.log("🔍 Skipping fetch - missing coordinates or invalid radius");
+        console.log(
+          "🔍 Skipping fetch - missing coordinates or invalid radius",
+        );
         return null;
       }
-      
+
       console.log("🔍 Using valid coordinates:", { lat, lon, radiusMeters });
       //const filters = filtersFn();
       // Serialize filters to detect content changes, use 'no-filters' if undefined
@@ -244,3 +233,251 @@ export const useSearchPOIs = (query: string, filters?: any) => {
     staleTime: 5 * 60 * 1000,
   }));
 };
+
+// ===============
+// DISCOVER CATEGORY APIs
+// ===============
+
+export const getNearbyRestaurants = async (
+  lat: number,
+  lon: number,
+  radiusMeters: number,
+): Promise<POIDetailedInfo[]> => {
+  try {
+    const params = new URLSearchParams({
+      lat: lat.toString(),
+      lon: lon.toString(),
+      distance: radiusMeters.toString(),
+    });
+
+    console.log("🍽️ getNearbyRestaurants params:", params.toString());
+    const response = await apiRequest<{
+      restaurants?: POIDetailedInfo[];
+      points_of_interest?: POIDetailedInfo[];
+    }>(`/pois/discover/restaurants?${params.toString()}`, { method: "GET" });
+
+    console.log("🍽️ getNearbyRestaurants response:", response);
+    return response.restaurants || response.points_of_interest || [];
+  } catch (error) {
+    console.error("🍽️ getNearbyRestaurants error:", error);
+    // Return empty array on error to prevent UI breaking
+    return [];
+  }
+};
+
+export const getNearbyActivities = async (
+  lat: number,
+  lon: number,
+  radiusMeters: number,
+): Promise<POIDetailedInfo[]> => {
+  try {
+    const params = new URLSearchParams({
+      lat: lat.toString(),
+      lon: lon.toString(),
+      distance: radiusMeters.toString(),
+    });
+
+    console.log("🎯 getNearbyActivities params:", params.toString());
+    const response = await apiRequest<{
+      activities?: POIDetailedInfo[];
+      points_of_interest?: POIDetailedInfo[];
+    }>(`/pois/discover/activities?${params.toString()}`, { method: "GET" });
+
+    console.log("🎯 getNearbyActivities response:", response);
+    return response.activities || response.points_of_interest || [];
+  } catch (error) {
+    console.error("🎯 getNearbyActivities error:", error);
+    // Return empty array on error to prevent UI breaking
+    return [];
+  }
+};
+
+export const getNearbyHotels = async (
+  lat: number,
+  lon: number,
+  radiusMeters: number,
+): Promise<POIDetailedInfo[]> => {
+  try {
+    const params = new URLSearchParams({
+      lat: lat.toString(),
+      lon: lon.toString(),
+      distance: radiusMeters.toString(),
+    });
+
+    console.log("🏨 getNearbyHotels params:", params.toString());
+    const response = await apiRequest<{
+      hotels?: POIDetailedInfo[];
+      points_of_interest?: POIDetailedInfo[];
+    }>(`/pois/discover/hotels?${params.toString()}`, { method: "GET" });
+
+    console.log("🏨 getNearbyHotels response:", response);
+    return response.hotels || response.points_of_interest || [];
+  } catch (error) {
+    console.error("🏨 getNearbyHotels error:", error);
+    // Return empty array on error to prevent UI breaking
+    return [];
+  }
+};
+
+export const getNearbyAttractions = async (
+  lat: number,
+  lon: number,
+  radiusMeters: number,
+): Promise<POIDetailedInfo[]> => {
+  try {
+    const params = new URLSearchParams({
+      lat: lat.toString(),
+      lon: lon.toString(),
+      distance: radiusMeters.toString(),
+    });
+
+    console.log("🏛️ getNearbyAttractions params:", params.toString());
+    const response = await apiRequest<{
+      attractions?: POIDetailedInfo[];
+      points_of_interest?: POIDetailedInfo[];
+    }>(`/pois/discover/attractions?${params.toString()}`, { method: "GET" });
+
+    console.log("🏛️ getNearbyAttractions response:", response);
+    return response.attractions || response.points_of_interest || [];
+  } catch (error) {
+    console.error("🏛️ getNearbyAttractions error:", error);
+    // Return empty array on error to prevent UI breaking
+    return [];
+  }
+};
+
+// ===============
+// DISCOVER CATEGORY HOOKS
+// ===============
+
+export function useNearbyRestaurants(
+  latFn: () => number | undefined,
+  lonFn: () => number | undefined,
+  radiusFn: () => number,
+) {
+  const [data, dataInfo] = createResource(
+    () => {
+      const lat = latFn();
+      const lon = lonFn();
+      const radiusMeters = radiusFn();
+
+      if (lat === undefined || lon === undefined || radiusMeters <= 0) {
+        return null;
+      }
+
+      return [lat, lon, radiusMeters];
+    },
+    async ([lat, lon, radiusMeters]: [number, number, number]) => {
+      return getNearbyRestaurants(lat, lon, radiusMeters);
+    },
+  );
+
+  return {
+    data,
+    isLoading: () => dataInfo.loading,
+    isError: () => !!dataInfo.error,
+    error: () => dataInfo.error,
+    isSuccess: () =>
+      !dataInfo.loading && !dataInfo.error && data() !== undefined,
+    refetch: dataInfo.refetch,
+  };
+}
+
+export function useNearbyActivities(
+  latFn: () => number | undefined,
+  lonFn: () => number | undefined,
+  radiusFn: () => number,
+) {
+  const [data, dataInfo] = createResource(
+    () => {
+      const lat = latFn();
+      const lon = lonFn();
+      const radiusMeters = radiusFn();
+
+      if (lat === undefined || lon === undefined || radiusMeters <= 0) {
+        return null;
+      }
+
+      return [lat, lon, radiusMeters];
+    },
+    async ([lat, lon, radiusMeters]: [number, number, number]) => {
+      return getNearbyActivities(lat, lon, radiusMeters);
+    },
+  );
+
+  return {
+    data,
+    isLoading: () => dataInfo.loading,
+    isError: () => !!dataInfo.error,
+    error: () => dataInfo.error,
+    isSuccess: () =>
+      !dataInfo.loading && !dataInfo.error && data() !== undefined,
+    refetch: dataInfo.refetch,
+  };
+}
+
+export function useNearbyHotels(
+  latFn: () => number | undefined,
+  lonFn: () => number | undefined,
+  radiusFn: () => number,
+) {
+  const [data, dataInfo] = createResource(
+    () => {
+      const lat = latFn();
+      const lon = lonFn();
+      const radiusMeters = radiusFn();
+
+      if (lat === undefined || lon === undefined || radiusMeters <= 0) {
+        return null;
+      }
+
+      return [lat, lon, radiusMeters];
+    },
+    async ([lat, lon, radiusMeters]: [number, number, number]) => {
+      return getNearbyHotels(lat, lon, radiusMeters);
+    },
+  );
+
+  return {
+    data,
+    isLoading: () => dataInfo.loading,
+    isError: () => !!dataInfo.error,
+    error: () => dataInfo.error,
+    isSuccess: () =>
+      !dataInfo.loading && !dataInfo.error && data() !== undefined,
+    refetch: dataInfo.refetch,
+  };
+}
+
+export function useNearbyAttractions(
+  latFn: () => number | undefined,
+  lonFn: () => number | undefined,
+  radiusFn: () => number,
+) {
+  const [data, dataInfo] = createResource(
+    () => {
+      const lat = latFn();
+      const lon = lonFn();
+      const radiusMeters = radiusFn();
+
+      if (lat === undefined || lon === undefined || radiusMeters <= 0) {
+        return null;
+      }
+
+      return [lat, lon, radiusMeters];
+    },
+    async ([lat, lon, radiusMeters]: [number, number, number]) => {
+      return getNearbyAttractions(lat, lon, radiusMeters);
+    },
+  );
+
+  return {
+    data,
+    isLoading: () => dataInfo.loading,
+    isError: () => !!dataInfo.error,
+    error: () => dataInfo.error,
+    isSuccess: () =>
+      !dataInfo.loading && !dataInfo.error && data() !== undefined,
+    refetch: dataInfo.refetch,
+  };
+}

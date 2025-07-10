@@ -40,12 +40,10 @@ import {
 import MapComponent from "~/components/features/Map/Map";
 // @ts-ignore - API hooks type
 import {
-  useItineraries,
   useItinerary,
   useUpdateItineraryMutation,
   useSaveItineraryMutation,
   useRemoveItineraryMutation,
-  useAllUserItineraries,
 } from "~/lib/api/itineraries";
 // @ts-ignore - POI favorites API hooks type
 import {
@@ -65,6 +63,7 @@ import { useChatSession } from "~/lib/hooks/useChatSession";
 import ChatInterface from "~/components/ui/ChatInterface";
 // @ts-ignore - Auth context type
 import { useAuth } from "~/contexts/AuthContext";
+import { useAllUserItineraries } from "~/lib/api/itineraries";
 
 interface LocationState {
   streamingData?: any;
@@ -103,7 +102,6 @@ export default function ItineraryResultsPage() {
   const location = useLocation<LocationState>();
   const [searchParams] = useSearchParams();
   const auth = useAuth();
-  const [map, setMap] = createSignal(null);
   const [selectedPOI, setSelectedPOI] = createSignal(null);
   const [showFilters, setShowFilters] = createSignal(false);
   const [viewMode, setViewMode] = createSignal("split"); // 'map', 'list', 'split'
@@ -145,9 +143,7 @@ export default function ItineraryResultsPage() {
   const isAuthenticated = () => auth.isAuthenticated();
 
   // API hooks - only enabled for authenticated users
-  const itinerariesQuery = useItineraries(1, 10, {
-    enabled: isAuthenticated(),
-  });
+
   const itineraryQuery = useItinerary(currentItineraryId() || "", {
     enabled: isAuthenticated() && !!currentItineraryId(),
   });
@@ -159,7 +155,7 @@ export default function ItineraryResultsPage() {
   const removeItineraryMutation = useRemoveItineraryMutation();
 
   // Favorites hooks
-  const favoritesQuery = useFavorites();
+  const favoritesQuery = useFavorites(() => 1, () => 1000); // Get all favorites for checking
   const addToFavoritesMutation = useAddToFavoritesMutation();
   const removeFromFavoritesMutation = useRemoveFromFavoritesMutation();
 
@@ -327,57 +323,6 @@ export default function ItineraryResultsPage() {
       }
     }, 100);
   });
-
-  // Fallback function to create a new session when session ID is missing
-  const createFallbackSession = async () => {
-    const streaming = streamingData();
-    if (!streaming || !streaming.general_city_data?.city) {
-      console.warn("Cannot create fallback session - missing city data");
-      return;
-    }
-
-    try {
-      console.log(
-        "Creating fallback session for city:",
-        streaming.general_city_data.city,
-      );
-
-      // Create a fallback session ID (UUID v4)
-      const fallbackSessionId = crypto.randomUUID();
-      chatSession.setSessionId(fallbackSessionId);
-
-      console.log("Generated fallback session ID:", fallbackSessionId);
-
-      // Update session storage with the new session ID
-      const storedSession = sessionStorage.getItem("completedStreamingSession");
-      if (storedSession) {
-        try {
-          const session = JSON.parse(storedSession);
-          session.sessionId = fallbackSessionId;
-          sessionStorage.setItem(
-            "completedStreamingSession",
-            JSON.stringify(session),
-          );
-          console.log("Updated session storage with fallback session ID");
-        } catch (error) {
-          console.error("Error updating session storage:", error);
-        }
-      }
-    } catch (error) {
-      console.error("Error creating fallback session:", error);
-      // Fallback to a simple UUID if crypto.randomUUID is not available
-      const simpleUuid = "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(
-        /[xy]/g,
-        function (c) {
-          const r = (Math.random() * 16) | 0;
-          const v = c == "x" ? r : (r & 0x3) | 0x8;
-          return v.toString(16);
-        },
-      );
-      chatSession.setSessionId(simpleUuid);
-      console.log("Created simple fallback session ID:", simpleUuid);
-    }
-  };
 
   // Get current itinerary data from streaming data, API, or fallback
   const itinerary = () => {
@@ -1127,14 +1072,14 @@ export default function ItineraryResultsPage() {
     const expectedTitle =
       currentItinerary.name || `${primaryCityName} Adventure`;
 
-    return savedItineraries.some(
-      (saved) => {
-        const titleMatch = saved.title === expectedTitle;
-        const sessionMatch = (saved.source_llm_interaction_id && saved.source_llm_interaction_id === sessionId) ||
-                           (saved.session_id && saved.session_id === sessionId);
-        return titleMatch || sessionMatch;
-      }
-    );
+    return savedItineraries.some((saved) => {
+      const titleMatch = saved.title === expectedTitle;
+      const sessionMatch =
+        (saved.source_llm_interaction_id &&
+          saved.source_llm_interaction_id === sessionId) ||
+        (saved.session_id && saved.session_id === sessionId);
+      return titleMatch || sessionMatch;
+    });
   };
 
   // Get the bookmarked itinerary ID if it exists
@@ -1155,14 +1100,14 @@ export default function ItineraryResultsPage() {
     const expectedTitle =
       currentItinerary.name || `${primaryCityName} Adventure`;
 
-    const foundItinerary = savedItineraries.find(
-      (saved) => {
-        const titleMatch = saved.title === expectedTitle;
-        const sessionMatch = (saved.source_llm_interaction_id && saved.source_llm_interaction_id === sessionId) ||
-                           (saved.session_id && saved.session_id === sessionId);
-        return titleMatch || sessionMatch;
-      }
-    );
+    const foundItinerary = savedItineraries.find((saved) => {
+      const titleMatch = saved.title === expectedTitle;
+      const sessionMatch =
+        (saved.source_llm_interaction_id &&
+          saved.source_llm_interaction_id === sessionId) ||
+        (saved.session_id && saved.session_id === sessionId);
+      return titleMatch || sessionMatch;
+    });
 
     return foundItinerary?.id || null;
   };
@@ -1170,7 +1115,9 @@ export default function ItineraryResultsPage() {
   const toggleBookmark = () => {
     // Prevent multiple rapid calls while mutation is pending
     if (removeItineraryMutation.isPending || saveItineraryMutation.isPending) {
-      console.log("Bookmark operation already in progress, ignoring duplicate call");
+      console.log(
+        "Bookmark operation already in progress, ignoring duplicate call",
+      );
       return;
     }
 
@@ -1255,7 +1202,7 @@ export default function ItineraryResultsPage() {
 
   // Favorites functionality
   const isFavorite = (poiName: string) => {
-    const favs = favoritesQuery.data || [];
+    const favs = favoritesQuery.data?.data || [];
     return favs.some((poi) => poi.name === poiName);
   };
 
@@ -1434,10 +1381,10 @@ export default function ItineraryResultsPage() {
                       <button
                         disabled
                         class="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-gray-400 bg-gray-100 rounded-lg transition-colors text-sm sm:flex-initial disabled:cursor-not-allowed"
-                        title="Sign in to save itineraries"
+                        title="Sign in to bookmark itineraries"
                       >
                         <Heart class="w-4 h-4" />
-                        <span class="hidden sm:inline">Save</span>
+                        <span class="hidden sm:inline">Bookmark</span>
                       </button>
                     }
                   >
@@ -1455,7 +1402,7 @@ export default function ItineraryResultsPage() {
                       title={
                         isCurrentItineraryBookmarked()
                           ? "Remove from bookmarks"
-                          : "Save to bookmarks"
+                          : "Bookmark this itinerary"
                       }
                     >
                       <Heart
@@ -1466,11 +1413,17 @@ export default function ItineraryResultsPage() {
                         removeItineraryMutation.isPending
                           ? isCurrentItineraryBookmarked()
                             ? "Removing..."
-                            : "Saving..."
+                            : "Bookmarking..."
                           : isCurrentItineraryBookmarked()
-                            ? "Saved"
-                            : "Save"}
+                            ? "Bookmarked"
+                            : "Bookmark"}
                       </span>
+                      {/* Debug info */}
+                      <Show when={isAuthenticated()}>
+                        <span class="text-xs text-gray-400">
+                          ({allItinerariesQuery.isLoading ? "loading" : allItinerariesQuery.data?.itineraries?.length || 0} saved)
+                        </span>
+                      </Show>
                     </button>
                   </Show>
 
@@ -1921,7 +1874,7 @@ export default function ItineraryResultsPage() {
                   }
                   favorites={
                     isAuthenticated()
-                      ? (favoritesQuery.data || []).map((fav) => fav.name)
+                      ? (favoritesQuery.data?.data || []).map((fav) => fav.name)
                       : []
                   }
                   isLoadingFavorites={

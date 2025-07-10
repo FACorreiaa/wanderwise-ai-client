@@ -225,6 +225,8 @@ export const queryKeys = {
     ["itineraries", page, limit] as const,
   itinerary: (id: string) => ["itineraries", id] as const,
   userItineraries: ["user-itineraries"] as const,
+  bookmarkedItineraries: (page: number, limit: number) =>
+    ["bookmarked-itineraries", page, limit] as const,
 
   // Lists
   lists: ["lists"] as const,
