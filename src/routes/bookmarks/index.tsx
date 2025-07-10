@@ -26,6 +26,7 @@ import {
 import {
   useRemoveItineraryMutation,
   useSaveItineraryMutation,
+  useBookmarkedItineraries,
 } from "~/lib/api/itineraries";
 import { useQuery } from "@tanstack/solid-query";
 import Paginator from "~/components/Paginator";
@@ -42,44 +43,9 @@ export default function BookmarksPage() {
   const [currentPage, setCurrentPage] = createSignal(1);
   const [itemsPerPage, setItemsPerPage] = createSignal(10);
 
-  // Simple API request function
-  const fetchBookmarks = async (page: number, limit: number) => {
-    const API_BASE_URL =
-      import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api/v1";
-    const token =
-      localStorage.getItem("access_token") ||
-      sessionStorage.getItem("access_token");
-
-    const response = await fetch(
-      `${API_BASE_URL}/llm/prompt-response/bookmarks?page=${page}&limit=${limit}`,
-      {
-        headers: {
-          "Content-Type": "application/json",
-          ...(token && { Authorization: `Bearer ${token}` }),
-        },
-      },
-    );
-
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-    }
-
-    return response.json();
-  };
-
-  // API hooks
-  const bookmarksQuery = useQuery(() => ({
-    queryKey: ["bookmarked-itineraries", currentPage(), itemsPerPage],
-    queryFn: () => fetchBookmarks(currentPage(), itemsPerPage()),
-    staleTime: 5 * 60 * 1000,
-    enabled: true,
-  }));
-
-  const getTotalPages = () => {
-    if (!bookmarksQuery.data?.total) return 0;
-    return Math.ceil(bookmarksQuery.data.total / itemsPerPage());
-  };
-  //const removeItineraryMutation = useRemoveItineraryMutation();
+  // API hooks  
+  const bookmarksQuery = useBookmarkedItineraries(currentPage, itemsPerPage);
+  const removeItineraryMutation = useRemoveItineraryMutation();
   const saveItineraryMutation = useSaveItineraryMutation();
 
   // Get bookmarks from API or fallback to empty array
@@ -90,7 +56,7 @@ export default function BookmarksPage() {
     return bookmarksQuery.data?.itineraries || [];
   };
   const totalRecords = () => bookmarksQuery.data?.total_records || 0;
-  const totalPages = () => Math.ceil(totalRecords() / itemsPerPage());
+  const totalPages = () => Math.ceil((bookmarksQuery.data?.total_records || 0) / (bookmarksQuery.data?.page_size || 10));
 
   const sortOptions = [
     { id: "title", label: "Title" },
@@ -189,13 +155,13 @@ export default function BookmarksPage() {
     return colors[level] || "text-gray-600 bg-gray-50";
   };
 
-  //const removeBookmark = async (itineraryId) => {
-  //try {
-  // await removeItineraryMutation.mutateAsync(itineraryId);
-  //} catch (error) {
-  // console.error("Failed to remove bookmark:", error);
-  // }
-  //};
+  const removeBookmark = async (itineraryId) => {
+    try {
+      await removeItineraryMutation.mutateAsync(itineraryId);
+    } catch (error) {
+      console.error("Failed to remove bookmark:", error);
+    }
+  };
 
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString("en-US", {
@@ -230,226 +196,259 @@ export default function BookmarksPage() {
   };
 
   const renderGridCard = (bookmark) => (
-    <div class="cb-card group hover:shadow-lg transition-all duration-300 overflow-hidden">
-      {/* Header with gradient - Clickable */}
-      <A
-        href={getBookmarkDetailUrl(bookmark)}
-        class="relative h-32 bg-gradient-to-br from-blue-500 to-purple-600 overflow-hidden block cursor-pointer"
-      >
-        <div class="absolute inset-0 bg-black/20"></div>
-
-        {/* Selection checkbox */}
-        <div class="absolute top-3 left-3 z-10">
-          <input
-            type="checkbox"
-            checked={selectedItineraries().includes(bookmark.id)}
-            onChange={() => toggleItinerarySelection(bookmark.id)}
-            class="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
-            onClick={(e) => e.stopPropagation()}
-          />
-        </div>
-
-        {/* Action buttons */}
-        <div class="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity z-10">
-          <div class="flex gap-1">
-            <button
-              class="p-1.5 bg-white/90 text-gray-700 rounded-lg hover:bg-white"
+    <div class="bg-white rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden border border-gray-100 group">
+      {/* Header with improved visual hierarchy */}
+      <div class="relative">
+        <A
+          href={getBookmarkDetailUrl(bookmark)}
+          class="relative h-40 bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 overflow-hidden block cursor-pointer"
+        >
+          <div class="absolute inset-0 bg-black/20"></div>
+          
+          {/* Selection checkbox - Mobile optimized */}
+          <div class="absolute top-2 left-2 z-10">
+            <input
+              type="checkbox"
+              checked={selectedItineraries().includes(bookmark.id)}
+              onChange={() => toggleItinerarySelection(bookmark.id)}
+              class="w-5 h-5 text-blue-600 rounded border-2 border-white/50 focus:ring-blue-500 focus:ring-2"
               onClick={(e) => e.stopPropagation()}
+            />
+          </div>
+
+          {/* Action buttons - Mobile friendly */}
+          <div class="absolute top-2 right-2 flex gap-1 z-10">
+            <button
+              class="p-2 bg-white/90 backdrop-blur-sm text-gray-700 rounded-lg hover:bg-white transition-colors"
+              onClick={(e) => e.stopPropagation()}
+              title="Share bookmark"
             >
-              <Share2 class="w-3 h-3" />
+              <Share2 class="w-4 h-4" />
             </button>
             <button
               onClick={(e) => {
                 e.stopPropagation();
-                //removeBookmark(bookmark.id);
+                removeBookmark(bookmark.id);
               }}
-              class="p-1.5 bg-red-500 text-white rounded-lg hover:bg-red-600"
+              class="p-2 bg-red-500/90 backdrop-blur-sm text-white rounded-lg hover:bg-red-600 transition-colors"
+              disabled={removeItineraryMutation.isPending}
+              title="Remove bookmark"
             >
-              <Trash2 class="w-3 h-3" />
+              <Trash2 class="w-4 h-4" />
             </button>
           </div>
-        </div>
 
-        {/* Title overlay */}
-        <div class="absolute bottom-3 left-3 right-3 z-10">
-          <h3 class="font-semibold text-white text-sm line-clamp-2">
-            {bookmark.title}
-          </h3>
-        </div>
-      </A>
-
-      {/* Content - Clickable */}
-      <A
-        href={getBookmarkDetailUrl(bookmark)}
-        class="block p-4 hover:bg-gray-50 transition-colors"
-      >
-        <div class="mb-3">
-          <p class="text-xs text-gray-500 mb-2">
-            Added {formatDate(bookmark.created_at)}
-          </p>
-          <Show when={bookmark.description}>
-            <p class="text-sm text-gray-600 line-clamp-3">
-              {bookmark.description}
+          {/* Enhanced title overlay */}
+          <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent p-4">
+            <h3 class="font-bold text-white text-base leading-tight line-clamp-2 mb-1">
+              {bookmark.title}
+            </h3>
+            <p class="text-white/90 text-sm">
+              Added {formatDate(bookmark.created_at)}
             </p>
+          </div>
+        </A>
+      </div>
+
+      {/* Enhanced content section */}
+      <div class="p-4 space-y-4">
+        {/* Description */}
+        <Show when={bookmark.description}>
+          <p class="text-gray-700 text-sm leading-relaxed line-clamp-3">
+            {bookmark.description}
+          </p>
+        </Show>
+
+        {/* Enhanced metadata grid */}
+        <div class="grid grid-cols-2 gap-3 text-sm">
+          <Show when={bookmark.estimated_duration_days}>
+            <div class="flex items-center gap-2 p-2 bg-blue-50 rounded-lg">
+              <Calendar class="w-4 h-4 text-blue-600 flex-shrink-0" />
+              <span class="text-blue-800 font-medium">
+                {bookmark.estimated_duration_days} day{bookmark.estimated_duration_days > 1 ? "s" : ""}
+              </span>
+            </div>
+          </Show>
+          
+          <Show when={bookmark.estimated_cost_level}>
+            <div class={`flex items-center gap-2 p-2 rounded-lg ${getCostLevelColor(bookmark.estimated_cost_level)}`}>
+              <DollarSign class="w-4 h-4 flex-shrink-0" />
+              <span class="font-medium">
+                {getCostLevelText(bookmark.estimated_cost_level)}
+              </span>
+            </div>
           </Show>
         </div>
 
-        {/* Tags */}
+        {/* Tags with improved styling */}
         <Show when={bookmark.tags && bookmark.tags.length > 0}>
-          <div class="flex flex-wrap gap-1 mb-3">
-            <For each={bookmark.tags.slice(0, 3)}>
+          <div class="flex flex-wrap gap-1.5">
+            <For each={bookmark.tags.slice(0, 4)}>
               {(tag) => (
-                <span class="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-full">
+                <span class="px-2.5 py-1 bg-gray-100 text-gray-700 text-xs rounded-full font-medium hover:bg-gray-200 transition-colors">
                   {tag}
                 </span>
               )}
             </For>
-            <Show when={bookmark.tags.length > 3}>
-              <span class="px-2 py-1 bg-gray-100 text-gray-500 text-xs rounded-full">
-                +{bookmark.tags.length - 3}
+            <Show when={bookmark.tags.length > 4}>
+              <span class="px-2.5 py-1 bg-blue-100 text-blue-700 text-xs rounded-full font-medium">
+                +{bookmark.tags.length - 4} more
               </span>
             </Show>
           </div>
         </Show>
 
-        {/* Metadata */}
-        <div class="space-y-2 text-sm">
-          <Show when={bookmark.estimated_duration_days}>
-            <div class="flex items-center gap-2 text-gray-500">
-              <Calendar class="w-4 h-4" />
-              <span>
-                {bookmark.estimated_duration_days} day
-                {bookmark.estimated_duration_days > 1 ? "s" : ""}
-              </span>
-            </div>
-          </Show>
-          <Show when={bookmark.estimated_cost_level}>
-            <div class="flex items-center gap-2">
-              <DollarSign class="w-4 h-4 text-gray-500" />
-              <span
-                class={`px-2 py-1 rounded text-xs ${getCostLevelColor(bookmark.estimated_cost_level)}`}
-              >
-                {getCostLevelText(bookmark.estimated_cost_level)}
-              </span>
-            </div>
-          </Show>
+        {/* Action footer */}
+        <div class="flex items-center justify-between pt-2 border-t border-gray-100">
           <Show when={bookmark.is_public}>
-            <div class="flex items-center gap-2 text-gray-500">
+            <div class="flex items-center gap-1.5 text-green-600">
               <Globe class="w-4 h-4" />
-              <span class="text-xs">Public</span>
+              <span class="text-xs font-medium">Public</span>
             </div>
           </Show>
+          
+          <A
+            href={getBookmarkDetailUrl(bookmark)}
+            class="px-3 py-1.5 bg-blue-600 text-white text-xs rounded-lg hover:bg-blue-700 transition-colors font-medium"
+          >
+            View Details
+          </A>
         </div>
-      </A>
+      </div>
     </div>
   );
 
   const renderListItem = (bookmark) => (
-    <div class="cb-card hover:shadow-md transition-all duration-200">
+    <div class="bg-white rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 border border-gray-100 overflow-hidden">
       <div class="p-4 sm:p-6">
-        <div class="flex items-start gap-4">
-          {/* Selection checkbox */}
-          <input
-            type="checkbox"
-            checked={selectedItineraries().includes(bookmark.id)}
-            onChange={() => toggleItinerarySelection(bookmark.id)}
-            class="mt-1 w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
-            onClick={(e) => e.stopPropagation()}
-          />
+        <div class="flex gap-4">
+          {/* Mobile-optimized selection and icon */}
+          <div class="flex flex-col items-center gap-3 flex-shrink-0">
+            <input
+              type="checkbox"
+              checked={selectedItineraries().includes(bookmark.id)}
+              onChange={() => toggleItinerarySelection(bookmark.id)}
+              class="w-5 h-5 text-blue-600 rounded border-2 border-gray-300 focus:ring-blue-500 focus:ring-2"
+              onClick={(e) => e.stopPropagation()}
+            />
+            
+            <A
+              href={getBookmarkDetailUrl(bookmark)}
+              class="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 rounded-xl flex items-center justify-center text-white hover:shadow-lg transition-all duration-300 group"
+            >
+              <Bookmark class="w-6 h-6 sm:w-8 sm:h-8 group-hover:scale-110 transition-transform" />
+            </A>
+          </div>
 
-          {/* Icon - Clickable */}
-          <A
-            href={getBookmarkDetailUrl(bookmark)}
-            class="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center text-white text-2xl flex-shrink-0 hover:shadow-md transition-shadow"
-          >
-            <Bookmark />
-          </A>
-
-          {/* Content */}
+          {/* Enhanced content section */}
           <div class="flex-1 min-w-0">
-            <div class="flex items-start justify-between mb-3">
+            {/* Header with mobile-responsive layout */}
+            <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 sm:gap-4 mb-3">
               <div class="flex-1 min-w-0">
                 <A
                   href={getBookmarkDetailUrl(bookmark)}
-                  class="block hover:text-blue-600 transition-colors"
+                  class="block hover:text-blue-600 transition-colors group"
                 >
-                  <h3 class="font-semibold text-gray-900 text-lg mb-1">
+                  <h3 class="font-bold text-gray-900 text-lg sm:text-xl mb-1 line-clamp-2 group-hover:text-blue-600 transition-colors">
                     {bookmark.title}
                   </h3>
                 </A>
-                <p class="text-sm text-gray-500 mb-2">
+                <p class="text-sm text-gray-500 mb-2 flex items-center gap-2">
+                  <Calendar class="w-4 h-4" />
                   Added {formatDate(bookmark.created_at)}
                 </p>
               </div>
 
-              {/* Action buttons */}
-              <div class="flex items-center gap-1 ml-4">
+              {/* Action buttons - Mobile optimized */}
+              <div class="flex items-center gap-2 self-start">
                 <button
-                  class="p-2 text-gray-600 hover:bg-gray-50 rounded-lg"
+                  class="p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
                   onClick={(e) => e.stopPropagation()}
+                  title="Share bookmark"
                 >
                   <Share2 class="w-4 h-4" />
                 </button>
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
-                    //removeBookmark(bookmark.id);
+                    removeBookmark(bookmark.id);
                   }}
-                  class="p-2 text-red-600 hover:bg-red-50 rounded-lg"
+                  class="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                  disabled={removeItineraryMutation.isPending}
+                  title="Remove bookmark"
                 >
                   <Trash2 class="w-4 h-4" />
                 </button>
+                <A
+                  href={getBookmarkDetailUrl(bookmark)}
+                  class="px-3 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors font-medium hidden sm:block"
+                >
+                  View Details
+                </A>
               </div>
             </div>
 
+            {/* Description */}
             <Show when={bookmark.description}>
-              <p class="text-sm text-gray-600 mb-4 leading-relaxed">
+              <p class="text-gray-700 text-sm leading-relaxed mb-4 line-clamp-3">
                 {bookmark.description}
               </p>
             </Show>
 
-            {/* Tags */}
-            <Show when={bookmark.tags && bookmark.tags.length > 0}>
-              <div class="flex flex-wrap gap-1 mb-4">
-                <For each={bookmark.tags}>
-                  {(tag) => (
-                    <span class="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-full">
-                      {tag}
-                    </span>
-                  )}
-                </For>
-              </div>
-            </Show>
-
-            {/* Metadata grid */}
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm text-gray-500">
+            {/* Enhanced metadata grid - Mobile responsive */}
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-4">
               <Show when={bookmark.estimated_duration_days}>
-                <div class="flex items-center gap-2">
-                  <Calendar class="w-4 h-4" />
-                  <span>
-                    {bookmark.estimated_duration_days} day
-                    {bookmark.estimated_duration_days > 1 ? "s" : ""}
+                <div class="flex items-center gap-2 p-3 bg-blue-50 rounded-lg">
+                  <Calendar class="w-4 h-4 text-blue-600 flex-shrink-0" />
+                  <span class="text-blue-800 font-medium text-sm">
+                    {bookmark.estimated_duration_days} day{bookmark.estimated_duration_days > 1 ? "s" : ""}
                   </span>
                 </div>
               </Show>
 
               <Show when={bookmark.estimated_cost_level}>
-                <div class="flex items-center gap-2">
-                  <DollarSign class="w-4 h-4" />
-                  <span
-                    class={`px-2 py-1 rounded text-xs ${getCostLevelColor(bookmark.estimated_cost_level)}`}
-                  >
+                <div class={`flex items-center gap-2 p-3 rounded-lg ${getCostLevelColor(bookmark.estimated_cost_level)}`}>
+                  <DollarSign class="w-4 h-4 flex-shrink-0" />
+                  <span class="font-medium text-sm">
                     {getCostLevelText(bookmark.estimated_cost_level)}
                   </span>
                 </div>
               </Show>
 
               <Show when={bookmark.is_public}>
-                <div class="flex items-center gap-2">
-                  <Globe class="w-4 h-4" />
-                  <span>Public</span>
+                <div class="flex items-center gap-2 p-3 bg-green-50 rounded-lg">
+                  <Globe class="w-4 h-4 text-green-600 flex-shrink-0" />
+                  <span class="text-green-800 font-medium text-sm">Public</span>
                 </div>
               </Show>
+            </div>
+
+            {/* Tags with improved mobile layout */}
+            <Show when={bookmark.tags && bookmark.tags.length > 0}>
+              <div class="flex flex-wrap gap-1.5 mb-4">
+                <For each={bookmark.tags.slice(0, 6)}>
+                  {(tag) => (
+                    <span class="px-2.5 py-1.5 bg-gray-100 text-gray-700 text-xs rounded-full font-medium hover:bg-gray-200 transition-colors">
+                      {tag}
+                    </span>
+                  )}
+                </For>
+                <Show when={bookmark.tags.length > 6}>
+                  <span class="px-2.5 py-1.5 bg-blue-100 text-blue-700 text-xs rounded-full font-medium">
+                    +{bookmark.tags.length - 6} more
+                  </span>
+                </Show>
+              </div>
+            </Show>
+
+            {/* Mobile view details button */}
+            <div class="sm:hidden">
+              <A
+                href={getBookmarkDetailUrl(bookmark)}
+                class="block w-full px-4 py-2 bg-blue-600 text-white text-center rounded-lg hover:bg-blue-700 transition-colors font-medium"
+              >
+                View Details
+              </A>
             </div>
           </div>
         </div>
@@ -458,95 +457,130 @@ export default function BookmarksPage() {
   );
 
   return (
-    <div class="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div class="bg-white border-b border-gray-200">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div>
-              <h1 class="text-2xl font-bold text-gray-900">My Bookmarks</h1>
-              <p class="text-gray-600 mt-1">
-                {totalRecords()} saved itinerar
-                {totalRecords() === 1 ? "y" : "ies"}
+    <div class="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+      {/* Enhanced Header */}
+      <div class="bg-white shadow-sm border-b border-gray-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+          <div class="flex flex-col space-y-4 sm:space-y-0 sm:flex-row sm:items-center sm:justify-between">
+            <div class="space-y-2">
+              <div class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
+                  <Bookmark class="w-5 h-5 text-white" />
+                </div>
+                <h1 class="text-2xl sm:text-3xl font-bold text-gray-900">My Bookmarks</h1>
+              </div>
+              <p class="text-gray-600 flex items-center gap-2">
+                <Star class="w-4 h-4 text-yellow-500" />
+                <span>
+                  {totalRecords()} saved itinerar{totalRecords() === 1 ? "y" : "ies"}
+                  {totalRecords() > 0 && (
+                    <span class="ml-2 px-2 py-0.5 bg-blue-100 text-blue-800 rounded-full text-xs font-medium">
+                      {totalPages()} page{totalPages() > 1 ? "s" : ""}
+                    </span>
+                  )}
+                </span>
               </p>
             </div>
-            <div class="flex items-center gap-3">
+            
+            {/* Action buttons - Mobile optimized */}
+            <div class="flex flex-col sm:flex-row gap-2 sm:gap-3">
               <button
                 onClick={createTestBookmark}
-                class="cb-button cb-button-primary px-4 py-2 flex items-center gap-2"
+                class="flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                 disabled={saveItineraryMutation.isLoading}
               >
                 <Plus class="w-4 h-4" />
-                {saveItineraryMutation.isLoading
-                  ? "Creating..."
-                  : "Test Bookmark"}
+                <span class="hidden sm:inline">
+                  {saveItineraryMutation.isLoading ? "Creating..." : "Test Bookmark"}
+                </span>
+                <span class="sm:hidden">
+                  {saveItineraryMutation.isLoading ? "Creating..." : "Add Test"}
+                </span>
               </button>
-              <button class="cb-button cb-button-secondary px-4 py-2 flex items-center gap-2">
+              <button class="flex items-center justify-center gap-2 px-4 py-2.5 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors font-medium">
                 <Download class="w-4 h-4" />
-                Export
+                <span class="hidden sm:inline">Export</span>
               </button>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Filters and Controls */}
-      <div class="bg-white border-b border-gray-200">
+      {/* Enhanced Filters and Controls */}
+      <div class="bg-white shadow-sm border-b border-gray-200">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div class="flex flex-col lg:flex-row lg:items-center gap-4">
-            {/* Search */}
-            <div class="relative flex-1 max-w-md">
-              <Search class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+          <div class="flex flex-col space-y-4 lg:space-y-0 lg:flex-row lg:items-center lg:justify-between gap-4">
+            {/* Search - Mobile first */}
+            <div class="relative flex-1 max-w-lg">
+              <Search class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
               <input
                 type="text"
-                placeholder="Search bookmarks..."
+                placeholder="Search your bookmarks..."
                 value={searchQuery()}
                 onInput={(e) => setSearchQuery(e.target.value)}
-                class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                class="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
               />
             </div>
 
-            {/* Sort */}
-            <div class="flex items-center gap-2">
-              <select
-                value={sortBy()}
-                onChange={(e) => setSortBy(e.target.value)}
-                class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              >
-                <For each={sortOptions}>
-                  {(option) => (
-                    <option value={option.id}>{option.label}</option>
+            {/* Controls group */}
+            <div class="flex flex-col sm:flex-row gap-3 lg:gap-2">
+              {/* Sort controls */}
+              <div class="flex items-center gap-2">
+                <label class="text-sm font-medium text-gray-700 hidden sm:block">Sort:</label>
+                <select
+                  value={sortBy()}
+                  onChange={(e) => setSortBy(e.target.value)}
+                  class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-sm"
+                >
+                  <For each={sortOptions}>
+                    {(option) => (
+                      <option value={option.id}>{option.label}</option>
+                    )}
+                  </For>
+                </select>
+                <button
+                  onClick={() =>
+                    setSortOrder((prev) => (prev === "asc" ? "desc" : "asc"))
+                  }
+                  class="p-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                  title={`Sort ${sortOrder() === "asc" ? "descending" : "ascending"}`}
+                >
+                  {sortOrder() === "asc" ? (
+                    <SortAsc class="w-4 h-4" />
+                  ) : (
+                    <SortDesc class="w-4 h-4" />
                   )}
-                </For>
-              </select>
-              <button
-                onClick={() =>
-                  setSortOrder((prev) => (prev === "asc" ? "desc" : "asc"))
-                }
-                class="p-2 border border-gray-300 rounded-lg hover:bg-gray-50"
-              >
-                {sortOrder() === "asc" ? (
-                  <SortAsc class="w-4 h-4" />
-                ) : (
-                  <SortDesc class="w-4 h-4" />
-                )}
-              </button>
-            </div>
+                </button>
+              </div>
 
-            {/* View mode */}
-            <div class="flex items-center border border-gray-300 rounded-lg p-1">
-              <button
-                onClick={() => setViewMode("grid")}
-                class={`p-2 rounded ${viewMode() === "grid" ? "bg-blue-600 text-white" : "text-gray-600 hover:bg-gray-50"}`}
-              >
-                <Grid class="w-4 h-4" />
-              </button>
-              <button
-                onClick={() => setViewMode("list")}
-                class={`p-2 rounded ${viewMode() === "list" ? "bg-blue-600 text-white" : "text-gray-600 hover:bg-gray-50"}`}
-              >
-                <List class="w-4 h-4" />
-              </button>
+              {/* View mode toggle */}
+              <div class="flex items-center gap-2">
+                <label class="text-sm font-medium text-gray-700 hidden sm:block">View:</label>
+                <div class="flex items-center bg-gray-100 rounded-lg p-1">
+                  <button
+                    onClick={() => setViewMode("grid")}
+                    class={`p-2 rounded-md transition-colors ${
+                      viewMode() === "grid" 
+                        ? "bg-white text-blue-600 shadow-sm" 
+                        : "text-gray-600 hover:text-gray-800"
+                    }`}
+                    title="Grid view"
+                  >
+                    <Grid class="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => setViewMode("list")}
+                    class={`p-2 rounded-md transition-colors ${
+                      viewMode() === "list" 
+                        ? "bg-white text-blue-600 shadow-sm" 
+                        : "text-gray-600 hover:text-gray-800"
+                    }`}
+                    title="List view"
+                  >
+                    <List class="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -613,27 +647,39 @@ export default function BookmarksPage() {
           <Show
             when={filteredBookmarks().length > 0}
             fallback={
-              <div class="text-center py-12">
-                <Bookmark class="w-12 h-12 text-gray-300 mx-auto mb-4" />
-                <h3 class="text-lg font-semibold text-gray-900 mb-2">
-                  No bookmarks found
+              <div class="flex flex-col items-center justify-center py-16 px-4">
+                <div class="w-20 h-20 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center mb-6">
+                  <Bookmark class="w-10 h-10 text-white" />
+                </div>
+                <h3 class="text-xl font-bold text-gray-900 mb-3 text-center">
+                  {searchQuery() ? "No matching bookmarks" : "No bookmarks yet"}
                 </h3>
-                <p class="text-gray-600 mb-4">
+                <p class="text-gray-600 mb-6 text-center max-w-md">
                   {searchQuery()
-                    ? "Try adjusting your search"
-                    : "Start saving itineraries to see them here!"}
+                    ? "Try adjusting your search terms or clear the search to see all bookmarks"
+                    : "Start your travel planning journey by exploring itineraries and saving your favorites!"}
                 </p>
-                <button class="cb-button cb-button-primary px-6 py-2">
-                  Explore Itineraries
-                </button>
+                <div class="flex flex-col sm:flex-row gap-3">
+                  <Show when={searchQuery()}>
+                    <button 
+                      onClick={() => setSearchQuery("")}
+                      class="px-6 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
+                    >
+                      Clear Search
+                    </button>
+                  </Show>
+                  <button class="px-6 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium">
+                    Explore Itineraries
+                  </button>
+                </div>
               </div>
             }
           >
             <div
               class={
                 viewMode() === "grid"
-                  ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6"
-                  : "space-y-4"
+                  ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-4 sm:gap-6"
+                  : "space-y-4 sm:space-y-6"
               }
             >
               <For each={filteredBookmarks()}>
@@ -645,16 +691,22 @@ export default function BookmarksPage() {
               </For>
             </div>
 
-            {/* Pagination */}
+            {/* Enhanced Pagination */}
             <Show when={totalPages() > 1}>
-              <div class="mt-8 flex justify-center">
+              <div class="mt-8 sm:mt-12 flex flex-col items-center gap-4">
+                <div class="text-sm text-gray-600 text-center">
+                  Showing page {currentPage()} of {totalPages()} 
+                  <span class="hidden sm:inline">
+                    ({totalRecords()} total bookmark{totalRecords() !== 1 ? "s" : ""})
+                  </span>
+                </div>
                 <Paginator
                   currentPage={currentPage()}
-                  totalPages={getTotalPages()}
-                  totalItems={bookmarksQuery.data?.total || 0}
+                  totalPages={totalPages()}
+                  totalItems={totalRecords()}
                   itemsPerPage={itemsPerPage()}
                   onPageChange={handlePageChange}
-                  className="rounded-lg border border-gray-200 dark:border-gray-700"
+                  className="rounded-xl border border-gray-200 shadow-sm bg-white"
                 />
               </div>
             </Show>

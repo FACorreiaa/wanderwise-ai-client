@@ -35,12 +35,12 @@ export default function FavoritesPage() {
   const [currentPage, setCurrentPage] = createSignal(1);
 
   // API hooks - Reactive query that refetches when page changes
-  const favoritesQuery = () => useFavorites(currentPage(), itemsPerPage());
+  const favoritesQuery = useFavorites(currentPage, itemsPerPage);
   const removeFavoriteMutation = useRemoveFromFavoritesMutation();
 
   // Get favorites from API or fallback to empty array
-  const favorites = () => favoritesQuery().data?.data || [];
-  const pagination = () => favoritesQuery().data?.pagination;
+  const favorites = () => favoritesQuery.data?.data || [];
+  const pagination = () => favoritesQuery.data?.pagination;
   // Dynamic categories based on actual data
   const categories = () => {
     const allCategories = favorites()
@@ -128,15 +128,11 @@ export default function FavoritesPage() {
     );
   };
 
-  const selectAllPOIs = () => {
-    setSelectedPOIs(filteredFavorites().map((fav) => fav.id));
-  };
-
   // Pagination handler
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
     // Reset selection when changing pages
-    setSelectedPOIs([]);
+    //setSelectedPOIs([]);
     // Scroll to top when changing pages
     window.scrollTo({ top: 0, behavior: "smooth" });
   };

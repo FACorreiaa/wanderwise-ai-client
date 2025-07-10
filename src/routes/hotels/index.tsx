@@ -27,11 +27,23 @@ import { useChatSession } from "~/lib/hooks/useChatSession";
 import ChatInterface from "~/components/ui/ChatInterface";
 import { API_BASE_URL } from "~/lib/api/shared";
 import { useAuth } from "~/contexts/AuthContext";
+import { useFavorites, useAddToFavoritesMutation, useRemoveFromFavoritesMutation } from "~/lib/api/pois";
+import { useSaveItineraryMutation, useRemoveItineraryMutation, useAllUserItineraries } from "~/lib/api/itineraries";
 
 export default function HotelsPage() {
   const location = useLocation();
   const [urlSearchParams] = useSearchParams();
   const auth = useAuth();
+  
+  // Favorites hooks
+  const favoritesQuery = useFavorites(() => 1, () => 1000); // Get all favorites for checking
+  const addToFavoritesMutation = useAddToFavoritesMutation();
+  const removeFromFavoritesMutation = useRemoveFromFavoritesMutation();
+  
+  // Bookmark hooks (for saving entire hotel plans)
+  const allItinerariesQuery = useAllUserItineraries({ enabled: auth.isAuthenticated() });
+  const saveItineraryMutation = useSaveItineraryMutation();
+  const removeItineraryMutation = useRemoveItineraryMutation();
   const [selectedHotel, setSelectedHotel] = createSignal(null);
   const [showFilters, setShowFilters] = createSignal(false);
   const [viewMode, setViewMode] = createSignal("split"); // 'map', 'list', 'split'
@@ -950,6 +962,126 @@ export default function HotelsPage() {
     );
   };
 
+  // Favorites functionality
+  const isFavorite = (hotelName: string) => {
+    const favs = favoritesQuery.data?.data || [];
+    return favs.some((poi) => poi.name === hotelName);
+  };
+
+  const toggleFavorite = (hotelName: string, hotel: any) => {
+    if (!auth.isAuthenticated()) {
+      console.log("User not authenticated, cannot toggle favorite");
+      return;
+    }
+
+    // Convert hotel to POI format
+    const poiData = {
+      id: hotel.name, // Use name as fallback ID
+      city: "Unknown", // Hotels don't have city in the data structure
+      name: hotel.name,
+      latitude: hotel.latitude || 0,
+      longitude: hotel.longitude || 0,
+      category: hotel.type || "accommodation",
+      description: hotel.description_poi || "",
+      address: hotel.address || "",
+      website: hotel.website || "",
+      phone_number: hotel.phone_number || "",
+      opening_hours: hotel.opening_hours || "",
+      price_level: hotel.price_level || "Unknown",
+      amenities: hotel.amenities || [],
+      tags: [],
+      images: hotel.images || [],
+      rating: hotel.rating || 0,
+      time_to_spend: "1 night",
+      budget: hotel.price_level || "Unknown",
+      priority: 1,
+      llm_interaction_id: "unknown",
+    };
+
+    if (isFavorite(hotelName)) {
+      removeFromFavoritesMutation.mutate({ poiId: hotelName, poiData });
+    } else {
+      addToFavoritesMutation.mutate({ poiId: hotel.name, poiData });
+    }
+  };
+
+  // Bookmark plan functionality (save entire hotel plan)
+  const isCurrentPlanBookmarked = () => {
+    if (!auth.isAuthenticated() || !allItinerariesQuery.data) return false;
+    
+    const sessionId = chatSession.sessionId();
+    if (!sessionId) return false;
+    
+    const savedItineraries = allItinerariesQuery.data.itineraries || [];
+    const streaming = streamingData();
+    const cityName = streaming?.general_city_data?.city || "unknown";
+    const expectedTitle = `Hotel Guide: ${cityName}`;
+    
+    return savedItineraries.some((saved) => {
+        return saved.title === expectedTitle || 
+               (saved.source_llm_interaction_id && saved.source_llm_interaction_id === sessionId) ||
+               (saved.session_id && saved.session_id === sessionId);
+    });
+  };
+
+  const getBookmarkedPlanId = () => {
+    if (!auth.isAuthenticated() || !allItinerariesQuery.data) return null;
+    
+    const sessionId = chatSession.sessionId();
+    if (!sessionId) return null;
+    
+    const savedItineraries = allItinerariesQuery.data.itineraries || [];
+    const streaming = streamingData();
+    const cityName = streaming?.general_city_data?.city || "unknown";
+    const expectedTitle = `Hotel Guide: ${cityName}`;
+    
+    const foundItinerary = savedItineraries.find((saved) => {
+        return saved.title === expectedTitle || 
+               (saved.source_llm_interaction_id && saved.source_llm_interaction_id === sessionId) ||
+               (saved.session_id && saved.session_id === sessionId);
+    });
+    
+    return foundItinerary?.id || null;
+  };
+
+  const toggleBookmarkPlan = () => {
+    if (removeItineraryMutation.isPending || saveItineraryMutation.isPending) {
+        return;
+    }
+
+    if (isCurrentPlanBookmarked()) {
+        const planId = getBookmarkedPlanId();
+        if (planId) {
+            removeItineraryMutation.mutate(planId);
+        }
+    } else {
+        savePlan();
+    }
+  };
+
+  const savePlan = () => {
+    const sessionId = chatSession.sessionId();
+    if (!sessionId) {
+        console.error("No session ID available for saving hotel plan");
+        return;
+    }
+
+    const streaming = streamingData();
+    const cityName = streaming?.general_city_data?.city || "unknown";
+    
+    const itineraryData = {
+        session_id: sessionId,
+        primary_city_name: cityName,
+        title: `Hotel Guide: ${cityName}`,
+        description: `Curated hotel recommendations for ${cityName}`,
+        tags: [cityName.toLowerCase(), "hotels", "accommodation", "ai-generated"],
+        is_public: false,
+    };
+
+    console.log("Saving hotel plan with data:", itineraryData);
+    saveItineraryMutation.mutate(itineraryData);
+  };
+
   const renderHotelCard = (hotel) => {
     const IconComponent = getHotelIcon(hotel.type);
     return (
@@ -1352,7 +1484,7 @@ export default function HotelsPage() {
               {/* Action Buttons */}
               <div class="flex flex-col gap-2 sm:flex-row sm:gap-3">
                 <button
-                  onClick={() => setShowChat(true)}
+                  onClick={() => chatSession.setShowChat(true)}
                   class="flex items-center justify-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all shadow-sm text-sm font-medium"
                 >
                   <MessageCircle class="w-4 h-4" />
@@ -1360,10 +1492,51 @@ export default function HotelsPage() {
                 </button>
 
                 <div class="flex gap-2">
-                  <button class="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors text-sm sm:flex-initial">
-                    <Heart class="w-4 h-4" />
-                    <span class="hidden sm:inline">Saved</span>
-                  </button>
+                  <Show
+                    when={auth.isAuthenticated()}
+                    fallback={
+                      <button
+                        disabled
+                        class="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-gray-400 bg-gray-100 rounded-lg transition-colors text-sm sm:flex-initial disabled:cursor-not-allowed"
+                        title="Sign in to bookmark hotel plans"
+                      >
+                        <Heart class="w-4 h-4" />
+                        <span class="hidden sm:inline">Bookmark</span>
+                      </button>
+                    }
+                  >
+                    <button
+                      onClick={toggleBookmarkPlan}
+                      disabled={
+                        saveItineraryMutation.isPending ||
+                        removeItineraryMutation.isPending
+                      }
+                      class={`flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg transition-colors text-sm sm:flex-initial disabled:opacity-50 ${
+                        isCurrentPlanBookmarked()
+                          ? "text-red-600 bg-red-50 hover:bg-red-100"
+                          : "text-gray-700 hover:bg-gray-100"
+                      }`}
+                      title={
+                        isCurrentPlanBookmarked()
+                          ? "Remove hotel plan from bookmarks"
+                          : "Bookmark this hotel plan"
+                      }
+                    >
+                      <Heart
+                        class={`w-4 h-4 ${isCurrentPlanBookmarked() ? "fill-current" : ""}`}
+                      />
+                      <span class="hidden sm:inline">
+                        {saveItineraryMutation.isPending ||
+                        removeItineraryMutation.isPending
+                          ? isCurrentPlanBookmarked()
+                            ? "Removing..."
+                            : "Saving..."
+                          : isCurrentPlanBookmarked()
+                            ? "Bookmarked"
+                            : "Bookmark Plan"}
+                      </span>
+                    </button>
+                  </Show>
                   <button class="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors text-sm sm:flex-initial">
                     <Share2 class="w-4 h-4" />
                     <span class="hidden sm:inline">Share</span>
@@ -1476,10 +1649,9 @@ export default function HotelsPage() {
                     compact={false}
                     showToggle={filteredHotels().length > 5}
                     initialLimit={5}
-                    onFavoriteClick={(hotel) => {
-                      console.log("Add to bookmarks:", hotel.name);
-                      addToBookmarks(hotel);
-                    }}
+                    onToggleFavorite={
+                      auth.isAuthenticated() ? toggleFavorite : undefined
+                    }
                     onShareClick={(hotel) => {
                       if (navigator.share) {
                         navigator.share({
@@ -1493,7 +1665,16 @@ export default function HotelsPage() {
                         );
                       }
                     }}
-                    favorites={myBookmarks().map((b) => b.name)}
+                    favorites={
+                      auth.isAuthenticated()
+                        ? (favoritesQuery.data?.data || []).map((fav) => fav.name)
+                        : []
+                    }
+                    isLoadingFavorites={
+                      addToFavoritesMutation.isPending ||
+                      removeFromFavoritesMutation.isPending
+                    }
+                    showAuthMessage={!auth.isAuthenticated()}
                   />
                 </Show>
               </div>

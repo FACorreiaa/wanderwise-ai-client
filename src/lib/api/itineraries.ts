@@ -20,10 +20,14 @@ export const useItineraries = (page: number = 1, limit: number = 10, options: { 
 // BOOKMARK QUERIES
 // ====================
 
-export const useBookmarkedItineraries = (page: number = 1, limit: number = 10, options: { enabled?: boolean } = {}) => {
+export const useBookmarkedItineraries = (pageFn: () => number, limitFn: () => number, options: { enabled?: boolean } = {}) => {
   return useQuery(() => ({
-    queryKey: queryKeys.bookmarkedItineraries(page, limit),
-    queryFn: () => apiRequest<PaginatedItinerariesResponse>(`/llm/prompt-response/bookmarks?page=${page}&limit=${limit}`),
+    queryKey: queryKeys.bookmarkedItineraries(pageFn(), limitFn()),
+    queryFn: () => {
+      const page = pageFn();
+      const limit = limitFn();
+      return apiRequest<PaginatedItinerariesResponse>(`/llm/prompt-response/bookmarks?page=${page}&limit=${limit}`);
+    },
     staleTime: 5 * 60 * 1000,
     enabled: options.enabled ?? true,
   }));

@@ -24,10 +24,24 @@ import { ActivityResults } from "~/components/results";
 import { TypingAnimation } from "~/components/TypingAnimation";
 import { useChatSession } from "~/lib/hooks/useChatSession";
 import ChatInterface from "~/components/ui/ChatInterface";
+import { useAuth } from "~/contexts/AuthContext";
+import { useFavorites, useAddToFavoritesMutation, useRemoveFromFavoritesMutation } from "~/lib/api/pois";
+import { useSaveItineraryMutation, useRemoveItineraryMutation, useAllUserItineraries } from "~/lib/api/itineraries";
 
 export default function ActivitiesPage() {
   const location = useLocation();
   const [urlSearchParams] = useSearchParams();
+  const auth = useAuth();
+  
+  // Favorites hooks
+  const favoritesQuery = useFavorites(() => 1, () => 1000); // Get all favorites for checking
+  const addToFavoritesMutation = useAddToFavoritesMutation();
+  const removeFromFavoritesMutation = useRemoveFromFavoritesMutation();
+  
+  // Bookmark hooks (for saving entire activity plans)
+  const allItinerariesQuery = useAllUserItineraries({ enabled: auth.isAuthenticated() });
+  const saveItineraryMutation = useSaveItineraryMutation();
+  const removeItineraryMutation = useRemoveItineraryMutation();
   const [selectedActivity, setSelectedActivity] = createSignal(null);
   const [showFilters, setShowFilters] = createSignal(false);
   const [viewMode, setViewMode] = createSignal("split"); // 'map', 'list', 'split'
@@ -274,6 +288,126 @@ export default function ActivitiesPage() {
     setMyFavorites((prev) =>
       prev.some((item) => item.id === activity.id) ? prev : [...prev, activity],
     );
+  };
+
+  // API-based favorites functionality
+  const isFavorite = (activityName: string) => {
+    const favs = favoritesQuery.data?.data || [];
+    return favs.some((poi) => poi.name === activityName);
+  };
+
+  const toggleFavorite = (activityName: string, activity: any) => {
+    if (!auth.isAuthenticated()) {
+      console.log("User not authenticated, cannot toggle favorite");
+      return;
+    }
+
+    // Convert activity to POI format
+    const poiData = {
+      id: activity.name, // Use name as fallback ID
+      city: "Unknown", // Activities don't have city in the data structure
+      name: activity.name,
+      latitude: activity.latitude || 0,
+      longitude: activity.longitude || 0,
+      category: activity.category || "activity",
+      description: activity.description_poi || "",
+      address: activity.address || "",
+      website: activity.website || "",
+      phone_number: activity.phone_number || "",
+      opening_hours: activity.opening_hours || "",
+      price_level: activity.price_level || "Unknown",
+      amenities: [],
+      tags: [],
+      images: [],
+      rating: activity.rating || 0,
+      time_to_spend: activity.duration || "2-3 hours",
+      budget: activity.price_level || "Unknown",
+      priority: 1,
+      llm_interaction_id: "unknown",
+    };
+
+    if (isFavorite(activityName)) {
+      removeFromFavoritesMutation.mutate({ poiId: activityName, poiData });
+    } else {
+      addToFavoritesMutation.mutate({ poiId: activity.name, poiData });
+    }
+  };
+
+  // Bookmark plan functionality (save entire activity plan)
+  const isCurrentPlanBookmarked = () => {
+    if (!auth.isAuthenticated() || !allItinerariesQuery.data) return false;
+    
+    const sessionId = chatSession.sessionId();
+    if (!sessionId) return false;
+    
+    const savedItineraries = allItinerariesQuery.data.itineraries || [];
+    const streaming = streamingData();
+    const cityName = streaming?.general_city_data?.city || "unknown";
+    const expectedTitle = `Activity Guide: ${cityName}`;
+    
+    return savedItineraries.some((saved) => {
+        return saved.title === expectedTitle || 
+               (saved.source_llm_interaction_id && saved.source_llm_interaction_id === sessionId) ||
+               (saved.session_id && saved.session_id === sessionId);
+    });
+  };
+
+  const getBookmarkedPlanId = () => {
+    if (!auth.isAuthenticated() || !allItinerariesQuery.data) return null;
+    
+    const sessionId = chatSession.sessionId();
+    if (!sessionId) return null;
+    
+    const savedItineraries = allItinerariesQuery.data.itineraries || [];
+    const streaming = streamingData();
+    const cityName = streaming?.general_city_data?.city || "unknown";
+    const expectedTitle = `Activity Guide: ${cityName}`;
+    
+    const foundItinerary = savedItineraries.find((saved) => {
+        return saved.title === expectedTitle || 
+               (saved.source_llm_interaction_id && saved.source_llm_interaction_id === sessionId) ||
+               (saved.session_id && saved.session_id === sessionId);
+    });
+    
+    return foundItinerary?.id || null;
+  };
+
+  const toggleBookmarkPlan = () => {
+    if (removeItineraryMutation.isPending || saveItineraryMutation.isPending) {
+        return;
+    }
+
+    if (isCurrentPlanBookmarked()) {
+        const planId = getBookmarkedPlanId();
+        if (planId) {
+            removeItineraryMutation.mutate(planId);
+        }
+    } else {
+        savePlan();
+    }
+  };
+
+  const savePlan = () => {
+    const sessionId = chatSession.sessionId();
+    if (!sessionId) {
+        console.error("No session ID available for saving activity plan");
+        return;
+    }
+
+    const streaming = streamingData();
+    const cityName = streaming?.general_city_data?.city || "unknown";
+    
+    const itineraryData = {
+        session_id: sessionId,
+        primary_city_name: cityName,
+        title: `Activity Guide: ${cityName}`,
+        description: `Curated activity recommendations for ${cityName}`,
+        tags: [cityName.toLowerCase(), "activities", "experiences", "ai-generated"],
+        is_public: false,
+    };
+
+    console.log("Saving activity plan with data:", itineraryData);
+    saveItineraryMutation.mutate(itineraryData);
   };
 
   const renderActivityCard = (activity) => {
@@ -608,10 +742,51 @@ export default function ActivitiesPage() {
                 </button>
 
                 <div class="flex gap-2">
-                  <button class="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors text-sm sm:flex-initial">
-                    <Heart class="w-4 h-4" />
-                    <span class="hidden sm:inline">Favorites</span>
-                  </button>
+                  <Show
+                    when={auth.isAuthenticated()}
+                    fallback={
+                      <button
+                        disabled
+                        class="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-gray-400 bg-gray-100 rounded-lg transition-colors text-sm sm:flex-initial disabled:cursor-not-allowed"
+                        title="Sign in to bookmark activity plans"
+                      >
+                        <Heart class="w-4 h-4" />
+                        <span class="hidden sm:inline">Bookmark</span>
+                      </button>
+                    }
+                  >
+                    <button
+                      onClick={toggleBookmarkPlan}
+                      disabled={
+                        saveItineraryMutation.isPending ||
+                        removeItineraryMutation.isPending
+                      }
+                      class={`flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg transition-colors text-sm sm:flex-initial disabled:opacity-50 ${
+                        isCurrentPlanBookmarked()
+                          ? "text-red-600 bg-red-50 hover:bg-red-100"
+                          : "text-gray-700 hover:bg-gray-100"
+                      }`}
+                      title={
+                        isCurrentPlanBookmarked()
+                          ? "Remove activity plan from bookmarks"
+                          : "Bookmark this activity plan"
+                      }
+                    >
+                      <Heart
+                        class={`w-4 h-4 ${isCurrentPlanBookmarked() ? "fill-current" : ""}`}
+                      />
+                      <span class="hidden sm:inline">
+                        {saveItineraryMutation.isPending ||
+                        removeItineraryMutation.isPending
+                          ? isCurrentPlanBookmarked()
+                            ? "Removing..."
+                            : "Saving..."
+                          : isCurrentPlanBookmarked()
+                            ? "Bookmarked"
+                            : "Bookmark Plan"}
+                      </span>
+                    </button>
+                  </Show>
                   <button class="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors text-sm sm:flex-initial">
                     <Share2 class="w-4 h-4" />
                     <span class="hidden sm:inline">Share</span>
@@ -715,6 +890,32 @@ export default function ActivitiesPage() {
                     compact={false}
                     showToggle={filteredActivities().length > 5}
                     initialLimit={5}
+                    onToggleFavorite={
+                      auth.isAuthenticated() ? toggleFavorite : undefined
+                    }
+                    onShareClick={(activity) => {
+                      if (navigator.share) {
+                        navigator.share({
+                          title: activity.name,
+                          text: `Check out ${activity.name} - ${activity.description_poi}`,
+                          url: window.location.href,
+                        });
+                      } else {
+                        navigator.clipboard.writeText(
+                          `Check out ${activity.name}: ${activity.description_poi}`,
+                        );
+                      }
+                    }}
+                    favorites={
+                      auth.isAuthenticated()
+                        ? (favoritesQuery.data?.data || []).map((fav) => fav.name)
+                        : []
+                    }
+                    isLoadingFavorites={
+                      addToFavoritesMutation.isPending ||
+                      removeFromFavoritesMutation.isPending
+                    }
+                    showAuthMessage={!auth.isAuthenticated()}
                   />
                 </Show>
               </div>

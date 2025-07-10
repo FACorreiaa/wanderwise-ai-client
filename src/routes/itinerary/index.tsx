@@ -43,6 +43,7 @@ import {
   useItinerary,
   useUpdateItineraryMutation,
   useSaveItineraryMutation,
+  useRemoveItineraryMutation,
 } from "~/lib/api/itineraries";
 // @ts-ignore - POI favorites API hooks type
 import {
@@ -62,6 +63,7 @@ import { useChatSession } from "~/lib/hooks/useChatSession";
 import ChatInterface from "~/components/ui/ChatInterface";
 // @ts-ignore - Auth context type
 import { useAuth } from "~/contexts/AuthContext";
+import { useAllUserItineraries } from "~/lib/api/itineraries";
 
 interface LocationState {
   streamingData?: any;
@@ -153,7 +155,7 @@ export default function ItineraryResultsPage() {
   const removeItineraryMutation = useRemoveItineraryMutation();
 
   // Favorites hooks
-  const favoritesQuery = useFavorites();
+  const favoritesQuery = useFavorites(() => 1, () => 1000); // Get all favorites for checking
   const addToFavoritesMutation = useAddToFavoritesMutation();
   const removeFromFavoritesMutation = useRemoveFromFavoritesMutation();
 
@@ -1200,7 +1202,7 @@ export default function ItineraryResultsPage() {
 
   // Favorites functionality
   const isFavorite = (poiName: string) => {
-    const favs = favoritesQuery.data || [];
+    const favs = favoritesQuery.data?.data || [];
     return favs.some((poi) => poi.name === poiName);
   };
 
@@ -1379,10 +1381,10 @@ export default function ItineraryResultsPage() {
                       <button
                         disabled
                         class="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-gray-400 bg-gray-100 rounded-lg transition-colors text-sm sm:flex-initial disabled:cursor-not-allowed"
-                        title="Sign in to save itineraries"
+                        title="Sign in to bookmark itineraries"
                       >
                         <Heart class="w-4 h-4" />
-                        <span class="hidden sm:inline">Save</span>
+                        <span class="hidden sm:inline">Bookmark</span>
                       </button>
                     }
                   >
@@ -1400,7 +1402,7 @@ export default function ItineraryResultsPage() {
                       title={
                         isCurrentItineraryBookmarked()
                           ? "Remove from bookmarks"
-                          : "Save to bookmarks"
+                          : "Bookmark this itinerary"
                       }
                     >
                       <Heart
@@ -1411,11 +1413,17 @@ export default function ItineraryResultsPage() {
                         removeItineraryMutation.isPending
                           ? isCurrentItineraryBookmarked()
                             ? "Removing..."
-                            : "Saving..."
+                            : "Bookmarking..."
                           : isCurrentItineraryBookmarked()
-                            ? "Saved"
-                            : "Save"}
+                            ? "Bookmarked"
+                            : "Bookmark"}
                       </span>
+                      {/* Debug info */}
+                      <Show when={isAuthenticated()}>
+                        <span class="text-xs text-gray-400">
+                          ({allItinerariesQuery.isLoading ? "loading" : allItinerariesQuery.data?.itineraries?.length || 0} saved)
+                        </span>
+                      </Show>
                     </button>
                   </Show>
 
@@ -1866,7 +1874,7 @@ export default function ItineraryResultsPage() {
                   }
                   favorites={
                     isAuthenticated()
-                      ? (favoritesQuery.data || []).map((fav) => fav.name)
+                      ? (favoritesQuery.data?.data || []).map((fav) => fav.name)
                       : []
                   }
                   isLoadingFavorites={
