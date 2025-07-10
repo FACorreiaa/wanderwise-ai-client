@@ -13,6 +13,16 @@ interface PaginatorProps {
 export default function Paginator(props: PaginatorProps) {
   const startItem = () => (props.currentPage - 1) * props.itemsPerPage + 1;
   const endItem = () => Math.min(props.currentPage * props.itemsPerPage, props.totalItems);
+  
+  // Debug logging
+  console.log('Paginator props:', {
+    currentPage: props.currentPage,
+    totalPages: props.totalPages,
+    totalItems: props.totalItems,
+    itemsPerPage: props.itemsPerPage,
+    startItem: startItem(),
+    endItem: endItem()
+  });
 
   // Generate page numbers to display - simplified for mobile
   const getPageNumbers = () => {
@@ -63,7 +73,10 @@ export default function Paginator(props: PaginatorProps) {
             Page {props.currentPage} of {props.totalPages}
           </span>
           <span class="hidden sm:inline">
-            {startItem()}-{endItem()} of {props.totalItems}
+            {startItem() === endItem() 
+              ? `${startItem()} of ${props.totalItems}`
+              : `${startItem()}-${endItem()} of ${props.totalItems}`
+            }
           </span>
         </div>
 

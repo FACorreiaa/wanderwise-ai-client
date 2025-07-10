@@ -23,67 +23,88 @@ import {
   ChevronLeft,
   ChevronRight,
 } from "lucide-solid";
-import { useRemoveItineraryMutation, useSaveItineraryMutation } from "~/lib/api/itineraries";
-import { useQuery } from '@tanstack/solid-query';
-import { Paginator } from "~/components/Paginator";
-import { A } from '@solidjs/router';
+import {
+  useRemoveItineraryMutation,
+  useSaveItineraryMutation,
+} from "~/lib/api/itineraries";
+import { useQuery } from "@tanstack/solid-query";
+import Paginator from "~/components/Paginator";
+import { A } from "@solidjs/router";
 
 export default function BookmarksPage() {
   console.log("BookmarksPage component rendering");
-  
+
   const [viewMode, setViewMode] = createSignal("grid"); // 'grid', 'list'
   const [searchQuery, setSearchQuery] = createSignal("");
   const [sortBy, setSortBy] = createSignal("created_at"); // 'title', 'created_at', 'duration'
   const [sortOrder, setSortOrder] = createSignal("desc"); // 'asc', 'desc'
   const [selectedItineraries, setSelectedItineraries] = createSignal([]);
   const [currentPage, setCurrentPage] = createSignal(1);
-  const itemsPerPage = 12;
+  const [itemsPerPage, setItemsPerPage] = createSignal(10);
 
   // Simple API request function
   const fetchBookmarks = async (page: number, limit: number) => {
-    const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api/v1";
-    const token = localStorage.getItem("access_token") || sessionStorage.getItem("access_token");
-    
-    const response = await fetch(`${API_BASE_URL}/llm/prompt-response/bookmarks?page=${page}&limit=${limit}`, {
-      headers: {
-        "Content-Type": "application/json",
-        ...(token && { Authorization: `Bearer ${token}` }),
+    const API_BASE_URL =
+      import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api/v1";
+    const token =
+      localStorage.getItem("access_token") ||
+      sessionStorage.getItem("access_token");
+
+    const response = await fetch(
+      `${API_BASE_URL}/llm/prompt-response/bookmarks?page=${page}&limit=${limit}`,
+      {
+        headers: {
+          "Content-Type": "application/json",
+          ...(token && { Authorization: `Bearer ${token}` }),
+        },
       },
-    });
-    
+    );
+
     if (!response.ok) {
       throw new Error(`HTTP ${response.status}: ${response.statusText}`);
     }
-    
+
     return response.json();
   };
 
   // API hooks
   const bookmarksQuery = useQuery(() => ({
-    queryKey: ['bookmarked-itineraries', currentPage(), itemsPerPage],
-    queryFn: () => fetchBookmarks(currentPage(), itemsPerPage),
+    queryKey: ["bookmarked-itineraries", currentPage(), itemsPerPage],
+    queryFn: () => fetchBookmarks(currentPage(), itemsPerPage()),
     staleTime: 5 * 60 * 1000,
     enabled: true,
   }));
-  const removeItineraryMutation = useRemoveItineraryMutation();
-  const saveItineraryMutation = useSaveItineraryMutation();
 
+  const getTotalPages = () => {
+    if (!bookmarksQuery.data?.total) return 0;
+    return Math.ceil(bookmarksQuery.data.total / itemsPerPage());
+  };
+  //const removeItineraryMutation = useRemoveItineraryMutation();
+  const saveItineraryMutation = useSaveItineraryMutation();
 
   // Get bookmarks from API or fallback to empty array
   const bookmarks = () => {
-    console.log('Bookmarks query data:', bookmarksQuery.data);
-    console.log('Bookmarks query isLoading:', bookmarksQuery.isLoading);
-    console.log('Bookmarks query error:', bookmarksQuery.error);
+    console.log("Bookmarks query data:", bookmarksQuery.data);
+    console.log("Bookmarks query isLoading:", bookmarksQuery.isLoading);
+    console.log("Bookmarks query error:", bookmarksQuery.error);
     return bookmarksQuery.data?.itineraries || [];
   };
   const totalRecords = () => bookmarksQuery.data?.total_records || 0;
-  const totalPages = () => Math.ceil(totalRecords() / itemsPerPage);
+  const totalPages = () => Math.ceil(totalRecords() / itemsPerPage());
 
   const sortOptions = [
     { id: "title", label: "Title" },
     { id: "created_at", label: "Date Added" },
     { id: "estimated_duration_days", label: "Duration" },
   ];
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+    // Reset selection when changing pages
+    //setSelectedPOIs([]);
+    // Scroll to top when changing pages
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
 
   // Filter and sort bookmarks
   const filteredBookmarks = () => {
@@ -96,7 +117,7 @@ export default function BookmarksPage() {
         (bookmark) =>
           bookmark.title?.toLowerCase().includes(query) ||
           bookmark.description?.toLowerCase().includes(query) ||
-          bookmark.tags?.some(tag => tag.toLowerCase().includes(query))
+          bookmark.tags?.some((tag) => tag.toLowerCase().includes(query)),
       );
     }
 
@@ -153,7 +174,7 @@ export default function BookmarksPage() {
       1: "Budget",
       2: "Moderate",
       3: "Expensive",
-      4: "Luxury"
+      4: "Luxury",
     };
     return levels[level] || "Unknown";
   };
@@ -163,24 +184,24 @@ export default function BookmarksPage() {
       1: "text-green-600 bg-green-50",
       2: "text-blue-600 bg-blue-50",
       3: "text-orange-600 bg-orange-50",
-      4: "text-purple-600 bg-purple-50"
+      4: "text-purple-600 bg-purple-50",
     };
     return colors[level] || "text-gray-600 bg-gray-50";
   };
 
-  const removeBookmark = async (itineraryId) => {
-    try {
-      await removeItineraryMutation.mutateAsync(itineraryId);
-    } catch (error) {
-      console.error("Failed to remove bookmark:", error);
-    }
-  };
+  //const removeBookmark = async (itineraryId) => {
+  //try {
+  // await removeItineraryMutation.mutateAsync(itineraryId);
+  //} catch (error) {
+  // console.error("Failed to remove bookmark:", error);
+  // }
+  //};
 
   const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
+    return new Date(dateString).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
     });
   };
 
@@ -191,7 +212,7 @@ export default function BookmarksPage() {
         description: "This is a test bookmark to verify the feature works",
         primary_city_name: "Test City",
         tags: ["test", "bookmark"],
-        is_public: false
+        is_public: false,
       };
       console.log("Creating test bookmark with data:", bookmarkData);
       await saveItineraryMutation.mutateAsync(bookmarkData);
@@ -211,9 +232,12 @@ export default function BookmarksPage() {
   const renderGridCard = (bookmark) => (
     <div class="cb-card group hover:shadow-lg transition-all duration-300 overflow-hidden">
       {/* Header with gradient - Clickable */}
-      <A href={getBookmarkDetailUrl(bookmark)} class="relative h-32 bg-gradient-to-br from-blue-500 to-purple-600 overflow-hidden block cursor-pointer">
+      <A
+        href={getBookmarkDetailUrl(bookmark)}
+        class="relative h-32 bg-gradient-to-br from-blue-500 to-purple-600 overflow-hidden block cursor-pointer"
+      >
         <div class="absolute inset-0 bg-black/20"></div>
-        
+
         {/* Selection checkbox */}
         <div class="absolute top-3 left-3 z-10">
           <input
@@ -228,7 +252,7 @@ export default function BookmarksPage() {
         {/* Action buttons */}
         <div class="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity z-10">
           <div class="flex gap-1">
-            <button 
+            <button
               class="p-1.5 bg-white/90 text-gray-700 rounded-lg hover:bg-white"
               onClick={(e) => e.stopPropagation()}
             >
@@ -237,7 +261,7 @@ export default function BookmarksPage() {
             <button
               onClick={(e) => {
                 e.stopPropagation();
-                removeBookmark(bookmark.id);
+                //removeBookmark(bookmark.id);
               }}
               class="p-1.5 bg-red-500 text-white rounded-lg hover:bg-red-600"
             >
@@ -255,7 +279,10 @@ export default function BookmarksPage() {
       </A>
 
       {/* Content - Clickable */}
-      <A href={getBookmarkDetailUrl(bookmark)} class="block p-4 hover:bg-gray-50 transition-colors">
+      <A
+        href={getBookmarkDetailUrl(bookmark)}
+        class="block p-4 hover:bg-gray-50 transition-colors"
+      >
         <div class="mb-3">
           <p class="text-xs text-gray-500 mb-2">
             Added {formatDate(bookmark.created_at)}
@@ -290,13 +317,18 @@ export default function BookmarksPage() {
           <Show when={bookmark.estimated_duration_days}>
             <div class="flex items-center gap-2 text-gray-500">
               <Calendar class="w-4 h-4" />
-              <span>{bookmark.estimated_duration_days} day{bookmark.estimated_duration_days > 1 ? 's' : ''}</span>
+              <span>
+                {bookmark.estimated_duration_days} day
+                {bookmark.estimated_duration_days > 1 ? "s" : ""}
+              </span>
             </div>
           </Show>
           <Show when={bookmark.estimated_cost_level}>
             <div class="flex items-center gap-2">
               <DollarSign class="w-4 h-4 text-gray-500" />
-              <span class={`px-2 py-1 rounded text-xs ${getCostLevelColor(bookmark.estimated_cost_level)}`}>
+              <span
+                class={`px-2 py-1 rounded text-xs ${getCostLevelColor(bookmark.estimated_cost_level)}`}
+              >
                 {getCostLevelText(bookmark.estimated_cost_level)}
               </span>
             </div>
@@ -326,7 +358,10 @@ export default function BookmarksPage() {
           />
 
           {/* Icon - Clickable */}
-          <A href={getBookmarkDetailUrl(bookmark)} class="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center text-white text-2xl flex-shrink-0 hover:shadow-md transition-shadow">
+          <A
+            href={getBookmarkDetailUrl(bookmark)}
+            class="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center text-white text-2xl flex-shrink-0 hover:shadow-md transition-shadow"
+          >
             <Bookmark />
           </A>
 
@@ -334,7 +369,10 @@ export default function BookmarksPage() {
           <div class="flex-1 min-w-0">
             <div class="flex items-start justify-between mb-3">
               <div class="flex-1 min-w-0">
-                <A href={getBookmarkDetailUrl(bookmark)} class="block hover:text-blue-600 transition-colors">
+                <A
+                  href={getBookmarkDetailUrl(bookmark)}
+                  class="block hover:text-blue-600 transition-colors"
+                >
                   <h3 class="font-semibold text-gray-900 text-lg mb-1">
                     {bookmark.title}
                   </h3>
@@ -346,7 +384,7 @@ export default function BookmarksPage() {
 
               {/* Action buttons */}
               <div class="flex items-center gap-1 ml-4">
-                <button 
+                <button
                   class="p-2 text-gray-600 hover:bg-gray-50 rounded-lg"
                   onClick={(e) => e.stopPropagation()}
                 >
@@ -355,7 +393,7 @@ export default function BookmarksPage() {
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
-                    removeBookmark(bookmark.id);
+                    //removeBookmark(bookmark.id);
                   }}
                   class="p-2 text-red-600 hover:bg-red-50 rounded-lg"
                 >
@@ -388,19 +426,24 @@ export default function BookmarksPage() {
               <Show when={bookmark.estimated_duration_days}>
                 <div class="flex items-center gap-2">
                   <Calendar class="w-4 h-4" />
-                  <span>{bookmark.estimated_duration_days} day{bookmark.estimated_duration_days > 1 ? 's' : ''}</span>
+                  <span>
+                    {bookmark.estimated_duration_days} day
+                    {bookmark.estimated_duration_days > 1 ? "s" : ""}
+                  </span>
                 </div>
               </Show>
-              
+
               <Show when={bookmark.estimated_cost_level}>
                 <div class="flex items-center gap-2">
                   <DollarSign class="w-4 h-4" />
-                  <span class={`px-2 py-1 rounded text-xs ${getCostLevelColor(bookmark.estimated_cost_level)}`}>
+                  <span
+                    class={`px-2 py-1 rounded text-xs ${getCostLevelColor(bookmark.estimated_cost_level)}`}
+                  >
                     {getCostLevelText(bookmark.estimated_cost_level)}
                   </span>
                 </div>
               </Show>
-              
+
               <Show when={bookmark.is_public}>
                 <div class="flex items-center gap-2">
                   <Globe class="w-4 h-4" />
@@ -423,17 +466,20 @@ export default function BookmarksPage() {
             <div>
               <h1 class="text-2xl font-bold text-gray-900">My Bookmarks</h1>
               <p class="text-gray-600 mt-1">
-                {totalRecords()} saved itinerar{totalRecords() === 1 ? 'y' : 'ies'}
+                {totalRecords()} saved itinerar
+                {totalRecords() === 1 ? "y" : "ies"}
               </p>
             </div>
             <div class="flex items-center gap-3">
-              <button 
+              <button
                 onClick={createTestBookmark}
                 class="cb-button cb-button-primary px-4 py-2 flex items-center gap-2"
                 disabled={saveItineraryMutation.isLoading}
               >
                 <Plus class="w-4 h-4" />
-                {saveItineraryMutation.isLoading ? "Creating..." : "Test Bookmark"}
+                {saveItineraryMutation.isLoading
+                  ? "Creating..."
+                  : "Test Bookmark"}
               </button>
               <button class="cb-button cb-button-secondary px-4 py-2 flex items-center gap-2">
                 <Download class="w-4 h-4" />
@@ -552,10 +598,10 @@ export default function BookmarksPage() {
               <div class="text-center py-12">
                 <div class="text-red-600 mb-4">❌ Error loading bookmarks</div>
                 <p class="text-gray-600 mb-4">
-                  {bookmarksQuery.error?.message || 'Failed to load bookmarks'}
+                  {bookmarksQuery.error?.message || "Failed to load bookmarks"}
                 </p>
-                <button 
-                  onClick={() => bookmarksQuery.refetch()} 
+                <button
+                  onClick={() => bookmarksQuery.refetch()}
                   class="cb-button cb-button-primary"
                 >
                   Try Again
@@ -604,8 +650,11 @@ export default function BookmarksPage() {
               <div class="mt-8 flex justify-center">
                 <Paginator
                   currentPage={currentPage()}
-                  totalPages={totalPages()}
-                  onPageChange={setCurrentPage}
+                  totalPages={getTotalPages()}
+                  totalItems={bookmarksQuery.data?.total || 0}
+                  itemsPerPage={itemsPerPage()}
+                  onPageChange={handlePageChange}
+                  className="rounded-lg border border-gray-200 dark:border-gray-700"
                 />
               </div>
             </Show>

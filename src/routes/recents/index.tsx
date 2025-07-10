@@ -20,7 +20,10 @@ import {
   SortDesc,
   Bookmark,
 } from "lucide-solid";
-import { useRecentInteractions, type RecentInteractionsFilter } from "~/lib/api/recents";
+import {
+  useRecentInteractions,
+  type RecentInteractionsFilter,
+} from "~/lib/api/recents";
 import type {
   CityInteractions,
   POIDetailedInfo,
@@ -40,8 +43,12 @@ export default function RecentsPage() {
   const [sortBy, setSortBy] = createSignal("last_activity");
   const [sortOrder, setSortOrder] = createSignal("desc");
   const [searchQuery, setSearchQuery] = createSignal("");
-  const [minInteractions, setMinInteractions] = createSignal<number | undefined>(undefined);
-  const [maxInteractions, setMaxInteractions] = createSignal<number | undefined>(undefined);
+  const [minInteractions, setMinInteractions] = createSignal<
+    number | undefined
+  >(undefined);
+  const [maxInteractions, setMaxInteractions] = createSignal<
+    number | undefined
+  >(undefined);
 
   // Create filter object
   const filterOptions = (): RecentInteractionsFilter => ({
@@ -53,7 +60,11 @@ export default function RecentsPage() {
   });
 
   const navigate = useNavigate();
-  const recentsQuery = useRecentInteractions(currentPage, itemsPerPage, filterOptions);
+  const recentsQuery = useRecentInteractions(
+    currentPage,
+    itemsPerPage,
+    filterOptions,
+  );
 
   // Statistics for current page only (since we're using server-side pagination)
   const getCurrentPageInteractions = () => {
@@ -436,11 +447,17 @@ export default function RecentsPage() {
                   <option value="poi_count">POI Count</option>
                 </select>
                 <button
-                  onClick={() => setSortOrder(sortOrder() === "asc" ? "desc" : "asc")}
+                  onClick={() =>
+                    setSortOrder(sortOrder() === "asc" ? "desc" : "asc")
+                  }
                   class="p-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
                   title={`Sort ${sortOrder() === "asc" ? "descending" : "ascending"}`}
                 >
-                  {sortOrder() === "asc" ? <SortAsc class="w-4 h-4" /> : <SortDesc class="w-4 h-4" />}
+                  {sortOrder() === "asc" ? (
+                    <SortAsc class="w-4 h-4" />
+                  ) : (
+                    <SortDesc class="w-4 h-4" />
+                  )}
                 </button>
               </div>
             </div>
@@ -455,7 +472,10 @@ export default function RecentsPage() {
                 <input
                   type="number"
                   placeholder="Min"
-                  value={minInteractions() !== undefined ? minInteractions().toString() : ""}
+                  value={(() => {
+                    const val = minInteractions();
+                    return val !== undefined ? val.toString() : "";
+                  })()}
                   onInput={(e) => {
                     const value = e.currentTarget.value;
                     const numValue = value === "" ? undefined : Number(value);
@@ -467,7 +487,10 @@ export default function RecentsPage() {
                 <input
                   type="number"
                   placeholder="Max"
-                  value={maxInteractions() !== undefined ? maxInteractions().toString() : ""}
+                  value={(() => {
+                    const val = maxInteractions();
+                    return val !== undefined ? val.toString() : "";
+                  })()}
                   onInput={(e) => {
                     const value = e.currentTarget.value;
                     const numValue = value === "" ? undefined : Number(value);
@@ -475,7 +498,15 @@ export default function RecentsPage() {
                   }}
                   class="w-20 px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
                 />
-                <Show when={searchQuery() || minInteractions() !== undefined || maxInteractions() !== undefined || sortBy() !== "last_activity" || sortOrder() !== "desc"}>
+                <Show
+                  when={
+                    searchQuery() ||
+                    minInteractions() !== undefined ||
+                    maxInteractions() !== undefined ||
+                    sortBy() !== "last_activity" ||
+                    sortOrder() !== "desc"
+                  }
+                >
                   <button
                     onClick={clearFilters}
                     class="px-3 py-1 text-sm bg-gray-100 dark:bg-gray-600 text-gray-600 dark:text-gray-300 rounded hover:bg-gray-200 dark:hover:bg-gray-500 transition-colors"

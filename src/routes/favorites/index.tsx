@@ -19,7 +19,8 @@ import {
   Eye,
 } from "lucide-solid";
 import { useFavorites, useRemoveFromFavoritesMutation } from "~/lib/api/pois";
-import { A } from '@solidjs/router';
+import { A } from "@solidjs/router";
+import Paginator from "~/components/Paginator";
 
 export default function FavoritesPage() {
   const [viewMode, setViewMode] = createSignal("grid"); // 'grid', 'list'
@@ -28,27 +29,33 @@ export default function FavoritesPage() {
   const [sortBy, setSortBy] = createSignal("name"); // 'name', 'category', 'distance'
   const [sortOrder, setSortOrder] = createSignal("asc"); // 'asc', 'desc'
   const [selectedPOIs, setSelectedPOIs] = createSignal([]);
+  const [itemsPerPage, setItemsPerPage] = createSignal(10);
 
-  // API hooks
-  const favoritesQuery = useFavorites();
+  // Pagination state
+  const [currentPage, setCurrentPage] = createSignal(1);
+
+  // API hooks - Reactive query that refetches when page changes
+  const favoritesQuery = () => useFavorites(currentPage(), itemsPerPage());
   const removeFavoriteMutation = useRemoveFromFavoritesMutation();
 
   // Get favorites from API or fallback to empty array
-  const favorites = () => favoritesQuery.data || [];
-
+  const favorites = () => favoritesQuery().data?.data || [];
+  const pagination = () => favoritesQuery().data?.pagination;
   // Dynamic categories based on actual data
   const categories = () => {
-    const allCategories = favorites().map(fav => fav.category).filter(Boolean);
+    const allCategories = favorites()
+      .map((fav) => fav.category)
+      .filter(Boolean);
     const uniqueCategories = [...new Set(allCategories)];
-    const categoryCounts = uniqueCategories.map(cat => ({
+    const categoryCounts = uniqueCategories.map((cat) => ({
       id: cat.toLowerCase(),
       label: cat,
-      count: favorites().filter(fav => fav.category === cat).length
+      count: favorites().filter((fav) => fav.category === cat).length,
     }));
-    
+
     return [
-      { id: "all", label: "All Categories", count: favorites().length },
-      ...categoryCounts
+      { id: "all", label: "All Categories", count: pagination()?.total || 0 },
+      ...categoryCounts,
     ];
   };
 
@@ -70,14 +77,14 @@ export default function FavoritesPage() {
           fav.name?.toLowerCase().includes(query) ||
           fav.description_poi?.toLowerCase().includes(query) ||
           fav.category?.toLowerCase().includes(query) ||
-          fav.address?.toLowerCase().includes(query)
+          fav.address?.toLowerCase().includes(query),
       );
     }
 
     // Category filter
     if (selectedCategory() !== "all") {
-      filtered = filtered.filter((fav) =>
-        fav.category?.toLowerCase() === selectedCategory()
+      filtered = filtered.filter(
+        (fav) => fav.category?.toLowerCase() === selectedCategory(),
       );
     }
 
@@ -125,33 +132,50 @@ export default function FavoritesPage() {
     setSelectedPOIs(filteredFavorites().map((fav) => fav.id));
   };
 
+  // Pagination handler
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+    // Reset selection when changing pages
+    setSelectedPOIs([]);
+    // Scroll to top when changing pages
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
   const clearSelection = () => {
     setSelectedPOIs([]);
   };
 
   const getCategoryColor = (category) => {
     const colorMap = {
-      "Restaurant": "text-orange-600 bg-orange-50",
-      "Park": "text-green-600 bg-green-50",
-      "Beach": "text-blue-600 bg-blue-50",
-      "Landmark": "text-purple-600 bg-purple-50",
+      Restaurant: "text-orange-600 bg-orange-50",
+      Park: "text-green-600 bg-green-50",
+      Beach: "text-blue-600 bg-blue-50",
+      Landmark: "text-purple-600 bg-purple-50",
       "Religious Site": "text-indigo-600 bg-indigo-50",
-      "Museum": "text-amber-600 bg-amber-50",
-      "Shopping": "text-pink-600 bg-pink-50",
+      Museum: "text-amber-600 bg-amber-50",
+      Shopping: "text-pink-600 bg-pink-50",
     };
     return colorMap[category] || "text-gray-600 bg-gray-50";
   };
 
   const getCategoryIcon = (category) => {
     switch (category) {
-      case "Restaurant": return "🍽️";
-      case "Park": return "🌳";
-      case "Beach": return "🏖️";
-      case "Landmark": return "🏛️";
-      case "Religious Site": return "⛪";
-      case "Museum": return "🏛️";
-      case "Shopping": return "🛍️";
-      default: return "📍";
+      case "Restaurant":
+        return "🍽️";
+      case "Park":
+        return "🌳";
+      case "Beach":
+        return "🏖️";
+      case "Landmark":
+        return "🏛️";
+      case "Religious Site":
+        return "⛪";
+      case "Museum":
+        return "🏛️";
+      case "Shopping":
+        return "🛍️";
+      default:
+        return "📍";
     }
   };
 
@@ -159,7 +183,7 @@ export default function FavoritesPage() {
     try {
       await removeFavoriteMutation.mutateAsync({
         poiId: favoriteId,
-        isLlmPoi: true // Based on your data structure, these appear to be LLM POIs
+        isLlmPoi: true, // Based on your data structure, these appear to be LLM POIs
       });
     } catch (error) {
       console.error("Failed to remove favorite:", error);
@@ -173,10 +197,17 @@ export default function FavoritesPage() {
   };
 
   const getDetailUrl = (favorite) => {
-    const category = favorite.category?.toLowerCase() || '';
-    if (category.includes('restaurant') || category.includes('food') || category.includes('cafe')) {
+    const category = favorite.category?.toLowerCase() || "";
+    if (
+      category.includes("restaurant") ||
+      category.includes("food") ||
+      category.includes("cafe")
+    ) {
       return `/restaurants/${favorite.id}`;
-    } else if (category.includes('hotel') || category.includes('accommodation')) {
+    } else if (
+      category.includes("hotel") ||
+      category.includes("accommodation")
+    ) {
       return `/hotels/${favorite.id}`;
     } else {
       // For other POI types, we'll use a generic POI detail page
@@ -184,13 +215,14 @@ export default function FavoritesPage() {
     }
   };
 
-  console.log("favorites", favorites);
-
   const renderGridCard = (favorite) => (
     <div class="cb-card group hover:shadow-lg transition-all duration-300 overflow-hidden">
       {/* Image */}
       <div class="relative h-40 bg-gradient-to-br from-blue-100 to-purple-100 overflow-hidden">
-        <A href={getDetailUrl(favorite)} class="absolute inset-0 flex items-center justify-center text-6xl cursor-pointer">
+        <A
+          href={getDetailUrl(favorite)}
+          class="absolute inset-0 flex items-center justify-center text-6xl cursor-pointer"
+        >
           {getCategoryIcon(favorite.category)}
         </A>
 
@@ -208,7 +240,7 @@ export default function FavoritesPage() {
         {/* Action buttons */}
         <div class="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity z-10">
           <div class="flex gap-1">
-            <button 
+            <button
               class="p-1.5 bg-white/90 text-gray-700 rounded-lg hover:bg-white"
               onClick={(e) => e.stopPropagation()}
             >
@@ -228,20 +260,27 @@ export default function FavoritesPage() {
 
         {/* Category badge */}
         <div class="absolute bottom-3 left-3 z-10">
-          <span class={`px-2 py-1 rounded-full text-xs font-medium ${getCategoryColor(favorite.category)}`}>
+          <span
+            class={`px-2 py-1 rounded-full text-xs font-medium ${getCategoryColor(favorite.category)}`}
+          >
             {favorite.category}
           </span>
         </div>
       </div>
 
       {/* Content - Clickable */}
-      <A href={getDetailUrl(favorite)} class="block p-4 hover:bg-gray-50 transition-colors">
+      <A
+        href={getDetailUrl(favorite)}
+        class="block p-4 hover:bg-gray-50 transition-colors"
+      >
         <div class="mb-3">
           <h3 class="font-semibold text-gray-900 text-base mb-1 line-clamp-2">
             {favorite.name}
           </h3>
           <Show when={formatDistance(favorite.distance)}>
-            <p class="text-sm text-gray-500">{formatDistance(favorite.distance)} away</p>
+            <p class="text-sm text-gray-500">
+              {formatDistance(favorite.distance)} away
+            </p>
           </Show>
         </div>
 
@@ -266,9 +305,9 @@ export default function FavoritesPage() {
           <Show when={favorite.website}>
             <div class="flex items-center gap-2">
               <span class="w-4 h-4 text-center">🌐</span>
-              <a 
-                href={favorite.website} 
-                target="_blank" 
+              <a
+                href={favorite.website}
+                target="_blank"
                 rel="noopener noreferrer"
                 class="text-blue-600 hover:text-blue-800 truncate"
                 onClick={(e) => e.stopPropagation()}
@@ -301,7 +340,10 @@ export default function FavoritesPage() {
           />
 
           {/* Category icon - Clickable */}
-          <A href={getDetailUrl(favorite)} class="w-16 h-16 bg-gradient-to-br from-blue-100 to-purple-100 rounded-lg flex items-center justify-center text-3xl flex-shrink-0 hover:shadow-md transition-shadow">
+          <A
+            href={getDetailUrl(favorite)}
+            class="w-16 h-16 bg-gradient-to-br from-blue-100 to-purple-100 rounded-lg flex items-center justify-center text-3xl flex-shrink-0 hover:shadow-md transition-shadow"
+          >
             {getCategoryIcon(favorite.category)}
           </A>
 
@@ -309,24 +351,31 @@ export default function FavoritesPage() {
           <div class="flex-1 min-w-0">
             <div class="flex items-start justify-between mb-3">
               <div class="flex-1 min-w-0">
-                <A href={getDetailUrl(favorite)} class="block hover:text-blue-600 transition-colors">
+                <A
+                  href={getDetailUrl(favorite)}
+                  class="block hover:text-blue-600 transition-colors"
+                >
                   <h3 class="font-semibold text-gray-900 text-lg mb-1">
                     {favorite.name}
                   </h3>
                 </A>
                 <div class="flex items-center gap-2 mb-2">
-                  <span class={`px-2 py-1 rounded-full text-xs font-medium ${getCategoryColor(favorite.category)}`}>
+                  <span
+                    class={`px-2 py-1 rounded-full text-xs font-medium ${getCategoryColor(favorite.category)}`}
+                  >
                     {favorite.category}
                   </span>
                   <Show when={formatDistance(favorite.distance)}>
-                    <span class="text-sm text-gray-500">{formatDistance(favorite.distance)} away</span>
+                    <span class="text-sm text-gray-500">
+                      {formatDistance(favorite.distance)} away
+                    </span>
                   </Show>
                 </div>
               </div>
 
               {/* Action buttons */}
               <div class="flex items-center gap-1 ml-4">
-                <button 
+                <button
                   class="p-2 text-gray-600 hover:bg-gray-50 rounded-lg"
                   onClick={(e) => e.stopPropagation()}
                 >
@@ -356,12 +405,12 @@ export default function FavoritesPage() {
                   <span class="line-clamp-2">{favorite.address}</span>
                 </div>
               </Show>
-              
+
               <Show when={favorite.phone_number}>
                 <div class="flex items-center gap-2">
                   <span class="w-4 h-4 text-center">📞</span>
-                  <a 
-                    href={`tel:${favorite.phone_number}`} 
+                  <a
+                    href={`tel:${favorite.phone_number}`}
                     class="hover:text-blue-600"
                     onClick={(e) => e.stopPropagation()}
                   >
@@ -369,13 +418,13 @@ export default function FavoritesPage() {
                   </a>
                 </div>
               </Show>
-              
+
               <Show when={favorite.website}>
                 <div class="flex items-center gap-2">
                   <span class="w-4 h-4 text-center">🌐</span>
-                  <a 
-                    href={favorite.website} 
-                    target="_blank" 
+                  <a
+                    href={favorite.website}
+                    target="_blank"
                     rel="noopener noreferrer"
                     class="text-blue-600 hover:text-blue-800 truncate"
                     onClick={(e) => e.stopPropagation()}
@@ -384,11 +433,12 @@ export default function FavoritesPage() {
                   </a>
                 </div>
               </Show>
-              
+
               <div class="flex items-center gap-2">
                 <span class="w-4 h-4 text-center">📍</span>
                 <span class="text-xs text-gray-400">
-                  {favorite.latitude?.toFixed(4)}, {favorite.longitude?.toFixed(4)}
+                  {favorite.latitude?.toFixed(4)},{" "}
+                  {favorite.longitude?.toFixed(4)}
                 </span>
               </div>
             </div>
@@ -420,7 +470,7 @@ export default function FavoritesPage() {
             <div>
               <h1 class="text-2xl font-bold text-gray-900">My Favorites</h1>
               <p class="text-gray-600 mt-1">
-                {favorites().length} places you've saved
+                {pagination()?.total || 0} places you've saved
               </p>
             </div>
             <div class="flex items-center gap-3">
@@ -579,6 +629,20 @@ export default function FavoritesPage() {
               }
             </For>
           </div>
+
+          {/* Pagination Component */}
+          <Show when={pagination() && pagination()!.total_pages > 1}>
+            <div class="mt-8">
+              <Paginator
+                currentPage={currentPage()}
+                totalPages={pagination()!.total_pages}
+                totalItems={pagination()!.total}
+                itemsPerPage={itemsPerPage()}
+                onPageChange={handlePageChange}
+                className="rounded-lg border border-gray-200"
+              />
+            </div>
+          </Show>
         </Show>
       </div>
     </div>

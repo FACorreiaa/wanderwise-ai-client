@@ -8,13 +8,27 @@ import { createResource } from "solid-js";
 // POI QUERIES
 // ===============
 
-export const useFavorites = () => {
+export const useFavorites = (page: number = 1, limit: number = 12) => {
   return useQuery(() => ({
-    queryKey: queryKeys.favorites,
+    queryKey: [...queryKeys.favorites, page, limit],
     queryFn: async () => {
-      console.log("🔄 Fetching user favorites...");
+      console.log("🔄 Fetching user favorites...", { page, limit });
       try {
-        const response = await apiRequest<POI[]>("/pois/favourites");
+        const params = new URLSearchParams({
+          page: page.toString(),
+          limit: limit.toString(),
+        });
+        const response = await apiRequest<{
+          data: POI[];
+          pagination: {
+            current_page: number;
+            per_page: number;
+            total: number;
+            total_pages: number;
+            has_next: boolean;
+            has_prev: boolean;
+          };
+        }>(`/pois/favourites?${params}`);
         console.log("✅ Favorites fetched:", response);
         return response;
       } catch (error) {
@@ -52,32 +66,15 @@ export const useAddToFavoritesMutation = () => {
       console.log("✅ Add to favorites response:", response);
       return response;
     },
-    onMutate: async (params) => {
-      // Cancel any outgoing refetches
-      await queryClient.cancelQueries({ queryKey: queryKeys.favorites });
-
-      // Snapshot the previous value
-      const previousFavorites = queryClient.getQueryData(queryKeys.favorites);
-
-      // Optimistically update to the new value
-      queryClient.setQueryData(
-        queryKeys.favorites,
-        (old: POI[] | undefined) => {
-          const currentFavorites = old || [];
-          // Add the POI if we have the data, otherwise add a minimal POI object
-          const newPOI =
-            params.poiData || ({ id: params.poiId, name: "POI" } as POI);
-          return [...currentFavorites, newPOI];
-        },
-      );
-
-      // Return a context object with the snapshotted value
-      return { previousFavorites };
+    onSuccess: () => {
+      // Invalidate all favorites queries to refetch data
+      queryClient.invalidateQueries({ 
+        queryKey: queryKeys.favorites,
+        exact: false // This will invalidate all favorites queries regardless of pagination params
+      });
     },
-    onError: (error, params, context) => {
+    onError: (error) => {
       console.error("❌ Add to favorites failed:", error);
-      // If the mutation fails, use the context returned from onMutate to roll back
-      queryClient.setQueryData(queryKeys.favorites, context?.previousFavorites);
     },
   }));
 };
@@ -108,31 +105,15 @@ export const useRemoveFromFavoritesMutation = () => {
       console.log("✅ Remove from favorites response:", response);
       return response;
     },
-    onMutate: async (params) => {
-      console.log("🔄 Optimistically removing POI:", params.poiId);
-      // Optimistically remove from favorites
-      await queryClient.cancelQueries({ queryKey: queryKeys.favorites });
-      const previousFavorites = queryClient.getQueryData(queryKeys.favorites);
-
-      queryClient.setQueryData(
-        queryKeys.favorites,
-        (old: POI[] | undefined) => {
-          const currentFavorites = old || [];
-          return currentFavorites.filter((poi) => poi.id !== params.poiId);
-        },
-      );
-
-      return { previousFavorites };
+    onSuccess: () => {
+      // Invalidate all favorites queries to refetch data
+      queryClient.invalidateQueries({ 
+        queryKey: queryKeys.favorites,
+        exact: false // This will invalidate all favorites queries regardless of pagination params
+      });
     },
-    onError: (err, params, context) => {
-      console.error("❌ Remove from favorites failed:", err);
-      // Rollback on error
-      if (context?.previousFavorites) {
-        queryClient.setQueryData(
-          queryKeys.favorites,
-          context.previousFavorites,
-        );
-      }
+    onError: (error) => {
+      console.error("❌ Remove from favorites failed:", error);
     },
   }));
 };
