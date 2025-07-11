@@ -1,26 +1,21 @@
-import { createSignal, createEffect, For, Show, onMount } from "solid-js";
+import { A } from "@solidjs/router";
 import {
-  Heart,
-  MapPin,
   Clock,
-  Star,
-  Filter,
-  Search,
-  Grid,
-  List,
-  Share2,
   Download,
-  Edit3,
-  Trash2,
+  Grid,
+  Heart,
+  List,
+  MapPin,
   Plus,
+  Search,
+  Share2,
   SortAsc,
   SortDesc,
-  Tag,
-  Eye,
+  Trash2,
 } from "lucide-solid";
-import { useFavorites, useRemoveFromFavoritesMutation } from "~/lib/api/pois";
-import { A } from "@solidjs/router";
+import { createSignal, For, Show } from "solid-js";
 import Paginator from "~/components/Paginator";
+import { useFavorites, useRemoveFromFavoritesMutation } from "~/lib/api/pois";
 
 export default function FavoritesPage() {
   const [viewMode, setViewMode] = createSignal("grid"); // 'grid', 'list'

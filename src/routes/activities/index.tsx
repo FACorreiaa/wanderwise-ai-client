@@ -1,45 +1,58 @@
-import { createSignal, createEffect, For, Show, onMount } from "solid-js";
+import { useUserLocation } from "@/contexts/LocationContext";
 import { useLocation, useSearchParams } from "@solidjs/router";
 import {
-  MapPin,
+  Camera,
   Clock,
-  Star,
+  Compass,
+  DollarSign,
   Filter,
   Heart,
-  Share2,
-  X,
-  DollarSign,
-  Camera,
+  MapPin,
   MessageCircle,
-  Compass,
-  Zap,
   Mountain,
-  Palette,
   Music,
+  Palette,
+  Share2,
+  Star,
+  X,
+  Zap,
 } from "lucide-solid";
+import { createSignal, For, onMount, Show } from "solid-js";
 import MapComponent from "~/components/features/Map/Map";
-import type { ActivitiesResponse, POIDetailedInfo } from "~/lib/api/types";
-import { useUserLocation } from "@/contexts/LocationContext";
 import { ActivityResults } from "~/components/results";
 import { TypingAnimation } from "~/components/TypingAnimation";
-import { useChatSession } from "~/lib/hooks/useChatSession";
 import ChatInterface from "~/components/ui/ChatInterface";
 import { useAuth } from "~/contexts/AuthContext";
-import { useFavorites, useAddToFavoritesMutation, useRemoveFromFavoritesMutation } from "~/lib/api/pois";
-import { useSaveItineraryMutation, useRemoveItineraryMutation, useAllUserItineraries } from "~/lib/api/itineraries";
+import {
+  useAllUserItineraries,
+  useRemoveItineraryMutation,
+  useSaveItineraryMutation,
+} from "~/lib/api/itineraries";
+import {
+  useAddToFavoritesMutation,
+  useFavorites,
+  useRemoveFromFavoritesMutation,
+} from "~/lib/api/pois";
+import type { ActivitiesResponse, POIDetailedInfo } from "~/lib/api/types";
+import { useChatSession } from "~/lib/hooks/useChatSession";
 
 export default function ActivitiesPage() {
   const location = useLocation();
   const [urlSearchParams] = useSearchParams();
   const auth = useAuth();
-  
+
   // Favorites hooks
-  const favoritesQuery = useFavorites(() => 1, () => 1000); // Get all favorites for checking
+  const favoritesQuery = useFavorites(
+    () => 1,
+    () => 1000,
+  ); // Get all favorites for checking
   const addToFavoritesMutation = useAddToFavoritesMutation();
   const removeFromFavoritesMutation = useRemoveFromFavoritesMutation();
-  
+
   // Bookmark hooks (for saving entire activity plans)
-  const allItinerariesQuery = useAllUserItineraries({ enabled: auth.isAuthenticated() });
+  const allItinerariesQuery = useAllUserItineraries({
+    enabled: auth.isAuthenticated(),
+  });
   const saveItineraryMutation = useSaveItineraryMutation();
   const removeItineraryMutation = useRemoveItineraryMutation();
   const [selectedActivity, setSelectedActivity] = createSignal(null);
@@ -336,74 +349,85 @@ export default function ActivitiesPage() {
   // Bookmark plan functionality (save entire activity plan)
   const isCurrentPlanBookmarked = () => {
     if (!auth.isAuthenticated() || !allItinerariesQuery.data) return false;
-    
+
     const sessionId = chatSession.sessionId();
     if (!sessionId) return false;
-    
+
     const savedItineraries = allItinerariesQuery.data.itineraries || [];
     const streaming = streamingData();
     const cityName = streaming?.general_city_data?.city || "unknown";
     const expectedTitle = `Activity Guide: ${cityName}`;
-    
+
     return savedItineraries.some((saved) => {
-        return saved.title === expectedTitle || 
-               (saved.source_llm_interaction_id && saved.source_llm_interaction_id === sessionId) ||
-               (saved.session_id && saved.session_id === sessionId);
+      return (
+        saved.title === expectedTitle ||
+        (saved.source_llm_interaction_id &&
+          saved.source_llm_interaction_id === sessionId) ||
+        (saved.session_id && saved.session_id === sessionId)
+      );
     });
   };
 
   const getBookmarkedPlanId = () => {
     if (!auth.isAuthenticated() || !allItinerariesQuery.data) return null;
-    
+
     const sessionId = chatSession.sessionId();
     if (!sessionId) return null;
-    
+
     const savedItineraries = allItinerariesQuery.data.itineraries || [];
     const streaming = streamingData();
     const cityName = streaming?.general_city_data?.city || "unknown";
     const expectedTitle = `Activity Guide: ${cityName}`;
-    
+
     const foundItinerary = savedItineraries.find((saved) => {
-        return saved.title === expectedTitle || 
-               (saved.source_llm_interaction_id && saved.source_llm_interaction_id === sessionId) ||
-               (saved.session_id && saved.session_id === sessionId);
+      return (
+        saved.title === expectedTitle ||
+        (saved.source_llm_interaction_id &&
+          saved.source_llm_interaction_id === sessionId) ||
+        (saved.session_id && saved.session_id === sessionId)
+      );
     });
-    
+
     return foundItinerary?.id || null;
   };
 
   const toggleBookmarkPlan = () => {
     if (removeItineraryMutation.isPending || saveItineraryMutation.isPending) {
-        return;
+      return;
     }
 
     if (isCurrentPlanBookmarked()) {
-        const planId = getBookmarkedPlanId();
-        if (planId) {
-            removeItineraryMutation.mutate(planId);
-        }
+      const planId = getBookmarkedPlanId();
+      if (planId) {
+        removeItineraryMutation.mutate(planId);
+      }
     } else {
-        savePlan();
+      savePlan();
     }
   };
 
   const savePlan = () => {
     const sessionId = chatSession.sessionId();
     if (!sessionId) {
-        console.error("No session ID available for saving activity plan");
-        return;
+      console.error("No session ID available for saving activity plan");
+      return;
     }
 
     const streaming = streamingData();
     const cityName = streaming?.general_city_data?.city || "unknown";
-    
+
     const itineraryData = {
-        session_id: sessionId,
-        primary_city_name: cityName,
-        title: `Activity Guide: ${cityName}`,
-        description: `Curated activity recommendations for ${cityName}`,
-        tags: [cityName.toLowerCase(), "activities", "experiences", "ai-generated"],
-        is_public: false,
+      session_id: sessionId,
+      primary_city_name: cityName,
+      title: `Activity Guide: ${cityName}`,
+      description: `Curated activity recommendations for ${cityName}`,
+      tags: [
+        cityName.toLowerCase(),
+        "activities",
+        "experiences",
+        "ai-generated",
+      ],
+      is_public: false,
     };
 
     console.log("Saving activity plan with data:", itineraryData);
@@ -643,12 +667,18 @@ export default function ActivitiesPage() {
       const firstActivity = streaming.activities[0];
       if (firstActivity.latitude && firstActivity.longitude) {
         return {
-          lat: typeof firstActivity.latitude === 'string' ? parseFloat(firstActivity.latitude) : firstActivity.latitude,
-          lon: typeof firstActivity.longitude === 'string' ? parseFloat(firstActivity.longitude) : firstActivity.longitude,
+          lat:
+            typeof firstActivity.latitude === "string"
+              ? parseFloat(firstActivity.latitude)
+              : firstActivity.latitude,
+          lon:
+            typeof firstActivity.longitude === "string"
+              ? parseFloat(firstActivity.longitude)
+              : firstActivity.longitude,
         };
       }
     }
-    
+
     // Fall back to user location or default
     return {
       lat: userLocation()?.latitude || 38.7223,
@@ -833,7 +863,10 @@ export default function ActivitiesPage() {
               }
             >
               <MapComponent
-                center={[getSearchCoordinates().lon, getSearchCoordinates().lat]}
+                center={[
+                  getSearchCoordinates().lon,
+                  getSearchCoordinates().lat,
+                ]}
                 zoom={12}
                 minZoom={10}
                 maxZoom={22}
@@ -908,7 +941,9 @@ export default function ActivitiesPage() {
                     }}
                     favorites={
                       auth.isAuthenticated()
-                        ? (favoritesQuery.data?.data || []).map((fav) => fav.name)
+                        ? (favoritesQuery.data?.data || []).map(
+                            (fav) => fav.name,
+                          )
                         : []
                     }
                     isLoadingFavorites={

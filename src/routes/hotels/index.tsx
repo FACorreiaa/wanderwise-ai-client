@@ -1,47 +1,59 @@
-import { createSignal, createEffect, For, Show, onMount } from "solid-js";
 import { useLocation, useSearchParams } from "@solidjs/router";
 import {
-  MapPin,
-  Clock,
-  Star,
-  Filter,
-  Heart,
-  Share2,
-  X,
-  Users,
-  DollarSign,
-  Camera,
-  Coffee,
-  Loader2,
-  MessageCircle,
-  Send,
   Bed,
   Building2,
+  Camera,
+  Clock,
+  Coffee,
+  DollarSign,
+  Filter,
+  Heart,
+  Loader2,
+  MapPin,
+  MessageCircle,
+  Send,
+  Share2,
+  Star,
+  Users,
+  X,
 } from "lucide-solid";
+import { createSignal, For, onMount, Show } from "solid-js";
 import MapComponent from "~/components/features/Map/Map";
 // Removed old API imports - now using unified streaming endpoint only
-import type { AccommodationResponse, HotelDetailedInfo } from "~/lib/api/types";
 import { HotelResults } from "~/components/results";
 import { TypingAnimation } from "~/components/TypingAnimation";
-import { useChatSession } from "~/lib/hooks/useChatSession";
-import ChatInterface from "~/components/ui/ChatInterface";
-import { API_BASE_URL } from "~/lib/api/shared";
 import { useAuth } from "~/contexts/AuthContext";
-import { useFavorites, useAddToFavoritesMutation, useRemoveFromFavoritesMutation } from "~/lib/api/pois";
-import { useSaveItineraryMutation, useRemoveItineraryMutation, useAllUserItineraries } from "~/lib/api/itineraries";
+import {
+  useAllUserItineraries,
+  useRemoveItineraryMutation,
+  useSaveItineraryMutation,
+} from "~/lib/api/itineraries";
+import {
+  useAddToFavoritesMutation,
+  useFavorites,
+  useRemoveFromFavoritesMutation,
+} from "~/lib/api/pois";
+import { API_BASE_URL } from "~/lib/api/shared";
+import type { AccommodationResponse, HotelDetailedInfo } from "~/lib/api/types";
+import { useChatSession } from "~/lib/hooks/useChatSession";
 
 export default function HotelsPage() {
   const location = useLocation();
   const [urlSearchParams] = useSearchParams();
   const auth = useAuth();
-  
+
   // Favorites hooks
-  const favoritesQuery = useFavorites(() => 1, () => 1000); // Get all favorites for checking
+  const favoritesQuery = useFavorites(
+    () => 1,
+    () => 1000,
+  ); // Get all favorites for checking
   const addToFavoritesMutation = useAddToFavoritesMutation();
   const removeFromFavoritesMutation = useRemoveFromFavoritesMutation();
-  
+
   // Bookmark hooks (for saving entire hotel plans)
-  const allItinerariesQuery = useAllUserItineraries({ enabled: auth.isAuthenticated() });
+  const allItinerariesQuery = useAllUserItineraries({
+    enabled: auth.isAuthenticated(),
+  });
   const saveItineraryMutation = useSaveItineraryMutation();
   const removeItineraryMutation = useRemoveItineraryMutation();
   const [selectedHotel, setSelectedHotel] = createSignal(null);
@@ -291,7 +303,7 @@ export default function HotelsPage() {
       { type: "user", content: userMessage, timestamp: new Date() },
     ]);
 
-    let eventSource = null;
+    const eventSource = null;
 
     try {
       // Create request payload
@@ -1008,74 +1020,80 @@ export default function HotelsPage() {
   // Bookmark plan functionality (save entire hotel plan)
   const isCurrentPlanBookmarked = () => {
     if (!auth.isAuthenticated() || !allItinerariesQuery.data) return false;
-    
+
     const sessionId = chatSession.sessionId();
     if (!sessionId) return false;
-    
+
     const savedItineraries = allItinerariesQuery.data.itineraries || [];
     const streaming = streamingData();
     const cityName = streaming?.general_city_data?.city || "unknown";
     const expectedTitle = `Hotel Guide: ${cityName}`;
-    
+
     return savedItineraries.some((saved) => {
-        return saved.title === expectedTitle || 
-               (saved.source_llm_interaction_id && saved.source_llm_interaction_id === sessionId) ||
-               (saved.session_id && saved.session_id === sessionId);
+      return (
+        saved.title === expectedTitle ||
+        (saved.source_llm_interaction_id &&
+          saved.source_llm_interaction_id === sessionId) ||
+        (saved.session_id && saved.session_id === sessionId)
+      );
     });
   };
 
   const getBookmarkedPlanId = () => {
     if (!auth.isAuthenticated() || !allItinerariesQuery.data) return null;
-    
+
     const sessionId = chatSession.sessionId();
     if (!sessionId) return null;
-    
+
     const savedItineraries = allItinerariesQuery.data.itineraries || [];
     const streaming = streamingData();
     const cityName = streaming?.general_city_data?.city || "unknown";
     const expectedTitle = `Hotel Guide: ${cityName}`;
-    
+
     const foundItinerary = savedItineraries.find((saved) => {
-        return saved.title === expectedTitle || 
-               (saved.source_llm_interaction_id && saved.source_llm_interaction_id === sessionId) ||
-               (saved.session_id && saved.session_id === sessionId);
+      return (
+        saved.title === expectedTitle ||
+        (saved.source_llm_interaction_id &&
+          saved.source_llm_interaction_id === sessionId) ||
+        (saved.session_id && saved.session_id === sessionId)
+      );
     });
-    
+
     return foundItinerary?.id || null;
   };
 
   const toggleBookmarkPlan = () => {
     if (removeItineraryMutation.isPending || saveItineraryMutation.isPending) {
-        return;
+      return;
     }
 
     if (isCurrentPlanBookmarked()) {
-        const planId = getBookmarkedPlanId();
-        if (planId) {
-            removeItineraryMutation.mutate(planId);
-        }
+      const planId = getBookmarkedPlanId();
+      if (planId) {
+        removeItineraryMutation.mutate(planId);
+      }
     } else {
-        savePlan();
+      savePlan();
     }
   };
 
   const savePlan = () => {
     const sessionId = chatSession.sessionId();
     if (!sessionId) {
-        console.error("No session ID available for saving hotel plan");
-        return;
+      console.error("No session ID available for saving hotel plan");
+      return;
     }
 
     const streaming = streamingData();
     const cityName = streaming?.general_city_data?.city || "unknown";
-    
+
     const itineraryData = {
-        session_id: sessionId,
-        primary_city_name: cityName,
-        title: `Hotel Guide: ${cityName}`,
-        description: `Curated hotel recommendations for ${cityName}`,
-        tags: [cityName.toLowerCase(), "hotels", "accommodation", "ai-generated"],
-        is_public: false,
+      session_id: sessionId,
+      primary_city_name: cityName,
+      title: `Hotel Guide: ${cityName}`,
+      description: `Curated hotel recommendations for ${cityName}`,
+      tags: [cityName.toLowerCase(), "hotels", "accommodation", "ai-generated"],
+      is_public: false,
     };
 
     console.log("Saving hotel plan with data:", itineraryData);
@@ -1389,12 +1407,18 @@ export default function HotelsPage() {
       const firstHotel = streaming.hotels[0];
       if (firstHotel.latitude && firstHotel.longitude) {
         return {
-          lat: typeof firstHotel.latitude === 'string' ? parseFloat(firstHotel.latitude) : firstHotel.latitude,
-          lon: typeof firstHotel.longitude === 'string' ? parseFloat(firstHotel.longitude) : firstHotel.longitude,
+          lat:
+            typeof firstHotel.latitude === "string"
+              ? parseFloat(firstHotel.latitude)
+              : firstHotel.latitude,
+          lon:
+            typeof firstHotel.longitude === "string"
+              ? parseFloat(firstHotel.longitude)
+              : firstHotel.longitude,
         };
       }
     }
-    
+
     // Fall back to search params or default
     return {
       lat: searchParams().centerLat || 41.1579,
@@ -1592,7 +1616,10 @@ export default function HotelsPage() {
               }
             >
               <MapComponent
-                center={[getSearchCoordinates().lon, getSearchCoordinates().lat]}
+                center={[
+                  getSearchCoordinates().lon,
+                  getSearchCoordinates().lat,
+                ]}
                 zoom={12}
                 minZoom={10}
                 maxZoom={22}
@@ -1667,7 +1694,9 @@ export default function HotelsPage() {
                     }}
                     favorites={
                       auth.isAuthenticated()
-                        ? (favoritesQuery.data?.data || []).map((fav) => fav.name)
+                        ? (favoritesQuery.data?.data || []).map(
+                            (fav) => fav.name,
+                          )
                         : []
                     }
                     isLoadingFavorites={

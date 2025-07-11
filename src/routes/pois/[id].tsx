@@ -1,31 +1,29 @@
-import { createSignal, For, Show, createEffect } from 'solid-js';
-import { useParams } from '@solidjs/router';
-import { 
-  Star, 
-  MapPin, 
-  Clock, 
-  Phone, 
-  Mail, 
-  Globe, 
-  Heart, 
-  Share2, 
-  DollarSign, 
-  Users, 
-  Car,
+import { A, useParams } from "@solidjs/router";
+import {
   ArrowLeft,
-  Calendar,
+  Bookmark,
   Camera,
+  Clock,
+  DollarSign,
+  Globe,
+  Heart,
+  MapPin,
   Navigation,
-  Info,
+  Phone,
+  Share2,
+  Star,
   Tag,
-  Bookmark
-} from 'lucide-solid';
-import { A } from '@solidjs/router';
-import { useFavorites, useAddToFavoritesMutation, useRemoveFromFavoritesMutation } from '~/lib/api/pois';
+} from "lucide-solid";
+import { createEffect, createSignal, For, Show } from "solid-js";
+import {
+  useAddToFavoritesMutation,
+  useFavorites,
+  useRemoveFromFavoritesMutation,
+} from "~/lib/api/pois";
 
 export default function POIDetailPage() {
   const params = useParams();
-  const [selectedTab, setSelectedTab] = createSignal('overview');
+  const [selectedTab, setSelectedTab] = createSignal("overview");
   const [isLoading, setIsLoading] = createSignal(true);
   const [error, setError] = createSignal(null);
   const [poiData, setPOIData] = createSignal(null);
@@ -39,7 +37,7 @@ export default function POIDetailPage() {
   // Check if POI is in favorites
   createEffect(() => {
     const favorites = favoritesQuery.data || [];
-    const isInFavorites = favorites.some(fav => fav.id === params.id);
+    const isInFavorites = favorites.some((fav) => fav.id === params.id);
     setIsFavorite(isInFavorites);
   });
 
@@ -48,38 +46,39 @@ export default function POIDetailPage() {
     const loadPOIData = async () => {
       try {
         setIsLoading(true);
-        
+
         // Find POI in favorites if it exists
         const favorites = favoritesQuery.data || [];
-        const favoritesPOI = favorites.find(fav => fav.id === params.id);
-        
+        const favoritesPOI = favorites.find((fav) => fav.id === params.id);
+
         if (favoritesPOI) {
           setPOIData(favoritesPOI);
         } else {
           // Mock POI data - in real app this would be an API call
           setPOIData({
             id: params.id,
-            name: 'Sample POI',
-            category: 'Attraction',
-            description: 'This is a sample POI. In a real application, this would be fetched from the API.',
-            description_poi: 'Detailed description of the point of interest.',
+            name: "Sample POI",
+            category: "Attraction",
+            description:
+              "This is a sample POI. In a real application, this would be fetched from the API.",
+            description_poi: "Detailed description of the point of interest.",
             latitude: 40.7128,
-            longitude: -74.0060,
-            address: '123 Sample Street, New York, NY 10001',
-            phone_number: '+1 (555) 123-4567',
-            website: 'https://example.com',
-            opening_hours: 'Mon-Fri: 9AM-6PM, Sat-Sun: 10AM-4PM',
-            price_level: '$$',
+            longitude: -74.006,
+            address: "123 Sample Street, New York, NY 10001",
+            phone_number: "+1 (555) 123-4567",
+            website: "https://example.com",
+            opening_hours: "Mon-Fri: 9AM-6PM, Sat-Sun: 10AM-4PM",
+            price_level: "$$",
             rating: 4.5,
-            tags: ['tourist', 'popular', 'family-friendly'],
-            distance: 1.2
+            tags: ["tourist", "popular", "family-friendly"],
+            distance: 1.2,
           });
         }
-        
+
         setError(null);
       } catch (err) {
-        setError('Failed to load POI details');
-        console.error('Error loading POI:', err);
+        setError("Failed to load POI details");
+        console.error("Error loading POI:", err);
       } finally {
         setIsLoading(false);
       }
@@ -91,10 +90,10 @@ export default function POIDetailPage() {
   const poi = () => poiData();
 
   const tabs = [
-    { id: 'overview', label: 'Overview' },
-    { id: 'location', label: 'Location' },
-    { id: 'reviews', label: 'Reviews' },
-    { id: 'photos', label: 'Photos' }
+    { id: "overview", label: "Overview" },
+    { id: "location", label: "Location" },
+    { id: "reviews", label: "Reviews" },
+    { id: "photos", label: "Photos" },
   ];
 
   const toggleFavorite = async () => {
@@ -104,57 +103,65 @@ export default function POIDetailPage() {
       if (isFavorite()) {
         await removeFromFavoritesMutation.mutateAsync({
           poiId: poi().id,
-          isLlmPoi: true
+          isLlmPoi: true,
         });
       } else {
         await addToFavoritesMutation.mutateAsync({
           poiId: poi().id,
-          isLlmPoi: true
+          isLlmPoi: true,
         });
       }
     } catch (error) {
-      console.error('Failed to toggle favorite:', error);
+      console.error("Failed to toggle favorite:", error);
     }
   };
 
   const getPriceColor = (price) => {
     const colorMap = {
-      '$': 'text-green-600 bg-green-50',
-      '$$': 'text-orange-600 bg-orange-50',
-      '$$$': 'text-red-600 bg-red-50',
-      '$$$$': 'text-purple-600 bg-purple-50'
+      $: "text-green-600 bg-green-50",
+      $$: "text-orange-600 bg-orange-50",
+      $$$: "text-red-600 bg-red-50",
+      $$$$: "text-purple-600 bg-purple-50",
     };
-    return colorMap[price] || 'text-gray-600 bg-gray-50';
+    return colorMap[price] || "text-gray-600 bg-gray-50";
   };
 
   const getCategoryIcon = (category) => {
     switch (category?.toLowerCase()) {
-      case 'restaurant': return '🍽️';
-      case 'park': return '🌳';
-      case 'beach': return '🏖️';
-      case 'landmark': return '🏛️';
-      case 'museum': return '🏛️';
-      case 'shopping': return '🛍️';
-      case 'attraction': return '🎯';
-      default: return '📍';
+      case "restaurant":
+        return "🍽️";
+      case "park":
+        return "🌳";
+      case "beach":
+        return "🏖️";
+      case "landmark":
+        return "🏛️";
+      case "museum":
+        return "🏛️";
+      case "shopping":
+        return "🛍️";
+      case "attraction":
+        return "🎯";
+      default:
+        return "📍";
     }
   };
 
   const getCategoryColor = (category) => {
     const colorMap = {
-      'Restaurant': 'text-orange-600 bg-orange-50',
-      'Park': 'text-green-600 bg-green-50',
-      'Beach': 'text-blue-600 bg-blue-50',
-      'Landmark': 'text-purple-600 bg-purple-50',
-      'Museum': 'text-amber-600 bg-amber-50',
-      'Shopping': 'text-pink-600 bg-pink-50',
-      'Attraction': 'text-indigo-600 bg-indigo-50',
+      Restaurant: "text-orange-600 bg-orange-50",
+      Park: "text-green-600 bg-green-50",
+      Beach: "text-blue-600 bg-blue-50",
+      Landmark: "text-purple-600 bg-purple-50",
+      Museum: "text-amber-600 bg-amber-50",
+      Shopping: "text-pink-600 bg-pink-50",
+      Attraction: "text-indigo-600 bg-indigo-50",
     };
-    return colorMap[category] || 'text-gray-600 bg-gray-50';
+    return colorMap[category] || "text-gray-600 bg-gray-50";
   };
 
   const formatDistance = (distance) => {
-    if (!distance || distance === 0) return '';
+    if (!distance || distance === 0) return "";
     if (distance < 1000) return `${Math.round(distance)}m`;
     return `${(distance / 1000).toFixed(1)}km`;
   };
@@ -163,9 +170,13 @@ export default function POIDetailPage() {
     <div class="space-y-6">
       {/* Description */}
       <div class="bg-white rounded-lg p-6 border border-gray-200">
-        <h3 class="text-lg font-semibold text-gray-900 mb-3">About this place</h3>
+        <h3 class="text-lg font-semibold text-gray-900 mb-3">
+          About this place
+        </h3>
         <p class="text-gray-600 leading-relaxed">
-          {poi()?.description_poi || poi()?.description || 'No description available.'}
+          {poi()?.description_poi ||
+            poi()?.description ||
+            "No description available."}
         </p>
       </div>
 
@@ -178,25 +189,29 @@ export default function POIDetailPage() {
               <div class="text-2xl">{getCategoryIcon(poi()?.category)}</div>
               <div>
                 <p class="text-sm text-gray-500">Category</p>
-                <span class={`px-2 py-1 rounded-full text-xs font-medium ${getCategoryColor(poi()?.category)}`}>
+                <span
+                  class={`px-2 py-1 rounded-full text-xs font-medium ${getCategoryColor(poi()?.category)}`}
+                >
                   {poi()?.category}
                 </span>
               </div>
             </div>
           </Show>
-          
+
           <Show when={poi()?.price_level}>
             <div class="flex items-center gap-3">
               <DollarSign class="w-5 h-5 text-gray-500" />
               <div>
                 <p class="text-sm text-gray-500">Price Level</p>
-                <span class={`px-2 py-1 rounded text-sm ${getPriceColor(poi()?.price_level)}`}>
+                <span
+                  class={`px-2 py-1 rounded text-sm ${getPriceColor(poi()?.price_level)}`}
+                >
                   {poi()?.price_level}
                 </span>
               </div>
             </div>
           </Show>
-          
+
           <Show when={poi()?.rating}>
             <div class="flex items-center gap-3">
               <Star class="w-5 h-5 text-gray-500" />
@@ -209,13 +224,15 @@ export default function POIDetailPage() {
               </div>
             </div>
           </Show>
-          
+
           <Show when={formatDistance(poi()?.distance)}>
             <div class="flex items-center gap-3">
               <Navigation class="w-5 h-5 text-gray-500" />
               <div>
                 <p class="text-sm text-gray-500">Distance</p>
-                <p class="font-medium">{formatDistance(poi()?.distance)} away</p>
+                <p class="font-medium">
+                  {formatDistance(poi()?.distance)} away
+                </p>
               </div>
             </div>
           </Show>
@@ -224,7 +241,9 @@ export default function POIDetailPage() {
 
       {/* Contact Information */}
       <div class="bg-white rounded-lg p-6 border border-gray-200">
-        <h3 class="text-lg font-semibold text-gray-900 mb-4">Contact & Location</h3>
+        <h3 class="text-lg font-semibold text-gray-900 mb-4">
+          Contact & Location
+        </h3>
         <div class="space-y-3">
           <Show when={poi()?.address}>
             <div class="flex items-start gap-3">
@@ -235,27 +254,30 @@ export default function POIDetailPage() {
               </div>
             </div>
           </Show>
-          
+
           <Show when={poi()?.phone_number}>
             <div class="flex items-center gap-3">
               <Phone class="w-5 h-5 text-gray-500" />
               <div>
                 <p class="text-sm text-gray-500">Phone</p>
-                <a href={`tel:${poi()?.phone_number}`} class="font-medium text-blue-600 hover:text-blue-800">
+                <a
+                  href={`tel:${poi()?.phone_number}`}
+                  class="font-medium text-blue-600 hover:text-blue-800"
+                >
                   {poi()?.phone_number}
                 </a>
               </div>
             </div>
           </Show>
-          
+
           <Show when={poi()?.website}>
             <div class="flex items-center gap-3">
               <Globe class="w-5 h-5 text-gray-500" />
               <div>
                 <p class="text-sm text-gray-500">Website</p>
-                <a 
-                  href={poi()?.website} 
-                  target="_blank" 
+                <a
+                  href={poi()?.website}
+                  target="_blank"
                   rel="noopener noreferrer"
                   class="font-medium text-blue-600 hover:text-blue-800"
                 >
@@ -264,7 +286,7 @@ export default function POIDetailPage() {
               </div>
             </div>
           </Show>
-          
+
           <Show when={poi()?.opening_hours}>
             <div class="flex items-start gap-3">
               <Clock class="w-5 h-5 text-gray-500 mt-0.5" />
@@ -299,7 +321,9 @@ export default function POIDetailPage() {
   const renderLocation = () => (
     <div class="space-y-6">
       <div class="bg-white rounded-lg p-6 border border-gray-200">
-        <h3 class="text-lg font-semibold text-gray-900 mb-4">Location Details</h3>
+        <h3 class="text-lg font-semibold text-gray-900 mb-4">
+          Location Details
+        </h3>
         <div class="space-y-4">
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
@@ -311,7 +335,7 @@ export default function POIDetailPage() {
               <p class="font-mono text-sm">{poi()?.longitude?.toFixed(6)}</p>
             </div>
           </div>
-          
+
           <Show when={poi()?.address}>
             <div>
               <p class="text-sm text-gray-500">Full Address</p>
@@ -320,7 +344,7 @@ export default function POIDetailPage() {
           </Show>
         </div>
       </div>
-      
+
       {/* Placeholder for map */}
       <div class="bg-white rounded-lg p-6 border border-gray-200">
         <h3 class="text-lg font-semibold text-gray-900 mb-4">Map</h3>
@@ -385,44 +409,60 @@ export default function POIDetailPage() {
         <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           {/* Header */}
           <div class="mb-6">
-            <A href="/favorites" class="inline-flex items-center text-sm text-gray-500 hover:text-gray-700 mb-4">
+            <A
+              href="/favorites"
+              class="inline-flex items-center text-sm text-gray-500 hover:text-gray-700 mb-4"
+            >
               <ArrowLeft class="w-4 h-4 mr-2" />
               Back to Favorites
             </A>
-            
+
             <div class="flex items-start justify-between">
               <div class="flex-1">
                 <div class="flex items-center gap-3 mb-2">
                   <div class="text-4xl">{getCategoryIcon(poi()?.category)}</div>
                   <div>
-                    <h1 class="text-2xl font-bold text-gray-900">{poi()?.name}</h1>
+                    <h1 class="text-2xl font-bold text-gray-900">
+                      {poi()?.name}
+                    </h1>
                     <div class="flex items-center gap-2 mt-1">
                       <Show when={poi()?.category}>
-                        <span class={`px-2 py-1 rounded-full text-xs font-medium ${getCategoryColor(poi()?.category)}`}>
+                        <span
+                          class={`px-2 py-1 rounded-full text-xs font-medium ${getCategoryColor(poi()?.category)}`}
+                        >
                           {poi()?.category}
                         </span>
                       </Show>
                       <Show when={poi()?.rating}>
                         <div class="flex items-center gap-1">
                           <Star class="w-4 h-4 text-yellow-400 fill-current" />
-                          <span class="text-sm font-medium">{poi()?.rating}</span>
+                          <span class="text-sm font-medium">
+                            {poi()?.rating}
+                          </span>
                         </div>
                       </Show>
                       <Show when={formatDistance(poi()?.distance)}>
-                        <span class="text-sm text-gray-500">{formatDistance(poi()?.distance)} away</span>
+                        <span class="text-sm text-gray-500">
+                          {formatDistance(poi()?.distance)} away
+                        </span>
                       </Show>
                     </div>
                   </div>
                 </div>
               </div>
-              
+
               <div class="flex items-center gap-2">
-                <button 
+                <button
                   onClick={toggleFavorite}
-                  class={`p-2 rounded-lg ${isFavorite() ? 'text-red-600 bg-red-50' : 'text-gray-600 hover:bg-gray-100'}`}
-                  disabled={addToFavoritesMutation.isLoading || removeFromFavoritesMutation.isLoading}
+                  class={`p-2 rounded-lg ${isFavorite() ? "text-red-600 bg-red-50" : "text-gray-600 hover:bg-gray-100"}`}
+                  disabled={
+                    addToFavoritesMutation.isLoading ||
+                    removeFromFavoritesMutation.isLoading
+                  }
                 >
-                  <Heart class={`w-5 h-5 ${isFavorite() ? 'fill-current' : ''}`} />
+                  <Heart
+                    class={`w-5 h-5 ${isFavorite() ? "fill-current" : ""}`}
+                  />
                 </button>
                 <button class="p-2 text-gray-600 hover:bg-gray-100 rounded-lg">
                   <Share2 class="w-5 h-5" />
@@ -443,8 +483,8 @@ export default function POIDetailPage() {
                     onClick={() => setSelectedTab(tab.id)}
                     class={`py-2 px-1 border-b-2 font-medium text-sm ${
                       selectedTab() === tab.id
-                        ? 'border-blue-500 text-blue-600'
-                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                        ? "border-blue-500 text-blue-600"
+                        : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
                     }`}
                   >
                     {tab.label}
@@ -456,18 +496,10 @@ export default function POIDetailPage() {
 
           {/* Tab Content */}
           <div class="pb-6">
-            <Show when={selectedTab() === 'overview'}>
-              {renderOverview()}
-            </Show>
-            <Show when={selectedTab() === 'location'}>
-              {renderLocation()}
-            </Show>
-            <Show when={selectedTab() === 'reviews'}>
-              {renderReviews()}
-            </Show>
-            <Show when={selectedTab() === 'photos'}>
-              {renderPhotos()}
-            </Show>
+            <Show when={selectedTab() === "overview"}>{renderOverview()}</Show>
+            <Show when={selectedTab() === "location"}>{renderLocation()}</Show>
+            <Show when={selectedTab() === "reviews"}>{renderReviews()}</Show>
+            <Show when={selectedTab() === "photos"}>{renderPhotos()}</Show>
           </div>
         </div>
       </Show>

@@ -1,46 +1,39 @@
-import { createSignal, createEffect, For, Show, onMount } from "solid-js";
-import { useNavigate } from "@solidjs/router";
+import { useQueryClient } from "@tanstack/solid-query";
 import {
-  MessageCircle,
-  Send,
   Bot,
-  User,
-  MapPin,
-  Star,
-  Heart,
-  Download,
-  Share2,
-  Plus,
-  Loader2,
-  Sparkles,
   ChevronDown,
   ChevronUp,
+  Download,
+  Heart,
+  Loader2,
+  MapPin,
+  MessageCircle,
+  Plus,
+  Send,
+  Share2,
+  Sparkles,
+  Star,
+  User,
 } from "lucide-solid";
-import { sendUnifiedChatMessageStream, detectDomain } from "~/lib/api/llm";
-import { useChatSessions } from "~/lib/api/chat";
-import {
-  streamingService,
-  createStreamingSession,
-  getDomainRoute,
-} from "~/lib/streaming-service";
-import type {
-  StreamingSession,
-  DomainType,
-  UnifiedChatResponse,
-} from "~/lib/api/types";
-import { useUserLocation } from "~/contexts/LocationContext";
-import {
-  HotelResults,
-  RestaurantResults,
-  ActivityResults,
-  ItineraryResults,
-} from "~/components/results";
+import { createSignal, For, onMount, Show } from "solid-js";
 import DetailedItemModal from "~/components/DetailedItemModal";
-import Paginator from "~/components/Paginator";
-import { useQuery, useQueryClient } from "@tanstack/solid-query";
-import { useDefaultSearchProfile } from "~/lib/api/profiles";
+import {
+  ActivityResults,
+  HotelResults,
+  ItineraryResults,
+  RestaurantResults,
+} from "~/components/results";
 import { TypingAnimation } from "~/components/TypingAnimation";
+import { useUserLocation } from "~/contexts/LocationContext";
+import { useChatSessions } from "~/lib/api/chat";
+import { detectDomain, sendUnifiedChatMessageStream } from "~/lib/api/llm";
+import { useDefaultSearchProfile } from "~/lib/api/profiles";
 import { API_BASE_URL } from "~/lib/api/shared";
+import type { DomainType } from "~/lib/api/types";
+import {
+  createStreamingSession,
+  streamingService,
+} from "~/lib/streaming-service";
 
 export default function ChatPage() {
   const queryClient = useQueryClient();
@@ -1104,7 +1097,7 @@ export default function ChatPage() {
             "Content-Type": "application/json",
             Authorization: `Bearer ${localStorage.getItem("access_token") || sessionStorage.getItem("access_token") || ""}`,
           },
-        }
+        },
       );
 
       if (response.ok) {
@@ -1566,11 +1559,11 @@ export default function ChatPage() {
               </div>
             </Show>
 
-            <Show
-              when={!chatSessionsQuery.isError}
-            >
+            <Show when={!chatSessionsQuery.isError}>
               <div class="space-y-1 sm:space-y-2">
-                <Show when={sessions().length === 0 && !chatSessionsQuery.isLoading}>
+                <Show
+                  when={sessions().length === 0 && !chatSessionsQuery.isLoading}
+                >
                   <div class="text-center py-8 px-4">
                     <div class="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-blue-100 to-purple-100 dark:from-blue-900/20 dark:to-purple-900/20 rounded-full flex items-center justify-center">
                       <MessageCircle class="w-8 h-8 text-blue-500 dark:text-blue-400" />

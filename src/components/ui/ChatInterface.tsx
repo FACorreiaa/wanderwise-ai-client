@@ -1,6 +1,6 @@
-import { For, Show, Component } from 'solid-js';
-import { MessageCircle, Send, X, Loader2 } from 'lucide-solid';
-import type { ChatMessage } from '~/lib/hooks/useChatSession';
+import { Loader2, MessageCircle, Send, X } from "lucide-solid";
+import { Component, For, Show } from "solid-js";
+import type { ChatMessage } from "~/lib/hooks/useChatSession";
 
 export interface ChatInterfaceProps {
   // State
@@ -8,13 +8,13 @@ export interface ChatInterfaceProps {
   chatMessage: string;
   chatHistory: ChatMessage[];
   isLoading: boolean;
-  
+
   // Actions
   setShowChat: (show: boolean) => void;
   setChatMessage: (message: string) => void;
   sendChatMessage: () => void;
   handleKeyPress: (e: KeyboardEvent) => void;
-  
+
   // Configuration
   title?: string;
   placeholder?: string;
@@ -29,16 +29,21 @@ export interface ChatInterfaceProps {
 }
 
 export default function ChatInterface(props: ChatInterfaceProps) {
-  const title = () => props.title || 'Chat Assistant';
-  const placeholder = () => props.placeholder || 'Ask me something...';
-  const emptyStateTitle = () => props.emptyStateTitle || 'Start a conversation!';
-  const emptyStateSubtitle = () => props.emptyStateSubtitle || 'Ask me anything to get started.';
-  const loadingMessage = () => props.loadingMessage || 'Processing your request...';
-  const headerColor = () => props.headerColor || 'bg-blue-600 hover:bg-blue-700';
-  const userMessageColor = () => props.userMessageColor || 'bg-blue-600';
-  const floatingButtonColor = () => props.floatingButtonColor || 'bg-blue-600 hover:bg-blue-700';
-  const focusRingColor = () => props.focusRingColor || 'focus:ring-blue-500';
-  
+  const title = () => props.title || "Chat Assistant";
+  const placeholder = () => props.placeholder || "Ask me something...";
+  const emptyStateTitle = () =>
+    props.emptyStateTitle || "Start a conversation!";
+  const emptyStateSubtitle = () =>
+    props.emptyStateSubtitle || "Ask me anything to get started.";
+  const loadingMessage = () =>
+    props.loadingMessage || "Processing your request...";
+  const headerColor = () =>
+    props.headerColor || "bg-blue-600 hover:bg-blue-700";
+  const userMessageColor = () => props.userMessageColor || "bg-blue-600";
+  const floatingButtonColor = () =>
+    props.floatingButtonColor || "bg-blue-600 hover:bg-blue-700";
+  const focusRingColor = () => props.focusRingColor || "focus:ring-blue-500";
+
   const EmptyIcon = props.emptyStateIcon || MessageCircle;
 
   return (
@@ -47,7 +52,9 @@ export default function ChatInterface(props: ChatInterfaceProps) {
       <Show when={props.showChat}>
         <div class="fixed bottom-6 right-6 w-96 h-[500px] bg-white rounded-lg shadow-2xl border border-gray-200 flex flex-col z-50">
           {/* Chat Header */}
-          <div class={`flex items-center justify-between p-4 border-b border-gray-200 ${headerColor()} text-white rounded-t-lg`}>
+          <div
+            class={`flex items-center justify-between p-4 border-b border-gray-200 ${headerColor()} text-white rounded-t-lg`}
+          >
             <div class="flex items-center gap-2">
               <MessageCircle class="w-5 h-5" />
               <span class="font-medium">{title()}</span>
@@ -66,29 +73,36 @@ export default function ChatInterface(props: ChatInterfaceProps) {
               <div class="text-center text-gray-500 py-8">
                 <EmptyIcon class="w-12 h-12 mx-auto mb-4 text-gray-300" />
                 <p class="text-sm">{emptyStateTitle()}</p>
-                <p class="text-xs mt-2 text-gray-400">
-                  {emptyStateSubtitle()}
-                </p>
+                <p class="text-xs mt-2 text-gray-400">{emptyStateSubtitle()}</p>
               </div>
             </Show>
 
             <For each={props.chatHistory}>
               {(message) => (
-                <div class={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}>
-                  <div class={`max-w-[80%] p-3 rounded-lg text-sm ${
-                    message.type === 'user'
-                      ? `${userMessageColor()} text-white`
-                      : message.type === 'error'
-                        ? 'bg-red-100 text-red-800 border border-red-200'
-                        : 'bg-gray-100 text-gray-800'
-                  }`}>
+                <div
+                  class={`flex ${message.type === "user" ? "justify-end" : "justify-start"}`}
+                >
+                  <div
+                    class={`max-w-[80%] p-3 rounded-lg text-sm ${
+                      message.type === "user"
+                        ? `${userMessageColor()} text-white`
+                        : message.type === "error"
+                          ? "bg-red-100 text-red-800 border border-red-200"
+                          : "bg-gray-100 text-gray-800"
+                    }`}
+                  >
                     <p class="whitespace-pre-wrap">{message.content}</p>
-                    <p class={`text-xs mt-1 opacity-70 ${
-                      message.type === 'user' 
-                        ? 'text-white text-opacity-70' 
-                        : 'text-gray-500'
-                    }`}>
-                      {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    <p
+                      class={`text-xs mt-1 opacity-70 ${
+                        message.type === "user"
+                          ? "text-white text-opacity-70"
+                          : "text-gray-500"
+                      }`}
+                    >
+                      {message.timestamp.toLocaleTimeString([], {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
                     </p>
                   </div>
                 </div>

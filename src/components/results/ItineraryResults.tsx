@@ -1,15 +1,14 @@
-import { For, Show, createSignal } from "solid-js";
 import {
-  Star,
-  MapPin,
-  Clock,
   Calendar,
-  ChevronRight,
   ChevronDown,
+  ChevronRight,
   ChevronUp,
-  Heart,
+  Clock,
+  MapPin,
   Share2,
+  Star,
 } from "lucide-solid";
+import { For, Show, createSignal } from "solid-js";
 
 interface POI {
   name: string;
@@ -286,25 +285,36 @@ export default function ItineraryResults(props: ItineraryResultsProps) {
                             props.onFavoriteClick(poi);
                           }
                         }}
-                        disabled={props.isLoadingFavorites || (!props.onToggleFavorite && !props.onFavoriteClick)}
+                        disabled={
+                          props.isLoadingFavorites ||
+                          (!props.onToggleFavorite && !props.onFavoriteClick)
+                        }
                         data-poi-id={poi.name}
                         class={`p-2 rounded-lg transition-colors ${
-                          (!props.onToggleFavorite && !props.onFavoriteClick)
+                          !props.onToggleFavorite && !props.onFavoriteClick
                             ? "text-gray-300 dark:text-gray-600 cursor-not-allowed bg-gray-50 dark:bg-gray-800"
                             : isFavorite(poi.name)
                               ? "text-yellow-600 dark:text-yellow-400 bg-yellow-50 dark:bg-yellow-900/20 hover:bg-yellow-100 dark:hover:bg-yellow-900/30"
                               : "text-gray-400 hover:text-yellow-600 dark:hover:text-yellow-400 hover:bg-yellow-50 dark:hover:bg-yellow-900/20"
                         } disabled:opacity-50 disabled:cursor-not-allowed`}
-                        title={isFavorite(poi.name) ? "Remove from favorites" : "Add to favorites"}
+                        title={
+                          isFavorite(poi.name)
+                            ? "Remove from favorites"
+                            : "Add to favorites"
+                        }
                       >
                         <Show
                           when={!props.isLoadingFavorites}
-                          fallback={<div class="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin"></div>}
+                          fallback={
+                            <div class="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
+                          }
                         >
-                          <Star class={`w-4 h-4 ${isFavorite(poi.name) ? "fill-current" : ""}`} />
+                          <Star
+                            class={`w-4 h-4 ${isFavorite(poi.name) ? "fill-current" : ""}`}
+                          />
                         </Show>
                       </button>
-                      
+
                       {/* Share Button - show always but disable if no callback */}
                       <button
                         onClick={(e) => {
@@ -319,7 +329,13 @@ export default function ItineraryResults(props: ItineraryResultsProps) {
                             ? "text-gray-300 dark:text-gray-600 cursor-not-allowed bg-gray-50 dark:bg-gray-800"
                             : "text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20"
                         }`}
-                        title={props.onShareClick ? "Share this place" : props.showAuthMessage ? "Sign in to share this place" : "Share this place"}
+                        title={
+                          props.onShareClick
+                            ? "Share this place"
+                            : props.showAuthMessage
+                              ? "Sign in to share this place"
+                              : "Share this place"
+                        }
                       >
                         <Share2 class="w-4 h-4" />
                       </button>

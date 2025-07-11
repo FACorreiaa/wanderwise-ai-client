@@ -1,46 +1,45 @@
-import { createSignal, Show, For, createEffect } from 'solid-js';
-import { useParams } from '@solidjs/router';
-import { 
-  ArrowLeft, 
-  Calendar, 
-  DollarSign, 
-  Globe, 
-  MapPin, 
-  Clock, 
-  Share2, 
-  Edit3, 
-  Trash2,
+import { A, useParams } from "@solidjs/router";
+import {
+  ArrowLeft,
   Bookmark,
+  Calendar,
+  Clock,
+  DollarSign,
+  Download,
+  Edit3,
+  Globe,
+  Share2,
   Tag,
-  User,
-  Eye,
-  Download
-} from 'lucide-solid';
-import { A } from '@solidjs/router';
-import { useItinerary, useRemoveItineraryMutation } from '~/lib/api/itineraries';
+  Trash2,
+} from "lucide-solid";
+import { createSignal, For, Show } from "solid-js";
+import {
+  useItinerary,
+  useRemoveItineraryMutation,
+} from "~/lib/api/itineraries";
 
 export default function BookmarkDetailPage() {
   const params = useParams();
-  const [selectedTab, setSelectedTab] = createSignal('overview');
-  
+  const [selectedTab, setSelectedTab] = createSignal("overview");
+
   // Use existing itinerary API hook since bookmarks are stored in the same table
   const itineraryQuery = useItinerary(params.id);
   const removeItineraryMutation = useRemoveItineraryMutation();
-  
+
   const bookmark = () => itineraryQuery.data;
 
   const tabs = [
-    { id: 'overview', label: 'Overview' },
-    { id: 'content', label: 'Content' },
-    { id: 'details', label: 'Details' }
+    { id: "overview", label: "Overview" },
+    { id: "content", label: "Content" },
+    { id: "details", label: "Details" },
   ];
 
   const getCostLevelText = (level) => {
     const levels = {
       1: "Budget",
-      2: "Moderate", 
+      2: "Moderate",
       3: "Expensive",
-      4: "Luxury"
+      4: "Luxury",
     };
     return levels[level] || "Unknown";
   };
@@ -50,29 +49,29 @@ export default function BookmarkDetailPage() {
       1: "text-green-600 bg-green-50 border-green-200",
       2: "text-blue-600 bg-blue-50 border-blue-200",
       3: "text-orange-600 bg-orange-50 border-orange-200",
-      4: "text-purple-600 bg-purple-50 border-purple-200"
+      4: "text-purple-600 bg-purple-50 border-purple-200",
     };
     return colors[level] || "text-gray-600 bg-gray-50 border-gray-200";
   };
 
   const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
+    return new Date(dateString).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
     });
   };
 
   const removeBookmark = async () => {
-    if (confirm('Are you sure you want to remove this bookmark?')) {
+    if (confirm("Are you sure you want to remove this bookmark?")) {
       try {
         await removeItineraryMutation.mutateAsync(params.id);
         // Navigate back to bookmarks page
-        window.location.href = '/bookmarks';
+        window.location.href = "/bookmarks";
       } catch (error) {
-        console.error('Failed to remove bookmark:', error);
+        console.error("Failed to remove bookmark:", error);
       }
     }
   };
@@ -89,38 +88,47 @@ export default function BookmarkDetailPage() {
 
       {/* Key Information */}
       <div class="bg-white rounded-lg p-6 border border-gray-200">
-        <h3 class="text-lg font-semibold text-gray-900 mb-4">Itinerary Details</h3>
+        <h3 class="text-lg font-semibold text-gray-900 mb-4">
+          Itinerary Details
+        </h3>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Show when={bookmark()?.estimated_duration_days}>
             <div class="flex items-center gap-3">
               <Calendar class="w-5 h-5 text-gray-500" />
               <div>
                 <p class="text-sm text-gray-500">Duration</p>
-                <p class="font-medium">{bookmark()?.estimated_duration_days} day{bookmark()?.estimated_duration_days > 1 ? 's' : ''}</p>
+                <p class="font-medium">
+                  {bookmark()?.estimated_duration_days} day
+                  {bookmark()?.estimated_duration_days > 1 ? "s" : ""}
+                </p>
               </div>
             </div>
           </Show>
-          
+
           <Show when={bookmark()?.estimated_cost_level}>
             <div class="flex items-center gap-3">
               <DollarSign class="w-5 h-5 text-gray-500" />
               <div>
                 <p class="text-sm text-gray-500">Cost Level</p>
-                <span class={`px-2 py-1 rounded text-sm border ${getCostLevelColor(bookmark()?.estimated_cost_level)}`}>
+                <span
+                  class={`px-2 py-1 rounded text-sm border ${getCostLevelColor(bookmark()?.estimated_cost_level)}`}
+                >
                   {getCostLevelText(bookmark()?.estimated_cost_level)}
                 </span>
               </div>
             </div>
           </Show>
-          
+
           <div class="flex items-center gap-3">
             <Globe class="w-5 h-5 text-gray-500" />
             <div>
               <p class="text-sm text-gray-500">Visibility</p>
-              <p class="font-medium">{bookmark()?.is_public ? 'Public' : 'Private'}</p>
+              <p class="font-medium">
+                {bookmark()?.is_public ? "Public" : "Private"}
+              </p>
             </div>
           </div>
-          
+
           <div class="flex items-center gap-3">
             <Clock class="w-5 h-5 text-gray-500" />
             <div>
@@ -154,7 +162,9 @@ export default function BookmarkDetailPage() {
     <div class="space-y-6">
       <Show when={bookmark()?.markdown_content}>
         <div class="bg-white rounded-lg p-6 border border-gray-200">
-          <h3 class="text-lg font-semibold text-gray-900 mb-4">Itinerary Content</h3>
+          <h3 class="text-lg font-semibold text-gray-900 mb-4">
+            Itinerary Content
+          </h3>
           <div class="prose prose-sm max-w-none">
             <pre class="whitespace-pre-wrap text-gray-700 leading-relaxed">
               {bookmark()?.markdown_content}
@@ -168,7 +178,9 @@ export default function BookmarkDetailPage() {
   const renderDetails = () => (
     <div class="space-y-6">
       <div class="bg-white rounded-lg p-6 border border-gray-200">
-        <h3 class="text-lg font-semibold text-gray-900 mb-4">Technical Details</h3>
+        <h3 class="text-lg font-semibold text-gray-900 mb-4">
+          Technical Details
+        </h3>
         <div class="space-y-4">
           <div>
             <p class="text-sm text-gray-500">Bookmark ID</p>
@@ -177,7 +189,9 @@ export default function BookmarkDetailPage() {
           <Show when={bookmark()?.source_llm_interaction_id}>
             <div>
               <p class="text-sm text-gray-500">Source LLM Interaction</p>
-              <p class="font-mono text-sm">{bookmark()?.source_llm_interaction_id}</p>
+              <p class="font-mono text-sm">
+                {bookmark()?.source_llm_interaction_id}
+              </p>
             </div>
           </Show>
           <Show when={bookmark()?.session_id}>
@@ -214,8 +228,12 @@ export default function BookmarkDetailPage() {
       <Show when={itineraryQuery.isError}>
         <div class="flex items-center justify-center min-h-screen">
           <div class="text-center">
-            <h2 class="text-2xl font-bold text-gray-900 mb-2">Bookmark Not Found</h2>
-            <p class="text-gray-600 mb-4">The bookmark you're looking for doesn't exist or has been removed.</p>
+            <h2 class="text-2xl font-bold text-gray-900 mb-2">
+              Bookmark Not Found
+            </h2>
+            <p class="text-gray-600 mb-4">
+              The bookmark you're looking for doesn't exist or has been removed.
+            </p>
             <A href="/bookmarks" class="cb-button cb-button-primary">
               Back to Bookmarks
             </A>
@@ -228,11 +246,14 @@ export default function BookmarkDetailPage() {
         <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           {/* Header */}
           <div class="mb-6">
-            <A href="/bookmarks" class="inline-flex items-center text-sm text-gray-500 hover:text-gray-700 mb-4">
+            <A
+              href="/bookmarks"
+              class="inline-flex items-center text-sm text-gray-500 hover:text-gray-700 mb-4"
+            >
               <ArrowLeft class="w-4 h-4 mr-2" />
               Back to Bookmarks
             </A>
-            
+
             <div class="flex items-start justify-between">
               <div class="flex-1">
                 <div class="flex items-center gap-3 mb-2">
@@ -240,12 +261,16 @@ export default function BookmarkDetailPage() {
                     <Bookmark class="w-6 h-6" />
                   </div>
                   <div>
-                    <h1 class="text-2xl font-bold text-gray-900">{bookmark()?.title}</h1>
-                    <p class="text-gray-500">Saved {formatDate(bookmark()?.created_at)}</p>
+                    <h1 class="text-2xl font-bold text-gray-900">
+                      {bookmark()?.title}
+                    </h1>
+                    <p class="text-gray-500">
+                      Saved {formatDate(bookmark()?.created_at)}
+                    </p>
                   </div>
                 </div>
               </div>
-              
+
               <div class="flex items-center gap-2">
                 <button class="p-2 text-gray-600 hover:bg-gray-100 rounded-lg">
                   <Share2 class="w-5 h-5" />
@@ -256,7 +281,7 @@ export default function BookmarkDetailPage() {
                 <button class="p-2 text-gray-600 hover:bg-gray-100 rounded-lg">
                   <Download class="w-5 h-5" />
                 </button>
-                <button 
+                <button
                   onClick={removeBookmark}
                   class="p-2 text-red-600 hover:bg-red-50 rounded-lg"
                   disabled={removeItineraryMutation.isLoading}
@@ -276,8 +301,8 @@ export default function BookmarkDetailPage() {
                     onClick={() => setSelectedTab(tab.id)}
                     class={`py-2 px-1 border-b-2 font-medium text-sm ${
                       selectedTab() === tab.id
-                        ? 'border-blue-500 text-blue-600'
-                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                        ? "border-blue-500 text-blue-600"
+                        : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
                     }`}
                   >
                     {tab.label}
@@ -289,15 +314,9 @@ export default function BookmarkDetailPage() {
 
           {/* Tab Content */}
           <div class="pb-6">
-            <Show when={selectedTab() === 'overview'}>
-              {renderOverview()}
-            </Show>
-            <Show when={selectedTab() === 'content'}>
-              {renderContent()}
-            </Show>
-            <Show when={selectedTab() === 'details'}>
-              {renderDetails()}
-            </Show>
+            <Show when={selectedTab() === "overview"}>{renderOverview()}</Show>
+            <Show when={selectedTab() === "content"}>{renderContent()}</Show>
+            <Show when={selectedTab() === "details"}>{renderDetails()}</Show>
           </div>
         </div>
       </Show>

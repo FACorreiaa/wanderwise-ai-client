@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "include": [
+    "/*"
+  ],
+  "exclude": [
+    "/images/*",
+    "/icons/*", 
+    "/documents/*",
+    "/models/*",
+    "/favicon.ico",
+    "/favicon.svg",
+    "/manifest.json",
+    "/browserconfig.xml",
+    "/_build/*",
+    "/assets/*"
+  ]
+}

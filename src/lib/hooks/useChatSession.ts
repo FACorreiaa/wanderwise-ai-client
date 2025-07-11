@@ -100,7 +100,7 @@ export function useChatSession(options: UseChatSessionOptions = {}) {
     // Add user message to chat history
     setChatHistory(prev => [...prev, { type: 'user', content: userMessage, timestamp: new Date() }]);
 
-    let eventSource = null;
+    const eventSource = null;
 
     try {
       // Create request payload

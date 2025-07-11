@@ -1,5 +1,5 @@
 import { A } from "@solidjs/router";
-import { AlertTriangle, Home, RotateCcw, Compass, RefreshCw } from 'lucide-solid';
+import { AlertTriangle, Compass, Home, RefreshCw } from "lucide-solid";
 
 export default function ServerError() {
   const handleRefresh = () => {
@@ -27,20 +27,21 @@ export default function ServerError() {
           Server Error
         </h2>
         <p class="text-gray-600 dark:text-gray-400 mb-8 leading-relaxed">
-          Our travel servers are experiencing some turbulence. Don't worry - our team is working to get everything back on track!
+          Our travel servers are experiencing some turbulence. Don't worry - our
+          team is working to get everything back on track!
         </p>
 
         {/* Action Buttons */}
         <div class="space-y-3 sm:space-y-0 sm:space-x-4 sm:flex sm:justify-center">
-          <button 
+          <button
             onClick={handleRefresh}
             class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium"
           >
             <RefreshCw class="w-4 h-4" />
             Try Again
           </button>
-          <A 
-            href="/" 
+          <A
+            href="/"
             class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors font-medium"
           >
             <Home class="w-4 h-4" />
@@ -54,20 +55,20 @@ export default function ServerError() {
             While we fix things, try these features:
           </p>
           <div class="flex flex-wrap justify-center gap-3">
-            <A 
-              href="/hotels" 
+            <A
+              href="/hotels"
               class="inline-flex items-center gap-1 px-3 py-2 text-xs bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-full border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
             >
               🏨 Hotels
             </A>
-            <A 
-              href="/restaurants" 
+            <A
+              href="/restaurants"
               class="inline-flex items-center gap-1 px-3 py-2 text-xs bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-full border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
             >
               🍽️ Restaurants
             </A>
-            <A 
-              href="/activities" 
+            <A
+              href="/activities"
               class="inline-flex items-center gap-1 px-3 py-2 text-xs bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-full border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
             >
               🎯 Activities
@@ -79,10 +80,13 @@ export default function ServerError() {
         <div class="mt-8 p-4 bg-orange-50 dark:bg-orange-900/20 rounded-lg">
           <div class="flex items-center justify-center gap-2 mb-2">
             <Compass class="w-4 h-4 text-orange-600 dark:text-orange-400" />
-            <span class="text-sm font-medium text-orange-900 dark:text-orange-100">Travel Tip</span>
+            <span class="text-sm font-medium text-orange-900 dark:text-orange-100">
+              Travel Tip
+            </span>
           </div>
           <p class="text-xs text-orange-800 dark:text-orange-200">
-            Even the best travel plans hit unexpected delays. Sometimes the best stories come from the unplanned moments!
+            Even the best travel plans hit unexpected delays. Sometimes the best
+            stories come from the unplanned moments!
           </p>
         </div>
       </div>

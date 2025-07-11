@@ -1,8 +1,8 @@
-import ForgotPassword from '~/components/features/Auth/ForgotPassword';
-import { Component } from 'solid-js';
+import { Component } from "solid-js";
+import ForgotPassword from "~/components/features/Auth/ForgotPassword";
 
 const ForgotPasswordPage: Component = () => {
-    return <ForgotPassword />;
+  return <ForgotPassword />;
 };
 
 export default ForgotPasswordPage;

@@ -1,8 +1,8 @@
 import { defineConfig } from "@solidjs/start/config";
 import tailwindcss from "@tailwindcss/vite";
-import { VitePWA } from "vite-plugin-pwa";
-import { fileURLToPath } from "url"; // For ES Modules
 import path from "path";
+import { fileURLToPath } from "url"; // For ES Modules
+import { VitePWA } from "vite-plugin-pwa";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -12,6 +12,9 @@ export default defineConfig({
   server: {
     preset: "cloudflare_module",
     compatibilityDate: "2025-06-12",
+    rollupConfig: {
+      external: [],
+    },
   },
   vite: {
     plugins: [

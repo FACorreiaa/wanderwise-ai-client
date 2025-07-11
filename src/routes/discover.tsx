@@ -1,44 +1,44 @@
-import { createSignal, For, Show, createEffect, onMount } from "solid-js";
-import { useLocation } from "@solidjs/router";
-import {
-  Search,
-  Filter,
-  MapPin,
-  Star,
-  Clock,
-  DollarSign,
-  Wifi,
-  Camera,
-  Grid,
-  SortAsc,
-  SortDesc,
-  X,
-  Compass,
-  Map,
-  Share2,
-  Eye,
-} from "lucide-solid";
-import {
-  useNearbyPOIs,
-  useNearbyRestaurants,
-  useNearbyActivities,
-  useNearbyHotels,
-  useNearbyAttractions,
-  useFavorites,
-  useAddToFavoritesMutation,
-  useRemoveFromFavoritesMutation,
-} from "~/lib/api/pois";
+import { useUserLocation } from "@/contexts/LocationContext";
 import {
   Tabs,
-  TabsList,
-  TabsTrigger,
   TabsContent,
   TabsIndicator,
+  TabsList,
+  TabsTrigger,
 } from "@/ui/tabs";
-import type { ActivitiesResponse, POIDetailedInfo } from "~/lib/api/types";
-import { useUserLocation } from "@/contexts/LocationContext";
+import { useLocation } from "@solidjs/router";
+import {
+  Camera,
+  Clock,
+  Compass,
+  DollarSign,
+  Eye,
+  Filter,
+  Grid,
+  Map,
+  MapPin,
+  Search,
+  Share2,
+  SortAsc,
+  SortDesc,
+  Star,
+  Wifi,
+  X,
+} from "lucide-solid";
+import { createEffect, createSignal, For, onMount, Show } from "solid-js";
 import MapComponent from "~/components/features/Map/Map";
 import { TypingAnimation } from "~/components/TypingAnimation";
+import {
+  useAddToFavoritesMutation,
+  useFavorites,
+  useNearbyActivities,
+  useNearbyAttractions,
+  useNearbyHotels,
+  useNearbyPOIs,
+  useNearbyRestaurants,
+  useRemoveFromFavoritesMutation,
+} from "~/lib/api/pois";
+import type { ActivitiesResponse, POIDetailedInfo } from "~/lib/api/types";
 
 export default function DiscoverPage() {
   const [searchQuery, setSearchQuery] = createSignal("");

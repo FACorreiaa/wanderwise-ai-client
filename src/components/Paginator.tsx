@@ -1,5 +1,5 @@
-import { For, Show } from 'solid-js';
-import { ChevronLeft, ChevronRight, MoreHorizontal } from 'lucide-solid';
+import { ChevronLeft, ChevronRight } from "lucide-solid";
+import { For, Show } from "solid-js";
 
 interface PaginatorProps {
   currentPage: number;
@@ -12,16 +12,17 @@ interface PaginatorProps {
 
 export default function Paginator(props: PaginatorProps) {
   const startItem = () => (props.currentPage - 1) * props.itemsPerPage + 1;
-  const endItem = () => Math.min(props.currentPage * props.itemsPerPage, props.totalItems);
-  
+  const endItem = () =>
+    Math.min(props.currentPage * props.itemsPerPage, props.totalItems);
+
   // Debug logging
-  console.log('Paginator props:', {
+  console.log("Paginator props:", {
     currentPage: props.currentPage,
     totalPages: props.totalPages,
     totalItems: props.totalItems,
     itemsPerPage: props.itemsPerPage,
     startItem: startItem(),
-    endItem: endItem()
+    endItem: endItem(),
   });
 
   // Generate page numbers to display - simplified for mobile
@@ -43,19 +44,19 @@ export default function Paginator(props: PaginatorProps) {
         for (let i = 2; i <= 3; i++) {
           pages.push(i);
         }
-        pages.push('...');
+        pages.push("...");
         pages.push(totalPages);
       } else if (currentPage >= totalPages - 2) {
         // Show first page, ellipsis, then last 3 pages
-        pages.push('...');
+        pages.push("...");
         for (let i = totalPages - 2; i <= totalPages; i++) {
           pages.push(i);
         }
       } else {
         // Show first page, ellipsis, current page, ellipsis, last page
-        pages.push('...');
+        pages.push("...");
         pages.push(currentPage);
-        pages.push('...');
+        pages.push("...");
         pages.push(totalPages);
       }
     }
@@ -64,7 +65,7 @@ export default function Paginator(props: PaginatorProps) {
   };
 
   return (
-    <div class={`bg-white dark:bg-gray-800 ${props.className || ''}`}>
+    <div class={`bg-white dark:bg-gray-800 ${props.className || ""}`}>
       {/* Mobile-first compact pagination - Always visible */}
       <div class="px-3 py-2 sm:px-4 sm:py-3">
         {/* Page info - Mobile optimized */}
@@ -73,10 +74,9 @@ export default function Paginator(props: PaginatorProps) {
             Page {props.currentPage} of {props.totalPages}
           </span>
           <span class="hidden sm:inline">
-            {startItem() === endItem() 
+            {startItem() === endItem()
               ? `${startItem()} of ${props.totalItems}`
-              : `${startItem()}-${endItem()} of ${props.totalItems}`
-            }
+              : `${startItem()}-${endItem()} of ${props.totalItems}`}
           </span>
         </div>
 
@@ -84,7 +84,9 @@ export default function Paginator(props: PaginatorProps) {
         <div class="flex items-center justify-between gap-2">
           {/* Previous button */}
           <button
-            onClick={() => props.currentPage > 1 && props.onPageChange(props.currentPage - 1)}
+            onClick={() =>
+              props.currentPage > 1 && props.onPageChange(props.currentPage - 1)
+            }
             disabled={props.currentPage === 1}
             class="flex items-center gap-1 px-2 py-1 sm:px-3 sm:py-2 text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-md hover:bg-gray-100 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
@@ -98,7 +100,7 @@ export default function Paginator(props: PaginatorProps) {
             <For each={getPageNumbers()}>
               {(page) => (
                 <Show
-                  when={typeof page === 'number'}
+                  when={typeof page === "number"}
                   fallback={
                     <span class="px-2 py-1 text-xs sm:text-sm text-gray-400 dark:text-gray-500">
                       ...
@@ -109,8 +111,8 @@ export default function Paginator(props: PaginatorProps) {
                     onClick={() => props.onPageChange(page as number)}
                     class={`min-w-[28px] sm:min-w-[32px] h-7 sm:h-8 px-1 sm:px-2 text-xs sm:text-sm font-medium rounded border transition-colors ${
                       props.currentPage === page
-                        ? 'bg-blue-500 text-white border-blue-500'
-                        : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700'
+                        ? "bg-blue-500 text-white border-blue-500"
+                        : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700"
                     }`}
                   >
                     {page}
@@ -122,7 +124,10 @@ export default function Paginator(props: PaginatorProps) {
 
           {/* Next button */}
           <button
-            onClick={() => props.currentPage < props.totalPages && props.onPageChange(props.currentPage + 1)}
+            onClick={() =>
+              props.currentPage < props.totalPages &&
+              props.onPageChange(props.currentPage + 1)
+            }
             disabled={props.currentPage === props.totalPages}
             class="flex items-center gap-1 px-2 py-1 sm:px-3 sm:py-2 text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-md hover:bg-gray-100 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >

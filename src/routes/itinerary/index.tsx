@@ -1,58 +1,47 @@
-import {
-  createSignal,
-  createEffect,
-  For,
-  Show,
-  onMount,
-  batch,
-} from "solid-js";
 import { useLocation, useSearchParams } from "@solidjs/router";
-import mapboxgl from "mapbox-gl";
 import {
-  MapPin,
+  Building,
+  Calendar,
   Clock,
-  Star,
-  Filter,
-  Heart,
-  Share2,
+  Cloud,
+  Coffee,
+  Compass,
+  DollarSign,
   Download,
   Edit3,
-  Plus,
-  X,
-  Navigation,
-  Calendar,
-  Users,
-  DollarSign,
-  Camera,
-  Coffee,
-  Utensils,
-  Building,
-  TreePine,
-  ShoppingBag,
+  Filter,
+  Heart,
   Loader2,
+  MapPin,
   MessageCircle,
-  Send,
-  Compass,
+  Navigation,
   Palette,
-  Cloud,
+  Share2,
+  ShoppingBag,
+  Star,
+  TreePine,
+  Users,
+  Utensils,
+  X,
 } from "lucide-solid";
+import { createSignal, For, onMount, Show } from "solid-js";
 // @ts-ignore - Map component type
 import MapComponent from "~/components/features/Map/Map";
 // @ts-ignore - API hooks type
 import {
   useItinerary,
-  useUpdateItineraryMutation,
-  useSaveItineraryMutation,
   useRemoveItineraryMutation,
+  useSaveItineraryMutation,
+  useUpdateItineraryMutation,
 } from "~/lib/api/itineraries";
 // @ts-ignore - POI favorites API hooks type
 import {
-  useFavorites,
   useAddToFavoritesMutation,
+  useFavorites,
   useRemoveFromFavoritesMutation,
 } from "~/lib/api/pois";
 // @ts-ignore - API types
-import type { AiCityResponse, POIDetail } from "~/lib/api/types";
+import type { POIDetail } from "~/lib/api/types";
 // @ts-ignore - Results component type
 import { ItineraryResults } from "~/components/results";
 // @ts-ignore - Animation component type
@@ -155,7 +144,10 @@ export default function ItineraryResultsPage() {
   const removeItineraryMutation = useRemoveItineraryMutation();
 
   // Favorites hooks
-  const favoritesQuery = useFavorites(() => 1, () => 1000); // Get all favorites for checking
+  const favoritesQuery = useFavorites(
+    () => 1,
+    () => 1000,
+  ); // Get all favorites for checking
   const addToFavoritesMutation = useAddToFavoritesMutation();
   const removeFromFavoritesMutation = useRemoveFromFavoritesMutation();
 
@@ -1421,7 +1413,12 @@ export default function ItineraryResultsPage() {
                       {/* Debug info */}
                       <Show when={isAuthenticated()}>
                         <span class="text-xs text-gray-400">
-                          ({allItinerariesQuery.isLoading ? "loading" : allItinerariesQuery.data?.itineraries?.length || 0} saved)
+                          (
+                          {allItinerariesQuery.isLoading
+                            ? "loading"
+                            : allItinerariesQuery.data?.itineraries?.length ||
+                              0}{" "}
+                          saved)
                         </span>
                       </Show>
                     </button>

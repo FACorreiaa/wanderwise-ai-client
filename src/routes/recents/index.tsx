@@ -1,36 +1,26 @@
-import { createSignal, For, Show, createEffect, onMount } from "solid-js";
 import { A, useNavigate } from "@solidjs/router";
 import {
-  Search,
-  MapPin,
+  Bookmark,
+  ChevronRight,
   Clock,
-  Star,
-  Filter,
   Grid,
   List,
-  Calendar,
-  TrendingUp,
-  Sparkles,
-  ChevronRight,
-  Eye,
-  Share2,
-  Trash2,
+  MapPin,
   RotateCcw,
+  Search,
   SortAsc,
   SortDesc,
-  Bookmark,
+  Sparkles,
+  Star,
+  TrendingUp,
 } from "lucide-solid";
+import { createEffect, createSignal, For, Show } from "solid-js";
+import Paginator from "~/components/Paginator";
 import {
   useRecentInteractions,
   type RecentInteractionsFilter,
 } from "~/lib/api/recents";
-import type {
-  CityInteractions,
-  POIDetailedInfo,
-  HotelDetailedInfo,
-  RestaurantDetailedInfo,
-} from "~/lib/api/types";
-import Paginator from "~/components/Paginator";
+import type { CityInteractions } from "~/lib/api/types";
 
 export default function RecentsPage() {
   const [viewMode, setViewMode] = createSignal("grid"); // 'grid', 'list'
