@@ -53,7 +53,7 @@ export const FavoritesComponentWithFeatureFlag: Component = () => {
   
   // Use appropriate hook based on migration status
   const favorites = status.pois 
-    ? useFavorites() 
+    ? useFavorites(() => 1, () => 100) 
     : useFavoritesLegacy();
   
   const addToFavorites = status.pois

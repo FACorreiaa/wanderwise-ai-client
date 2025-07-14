@@ -61,7 +61,7 @@ export default function DiscoverPage() {
   const location = useLocation();
 
   // API hooks
-  const favoritesQuery = useFavorites();
+  const favoritesQuery = useFavorites(() => 1, () => 100);
   const addToFavoritesMutation = useAddToFavoritesMutation();
   const removeFromFavoritesMutation = useRemoveFromFavoritesMutation();
 
@@ -194,7 +194,7 @@ export default function DiscoverPage() {
 
   // Check if POI is in favorites
   const isFavorite = (poiId: string) => {
-    const favs = favoritesQuery.data || [];
+    const favs = favoritesQuery.data?.data || [];
     const isInFavorites = favs.some((poi) => poi.id === poiId);
     console.log(`🔍 isFavorite(${poiId}):`, isInFavorites, "Favs:", favs);
     return isInFavorites;

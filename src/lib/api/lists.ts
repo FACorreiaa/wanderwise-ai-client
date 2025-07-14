@@ -135,3 +135,59 @@ export const useRemoveFromListMutation = () => {
     },
   }));
 };
+
+// ===============
+// SAVED LISTS QUERIES
+// ===============
+
+export const useSavedLists = () => {
+  return useQuery(() => ({
+    queryKey: queryKeys.savedLists,
+    queryFn: () => apiRequest<ItineraryList[]>('/itineraries/lists/saved'),
+    staleTime: 5 * 60 * 1000,
+  }));
+};
+
+export const useSaveListMutation = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation(() => ({
+    mutationFn: (listId: string) =>
+      apiRequest(`/itineraries/lists/${listId}/save`, { method: 'POST' }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.savedLists });
+    },
+  }));
+};
+
+export const useUnsaveListMutation = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation(() => ({
+    mutationFn: (listId: string) =>
+      apiRequest(`/itineraries/lists/${listId}/save`, { method: 'DELETE' }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.savedLists });
+    },
+  }));
+};
+
+// ===============
+// SEARCH LISTS QUERIES
+// ===============
+
+export const useSearchLists = (searchTerm?: string, cityId?: string, contentType?: string) => {
+  return useQuery(() => ({
+    queryKey: queryKeys.searchLists(searchTerm, cityId, contentType),
+    queryFn: () => {
+      const params = new URLSearchParams();
+      if (searchTerm) params.append('search', searchTerm);
+      if (cityId) params.append('city_id', cityId);
+      if (contentType) params.append('content_type', contentType);
+      
+      return apiRequest<ItineraryList[]>(`/itineraries/lists/search?${params.toString()}`);
+    },
+    enabled: !!searchTerm || !!cityId || !!contentType,
+    staleTime: 2 * 60 * 1000,
+  }));
+};

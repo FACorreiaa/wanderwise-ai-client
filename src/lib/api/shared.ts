@@ -231,6 +231,9 @@ export const queryKeys = {
   // Lists
   lists: ["lists"] as const,
   list: (id: string) => ["lists", id] as const,
+  savedLists: ["lists", "saved"] as const,
+  searchLists: (searchTerm?: string, cityId?: string, contentType?: string) => 
+    ["lists", "search", searchTerm, cityId, contentType] as const,
 
   // Hotels
   hotels: ["hotels"] as const,

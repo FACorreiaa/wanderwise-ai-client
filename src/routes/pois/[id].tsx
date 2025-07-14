@@ -30,7 +30,7 @@ export default function POIDetailPage() {
   const [isFavorite, setIsFavorite] = createSignal(false);
 
   // API hooks
-  const favoritesQuery = useFavorites();
+  const favoritesQuery = useFavorites(() => 1, () => 100);
   const addToFavoritesMutation = useAddToFavoritesMutation();
   const removeFromFavoritesMutation = useRemoveFromFavoritesMutation();
 
