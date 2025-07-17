@@ -11,7 +11,7 @@ import {
   X,
 } from "lucide-solid";
 import { createSignal, For, Show } from "solid-js";
-import { ProtectedRoute, useAuth } from "~/contexts/AuthContext";
+import ProtectedRoute, { useAuth } from "~/contexts/AuthContext";
 import { ProcessedProfileData, UserProfileResponse } from "~/lib/api/types";
 import { useUpdateProfileMutation, useUserProfileQuery } from "~/lib/api/user";
 

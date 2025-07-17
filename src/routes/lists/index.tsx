@@ -1,4 +1,6 @@
 import {
+  Bookmark,
+  Check,
   Copy,
   Edit3,
   Eye,
@@ -9,27 +11,22 @@ import {
   Lock,
   MapPin,
   Plus,
+  Search,
   Share2,
   Trash2,
   Users,
   X,
-  Search,
-  Filter,
-  ChevronDown,
-  Check,
-  Bookmark,
-  Grid3X3,
-  List,
 } from "lucide-solid";
-import { createSignal, For, Show, createMemo, onMount } from "solid-js";
+import { createMemo, createSignal, For, Show } from "solid-js";
+import { useCities } from "~/lib/api/cities";
 import {
+  useAddToListMutation,
   useCreateListMutation,
   useDeleteListMutation,
   useLists,
+  useSaveListMutation,
+  useUnsaveListMutation,
   useUpdateListMutation,
-  useAddToListMutation,
-  // useSavedLists,
-  // useSearchLists,
 } from "~/lib/api/lists";
 import { useFavorites } from "~/lib/api/pois";
 
@@ -40,9 +37,10 @@ export default function ListsPage() {
   const [showCreateModal, setShowCreateModal] = createSignal(false);
   const [showEditModal, setShowEditModal] = createSignal(false);
   const [showDeleteModal, setShowDeleteModal] = createSignal(false);
-  
+
   // Enhanced create modal state
-  const [showCreateWithDataModal, setShowCreateWithDataModal] = createSignal(false);
+  const [showCreateWithDataModal, setShowCreateWithDataModal] =
+    createSignal(false);
   const [createStep, setCreateStep] = createSignal(1); // 1: form, 2: select data
   const [selectedContentType, setSelectedContentType] = createSignal("poi");
   const [selectedItems, setSelectedItems] = createSignal([]);
@@ -57,6 +55,7 @@ export default function ListsPage() {
     isPublic: false,
     allowCollaboration: false,
     tags: [],
+    cityId: "",
   });
 
   // API hooks
@@ -65,68 +64,79 @@ export default function ListsPage() {
   const updateListMutation = useUpdateListMutation();
   const deleteListMutation = useDeleteListMutation();
   const addToListMutation = useAddToListMutation();
-  
+  const saveListMutation = useSaveListMutation();
+  const unsaveListMutation = useUnsaveListMutation();
+
   // Data queries for list creation
-  const favoritesQuery = useFavorites(() => 1, () => 100);
-  
+  const favoritesQuery = useFavorites(
+    () => 1,
+    () => 100,
+  );
+  const citiesQuery = useCities();
+
   // Extract restaurants and hotels from POI favorites by category
   const allFavorites = () => favoritesQuery.data?.data || [];
-  const restaurantFavorites = () => allFavorites().filter(poi => 
-    poi.category?.toLowerCase().includes('restaurant') || 
-    poi.category?.toLowerCase().includes('food') ||
-    poi.category?.toLowerCase().includes('dining')
-  );
-  const hotelFavorites = () => allFavorites().filter(poi => 
-    poi.category?.toLowerCase().includes('hotel') || 
-    poi.category?.toLowerCase().includes('accommodation') ||
-    poi.category?.toLowerCase().includes('lodging')
-  );
-  
-  // Saved and public lists queries (temporarily disabled until endpoints are confirmed working)
-  // const savedListsQuery = useSavedLists();
-  // const searchListsQuery = useSearchLists(publicSearchTerm());
-  const savedListsQuery = { data: [] }; // Placeholder
-  const searchListsQuery = { data: [] }; // Placeholder
+  const restaurantFavorites = () =>
+    allFavorites().filter(
+      (poi) =>
+        poi.category?.toLowerCase().includes("restaurant") ||
+        poi.category?.toLowerCase().includes("food") ||
+        poi.category?.toLowerCase().includes("dining"),
+    );
+  const hotelFavorites = () =>
+    allFavorites().filter(
+      (poi) =>
+        poi.category?.toLowerCase().includes("hotel") ||
+        poi.category?.toLowerCase().includes("accommodation") ||
+        poi.category?.toLowerCase().includes("lodging"),
+    );
+
+  // Saved and public lists queries
 
   // Get lists from API or fallback to empty array
   const lists = () => listsQuery.data || [];
-  
+
   // Computed data based on selected content type
   const availableItems = createMemo(() => {
     const term = searchTerm().toLowerCase();
-    
+
     switch (selectedContentType()) {
       case "restaurant":
-        return restaurantFavorites().filter(item =>
-          item.name.toLowerCase().includes(term) ||
-          item.description?.toLowerCase().includes(term) ||
-          item.category?.toLowerCase().includes(term)
+        return restaurantFavorites().filter(
+          (item) =>
+            item.name.toLowerCase().includes(term) ||
+            item.description?.toLowerCase().includes(term) ||
+            item.category?.toLowerCase().includes(term),
         );
       case "hotel":
-        return hotelFavorites().filter(item =>
-          item.name.toLowerCase().includes(term) ||
-          item.description?.toLowerCase().includes(term) ||
-          item.category?.toLowerCase().includes(term)
+        return hotelFavorites().filter(
+          (item) =>
+            item.name.toLowerCase().includes(term) ||
+            item.description?.toLowerCase().includes(term) ||
+            item.category?.toLowerCase().includes(term),
         );
       default:
         // For POIs, exclude restaurants and hotels to avoid duplicates
-        const poiOnlyFavorites = allFavorites().filter(poi => {
-          const category = poi.category?.toLowerCase() || '';
-          return !category.includes('restaurant') && 
-                 !category.includes('food') && 
-                 !category.includes('dining') &&
-                 !category.includes('hotel') && 
-                 !category.includes('accommodation') &&
-                 !category.includes('lodging');
+        const poiOnlyFavorites = allFavorites().filter((poi) => {
+          const category = poi.category?.toLowerCase() || "";
+          return (
+            !category.includes("restaurant") &&
+            !category.includes("food") &&
+            !category.includes("dining") &&
+            !category.includes("hotel") &&
+            !category.includes("accommodation") &&
+            !category.includes("lodging")
+          );
         });
-        return poiOnlyFavorites.filter(item =>
-          item.name.toLowerCase().includes(term) ||
-          item.description?.toLowerCase().includes(term) ||
-          item.category?.toLowerCase().includes(term)
+        return poiOnlyFavorites.filter(
+          (item) =>
+            item.name.toLowerCase().includes(term) ||
+            item.description?.toLowerCase().includes(term) ||
+            item.category?.toLowerCase().includes(term),
         );
     }
   });
-  
+
   // Content type options
   const contentTypes = [
     { value: "poi", label: "Places & Attractions", icon: MapPin },
@@ -184,8 +194,8 @@ export default function ListsPage() {
 
   const tabs = [
     { id: "my-lists", label: "My Lists", count: lists().length },
-    { id: "saved", label: "Saved Lists", count: savedListsQuery.data?.length || 0 },
-    { id: "public", label: "Discover", count: searchListsQuery.data?.length || 0 },
+    { id: "saved", label: "Saved Lists", count: listsQuery.data?.length || 0 },
+    { id: "public", label: "Discover", count: listsQuery.data?.length || 0 },
   ];
 
   const createList = async () => {
@@ -196,8 +206,9 @@ export default function ListsPage() {
         description: formData.description,
         is_public: formData.isPublic,
         is_itinerary: false, // Empty lists are collections, not itineraries
-        // city_id can be added later if needed
+        city_id: formData.cityId || undefined, // Optional field for city association
       });
+      console.log('Created list response:', newList); // Debug log
       setShowCreateModal(false);
       resetForm();
     } catch (error) {
@@ -214,13 +225,13 @@ export default function ListsPage() {
         description: formData.description,
         is_public: formData.isPublic,
         is_itinerary: false, // Collections, not itineraries
-        // city_id can be added later if needed
+        city_id: formData.cityId || undefined, // Optional field for city association
       });
 
       // Add selected items to the new list
       for (const item of selectedItems()) {
         await addToListMutation.mutateAsync({
-          listId: newList.id,
+          listId: newList.ID,
           itemData: {
             item_id: item.id,
             content_type: selectedContentType(),
@@ -240,12 +251,18 @@ export default function ListsPage() {
   };
 
   const updateList = async () => {
-    const listId = selectedList()?.id;
+    const listId = selectedList()?.ID;
     if (listId) {
       try {
+        const formData = listForm();
         await updateListMutation.mutateAsync({
           listId,
-          listData: listForm(),
+          listData: {
+            name: formData.name,
+            description: formData.description,
+            is_public: formData.isPublic,
+            city_id: formData.cityId || undefined, // Optional field for city association
+          },
         });
         setShowEditModal(false);
         resetForm();
@@ -256,7 +273,7 @@ export default function ListsPage() {
   };
 
   const deleteList = async () => {
-    const listId = selectedList()?.id;
+    const listId = selectedList()?.ID;
     if (listId) {
       try {
         await deleteListMutation.mutateAsync(listId);
@@ -271,14 +288,30 @@ export default function ListsPage() {
   const duplicateList = async (list) => {
     try {
       await createListMutation.mutateAsync({
-        ...list,
-        name: `${list.name} (Copy)`,
-        views: 0,
-        likes: 0,
-        isPublic: false,
+        name: `${list.Name} (Copy)`,
+        description: list.Description,
+        is_public: false, // Duplicated lists are private by default
+        is_itinerary: list.IsItinerary || false,
+        city_id: list.CityID,
       });
     } catch (error) {
       console.error("Failed to duplicate list:", error);
+    }
+  };
+
+  const isListSaved = (listId) => {
+    return listsQuery.data?.some((list) => list.ID === listId);
+  };
+
+  const toggleSaveList = async (list) => {
+    try {
+      if (isListSaved(list.ID)) {
+        await unsaveListMutation.mutateAsync(list.ID);
+      } else {
+        await saveListMutation.mutateAsync(list.ID);
+      }
+    } catch (error) {
+      console.error("Failed to save/unsave list:", error);
     }
   };
 
@@ -289,6 +322,7 @@ export default function ListsPage() {
       isPublic: false,
       allowCollaboration: false,
       tags: [],
+      cityId: "",
     });
     setSelectedItems([]);
     setSearchTerm("");
@@ -297,9 +331,9 @@ export default function ListsPage() {
 
   const toggleItemSelection = (item) => {
     setSelectedItems((prev) => {
-      const isSelected = prev.some(p => p.id === item.id);
+      const isSelected = prev.some((p) => p.id === item.id);
       if (isSelected) {
-        return prev.filter(p => p.id !== item.id);
+        return prev.filter((p) => p.id !== item.id);
       } else {
         return [...prev, item];
       }
@@ -313,29 +347,30 @@ export default function ListsPage() {
   const openEditModal = (list) => {
     setSelectedList(list);
     setListForm({
-      name: list.name,
-      description: list.description,
-      isPublic: list.isPublic,
-      allowCollaboration: list.allowCollaboration,
-      tags: [...list.tags],
+      name: list.Name,
+      description: list.Description,
+      isPublic: list.IsPublic,
+      allowCollaboration: list.allowCollaboration || false,
+      tags: list.tags || [],
+      cityId: list.CityID || "",
     });
     setShowEditModal(true);
   };
 
   const getVisibilityIcon = (list) => {
-    if (list.isPublic) return Globe;
+    if (list.IsPublic) return Globe;
     if (list.allowCollaboration) return Users;
     return Lock;
   };
 
   const getVisibilityLabel = (list) => {
-    if (list.isPublic) return "Public";
+    if (list.IsPublic) return "Public";
     if (list.allowCollaboration) return "Collaborative";
     return "Private";
   };
 
   const getVisibilityColor = (list) => {
-    if (list.isPublic) return "text-green-600 bg-green-50";
+    if (list.IsPublic) return "text-green-600 bg-green-50";
     if (list.allowCollaboration) return "text-blue-600 bg-blue-50";
     return "text-gray-600 bg-gray-50";
   };
@@ -343,9 +378,9 @@ export default function ListsPage() {
   const getCurrentLists = () => {
     switch (activeTab()) {
       case "saved":
-        return savedListsQuery.data || [];
+        return listsQuery.data || [];
       case "public":
-        return searchListsQuery.data || [];
+        return listsQuery.data || [];
       default:
         return lists();
     }
@@ -355,7 +390,10 @@ export default function ListsPage() {
     const VisibilityIcon = getVisibilityIcon(list);
 
     return (
-      <div class="cb-card hover:shadow-lg transition-all duration-300 group">
+      <a
+        href={`/lists/${list.ID}`}
+        class="cb-card hover:shadow-lg transition-all duration-300 group"
+      >
         {/* Cover Image Placeholder */}
         <div class="relative h-32 bg-gradient-to-br from-blue-100 via-purple-100 to-pink-100 overflow-hidden">
           <div class="absolute inset-0 flex items-center justify-center">
@@ -407,6 +445,23 @@ export default function ListsPage() {
             </div>
           </Show>
 
+          <Show when={activeTab() !== "my-lists"}>
+            <div class="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  toggleSaveList(list);
+                }}
+                class="p-1.5 bg-white/90 text-gray-700 rounded-lg hover:bg-white"
+                title={isListSaved(list.ID) ? "Unsave list" : "Save list"}
+              >
+                <Bookmark
+                  class={`w-3 h-3 ${isListSaved(list.ID) ? "text-blue-500" : ""}`}
+                />
+              </button>
+            </div>
+          </Show>
+
           {/* Stats overlay */}
           <div class="absolute bottom-3 right-3">
             <div class="flex items-center gap-2 text-xs">
@@ -431,16 +486,16 @@ export default function ListsPage() {
           <div class="flex items-start justify-between mb-2">
             <div class="flex-1 min-w-0">
               <h3 class="font-semibold text-gray-900 text-sm mb-1 truncate">
-                {list.name}
+                {list.Name}
               </h3>
               <p class="text-xs text-gray-500">
-                By {list.owner} • {list.itemCount} places
+                By {list.owner || 'You'} • {list.itemCount || 0} places
               </p>
             </div>
           </div>
 
           <p class="text-xs text-gray-600 mb-3 line-clamp-2">
-            {list.description}
+            {list.Description}
           </p>
 
           {/* Cities */}
@@ -472,7 +527,7 @@ export default function ListsPage() {
           </Show>
 
           {/* Tags */}
-          <div class="flex flex-wrap gap-1 mb-3">
+          {/*<div class="flex flex-wrap gap-1 mb-3">
             {list.tags.slice(0, 2).map((tag) => (
               <span class="px-2 py-0.5 bg-blue-100 text-blue-800 rounded-full text-xs">
                 {tag}
@@ -483,11 +538,11 @@ export default function ListsPage() {
                 +{list.tags.length - 2}
               </span>
             )}
-          </div>
+          </div> */}
 
           {/* Footer */}
           <div class="flex items-center justify-between text-xs text-gray-500">
-            <span>Updated {new Date(list.updatedAt).toLocaleDateString()}</span>
+            <span>Updated {new Date(list.UpdatedAt).toLocaleDateString()}</span>
             <div class="flex items-center gap-2">
               <Show when={list.collaborators?.length > 0}>
                 <div class="flex items-center gap-1">
@@ -501,7 +556,7 @@ export default function ListsPage() {
             </div>
           </div>
         </div>
-      </div>
+      </a>
     );
   };
 
@@ -535,6 +590,34 @@ export default function ListsPage() {
           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           placeholder="Describe what makes this list special..."
         />
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-2">
+          City (Optional)
+        </label>
+        <select
+          value={listForm().cityId}
+          onInput={(e) =>
+            setListForm((prev) => ({ ...prev, cityId: e.target.value }))
+          }
+          class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+        >
+          <option value="">Select a city...</option>
+          <Show when={citiesQuery.data}>
+            <For each={citiesQuery.data}>
+              {(city) => (
+                <option value={city.id}>
+                  {city.name}
+                  {city.country ? `, ${city.country}` : ""}
+                </option>
+              )}
+            </For>
+          </Show>
+        </select>
+        <p class="text-xs text-gray-600 mt-1">
+          Associate this list with a specific city
+        </p>
       </div>
 
       <div class="space-y-3">
@@ -810,7 +893,7 @@ export default function ListsPage() {
               </div>
               <p class="text-gray-700 mb-6">
                 Are you sure you want to delete "
-                <strong>{selectedList()?.name}</strong>"? All{" "}
+                <strong>{selectedList()?.Name}</strong>"? All{" "}
                 {selectedList()?.itemCount} places in this list will be removed.
               </p>
               <div class="flex items-center justify-end gap-3">
@@ -842,13 +925,14 @@ export default function ListsPage() {
               <div class="flex items-center justify-between">
                 <div>
                   <h2 class="text-xl font-semibold text-gray-900">
-                    {createStep() === 1 ? "Create New List" : "Select Items to Add"}
+                    {createStep() === 1
+                      ? "Create New List"
+                      : "Select Items to Add"}
                   </h2>
                   <p class="text-sm text-gray-600 mt-1">
-                    {createStep() === 1 
-                      ? "Create a list from your saved items" 
-                      : `Step 2: Choose from your saved ${selectedContentType() === "poi" ? "places" : selectedContentType() + "s"}`
-                    }
+                    {createStep() === 1
+                      ? "Create a list from your saved items"
+                      : `Step 2: Choose from your saved ${selectedContentType() === "poi" ? "places" : selectedContentType() + "s"}`}
                   </p>
                 </div>
                 <button
@@ -869,7 +953,7 @@ export default function ListsPage() {
                 {/* Step 1: List Form */}
                 <div class="p-6">
                   {renderListForm()}
-                  
+
                   {/* Content Type Selection */}
                   <div class="mt-6">
                     <label class="block text-sm font-medium text-gray-700 mb-3">
@@ -890,7 +974,9 @@ export default function ListsPage() {
                             >
                               <div class="flex items-center gap-3">
                                 <IconComponent class="w-5 h-5 text-gray-600" />
-                                <span class="font-medium text-gray-900">{type.label}</span>
+                                <span class="font-medium text-gray-900">
+                                  {type.label}
+                                </span>
                               </div>
                             </button>
                           );
@@ -938,13 +1024,16 @@ export default function ListsPage() {
                       <div class="text-center py-12">
                         <Bookmark class="w-12 h-12 text-gray-300 mx-auto mb-4" />
                         <h3 class="text-lg font-semibold text-gray-900 mb-2">
-                          No saved {selectedContentType() === "poi" ? "places" : selectedContentType() + "s"} found
+                          No saved{" "}
+                          {selectedContentType() === "poi"
+                            ? "places"
+                            : selectedContentType() + "s"}{" "}
+                          found
                         </h3>
                         <p class="text-gray-600">
-                          {searchTerm() 
-                            ? "Try adjusting your search terms" 
-                            : `Start saving ${selectedContentType() === "poi" ? "places" : selectedContentType() + "s"} to add them to lists`
-                          }
+                          {searchTerm()
+                            ? "Try adjusting your search terms"
+                            : `Start saving ${selectedContentType() === "poi" ? "places" : selectedContentType() + "s"} to add them to lists`}
                         </p>
                       </div>
                     }
@@ -952,7 +1041,9 @@ export default function ListsPage() {
                     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 max-h-96 overflow-y-auto">
                       <For each={availableItems()}>
                         {(item) => {
-                          const isSelected = selectedItems().some(p => p.id === item.id);
+                          const isSelected = selectedItems().some(
+                            (p) => p.id === item.id,
+                          );
                           return (
                             <div
                               onClick={() => toggleItemSelection(item)}
@@ -963,9 +1054,13 @@ export default function ListsPage() {
                               }`}
                             >
                               <div class="flex items-start gap-3">
-                                <div class={`w-5 h-5 border-2 rounded flex items-center justify-center ${
-                                  isSelected ? "border-blue-500 bg-blue-500" : "border-gray-300"
-                                }`}>
+                                <div
+                                  class={`w-5 h-5 border-2 rounded flex items-center justify-center ${
+                                    isSelected
+                                      ? "border-blue-500 bg-blue-500"
+                                      : "border-gray-300"
+                                  }`}
+                                >
                                   <Show when={isSelected}>
                                     <Check class="w-3 h-3 text-white" />
                                   </Show>
@@ -1006,7 +1101,7 @@ export default function ListsPage() {
                   Back
                 </button>
               </Show>
-              
+
               <div class="flex items-center gap-3 ml-auto">
                 <button
                   onClick={() => {
@@ -1029,13 +1124,15 @@ export default function ListsPage() {
                 <Show when={createStep() === 2}>
                   <button
                     onClick={createListWithData}
-                    disabled={selectedItems().length === 0 || createListMutation.isPending}
+                    disabled={
+                      selectedItems().length === 0 ||
+                      createListMutation.isPending
+                    }
                     class="cb-button cb-button-primary px-4 py-2 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    {createListMutation.isPending 
-                      ? "Creating..." 
-                      : `Create List (${selectedItems().length} items)`
-                    }
+                    {createListMutation.isPending
+                      ? "Creating..."
+                      : `Create List (${selectedItems().length} items)`}
                   </button>
                 </Show>
               </div>

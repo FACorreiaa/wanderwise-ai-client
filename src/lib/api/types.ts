@@ -187,17 +187,31 @@ export interface ChatSessionsResponse {
 }
 
 export interface ItineraryList {
-  id: string;
-  name: string;
-  description: string;
-  itemCount: number;
-  isPublic: boolean;
-  allowCollaboration: boolean;
-  tags: string[];
-  createdAt: string;
-  updatedAt: string;
-  owner: string;
-  collaborators: string[];
+  ID: string;
+  UserID: string;
+  Name: string;
+  Description: string;
+  ImageURL: string;
+  IsPublic: boolean;
+  IsItinerary: boolean;
+  ParentListID: string | null;
+  CityID: string | null;
+  ViewCount: number;
+  SaveCount: number;
+  CreatedAt: string;
+  UpdatedAt: string;
+  // Legacy/computed fields for backwards compatibility
+  id?: string;
+  name?: string;
+  description?: string;
+  itemCount?: number;
+  isPublic?: boolean;
+  allowCollaboration?: boolean;
+  tags?: string[];
+  createdAt?: string;
+  updatedAt?: string;
+  owner?: string;
+  collaborators?: string[];
 }
 
 export interface UserSavedItinerary {

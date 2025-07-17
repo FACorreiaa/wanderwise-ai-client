@@ -61,7 +61,10 @@ export default function DiscoverPage() {
   const location = useLocation();
 
   // API hooks
-  const favoritesQuery = useFavorites(() => 1, () => 100);
+  const favoritesQuery = useFavorites(
+    () => 1,
+    () => 100,
+  );
   const addToFavoritesMutation = useAddToFavoritesMutation();
   const removeFromFavoritesMutation = useRemoveFromFavoritesMutation();
 

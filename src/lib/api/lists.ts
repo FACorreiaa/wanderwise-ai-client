@@ -50,7 +50,7 @@ export const useUpdateListMutation = () => {
     onSuccess: (updatedList, { listId }) => {
       queryClient.setQueryData(queryKeys.list(listId), updatedList);
       queryClient.setQueryData(queryKeys.lists, (old: ItineraryList[] = []) =>
-        old.map(list => list.id === listId ? updatedList : list)
+        old.map(list => list.ID === listId ? updatedList : list)
       );
     },
   }));
@@ -67,7 +67,7 @@ export const useDeleteListMutation = () => {
       const previousLists = queryClient.getQueryData(queryKeys.lists);
 
       queryClient.setQueryData(queryKeys.lists, (old: ItineraryList[] = []) =>
-        old.filter(list => list.id !== listId)
+        old.filter(list => list.ID !== listId)
       );
 
       return { previousLists };
@@ -129,6 +129,22 @@ export const useRemoveFromListMutation = () => {
   return useMutation(() => ({
     mutationFn: ({ listId, itemId }: { listId: string; itemId: string }) =>
       apiRequest(`/itineraries/lists/${listId}/items/${itemId}`, { method: 'DELETE' }),
+    onSuccess: (_, { listId }) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.list(listId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.lists });
+    },
+  }));
+};
+
+export const useUpdateListItemMutation = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation(() => ({
+    mutationFn: ({ listId, itemId, itemData }: { listId: string; itemId: string; itemData: Partial<AddToListItemData> }) =>
+      apiRequest(`/itineraries/lists/${listId}/items/${itemId}`, {
+        method: 'PUT',
+        body: JSON.stringify(itemData),
+      }),
     onSuccess: (_, { listId }) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.list(listId) });
       queryClient.invalidateQueries({ queryKey: queryKeys.lists });
