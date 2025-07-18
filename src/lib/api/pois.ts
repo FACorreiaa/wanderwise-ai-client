@@ -62,7 +62,11 @@ export const useAddToFavoritesMutation = () => {
       };
       console.log("📤 Request body:", requestBody);
 
-      const response = await apiRequest<{ message: string }>(
+      const response = await apiRequest<{ 
+        message: string;
+        poi_id: string;
+        id: string;
+      }>(
         "/pois/favourites",
         {
           method: "POST",
@@ -70,7 +74,7 @@ export const useAddToFavoritesMutation = () => {
         },
       );
       console.log("✅ Add to favorites response:", response);
-      return response;
+      return { ...response, originalPoiId: params.poiId };
     },
     onSuccess: () => {
       // Invalidate all favorites queries to refetch data
@@ -101,7 +105,11 @@ export const useRemoveFromFavoritesMutation = () => {
       };
       console.log("📤 Remove request body:", requestBody);
 
-      const response = await apiRequest<{ message: string }>(
+      const response = await apiRequest<{ 
+        message: string;
+        poi_id: string;
+        id: string;
+      }>(
         "/pois/favourites",
         {
           method: "DELETE",
@@ -109,7 +117,7 @@ export const useRemoveFromFavoritesMutation = () => {
         },
       );
       console.log("✅ Remove from favorites response:", response);
-      return response;
+      return { ...response, originalPoiId: params.poiId };
     },
     onSuccess: () => {
       // Invalidate all favorites queries to refetch data

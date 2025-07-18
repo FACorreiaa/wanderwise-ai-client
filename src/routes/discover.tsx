@@ -60,13 +60,22 @@ export default function DiscoverPage() {
     new Set(),
   );
 
-  // Clear optimistic state when favorites query data changes
+  // Track favorite IDs reactively
+  const [favoriteIds, setFavoriteIds] = createSignal<Set<string>>(new Set());
+
+  // Update favorite IDs when favorites query data changes
   createEffect(() => {
-    if (favoritesQuery.data) {
+    const data = favoritesQuery.data;
+    if (data?.data) {
+      console.log("🔄 Updating favorite IDs from server data");
+      const ids = new Set(data.data.map(poi => poi.id));
+      setFavoriteIds(ids);
+      // Clear optimistic state when server data is updated
       setOptimisticAdded(new Set());
       setOptimisticRemoved(new Set());
     }
   });
+
   const {
     userLocation,
     requestLocation,
@@ -215,14 +224,14 @@ export default function DiscoverPage() {
   const isFavorite = (poiId: string) => {
     const added = optimisticAdded();
     const removed = optimisticRemoved();
-    const favs = favoritesQuery.data?.data || [];
-    const isInFavorites = favs.some((poi) => poi.id === poiId);
+    const serverFavoriteIds = favoriteIds();
+    const isInServerFavorites = serverFavoriteIds.has(poiId);
 
     // DEBUG: Log favorite IDs for comparison
-    if (favs.length > 0) {
+    if (serverFavoriteIds.size > 0) {
       console.log(
         `🔍 Current favorite IDs:`,
-        favs.map((f) => f.id),
+        Array.from(serverFavoriteIds),
       );
       console.log(`🔍 Checking POI ID: ${poiId}`);
     }
@@ -240,11 +249,15 @@ export default function DiscoverPage() {
     // Fall back to server state
     console.log(
       `⭐ ${poiId} server state:`,
-      isInFavorites,
+      isInServerFavorites,
       "Total favs:",
-      favs.length,
+      serverFavoriteIds.size,
+      "Query loading:",
+      favoritesQuery.isLoading,
+      "Query success:",
+      favoritesQuery.isSuccess,
     );
-    return isInFavorites;
+    return isInServerFavorites;
   };
 
   const sortOptions = [
@@ -355,37 +368,56 @@ export default function DiscoverPage() {
 
   const toggleFavorite = (poiId: string, poi?: POIDetailedInfo) => {
     console.log(
-      `🔄 toggleFavorite called for ${poiId}, current favorite status:`,
+      `🔥 toggleFavorite called for ${poiId}, current favorite status:`,
       isFavorite(poiId),
     );
-    console.log(`🔄 Current optimistic added:`, Array.from(optimisticAdded()));
+    console.log(`🔥 Current optimistic added:`, Array.from(optimisticAdded()));
     console.log(
-      `🔄 Current optimistic removed:`,
+      `🔥 Current optimistic removed:`,
       Array.from(optimisticRemoved()),
     );
+    console.log(`🔥 Current favorite IDs:`, Array.from(favoriteIds()));
+    console.log(`🔥 POI data provided:`, !!poi);
 
     if (isFavorite(poiId)) {
-      console.log(`➖ Removing ${poiId} from favorites`);
+      console.log(`🔥 ➖ Removing ${poiId} from favorites (OPTIMISTIC)`);
       // Optimistically remove from favorites
-      setOptimisticRemoved((prev) => new Set(prev).add(poiId));
+      setOptimisticRemoved((prev) => {
+        const newSet = new Set(prev).add(poiId);
+        console.log(`🔥 ➖ Updated optimistic removed:`, Array.from(newSet));
+        return newSet;
+      });
       setOptimisticAdded((prev) => {
         const newSet = new Set(prev);
         newSet.delete(poiId);
+        console.log(`🔥 ➖ Updated optimistic added:`, Array.from(newSet));
         return newSet;
       });
 
       removeFromFavoritesMutation.mutate(
         { poiId, poiData: poi },
         {
-          onSuccess: () => {
-            // Clear optimistic state on success
+          onSuccess: (data) => {
+            console.log(`🔥 ✅ Remove favorite SUCCESS - Backend POI ID: ${data.poi_id}, Original POI ID: ${data.originalPoiId}`);
+            // Clear optimistic state using original POI ID
             setOptimisticRemoved((prev) => {
               const newSet = new Set(prev);
               newSet.delete(poiId);
               return newSet;
             });
+            // Remove both original and backend POI ID from favorite IDs
+            setFavoriteIds((prev) => {
+              const newSet = new Set(prev);
+              newSet.delete(poiId);
+              if (data.poi_id && data.poi_id !== poiId) {
+                console.log(`🔥 🔄 Removing transformed POI ID: ${data.poi_id}`);
+                newSet.delete(data.poi_id);
+              }
+              return newSet;
+            });
           },
           onError: () => {
+            console.log(`🔥 ❌ Remove favorite FAILED for ${poiId}`);
             // Revert optimistic state on error
             setOptimisticRemoved((prev) => {
               const newSet = new Set(prev);
@@ -396,29 +428,49 @@ export default function DiscoverPage() {
         },
       );
     } else {
-      if (!poi) return; // Ensure poi is provided for adding
+      if (!poi) {
+        console.log(`🔥 ❌ No POI data provided for adding ${poiId} to favorites`);
+        return; // Ensure poi is provided for adding
+      }
 
-      console.log(`➕ Adding ${poiId} to favorites`);
+      console.log(`🔥 ➕ Adding ${poiId} to favorites (OPTIMISTIC)`);
       // Optimistically add to favorites
-      setOptimisticAdded((prev) => new Set(prev).add(poiId));
+      setOptimisticAdded((prev) => {
+        const newSet = new Set(prev).add(poiId);
+        console.log(`🔥 ➕ Updated optimistic added:`, Array.from(newSet));
+        return newSet;
+      });
       setOptimisticRemoved((prev) => {
         const newSet = new Set(prev);
         newSet.delete(poiId);
+        console.log(`🔥 ➕ Updated optimistic removed:`, Array.from(newSet));
         return newSet;
       });
 
       addToFavoritesMutation.mutate(
         { poiId, poiData: poi },
         {
-          onSuccess: () => {
-            // Clear optimistic state on success
+          onSuccess: (data) => {
+            console.log(`🔥 ✅ Add favorite SUCCESS - Full response:`, data);
+            console.log(`🔥 ✅ Add favorite SUCCESS - Backend POI ID: ${data.poi_id}, Original POI ID: ${data.originalPoiId}`);
+            // Clear optimistic state using original POI ID
             setOptimisticAdded((prev) => {
               const newSet = new Set(prev);
               newSet.delete(poiId);
               return newSet;
             });
+            // Update favorite IDs with the actual POI ID from backend
+            if (data.poi_id && data.poi_id !== poiId) {
+              console.log(`🔥 🔄 POI ID transformed: ${poiId} → ${data.poi_id}`);
+              setFavoriteIds((prev) => {
+                const newSet = new Set(prev);
+                newSet.add(data.poi_id);
+                return newSet;
+              });
+            }
           },
-          onError: () => {
+          onError: (error) => {
+            console.log(`🔥 ❌ Add favorite FAILED for ${poiId}`, error);
             // Revert optimistic state on error
             setOptimisticAdded((prev) => {
               const newSet = new Set(prev);
@@ -426,6 +478,9 @@ export default function DiscoverPage() {
               return newSet;
             });
           },
+          onSettled: (data, error) => {
+            console.log(`🔥 🔄 Add favorite SETTLED for ${poiId}`, { data, error });
+          }
         },
       );
     }
@@ -553,41 +608,24 @@ export default function DiscoverPage() {
         {/* Action buttons */}
         <div class="absolute top-3 right-3 opacity-100 transition-opacity">
           <div class="flex flex-col gap-1">
-            <button
+            <div
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                console.log("🔥 STAR CLICKED for POI:", poi.id);
+                console.log("🔥🔥🔥 STAR CLICKED! POI:", poi.id, "Current favorite:", isFavorite(poi.id));
                 toggleFavorite(poi.id, poi);
               }}
-              disabled={
-                addToFavoritesMutation.isPending ||
-                removeFromFavoritesMutation.isPending
-              }
-              data-poi-id={poi.id}
-              class={`p-2 rounded-lg ${isFavorite(poi.id) ? "text-yellow-600 dark:text-yellow-400 bg-yellow-50 dark:bg-yellow-900/20" : "text-gray-400 bg-white/70 dark:bg-gray-800/70"} hover:bg-yellow-100 dark:hover:bg-yellow-900/30 transition-colors disabled:opacity-50 disabled:cursor-not-allowed`}
+              class="cursor-pointer p-1"
               title={
                 isFavorite(poi.id)
                   ? "Remove from favorites"
                   : "Add to favorites"
               }
             >
-              <Show
-                when={
-                  !(
-                    addToFavoritesMutation.isPending ||
-                    removeFromFavoritesMutation.isPending
-                  )
-                }
-                fallback={
-                  <div class="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
-                }
-              >
-                <Star
-                  class={`w-4 h-4 ${isFavorite(poi.id) ? "fill-current" : ""}`}
-                />
-              </Show>
-            </button>
+              <Star
+                class={`w-6 h-6 transition-all duration-200 ${isFavorite(poi.id) ? "fill-yellow-500 text-yellow-500" : "fill-none text-gray-400 hover:text-yellow-400"}`}
+              />
+            </div>
             <button
               onClick={() => handleShare(poi)}
               class="p-2 bg-white text-gray-700 dark:bg-gray-800 dark:text-gray-300 rounded-lg shadow-sm hover:scale-110 transition-transform"
@@ -794,41 +832,24 @@ export default function DiscoverPage() {
             </div>
 
             <div class="flex items-center gap-2">
-              <button
+              <div
                 onClick={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
-                  console.log("🔥 STAR CLICKED for POI:", poi.id);
+                  console.log("🔥🔥🔥 STAR CLICKED (list) for POI:", poi.id, "Current favorite:", isFavorite(poi.id));
                   toggleFavorite(poi.id, poi);
                 }}
-                disabled={
-                  addToFavoritesMutation.isPending ||
-                  removeFromFavoritesMutation.isPending
-                }
-                data-poi-id={poi.id}
-                class={`p-2 rounded-lg ${isFavorite(poi.id) ? "text-yellow-600 dark:text-yellow-400" : "text-gray-400"} hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed`}
+                class="cursor-pointer p-1"
                 title={
                   isFavorite(poi.id)
                     ? "Remove from favorites"
                     : "Add to favorites"
                 }
               >
-                <Show
-                  when={
-                    !(
-                      addToFavoritesMutation.isPending ||
-                      removeFromFavoritesMutation.isPending
-                    )
-                  }
-                  fallback={
-                    <div class="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
-                  }
-                >
-                  <Star
-                    class={`w-4 h-4 ${isFavorite(poi.id) ? "fill-current" : ""}`}
-                  />
-                </Show>
-              </button>
+                <Star
+                  class={`w-5 h-5 transition-all duration-200 ${isFavorite(poi.id) ? "fill-yellow-500 text-yellow-500" : "fill-none text-gray-400 hover:text-yellow-400"}`}
+                />
+              </div>
               <button
                 onClick={() => handleShare(poi)}
                 class="p-2 rounded-lg text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700"
