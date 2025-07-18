@@ -33,7 +33,10 @@ export const useCreateListMutation = () => {
         body: JSON.stringify(listData),
       }),
     onSuccess: (newList) => {
-      queryClient.setQueryData(queryKeys.lists, (old: ItineraryList[] = []) => [...old, newList]);
+      queryClient.setQueryData(queryKeys.lists, (old: ItineraryList[] = []) => {
+        const currentLists = Array.isArray(old) ? old : [];
+        return [...currentLists, newList];
+      });
     },
   }));
 };
@@ -49,9 +52,10 @@ export const useUpdateListMutation = () => {
       }),
     onSuccess: (updatedList, { listId }) => {
       queryClient.setQueryData(queryKeys.list(listId), updatedList);
-      queryClient.setQueryData(queryKeys.lists, (old: ItineraryList[] = []) =>
-        old.map(list => list.ID === listId ? updatedList : list)
-      );
+      queryClient.setQueryData(queryKeys.lists, (old: ItineraryList[] = []) => {
+        const currentLists = Array.isArray(old) ? old : [];
+        return currentLists.map(list => list.ID === listId ? updatedList : list);
+      });
     },
   }));
 };
@@ -66,9 +70,10 @@ export const useDeleteListMutation = () => {
       await queryClient.cancelQueries({ queryKey: queryKeys.lists });
       const previousLists = queryClient.getQueryData(queryKeys.lists);
 
-      queryClient.setQueryData(queryKeys.lists, (old: ItineraryList[] = []) =>
-        old.filter(list => list.ID !== listId)
-      );
+      queryClient.setQueryData(queryKeys.lists, (old: ItineraryList[] = []) => {
+        const currentLists = Array.isArray(old) ? old : [];
+        return currentLists.filter(list => list.ID !== listId);
+      });
 
       return { previousLists };
     },

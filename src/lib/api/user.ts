@@ -41,7 +41,10 @@ export const useCreateProfileMutation = () => {
       }),
     onSuccess: (newProfile) => {
       // Optimistically update the profiles list
-      queryClient.setQueryData(queryKeys.profiles, (old: UserProfile[] = []) => [...old, newProfile]);
+      queryClient.setQueryData(queryKeys.profiles, (old: UserProfile[] = []) => {
+        const currentProfiles = Array.isArray(old) ? old : [];
+        return [...currentProfiles, newProfile];
+      });
       queryClient.invalidateQueries({ queryKey: queryKeys.profiles });
     },
   }));
@@ -67,9 +70,10 @@ export const useUpdateProfileMutation = () => {
     onSuccess: (updatedProfile) => {
       // Optimistically update the default profile query
       queryClient.setQueryData(queryKeys.defaultProfile, updatedProfile);
-      queryClient.setQueryData(queryKeys.profiles, (old: UserProfile[] = []) =>
-        old.map(profile => profile.is_default ? updatedProfile : profile)
-      );
+      queryClient.setQueryData(queryKeys.profiles, (old: UserProfile[] = []) => {
+        const currentProfiles = Array.isArray(old) ? old : [];
+        return currentProfiles.map(profile => profile.is_default ? updatedProfile : profile);
+      });
     },
   }));
 };
@@ -82,9 +86,10 @@ export const useDeleteProfileMutation = () => {
       apiRequest<{ message: string }>(`/user/search-profile/${profileId}`, { method: 'DELETE' }),
     onSuccess: (_, profileId) => {
       // Optimistically remove from profiles list
-      queryClient.setQueryData(queryKeys.profiles, (old: UserProfile[] = []) =>
-        old.filter(profile => profile.id !== profileId)
-      );
+      queryClient.setQueryData(queryKeys.profiles, (old: UserProfile[] = []) => {
+        const currentProfiles = Array.isArray(old) ? old : [];
+        return currentProfiles.filter(profile => profile.id !== profileId);
+      });
       queryClient.removeQueries({ queryKey: queryKeys.profile(profileId) });
     },
   }));

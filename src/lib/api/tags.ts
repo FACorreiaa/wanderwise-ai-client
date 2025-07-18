@@ -32,7 +32,10 @@ export const useCreateTagMutation = () => {
       }),
     onSuccess: (newTag) => {
       // Add to tags list
-      queryClient.setQueryData(queryKeys.tags, (old: PersonalTag[] = []) => [...old, newTag]);
+      queryClient.setQueryData(queryKeys.tags, (old: PersonalTag[] = []) => {
+        const currentTags = Array.isArray(old) ? old : [];
+        return [...currentTags, newTag];
+      });
     },
   }));
 };
@@ -92,9 +95,10 @@ export const useDeleteTagMutation = () => {
       apiRequest<{ message: string }>(`/user/tags/${tagId}`, { method: 'DELETE' }),
     onSuccess: (_, tagId) => {
       // Remove from tags list
-      queryClient.setQueryData(queryKeys.tags, (old: PersonalTag[] = []) =>
-        old.filter(tag => tag.id !== tagId)
-      );
+      queryClient.setQueryData(queryKeys.tags, (old: PersonalTag[] = []) => {
+        const currentTags = Array.isArray(old) ? old : [];
+        return currentTags.filter(tag => tag.id !== tagId);
+      });
     },
   }));
 };

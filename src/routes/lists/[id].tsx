@@ -2,17 +2,16 @@ import { A, useParams } from "@solidjs/router";
 import {
   ArrowLeft,
   Bookmark,
-  Check,
   Edit,
   Folder,
   Heart,
   MapPin,
   Plus,
-  Search,
   Trash2,
   X,
 } from "lucide-solid";
 import { For, Show, createMemo, createSignal } from "solid-js";
+import { useBookmarkedItineraries } from "~/lib/api/itineraries";
 import {
   useAddToListMutation,
   useList,
@@ -20,11 +19,9 @@ import {
   useSavedLists,
 } from "~/lib/api/lists";
 import { useFavorites } from "~/lib/api/pois";
-import { useBookmarkedItineraries } from "~/lib/api/itineraries";
 
 export default function ListDetailsPage() {
   const params = useParams();
-  console.log('List ID from URL params:', params.id); // Debug log
   const listQuery = useList(params.id);
   const removeFromListMutation = useRemoveFromListMutation();
   const addToListMutation = useAddToListMutation();
@@ -125,7 +122,7 @@ export default function ListDetailsPage() {
           notes: "",
         },
       });
-      
+
       setShowAddItemModal(false);
       setSelectedItem("");
     } catch (error) {
@@ -258,9 +255,7 @@ export default function ListDetailsPage() {
                   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
                   <For each={contentTypes}>
-                    {(type) => (
-                      <option value={type.value}>{type.label}</option>
-                    )}
+                    {(type) => <option value={type.value}>{type.label}</option>}
                   </For>
                 </select>
               </div>
@@ -276,7 +271,11 @@ export default function ListDetailsPage() {
                     <div class="text-center py-8">
                       <Bookmark class="w-8 h-8 text-gray-300 mx-auto mb-2" />
                       <p class="text-gray-600 text-sm">
-                        No saved {selectedContentType() === "poi" ? "attractions" : selectedContentType() + "s"} found
+                        No saved{" "}
+                        {selectedContentType() === "poi"
+                          ? "attractions"
+                          : selectedContentType() + "s"}{" "}
+                        found
                       </p>
                     </div>
                   }
@@ -286,20 +285,28 @@ export default function ListDetailsPage() {
                     onInput={(e) => setSelectedItem(e.target.value)}
                     class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   >
-                    <option value="">Choose {selectedContentType() === "poi" ? "an attraction" : selectedContentType() === "itinerary" ? "an itinerary" : "a " + selectedContentType()}...</option>
+                    <option value="">
+                      Choose{" "}
+                      {selectedContentType() === "poi"
+                        ? "an attraction"
+                        : selectedContentType() === "itinerary"
+                          ? "an itinerary"
+                          : "a " + selectedContentType()}
+                      ...
+                    </option>
                     <For each={availableItems()}>
                       {(item) => {
                         // Get the correct ID and name fields based on content type
-                        const itemId = selectedContentType() === "list" ? item.ID : item.id;
-                        const itemName = selectedContentType() === "itinerary" 
-                          ? item.title
-                          : selectedContentType() === "list"
-                          ? item.Name
-                          : item.name;
-                        
-                        return (
-                          <option value={itemId}>{itemName}</option>
-                        );
+                        const itemId =
+                          selectedContentType() === "list" ? item.ID : item.id;
+                        const itemName =
+                          selectedContentType() === "itinerary"
+                            ? item.title
+                            : selectedContentType() === "list"
+                              ? item.Name
+                              : item.name;
+
+                        return <option value={itemId}>{itemName}</option>;
                       }}
                     </For>
                   </select>
@@ -320,14 +327,10 @@ export default function ListDetailsPage() {
               </button>
               <button
                 onClick={handleAddItem}
-                disabled={
-                  !selectedItem() || addToListMutation.isPending
-                }
+                disabled={!selectedItem() || addToListMutation.isPending}
                 class="cb-button cb-button-primary px-4 py-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {addToListMutation.isPending
-                  ? "Adding..."
-                  : "Add Item"}
+                {addToListMutation.isPending ? "Adding..." : "Add Item"}
               </button>
             </div>
           </div>

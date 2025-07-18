@@ -25,7 +25,10 @@ export const useCreateInterestMutation = () => {
         body: JSON.stringify({ name, description, active }),
       }),
     onSuccess: (newInterest) => {
-      queryClient.setQueryData(queryKeys.interests, (old: Interest[] = []) => [...old, newInterest]);
+      queryClient.setQueryData(queryKeys.interests, (old: Interest[] = []) => {
+        const currentInterests = Array.isArray(old) ? old : [];
+        return [...currentInterests, newInterest];
+      });
     },
   }));
 };
@@ -82,9 +85,10 @@ export const useDeleteInterestMutation = () => {
       apiRequest<{ message: string }>(`/user/interests/${interestId}`, { method: 'DELETE' }),
     onSuccess: (_, interestId) => {
       // Remove from interests list
-      queryClient.setQueryData(queryKeys.interests, (old: Interest[] = []) =>
-        old.filter(interest => interest?.id !== interestId)
-      );
+      queryClient.setQueryData(queryKeys.interests, (old: Interest[] = []) => {
+        const currentInterests = Array.isArray(old) ? old : [];
+        return currentInterests.filter(interest => interest?.id !== interestId);
+      });
     },
   }));
 };

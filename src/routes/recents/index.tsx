@@ -151,10 +151,10 @@ export default function RecentsPage() {
     console.log("Page:", currentPage());
     console.log(
       "Cities:",
-      recentsQuery.data?.cities.map((c) => ({
+      recentsQuery.data?.cities?.map((c) => ({
         city: c.city_name,
         session: c.session_id,
-      })),
+      })) || [],
     );
   });
 

@@ -18,6 +18,7 @@ import {
   X,
 } from "lucide-solid";
 import { createMemo, createSignal, For, Show } from "solid-js";
+import { useNavigate } from "@solidjs/router";
 import { useCities } from "~/lib/api/cities";
 import {
   useAddToListMutation,
@@ -29,8 +30,11 @@ import {
   useUpdateListMutation,
 } from "~/lib/api/lists";
 import { useFavorites } from "~/lib/api/pois";
+import { useBookmarkedItineraries } from "~/lib/api/itineraries";
+import { Alert, AlertDescription } from "~/ui/alert";
 
 export default function ListsPage() {
+  const navigate = useNavigate();
   const [viewMode, setViewMode] = createSignal("grid"); // 'grid', 'list'
   const [activeTab, setActiveTab] = createSignal("my-lists"); // 'my-lists', 'shared', 'public'
   const [selectedList, setSelectedList] = createSignal(null);
@@ -47,6 +51,11 @@ export default function ListsPage() {
   const [searchTerm, setSearchTerm] = createSignal("");
   const [showPublicListsSearch, setShowPublicListsSearch] = createSignal(false);
   const [publicSearchTerm, setPublicSearchTerm] = createSignal("");
+  
+  // Error and success handling
+  const [createError, setCreateError] = createSignal("");
+  const [showSuccess, setShowSuccess] = createSignal(false);
+  const [successMessage, setSuccessMessage] = createSignal("");
 
   // List form state
   const [listForm, setListForm] = createSignal({
@@ -72,6 +81,10 @@ export default function ListsPage() {
     () => 1,
     () => 100,
   );
+  const bookmarkedItinerariesQuery = useBookmarkedItineraries(
+    () => 1,
+    () => 100,
+  );
   const citiesQuery = useCities();
 
   // Extract restaurants and hotels from POI favorites by category
@@ -90,6 +103,9 @@ export default function ListsPage() {
         poi.category?.toLowerCase().includes("accommodation") ||
         poi.category?.toLowerCase().includes("lodging"),
     );
+
+  // Get saved itineraries
+  const savedItineraries = () => bookmarkedItinerariesQuery.data?.itineraries || [];
 
   // Saved and public lists queries
 
@@ -114,6 +130,13 @@ export default function ListsPage() {
             item.name.toLowerCase().includes(term) ||
             item.description?.toLowerCase().includes(term) ||
             item.category?.toLowerCase().includes(term),
+        );
+      case "itinerary":
+        return savedItineraries().filter(
+          (item) =>
+            item.name.toLowerCase().includes(term) ||
+            item.description?.toLowerCase().includes(term) ||
+            item.location?.toLowerCase().includes(term),
         );
       default:
         // For POIs, exclude restaurants and hotels to avoid duplicates
@@ -142,6 +165,7 @@ export default function ListsPage() {
     { value: "poi", label: "Places & Attractions", icon: MapPin },
     { value: "restaurant", label: "Restaurants", icon: Heart },
     { value: "hotel", label: "Hotels", icon: Folder },
+    { value: "itinerary", label: "Saved Itineraries", icon: Bookmark },
   ];
 
   const [sharedLists] = createSignal([
@@ -200,6 +224,7 @@ export default function ListsPage() {
 
   const createList = async () => {
     try {
+      setCreateError(""); // Clear any previous errors
       const formData = listForm();
       const newList = await createListMutation.mutateAsync({
         name: formData.name,
@@ -209,15 +234,28 @@ export default function ListsPage() {
         city_id: formData.cityId || undefined, // Optional field for city association
       });
       console.log('Created list response:', newList); // Debug log
+      
+      // Show success notification
+      setSuccessMessage(`List "${formData.name}" created successfully!`);
+      setShowSuccess(true);
+      
+      // Hide success after 3 seconds
+      setTimeout(() => {
+        setShowSuccess(false);
+      }, 3000);
+      
       setShowCreateModal(false);
       resetForm();
     } catch (error) {
       console.error("Failed to create list:", error);
+      setCreateError(error?.message || "Failed to create list. Please try again.");
     }
   };
 
   const createListWithData = async () => {
     try {
+      setCreateError(""); // Clear any previous errors
+      
       // Create the list first
       const formData = listForm();
       const newList = await createListMutation.mutateAsync({
@@ -241,12 +279,22 @@ export default function ListsPage() {
         });
       }
 
+      // Show success notification
+      setSuccessMessage(`List "${formData.name}" created successfully with ${selectedItems().length} items!`);
+      setShowSuccess(true);
+      
+      // Hide success after 3 seconds
+      setTimeout(() => {
+        setShowSuccess(false);
+      }, 3000);
+
       setShowCreateWithDataModal(false);
       resetForm();
       setSelectedItems([]);
       setCreateStep(1);
     } catch (error) {
       console.error("Failed to create list with data:", error);
+      setCreateError(error?.message || "Failed to create list. Please try again.");
     }
   };
 
@@ -327,6 +375,7 @@ export default function ListsPage() {
     setSelectedItems([]);
     setSearchTerm("");
     setCreateStep(1);
+    setCreateError(""); // Clear any errors
   };
 
   const toggleItemSelection = (item) => {
@@ -604,7 +653,13 @@ export default function ListsPage() {
           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
         >
           <option value="">Select a city...</option>
-          <Show when={citiesQuery.data}>
+          <Show when={citiesQuery.isLoading}>
+            <option value="" disabled>Loading cities...</option>
+          </Show>
+          <Show when={citiesQuery.isError}>
+            <option value="" disabled>Error loading cities</option>
+          </Show>
+          <Show when={citiesQuery.data && citiesQuery.data.length > 0}>
             <For each={citiesQuery.data}>
               {(city) => (
                 <option value={city.id}>
@@ -613,6 +668,9 @@ export default function ListsPage() {
                 </option>
               )}
             </For>
+          </Show>
+          <Show when={citiesQuery.data && citiesQuery.data.length === 0}>
+            <option value="" disabled>No cities found</option>
           </Show>
         </select>
         <p class="text-xs text-gray-600 mt-1">
@@ -786,7 +844,7 @@ export default function ListsPage() {
 
       {/* Create List Modal */}
       <Show when={showCreateModal()}>
-        <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+        <div class="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center p-4 z-50">
           <div class="bg-white rounded-lg max-w-2xl w-full">
             <div class="p-6 border-b border-gray-200">
               <div class="flex items-center justify-between">
@@ -801,7 +859,20 @@ export default function ListsPage() {
                 </button>
               </div>
             </div>
-            <div class="p-6">{renderListForm()}</div>
+            <div class="p-6">
+              {renderListForm()}
+              
+              {/* Error Display */}
+              <Show when={createError()}>
+                <div class="mt-4">
+                  <Alert variant="destructive">
+                    <AlertDescription>
+                      {createError()}
+                    </AlertDescription>
+                  </Alert>
+                </div>
+              </Show>
+            </div>
             <div class="p-6 border-t border-gray-200 flex items-center justify-end gap-3">
               <button
                 onClick={() => setShowCreateModal(false)}
@@ -825,7 +896,7 @@ export default function ListsPage() {
 
       {/* Edit List Modal */}
       <Show when={showEditModal()}>
-        <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+        <div class="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center p-4 z-50">
           <div class="bg-white rounded-lg max-w-2xl w-full">
             <div class="p-6 border-b border-gray-200">
               <div class="flex items-center justify-between">
@@ -875,7 +946,7 @@ export default function ListsPage() {
 
       {/* Delete Confirmation Modal */}
       <Show when={showDeleteModal()}>
-        <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+        <div class="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center p-4 z-50">
           <div class="bg-white rounded-lg max-w-md w-full">
             <div class="p-6">
               <div class="flex items-center gap-3 mb-4">
@@ -918,7 +989,7 @@ export default function ListsPage() {
 
       {/* Create List with Data Modal */}
       <Show when={showCreateWithDataModal()}>
-        <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+        <div class="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center p-4 z-50">
           <div class="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-hidden">
             {/* Header */}
             <div class="p-6 border-b border-gray-200">
@@ -984,6 +1055,17 @@ export default function ListsPage() {
                       </For>
                     </div>
                   </div>
+                  
+                  {/* Error Display */}
+                  <Show when={createError()}>
+                    <div class="mt-4">
+                      <Alert variant="destructive">
+                        <AlertDescription>
+                          {createError()}
+                        </AlertDescription>
+                      </Alert>
+                    </div>
+                  </Show>
                 </div>
               </Show>
 
@@ -1087,6 +1169,17 @@ export default function ListsPage() {
                       </For>
                     </div>
                   </Show>
+                  
+                  {/* Error Display */}
+                  <Show when={createError()}>
+                    <div class="mt-4">
+                      <Alert variant="destructive">
+                        <AlertDescription>
+                          {createError()}
+                        </AlertDescription>
+                      </Alert>
+                    </div>
+                  </Show>
                 </div>
               </Show>
             </div>
@@ -1136,6 +1229,33 @@ export default function ListsPage() {
                   </button>
                 </Show>
               </div>
+            </div>
+          </div>
+        </div>
+      </Show>
+
+      {/* Success Notification */}
+      <Show when={showSuccess()}>
+        <div class="fixed top-4 right-4 z-50">
+          <div class="bg-green-50 border border-green-200 rounded-lg p-4 shadow-lg">
+            <div class="flex items-center gap-3">
+              <div class="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center">
+                <Check class="w-4 h-4 text-white" />
+              </div>
+              <div>
+                <p class="text-sm font-medium text-green-900">
+                  Success!
+                </p>
+                <p class="text-xs text-green-700">
+                  {successMessage()}
+                </p>
+              </div>
+              <button
+                onClick={() => setShowSuccess(false)}
+                class="p-1 text-green-600 hover:text-green-700"
+              >
+                <X class="w-4 h-4" />
+              </button>
             </div>
           </div>
         </div>
