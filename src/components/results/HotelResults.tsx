@@ -11,8 +11,10 @@ import {
   Wifi,
 } from "lucide-solid";
 import { For, Show, createSignal } from "solid-js";
+import AddToListButton from "~/components/lists/AddToListButton";
 
 interface Hotel {
+  id?: string;
   name: string;
   latitude?: number;
   longitude?: number;
@@ -25,6 +27,7 @@ interface Hotel {
   price_range?: string;
   amenities?: string[];
   distance?: number;
+  llm_interaction_id?: string;
 }
 
 interface HotelResultsProps {
@@ -203,10 +206,7 @@ export default function HotelResults(props: HotelResultsProps) {
 
               {/* Action Buttons */}
               <Show
-                when={
-                  !props.compact &&
-                  (props.onFavoriteClick || props.onShareClick)
-                }
+                when={!props.compact}
               >
                 <div class="flex items-center gap-2 mt-3">
                   <Show when={props.onFavoriteClick}>
@@ -227,6 +227,16 @@ export default function HotelResults(props: HotelResultsProps) {
                       />
                     </button>
                   </Show>
+                  {/* Add to List Button */}
+                  <AddToListButton
+                    itemId={hotel.id || hotel.name}
+                    contentType="hotel"
+                    itemName={hotel.name}
+                    variant="icon"
+                    size="md"
+                    sourceInteractionId={hotel.llm_interaction_id}
+                    aiDescription={hotel.description_poi}
+                  />
                   <Show when={props.onShareClick}>
                     <button
                       onClick={(e) => {

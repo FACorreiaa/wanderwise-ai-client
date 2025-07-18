@@ -51,6 +51,22 @@ export default function DiscoverPage() {
   const [fromChat, setFromChat] = createSignal(false);
   const [showOnlyFavorites, setShowOnlyFavorites] = createSignal(false);
   const [activeTab, setActiveTab] = createSignal("general");
+
+  // Local state for optimistic updates
+  const [optimisticAdded, setOptimisticAdded] = createSignal<Set<string>>(
+    new Set(),
+  );
+  const [optimisticRemoved, setOptimisticRemoved] = createSignal<Set<string>>(
+    new Set(),
+  );
+
+  // Clear optimistic state when favorites query data changes
+  createEffect(() => {
+    if (favoritesQuery.data) {
+      setOptimisticAdded(new Set());
+      setOptimisticRemoved(new Set());
+    }
+  });
   const {
     userLocation,
     requestLocation,
@@ -195,11 +211,39 @@ export default function DiscoverPage() {
     };
   };
 
-  // Check if POI is in favorites
+  // Check if POI is in favorites (with optimistic updates)
   const isFavorite = (poiId: string) => {
+    const added = optimisticAdded();
+    const removed = optimisticRemoved();
     const favs = favoritesQuery.data?.data || [];
     const isInFavorites = favs.some((poi) => poi.id === poiId);
-    console.log(`🔍 isFavorite(${poiId}):`, isInFavorites, "Favs:", favs);
+
+    // DEBUG: Log favorite IDs for comparison
+    if (favs.length > 0) {
+      console.log(
+        `🔍 Current favorite IDs:`,
+        favs.map((f) => f.id),
+      );
+      console.log(`🔍 Checking POI ID: ${poiId}`);
+    }
+
+    // Apply optimistic updates
+    if (added.has(poiId)) {
+      console.log(`⭐ ${poiId} is optimistically ADDED to favorites`);
+      return true;
+    }
+    if (removed.has(poiId)) {
+      console.log(`⭐ ${poiId} is optimistically REMOVED from favorites`);
+      return false;
+    }
+
+    // Fall back to server state
+    console.log(
+      `⭐ ${poiId} server state:`,
+      isInFavorites,
+      "Total favs:",
+      favs.length,
+    );
     return isInFavorites;
   };
 
@@ -310,11 +354,80 @@ export default function DiscoverPage() {
   };
 
   const toggleFavorite = (poiId: string, poi?: POIDetailedInfo) => {
+    console.log(
+      `🔄 toggleFavorite called for ${poiId}, current favorite status:`,
+      isFavorite(poiId),
+    );
+    console.log(`🔄 Current optimistic added:`, Array.from(optimisticAdded()));
+    console.log(
+      `🔄 Current optimistic removed:`,
+      Array.from(optimisticRemoved()),
+    );
+
     if (isFavorite(poiId)) {
-      removeFromFavoritesMutation.mutate({ poiId, poiData: poi });
+      console.log(`➖ Removing ${poiId} from favorites`);
+      // Optimistically remove from favorites
+      setOptimisticRemoved((prev) => new Set(prev).add(poiId));
+      setOptimisticAdded((prev) => {
+        const newSet = new Set(prev);
+        newSet.delete(poiId);
+        return newSet;
+      });
+
+      removeFromFavoritesMutation.mutate(
+        { poiId, poiData: poi },
+        {
+          onSuccess: () => {
+            // Clear optimistic state on success
+            setOptimisticRemoved((prev) => {
+              const newSet = new Set(prev);
+              newSet.delete(poiId);
+              return newSet;
+            });
+          },
+          onError: () => {
+            // Revert optimistic state on error
+            setOptimisticRemoved((prev) => {
+              const newSet = new Set(prev);
+              newSet.delete(poiId);
+              return newSet;
+            });
+          },
+        },
+      );
     } else {
       if (!poi) return; // Ensure poi is provided for adding
-      addToFavoritesMutation.mutate({ poiId, poiData: poi });
+
+      console.log(`➕ Adding ${poiId} to favorites`);
+      // Optimistically add to favorites
+      setOptimisticAdded((prev) => new Set(prev).add(poiId));
+      setOptimisticRemoved((prev) => {
+        const newSet = new Set(prev);
+        newSet.delete(poiId);
+        return newSet;
+      });
+
+      addToFavoritesMutation.mutate(
+        { poiId, poiData: poi },
+        {
+          onSuccess: () => {
+            // Clear optimistic state on success
+            setOptimisticAdded((prev) => {
+              const newSet = new Set(prev);
+              newSet.delete(poiId);
+              return newSet;
+            });
+          },
+          onError: () => {
+            // Revert optimistic state on error
+            setOptimisticAdded((prev) => {
+              const newSet = new Set(prev);
+              newSet.delete(poiId);
+              return newSet;
+            });
+          },
+        },
+      );
     }
   };
 
@@ -441,13 +554,18 @@ export default function DiscoverPage() {
         <div class="absolute top-3 right-3 opacity-100 transition-opacity">
           <div class="flex flex-col gap-1">
             <button
-              onClick={() => toggleFavorite(poi.id, poi)}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log("🔥 STAR CLICKED for POI:", poi.id);
+                toggleFavorite(poi.id, poi);
+              }}
               disabled={
                 addToFavoritesMutation.isPending ||
                 removeFromFavoritesMutation.isPending
               }
               data-poi-id={poi.id}
-              class={`p-2 rounded-lg ${isFavorite(poi.id) ? "text-yellow-600" : "text-gray-400"} ...`}
+              class={`p-2 rounded-lg ${isFavorite(poi.id) ? "text-yellow-600 dark:text-yellow-400 bg-yellow-50 dark:bg-yellow-900/20" : "text-gray-400 bg-white/70 dark:bg-gray-800/70"} hover:bg-yellow-100 dark:hover:bg-yellow-900/30 transition-colors disabled:opacity-50 disabled:cursor-not-allowed`}
               title={
                 isFavorite(poi.id)
                   ? "Remove from favorites"
@@ -677,7 +795,12 @@ export default function DiscoverPage() {
 
             <div class="flex items-center gap-2">
               <button
-                onClick={() => toggleFavorite(poi.id, poi)}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  console.log("🔥 STAR CLICKED for POI:", poi.id);
+                  toggleFavorite(poi.id, poi);
+                }}
                 disabled={
                   addToFavoritesMutation.isPending ||
                   removeFromFavoritesMutation.isPending

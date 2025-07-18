@@ -5,6 +5,7 @@ import {
   useCreateListMutation,
   useLists,
 } from "~/lib/api/lists";
+import { useBookmarkedItineraries } from "~/lib/api/itineraries";
 
 interface AddToListButtonProps {
   itemId: string;
@@ -25,10 +26,36 @@ export default function AddToListButton(props: AddToListButtonProps) {
 
   // API hooks
   const listsQuery = useLists();
+  const bookmarkedItinerariesQuery = useBookmarkedItineraries(() => 1, () => 100);
   const createListMutation = useCreateListMutation();
   const addToListMutation = useAddToListMutation();
 
-  const lists = () => listsQuery.data || [];
+  const lists = () => {
+    const userLists = listsQuery.data || [];
+    const bookmarkedItineraries = bookmarkedItinerariesQuery.data?.itineraries || [];
+    
+    // Convert bookmarked itineraries to list format for dropdown
+    const convertedBookmarks = bookmarkedItineraries.map(itinerary => ({
+      id: itinerary.id,
+      name: itinerary.title,
+      description: itinerary.description,
+      is_itinerary: true,
+      is_public: itinerary.is_public,
+      user_id: "", // Will be filled by backend
+      created_at: itinerary.created_at,
+      updated_at: itinerary.updated_at,
+      view_count: 0,
+      save_count: 0,
+      item_count: 0,
+      city_id: itinerary.primary_city_id,
+      parent_list_id: null,
+      image_url: null,
+      // Mark as bookmarked itinerary for UI distinction
+      _isBookmarked: true,
+    }));
+    
+    return [...userLists, ...convertedBookmarks];
+  };
 
   const buttonSizeClasses = () => {
     switch (props.size) {
@@ -143,7 +170,10 @@ export default function AddToListButton(props: AddToListButtonProps) {
               <div class="flex items-center justify-between">
                 <div>
                   <h3 class="text-lg font-semibold text-gray-900">
-                    Add to List
+                    Add {props.contentType === 'itinerary' ? 'Itinerary' : 
+                         props.contentType === 'poi' ? 'Place' : 
+                         props.contentType === 'restaurant' ? 'Restaurant' : 
+                         props.contentType === 'hotel' ? 'Hotel' : 'Item'} to List
                   </h3>
                   <p class="text-sm text-gray-600 mt-1 truncate">
                     {props.itemName}
@@ -223,9 +253,16 @@ export default function AddToListButton(props: AddToListButtonProps) {
                         >
                           <div class="flex items-center justify-between">
                             <div class="flex-1 min-w-0">
-                              <h4 class="font-medium text-gray-900 truncate">
-                                {list.name}
-                              </h4>
+                              <div class="flex items-center gap-2">
+                                <h4 class="font-medium text-gray-900 truncate">
+                                  {list.name}
+                                </h4>
+                                <Show when={list._isBookmarked}>
+                                  <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                    Bookmarked
+                                  </span>
+                                </Show>
+                              </div>
                               <p class="text-sm text-gray-600 truncate">
                                 {list.description}
                               </p>

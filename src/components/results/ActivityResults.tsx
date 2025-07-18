@@ -8,8 +8,10 @@ import {
   Star,
 } from "lucide-solid";
 import { For, Show, createSignal } from "solid-js";
+import AddToListButton from "~/components/lists/AddToListButton";
 
 interface Activity {
+  id?: string;
   name: string;
   latitude?: number;
   longitude?: number;
@@ -23,6 +25,7 @@ interface Activity {
   price_range?: string;
   duration?: string;
   distance?: number;
+  llm_interaction_id?: string;
 }
 
 interface ActivityResultsProps {
@@ -229,6 +232,21 @@ export default function ActivityResults(props: ActivityResultsProps) {
                   <span class="truncate">{activity.address}</span>
                 </Show>
               </div>
+
+              {/* Action Buttons */}
+              <Show when={!props.compact}>
+                <div class="flex items-center gap-2 mt-3">
+                  <AddToListButton
+                    itemId={activity.id || activity.name}
+                    contentType="poi"
+                    itemName={activity.name}
+                    variant="icon"
+                    size="md"
+                    sourceInteractionId={activity.llm_interaction_id}
+                    aiDescription={activity.description_poi}
+                  />
+                </div>
+              </Show>
 
               <Show when={activity.website && !props.compact}>
                 <div class="mt-3 pt-3 border-t border-gray-100 dark:border-gray-700">

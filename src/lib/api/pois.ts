@@ -1,8 +1,8 @@
 // POI and favorites queries and mutations
-import { useQuery, useMutation, useQueryClient } from "@tanstack/solid-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/solid-query";
+import { createResource } from "solid-js";
 import { apiRequest, queryKeys } from "./shared";
 import type { POI, POIDetailedInfo } from "./types";
-import { createResource } from "solid-js";
 
 // ===============
 // POI QUERIES
@@ -57,7 +57,7 @@ export const useAddToFavoritesMutation = () => {
       console.log("🔄 Adding POI to favorites:", params);
       const requestBody = {
         poi_id: params.poiId,
-        is_llm_poi: true, // Since we're adding from itinerary, these are LLM-generated POIs
+        is_llm_poi: true,
         ...(params.poiData && { poi_data: params.poiData }),
       };
       console.log("📤 Request body:", requestBody);

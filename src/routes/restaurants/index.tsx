@@ -326,7 +326,7 @@ export default function RestaurantsPage() {
     // Convert restaurant to POI format for consistency
     const poiData = {
       id: restaurant.name,
-      city: selectedCityData().city || "Unknown",
+      city: streamingData()?.general_city_data?.city || "Unknown",
       name: restaurant.name,
       latitude: restaurant.latitude || 0,
       longitude: restaurant.longitude || 0,
@@ -343,8 +343,8 @@ export default function RestaurantsPage() {
       tags: restaurant.tags || [],
       priority: restaurant.priority || 1,
       cuisine_type: restaurant.cuisine_type || "",
-      llm_interaction_id: "",
-      city_id: selectedCityData().id || "",
+      llm_interaction_id: restaurant.llm_interaction_id || "00000000-0000-0000-0000-000000000000",
+      city_id: restaurant.city_id || streamingData()?.general_city_data?.id || "00000000-0000-0000-0000-000000000000",
       distance: restaurant.distance || 0,
       created_at: new Date().toISOString(),
     };

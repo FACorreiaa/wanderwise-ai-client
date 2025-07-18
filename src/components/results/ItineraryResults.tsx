@@ -9,8 +9,10 @@ import {
   Star,
 } from "lucide-solid";
 import { For, Show, createSignal } from "solid-js";
+import AddToListButton from "~/components/lists/AddToListButton";
 
 interface POI {
+  id?: string;
   name: string;
   latitude?: number;
   longitude?: number;
@@ -24,6 +26,7 @@ interface POI {
   distance?: number;
   timeToSpend?: string;
   budget?: string;
+  llm_interaction_id?: string;
 }
 
 interface ItineraryData {
@@ -35,6 +38,7 @@ interface ItineraryData {
 interface ItineraryResultsProps {
   pois?: POI[];
   itinerary?: ItineraryData;
+  itineraryId?: string; // ID of the itinerary for adding to lists
   compact?: boolean;
   limit?: number;
   showToggle?: boolean; // Whether to show the "Show More/Less" button
@@ -170,6 +174,19 @@ export default function ItineraryResults(props: ItineraryResultsProps) {
           <p class="text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
             {description()}
           </p>
+        </Show>
+        
+        {/* Add Entire Itinerary to List Button */}
+        <Show when={props.itineraryId && !props.compact}>
+          <div class="flex items-center gap-2 mt-3">
+            <AddToListButton
+              itemId={props.itineraryId}
+              contentType="itinerary"
+              itemName={itineraryName()}
+              variant="button"
+              size="md"
+            />
+          </div>
         </Show>
       </div>
 
@@ -339,6 +356,17 @@ export default function ItineraryResults(props: ItineraryResultsProps) {
                       >
                         <Share2 class="w-4 h-4" />
                       </button>
+                      
+                      {/* Add to List Button */}
+                      <AddToListButton
+                        itemId={poi.id || poi.name}
+                        contentType="poi"
+                        itemName={poi.name}
+                        variant="icon"
+                        size="md"
+                        sourceInteractionId={poi.llm_interaction_id}
+                        aiDescription={poi.description_poi}
+                      />
                     </div>
                   </Show>
 
