@@ -19,8 +19,7 @@ $(GRPC_DIR):
 proto-generate: $(GRPC_DIR)
 	@echo "Generating TypeScript gRPC-Web files..."
 	$(PROTOC) -I=$(PROTO_DIR) $(PROTO_FILES) \
-		--js_out=import_style=commonjs,binary:$(GRPC_DIR) \
-		--grpc-web_out=import_style=commonjs+dts,mode=grpcweb:$(GRPC_DIR)
+		--grpc-web_out=import_style=typescript,mode=grpcweb:$(GRPC_DIR)
 	@echo "TypeScript gRPC-Web files generated successfully!"
 
 # Lint proto files

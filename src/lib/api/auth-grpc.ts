@@ -1,8 +1,5 @@
 import { useQuery, useMutation } from '@tanstack/solid-query';
-import * as authPbModule from '../grpc/auth_pb';
-import * as authGrpcModule from '../grpc/auth_grpc_web_pb';
-
-const {
+import {
   LoginRequest,
   LoginResponse,
   RegisterRequest,
@@ -15,17 +12,20 @@ const {
   TokenResponse,
   UpdatePasswordRequest,
   UpdatePasswordResponse,
+  GoogleLoginRequest,
+  GoogleLoginResponse,
+  GoogleCallbackRequest,
   BaseRequest,
-} = authPbModule;
+} from '../grpc/auth_pb';
+import { AuthServiceClient } from '../grpc/AuthServiceClientPb';
 
-const { AuthServicePromiseClient } = authGrpcModule;
 const GRPC_SERVER_URL = import.meta.env.VITE_GRPC_SERVER_URL || 'http://localhost:8080';
 
 export class AuthGrpcService {
-  private client: typeof AuthServicePromiseClient;
+  private client: AuthServiceClient;
 
   constructor() {
-    this.client = new AuthServicePromiseClient(GRPC_SERVER_URL);
+    this.client = new AuthServiceClient(GRPC_SERVER_URL);
   }
 
   private createBaseRequest(): BaseRequest {
@@ -178,11 +178,99 @@ export class AuthGrpcService {
       throw new Error('Password update failed');
     }
   }
+
+  async refreshToken(refreshToken: string): Promise<{
+    accessToken: string;
+    refreshToken: string;
+    expiresIn: number;
+  }> {
+    try {
+      const request = new RefreshTokenRequest();
+      request.setRefreshToken(refreshToken);
+      request.setRequest(this.createBaseRequest());
+
+      const response: TokenResponse = await this.client.refreshToken(request);
+
+      // Store new tokens
+      if (response.getAccessToken()) {
+        setAuthToken(response.getAccessToken());
+        if (response.getRefreshToken()) {
+          setRefreshToken(response.getRefreshToken());
+        }
+      }
+
+      return {
+        accessToken: response.getAccessToken(),
+        refreshToken: response.getRefreshToken(),
+        expiresIn: response.getExpiresIn(),
+      };
+    } catch (error) {
+      console.error('Token refresh error:', error);
+      throw new Error('Token refresh failed');
+    }
+  }
+
+  async googleLogin(redirectUri: string): Promise<{
+    authUrl: string;
+  }> {
+    try {
+      const request = new GoogleLoginRequest();
+      request.setRedirectUri(redirectUri);
+      request.setRequest(this.createBaseRequest());
+
+      const response: GoogleLoginResponse = await this.client.googleLogin(request);
+
+      return {
+        authUrl: response.getAuthUrl(),
+      };
+    } catch (error) {
+      console.error('Google login error:', error);
+      throw new Error('Google login failed');
+    }
+  }
+
+  async googleCallback(code: string, state: string): Promise<{
+    success: boolean;
+    message: string;
+    accessToken?: string;
+    refreshToken?: string;
+    expiresIn?: number;
+    user?: any;
+  }> {
+    try {
+      const request = new GoogleCallbackRequest();
+      request.setCode(code);
+      request.setState(state);
+      request.setRequest(this.createBaseRequest());
+
+      const response: LoginResponse = await this.client.googleCallback(request);
+
+      // Store tokens if login successful
+      if (response.getSuccess() && response.getAccessToken()) {
+        setAuthToken(response.getAccessToken());
+        if (response.getRefreshToken()) {
+          setRefreshToken(response.getRefreshToken());
+        }
+      }
+
+      return {
+        success: response.getSuccess(),
+        message: response.getMessage(),
+        accessToken: response.getAccessToken(),
+        refreshToken: response.getRefreshToken(),
+        expiresIn: response.getExpiresIn(),
+        user: response.getUser()?.toObject(),
+      };
+    } catch (error) {
+      console.error('Google callback error:', error);
+      throw new Error('Google authentication failed');
+    }
+  }
 }
 
 export const authGrpcService = new AuthGrpcService();
 
-// Token management functions
+// dummy tokens td
 export const getAuthToken = (): string | null => {
   if (typeof window === 'undefined') return null;
   return localStorage.getItem('access_token');
@@ -209,7 +297,7 @@ export const clearAuthToken = (): void => {
   localStorage.removeItem('refresh_token');
 };
 
-// SolidJS Query hooks
+// hooks
 export const useGrpcLoginMutation = () => {
   return useMutation(() => ({
     mutationFn: async (params: { email: string; password: string; rememberMe?: boolean }) => {
@@ -275,5 +363,29 @@ export const useGrpcValidateSession = () => {
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
     refetchOnWindowFocus: false,
+  }));
+};
+
+export const useGrpcRefreshTokenMutation = () => {
+  return useMutation(() => ({
+    mutationFn: async (refreshToken: string) => {
+      return authGrpcService.refreshToken(refreshToken);
+    },
+  }));
+};
+
+export const useGrpcGoogleLoginMutation = () => {
+  return useMutation(() => ({
+    mutationFn: async (redirectUri: string) => {
+      return authGrpcService.googleLogin(redirectUri);
+    },
+  }));
+};
+
+export const useGrpcGoogleCallbackMutation = () => {
+  return useMutation(() => ({
+    mutationFn: async (params: { code: string; state: string }) => {
+      return authGrpcService.googleCallback(params.code, params.state);
+    },
   }));
 };
