@@ -1,0 +1,312 @@
+syntax = "proto3";
+
+package ai_poi.profiles.v1;
+
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/FACorreiaa/loci-proto/proto/profiles/v1";
+
+// ProfilesService provides user preference profile management
+service ProfilesService {
+  // Get all preference profiles for a user
+  rpc GetSearchProfiles(GetSearchProfilesRequest) returns (GetSearchProfilesResponse);
+  
+  // Get a specific preference profile
+  rpc GetSearchProfile(GetSearchProfileRequest) returns (GetSearchProfileResponse);
+  
+  // Get the default preference profile for a user
+  rpc GetDefaultSearchProfile(GetDefaultSearchProfileRequest) returns (GetDefaultSearchProfileResponse);
+  
+  // Create a new preference profile
+  rpc CreateSearchProfile(CreateSearchProfileRequest) returns (CreateSearchProfileResponse);
+  
+  // Update an existing preference profile
+  rpc UpdateSearchProfile(UpdateSearchProfileRequest) returns (UpdateSearchProfileResponse);
+  
+  // Delete a preference profile
+  rpc DeleteSearchProfile(DeleteSearchProfileRequest) returns (DeleteSearchProfileResponse);
+  
+  // Set a profile as the default
+  rpc SetDefaultSearchProfile(SetDefaultSearchProfileRequest) returns (SetDefaultSearchProfileResponse);
+}
+
+// Enums
+enum DayPreference {
+  DAY_PREFERENCE_UNSPECIFIED = 0;
+  DAY_PREFERENCE_ANY = 1;
+  DAY_PREFERENCE_DAY = 2;
+  DAY_PREFERENCE_NIGHT = 3;
+}
+
+enum SearchPace {
+  SEARCH_PACE_UNSPECIFIED = 0;
+  SEARCH_PACE_ANY = 1;
+  SEARCH_PACE_RELAXED = 2;
+  SEARCH_PACE_MODERATE = 3;
+  SEARCH_PACE_FAST = 4;
+}
+
+enum TransportPreference {
+  TRANSPORT_PREFERENCE_UNSPECIFIED = 0;
+  TRANSPORT_PREFERENCE_ANY = 1;
+  TRANSPORT_PREFERENCE_WALK = 2;
+  TRANSPORT_PREFERENCE_PUBLIC = 3;
+  TRANSPORT_PREFERENCE_CAR = 4;
+}
+
+// Range filter for numeric values
+message RangeFilter {
+  double min = 1;
+  double max = 2;
+}
+
+// Accommodation preferences
+message AccommodationPreferences {
+  string id = 1;
+  string user_preference_profile_id = 2;
+  repeated string accommodation_type = 3;
+  RangeFilter star_rating = 4;
+  RangeFilter price_range_per_night = 5;
+  repeated string amenities = 6;
+  repeated string room_type = 7;
+  string chain_preference = 8;
+  repeated string cancellation_policy = 9;
+  string booking_flexibility = 10;
+  google.protobuf.Timestamp created_at = 11;
+  google.protobuf.Timestamp updated_at = 12;
+}
+
+// Dining preferences
+message DiningPreferences {
+  string id = 1;
+  string user_preference_profile_id = 2;
+  repeated string cuisine_types = 3;
+  repeated string meal_types = 4;
+  repeated string service_style = 5;
+  RangeFilter price_range_per_person = 6;
+  repeated string dietary_needs = 7;
+  repeated string allergen_free = 8;
+  bool michelin_rated = 9;
+  bool local_recommendations = 10;
+  string chain_vs_local = 11;
+  bool organic_preference = 12;
+  bool outdoor_seating_preferred = 13;
+  google.protobuf.Timestamp created_at = 14;
+  google.protobuf.Timestamp updated_at = 15;
+}
+
+// Activity preferences
+message ActivityPreferences {
+  string id = 1;
+  string user_preference_profile_id = 2;
+  repeated string activity_categories = 3;
+  string physical_activity_level = 4;
+  string indoor_outdoor_preference = 5;
+  string cultural_immersion_level = 6;
+  string must_see_vs_hidden_gems = 7;
+  bool educational_preference = 8;
+  bool photography_opportunities = 9;
+  repeated string season_specific_activities = 10;
+  bool avoid_crowds = 11;
+  repeated string local_events_interest = 12;
+  google.protobuf.Timestamp created_at = 13;
+  google.protobuf.Timestamp updated_at = 14;
+}
+
+// Itinerary preferences
+message ItineraryPreferences {
+  string id = 1;
+  string user_preference_profile_id = 2;
+  string planning_style = 3;
+  string preferred_pace = 4;
+  string time_flexibility = 5;
+  string morning_vs_evening = 6;
+  string weekend_vs_weekday = 7;
+  repeated string preferred_seasons = 8;
+  bool avoid_peak_season = 9;
+  string adventure_vs_relaxation = 10;
+  string spontaneous_vs_planned = 11;
+  google.protobuf.Timestamp created_at = 12;
+  google.protobuf.Timestamp updated_at = 13;
+}
+
+// Interest reference
+message InterestReference {
+  string id = 1;
+  string name = 2;
+}
+
+// Tag reference
+message TagReference {
+  string id = 1;
+  string name = 2;
+  string tag_type = 3;
+}
+
+// User preference profile
+message UserPreferenceProfile {
+  string id = 1;
+  string user_id = 2;
+  string profile_name = 3;
+  bool is_default = 4;
+  double search_radius_km = 5;
+  DayPreference preferred_time = 6;
+  int32 budget_level = 7;
+  SearchPace preferred_pace = 8;
+  bool prefer_accessible_pois = 9;
+  bool prefer_outdoor_seating = 10;
+  bool prefer_dog_friendly = 11;
+  repeated string preferred_vibes = 12;
+  TransportPreference preferred_transport = 13;
+  repeated string dietary_needs = 14;
+  repeated InterestReference interests = 15;
+  repeated TagReference tags = 16;
+  double user_latitude = 17;
+  double user_longitude = 18;
+  AccommodationPreferences accommodation_preferences = 19;
+  DiningPreferences dining_preferences = 20;
+  ActivityPreferences activity_preferences = 21;
+  ItineraryPreferences itinerary_preferences = 22;
+  google.protobuf.Timestamp created_at = 23;
+  google.protobuf.Timestamp updated_at = 24;
+}
+
+// Profile creation parameters
+message CreateUserPreferenceProfileParams {
+  string profile_name = 1;
+  bool is_default = 2;
+  double search_radius_km = 3;
+  DayPreference preferred_time = 4;
+  int32 budget_level = 5;
+  SearchPace preferred_pace = 6;
+  bool prefer_accessible_pois = 7;
+  bool prefer_outdoor_seating = 8;
+  bool prefer_dog_friendly = 9;
+  repeated string preferred_vibes = 10;
+  TransportPreference preferred_transport = 11;
+  repeated string dietary_needs = 12;
+  repeated string tags = 13;
+  repeated string interests = 14;
+  AccommodationPreferences accommodation_preferences = 15;
+  DiningPreferences dining_preferences = 16;
+  ActivityPreferences activity_preferences = 17;
+  ItineraryPreferences itinerary_preferences = 18;
+}
+
+// Profile update parameters
+message UpdateSearchProfileParams {
+  string profile_name = 1;
+  bool is_default = 2;
+  double search_radius_km = 3;
+  DayPreference preferred_time = 4;
+  int32 budget_level = 5;
+  SearchPace preferred_pace = 6;
+  bool prefer_accessible_pois = 7;
+  bool prefer_outdoor_seating = 8;
+  bool prefer_dog_friendly = 9;
+  repeated string preferred_vibes = 10;
+  TransportPreference preferred_transport = 11;
+  repeated string dietary_needs = 12;
+  repeated string tags = 13;
+  repeated string interests = 14;
+  AccommodationPreferences accommodation_preferences = 15;
+  DiningPreferences dining_preferences = 16;
+  ActivityPreferences activity_preferences = 17;
+  ItineraryPreferences itinerary_preferences = 18;
+}
+
+// Request/Response messages
+message GetSearchProfilesRequest {
+  string user_id = 1;
+  BaseRequest request = 100;
+}
+
+message GetSearchProfilesResponse {
+  repeated UserPreferenceProfile profiles = 1;
+  string default_profile_id = 2;
+  BaseResponse response = 100;
+}
+
+message GetSearchProfileRequest {
+  string user_id = 1;
+  string profile_id = 2;
+  BaseRequest request = 100;
+}
+
+message GetSearchProfileResponse {
+  UserPreferenceProfile profile = 1;
+  BaseResponse response = 100;
+}
+
+message GetDefaultSearchProfileRequest {
+  string user_id = 1;
+  BaseRequest request = 100;
+}
+
+message GetDefaultSearchProfileResponse {
+  UserPreferenceProfile profile = 1;
+  BaseResponse response = 100;
+}
+
+message CreateSearchProfileRequest {
+  string user_id = 1;
+  CreateUserPreferenceProfileParams profile = 2;
+  BaseRequest request = 100;
+}
+
+message CreateSearchProfileResponse {
+  bool success = 1;
+  string message = 2;
+  UserPreferenceProfile profile = 3;
+  BaseResponse response = 100;
+}
+
+message UpdateSearchProfileRequest {
+  string user_id = 1;
+  string profile_id = 2;
+  UpdateSearchProfileParams profile = 3;
+  repeated string update_fields = 4;
+  BaseRequest request = 100;
+}
+
+message UpdateSearchProfileResponse {
+  bool success = 1;
+  string message = 2;
+  UserPreferenceProfile profile = 3;
+  BaseResponse response = 100;
+}
+
+message DeleteSearchProfileRequest {
+  string user_id = 1;
+  string profile_id = 2;
+  BaseRequest request = 100;
+}
+
+message DeleteSearchProfileResponse {
+  bool success = 1;
+  string message = 2;
+  BaseResponse response = 100;
+}
+
+message SetDefaultSearchProfileRequest {
+  string user_id = 1;
+  string profile_id = 2;
+  BaseRequest request = 100;
+}
+
+message SetDefaultSearchProfileResponse {
+  bool success = 1;
+  string message = 2;
+  BaseResponse response = 100;
+}
+
+message BaseRequest {
+  string downstream = 998;
+  string request_id = 999;
+}
+
+message BaseResponse {
+  string upstream = 998;
+  string request_id = 999;
+  string status = 1000;
+}

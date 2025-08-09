@@ -399,22 +399,13 @@ export default function DiscoverPage() {
         {
           onSuccess: (data) => {
             console.log(`🔥 ✅ Remove favorite SUCCESS - Backend POI ID: ${data.poi_id}, Original POI ID: ${data.originalPoiId}`);
-            // Clear optimistic state using original POI ID
+            // Clear optimistic state - the query invalidation will handle the rest
             setOptimisticRemoved((prev) => {
               const newSet = new Set(prev);
               newSet.delete(poiId);
               return newSet;
             });
-            // Remove both original and backend POI ID from favorite IDs
-            setFavoriteIds((prev) => {
-              const newSet = new Set(prev);
-              newSet.delete(poiId);
-              if (data.poi_id && data.poi_id !== poiId) {
-                console.log(`🔥 🔄 Removing transformed POI ID: ${data.poi_id}`);
-                newSet.delete(data.poi_id);
-              }
-              return newSet;
-            });
+            // Let the query invalidation update favoriteIds automatically
           },
           onError: () => {
             console.log(`🔥 ❌ Remove favorite FAILED for ${poiId}`);
@@ -453,21 +444,13 @@ export default function DiscoverPage() {
           onSuccess: (data) => {
             console.log(`🔥 ✅ Add favorite SUCCESS - Full response:`, data);
             console.log(`🔥 ✅ Add favorite SUCCESS - Backend POI ID: ${data.poi_id}, Original POI ID: ${data.originalPoiId}`);
-            // Clear optimistic state using original POI ID
+            // Clear optimistic state - the query invalidation will handle the rest
             setOptimisticAdded((prev) => {
               const newSet = new Set(prev);
               newSet.delete(poiId);
               return newSet;
             });
-            // Update favorite IDs with the actual POI ID from backend
-            if (data.poi_id && data.poi_id !== poiId) {
-              console.log(`🔥 🔄 POI ID transformed: ${poiId} → ${data.poi_id}`);
-              setFavoriteIds((prev) => {
-                const newSet = new Set(prev);
-                newSet.add(data.poi_id);
-                return newSet;
-              });
-            }
+            // Let the query invalidation update favoriteIds automatically
           },
           onError: (error) => {
             console.log(`🔥 ❌ Add favorite FAILED for ${poiId}`, error);

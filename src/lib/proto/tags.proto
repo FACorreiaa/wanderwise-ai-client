@@ -1,0 +1,116 @@
+syntax = "proto3";
+
+package ai_poi.tags.v1;
+
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/FACorreiaa/loci-proto/proto/tags/v1";
+
+// TagsService provides tag management for users
+service TagsService {
+  rpc GetTags(GetTagsRequest) returns (GetTagsResponse);
+  rpc GetTag(GetTagRequest) returns (GetTagResponse);
+  rpc CreateTag(CreateTagRequest) returns (CreateTagResponse);
+  rpc UpdateTag(UpdateTagRequest) returns (UpdateTagResponse);
+  rpc DeleteTag(DeleteTagRequest) returns (DeleteTagResponse);
+}
+
+// Personal tag entity
+message PersonalTag {
+  string id = 1;
+  string user_id = 2;
+  string name = 3;
+  string tag_type = 4;
+  string description = 5;
+  string source = 6;
+  google.protobuf.Timestamp created_at = 7;
+  google.protobuf.Timestamp updated_at = 8;
+}
+
+// Tag creation parameters
+message CreatePersonalTagParams {
+  string name = 1;
+  string description = 2;
+  string tag_type = 3;
+  bool active = 4;
+}
+
+// Tag update parameters
+message UpdatePersonalTagParams {
+  string name = 1;
+  string description = 2;
+  string tag_type = 3;
+  bool active = 4;
+}
+
+// Request/Response messages
+message GetTagsRequest {
+  string user_id = 1;
+  BaseRequest request = 100;
+}
+
+message GetTagsResponse {
+  repeated PersonalTag tags = 1;
+  BaseResponse response = 100;
+}
+
+message GetTagRequest {
+  string user_id = 1;
+  string tag_id = 2;
+  BaseRequest request = 100;
+}
+
+message GetTagResponse {
+  PersonalTag tag = 1;
+  BaseResponse response = 100;
+}
+
+message CreateTagRequest {
+  string user_id = 1;
+  CreatePersonalTagParams tag = 2;
+  BaseRequest request = 100;
+}
+
+message CreateTagResponse {
+  bool success = 1;
+  string message = 2;
+  PersonalTag tag = 3;
+  BaseResponse response = 100;
+}
+
+message UpdateTagRequest {
+  string user_id = 1;
+  string tag_id = 2;
+  UpdatePersonalTagParams tag = 3;
+  BaseRequest request = 100;
+}
+
+message UpdateTagResponse {
+  bool success = 1;
+  string message = 2;
+  PersonalTag tag = 3;
+  BaseResponse response = 100;
+}
+
+message DeleteTagRequest {
+  string user_id = 1;
+  string tag_id = 2;
+  BaseRequest request = 100;
+}
+
+message DeleteTagResponse {
+  bool success = 1;
+  string message = 2;
+  BaseResponse response = 100;
+}
+
+message BaseRequest {
+  string downstream = 998;
+  string request_id = 999;
+}
+
+message BaseResponse {
+  string upstream = 998;
+  string request_id = 999;
+  string status = 1000;
+}

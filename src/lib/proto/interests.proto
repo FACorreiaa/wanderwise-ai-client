@@ -1,0 +1,107 @@
+syntax = "proto3";
+
+package ai_poi.interests.v1;
+
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/FACorreiaa/loci-proto/proto/interests/v1";
+
+// InterestsService provides interest management for users
+service InterestsService {
+  // Get all available interests
+  rpc GetAllInterests(GetAllInterestsRequest) returns (GetAllInterestsResponse);
+  
+  // Create a new interest
+  rpc CreateInterest(CreateInterestRequest) returns (CreateInterestResponse);
+  
+  // Update an existing interest
+  rpc UpdateInterest(UpdateInterestRequest) returns (UpdateInterestResponse);
+  
+  // Delete/remove an interest
+  rpc RemoveInterest(RemoveInterestRequest) returns (RemoveInterestResponse);
+}
+
+// Interest entity
+message Interest {
+  string id = 1;
+  string name = 2;
+  string description = 3;
+  bool active = 4;
+  string source = 5;
+  google.protobuf.Timestamp created_at = 6;
+  google.protobuf.Timestamp updated_at = 7;
+}
+
+// Interest creation parameters
+message CreateInterestParams {
+  string name = 1;
+  string description = 2;
+  bool active = 3;
+}
+
+// Interest update parameters
+message UpdateInterestParams {
+  string name = 1;
+  string description = 2;
+  bool active = 3;
+}
+
+// Request/Response messages
+message GetAllInterestsRequest {
+  BaseRequest request = 100;
+}
+
+message GetAllInterestsResponse {
+  repeated Interest interests = 1;
+  BaseResponse response = 100;
+}
+
+message CreateInterestRequest {
+  string user_id = 1;
+  CreateInterestParams interest = 2;
+  BaseRequest request = 100;
+}
+
+message CreateInterestResponse {
+  bool success = 1;
+  string message = 2;
+  Interest interest = 3;
+  BaseResponse response = 100;
+}
+
+message UpdateInterestRequest {
+  string user_id = 1;
+  string interest_id = 2;
+  UpdateInterestParams interest = 3;
+  BaseRequest request = 100;
+}
+
+message UpdateInterestResponse {
+  bool success = 1;
+  string message = 2;
+  Interest interest = 3;
+  BaseResponse response = 100;
+}
+
+message RemoveInterestRequest {
+  string user_id = 1;
+  string interest_id = 2;
+  BaseRequest request = 100;
+}
+
+message RemoveInterestResponse {
+  bool success = 1;
+  string message = 2;
+  BaseResponse response = 100;
+}
+
+message BaseRequest {
+  string downstream = 998;
+  string request_id = 999;
+}
+
+message BaseResponse {
+  string upstream = 998;
+  string request_id = 999;
+  string status = 1000;
+}

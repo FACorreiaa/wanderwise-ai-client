@@ -6,7 +6,7 @@
 import type { UserProfile, Interest, POI } from "./api/types";
 
 const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api/v1";
+  import.meta.env.VITE_API_BASE_URL || "http://localhost:8081/api/v1";
 
 // Token management functions - moved to top to avoid circular dependency
 export const getAuthToken = (): string | null => {

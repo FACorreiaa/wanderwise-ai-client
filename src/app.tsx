@@ -7,11 +7,12 @@ import PWAInstall from "~/components/PWAInstall";
 import "./app.css";
 import { QueryClientProvider } from "@tanstack/solid-query";
 // @ts-ignore - Context type
-import { AuthProvider } from "~/contexts/AuthContext";
+import { AuthProviderSwitch } from "~/contexts/AuthProviderSwitch";
 import { ThemeProvider } from "~/contexts/ThemeContext";
 // @ts-ignore - Context type
 import { LocationProvider } from "~/contexts/LocationContext";
 import queryClient from "~/lib/query-client";
+
 
 export default function App() {
   return (
@@ -19,7 +20,7 @@ export default function App() {
       <ThemeProvider>
         <Router
           root={props => (
-            <AuthProvider>
+            <AuthProviderSwitch>
               <LocationProvider>
                 <div class="min-h-screen flex flex-col bg-white dark:bg-gray-900 transition-colors">
                   <Nav />
@@ -30,7 +31,7 @@ export default function App() {
                   <PWAInstall />
                 </div>
               </LocationProvider>
-            </AuthProvider>
+            </AuthProviderSwitch>
           )}
         >
           <FileRoutes />

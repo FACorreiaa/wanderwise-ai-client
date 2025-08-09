@@ -3,6 +3,7 @@
   "type": "module",
   "scripts": {
     "dev": "vinxi dev",
+    "dev:grpc": "VITE_USE_GRPC_AUTH=true vinxi dev",
     "build": "vinxi build",
     "start": "vinxi start",
     "version": "vinxi version",
@@ -15,6 +16,7 @@
     "lint:fix": "eslint src --ext .ts,.tsx --fix"
   },
   "dependencies": {
+    "@grpc/grpc-js": "^1.13.4",
     "@kobalte/core": "^0.13.10",
     "@solidjs/router": "^0.15.0",
     "@solidjs/start": "^1.1.0",
@@ -22,8 +24,11 @@
     "@tanstack/solid-query-devtools": "^5.80.6",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "google-protobuf": "^3.21.4",
+    "grpc-web": "^1.5.0",
     "lucide-solid": "^0.513.0",
     "mapbox-gl": "^3.12.0",
+    "protobufjs": "^7.5.3",
     "solid-icons": "^1.1.0",
     "solid-js": "^1.9.5",
     "tailwind-merge": "^3.3.0",
@@ -42,6 +47,7 @@
     "eslint-plugin-solid": "^0.14.5",
     "nitropack": "^2.11.12",
     "tailwindcss": "^4.1.8",
+    "ts-proto": "^2.7.5",
     "unimported": "^1.31.1",
     "wrangler": "^4.20.0"
   },

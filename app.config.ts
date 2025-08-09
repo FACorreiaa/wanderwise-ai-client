@@ -100,5 +100,18 @@ export default defineConfig({
         "~": path.resolve(__dirname, "./src"),
       },
     },
+    optimizeDeps: {
+      include: ['grpc-web', 'google-protobuf'],
+      force: true,
+    },
+    build: {
+      commonjsOptions: {
+        include: [/src\/lib\/grpc\/.*\.js$/, /grpc-web/, /google-protobuf/],
+        transformMixedEsModules: true,
+      },
+    },
+    define: {
+      global: 'globalThis',
+    },
   },
 });

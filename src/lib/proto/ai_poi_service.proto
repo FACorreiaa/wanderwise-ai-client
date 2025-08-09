@@ -1,0 +1,90 @@
+syntax = "proto3";
+
+package ai_poi.v1;
+
+import "common.proto";
+
+option go_package = "github.com/FACorreiaa/loci-proto/modules/ai_poi_service/generated";
+
+// Main AI POI API Gateway Service
+// This service can act as a unified entry point to all sub-services
+service AiPoiService {
+  // Health check
+  rpc HealthCheck(ai_poi.common.v1.HealthCheckRequest) returns (ai_poi.common.v1.HealthCheckResponse);
+
+  // Get service information
+  rpc GetServiceInfo(GetServiceInfoRequest) returns (GetServiceInfoResponse);
+
+  // Get feature flags for the user
+  rpc GetFeatureFlags(GetFeatureFlagsRequest) returns (GetFeatureFlagsResponse);
+}
+
+
+// Service information
+message GetServiceInfoRequest {
+  bool include_endpoints = 1;
+  bool include_version_info = 2;
+  BaseRequest request = 100;
+}
+
+message GetServiceInfoResponse {
+  ServiceInfo service_info = 1;
+  repeated ServiceEndpoint endpoints = 2;
+  repeated ai_poi.common.v1.ApiVersion versions = 3;
+  BaseResponse response = 100;
+}
+
+message ServiceInfo {
+  string name = 1;
+  string version = 2;
+  string description = 3;
+  string build_time = 4;
+  string git_commit = 5;
+  string environment = 6; // "development", "staging", "production"
+  map<string, string> configuration = 7;
+}
+
+message ServiceEndpoint {
+  string name = 1;
+  string path = 2;
+  string method = 3; // HTTP method for REST endpoints
+  string description = 4;
+  bool requires_auth = 5;
+  repeated string required_permissions = 6;
+  ai_poi.common.v1.RateLimitInfo rate_limit = 7;
+}
+
+// Feature flags
+message GetFeatureFlagsRequest {
+  string user_id = 1;
+  string client_version = 2;
+  string platform = 3; // "web", "ios", "android"
+  map<string, string> user_attributes = 4;
+  BaseRequest request = 100;
+}
+
+message GetFeatureFlagsResponse {
+  repeated ai_poi.common.v1.FeatureFlag flags = 1;
+  map<string, string> experiments = 2; // A/B test assignments
+  BaseResponse response = 100;
+}
+
+// Service dependencies and their health status
+message ServiceDependencies {
+  ai_poi.common.v1.ComponentHealth database = 1;
+  ai_poi.common.v1.ComponentHealth redis_cache = 2;
+  ai_poi.common.v1.ComponentHealth ai_service = 3;
+  ai_poi.common.v1.ComponentHealth external_apis = 4;
+  ai_poi.common.v1.ComponentHealth file_storage = 5;
+}
+
+message BaseRequest {
+  string downstream = 998;
+  string request_id = 999;
+}
+
+message BaseResponse {
+  string upstream = 998;
+  string request_id = 999;
+  string status = 1000;
+}

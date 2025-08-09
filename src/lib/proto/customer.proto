@@ -1,0 +1,132 @@
+// Note: This is a proto3 file, proto2 is deprecated and should not be used.
+// In proto3, all fields are optional by default, required and optional keywords
+// are no longer required. Everything is optional by default.
+syntax = "proto3";
+
+// Declaring a package name prevents collisions with other packages that use
+// methods with the same name.
+package highlyregarded.customer;
+
+// While Get and Create implement the same response, it's good practice to
+// always return a unique response type for each method to save yourself
+// headaches in the future.
+service Customer {
+  rpc GetCustomer(GetCustomerReq) returns (GetCustomerRes);
+  rpc CreateCustomer(CreateCustomerReq) returns (CreateCustomerRes);
+  rpc UpdateCustomer(UpdateCustomerReq) returns (UpdateCustomerRes);
+  rpc DeleteCustomer(DeleteCustomerReq) returns (NilRes);
+}
+
+message GetCustomerReq {
+  // Be explicit with what you want to get, don't just"ID"
+  string public_id    = 1;
+
+  BaseRequest request = 100;
+}
+
+message GetCustomerRes {
+  bool success        = 1;
+  string message      = 2; // Optional: populate if success is false
+
+  // The customer object
+  XCustomer customer   = 3;
+
+  BaseResponse response = 100;
+}
+
+message CreateCustomerReq {
+  // The customer object
+  XCustomer customer = 1;
+
+  BaseRequest request = 100;
+}
+
+message CreateCustomerRes {
+  bool success        = 1;
+  string message      = 2;
+
+  // The customer object
+  XCustomer customer   = 3;
+
+  BaseResponse response = 100;
+}
+
+message UpdateCustomerReq {
+  string customer_id      = 1;
+
+  // This saves us from having to return the entire customer object and saves
+  // on implementation complexity due to not all customer fields being
+  // returned (so we can't just dump the entire object into the DB).
+  repeated XDiff updates  = 2;
+
+  BaseRequest request = 100;
+}
+
+message UpdateCustomerRes {
+  bool      success     = 1;
+  string    message     = 2;
+
+  // The customer object
+  XCustomer customer    = 3;
+
+  BaseResponse response = 100;
+}
+
+message DeleteCustomerReq {
+  string  customer_id   = 1;
+  bool    hard_delete   = 2; // soft delete by default
+
+  BaseRequest request = 100;
+}
+
+// NilRes effectively mirrors google.protobuf.Empty, we use our own type though
+// as the google.protobuf.Empty type is not available in all languages that we
+// support.
+message NilRes {
+  BaseResponse response = 100;
+}
+
+// -- Subtype messages
+message XCustomer {
+  string  public_id   = 1;
+  string  private_id  = 2;
+  XName   name        = 3;
+  string  email       = 4;
+  string  phone       = 5; // Optional - string due to intl dial code
+}
+
+message XName {
+  // Title should be an enum but we'll keep it simple for now
+  string title    = 1;
+  string first    = 2;
+  string middle   = 3;
+  string last     = 4;
+  string suffix   = 5;
+
+  string nickname = 6;
+
+  // title + first + middle + last + suffix
+  string full     = 7;
+
+  // first + last
+  string friendly = 8;
+}
+
+// While the value may not be a string, for diff patching, we wrap everything in
+// a string.
+message XDiff {
+  string field      = 1;
+  string old_value  = 2;
+  string new_value  = 3;
+}
+
+message BaseRequest {
+  string downstream = 998;
+  string request_id = 999;
+}
+
+message BaseResponse {
+  string upstream = 998;
+  string request_id = 999;
+  string status = 1000;
+}
