@@ -8,6 +8,7 @@ import {
 } from "solid-js";
 import { useNavigate } from "@solidjs/router";
 import { authAPI, getAuthToken, setAuthToken, clearAuthToken } from "~/lib/api";
+import { useAuthGrpc } from './AuthContextGrpc'
 
 interface User {
   id: string;
@@ -53,11 +54,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType>();
 
 export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error("useAuth must be used within an AuthProvider");
-  }
-  return context;
+  return useAuthGrpc();
 };
 
 interface AuthProviderProps {

@@ -16,7 +16,7 @@ import {
   GoogleLoginResponse,
   GoogleCallbackRequest,
   BaseRequest,
-} from '../grpc/auth_pb';
+} from '../grpc/auth_pb.d';
 import { AuthServiceClient } from '../grpc/AuthServiceClientPb';
 
 const GRPC_SERVER_URL = import.meta.env.VITE_GRPC_SERVER_URL || 'http://localhost:8080';
