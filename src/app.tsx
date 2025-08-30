@@ -15,28 +15,29 @@ import queryClient from "~/lib/query-client";
 
 
 export default function App() {
-  return (
-    <QueryClientProvider client={queryClient}>
-      <ThemeProvider>
-        <Router
-          root={props => (
-            <AuthProviderSwitch>
-              <LocationProvider>
-                <div class="min-h-screen flex flex-col bg-white dark:bg-gray-900 transition-colors">
-                  <Nav />
-                  <main class="flex-grow min-h-screen bg-gradient-to-b from-blue-50 via-purple-50 to-white dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 transition-colors">
-                    <Suspense>{props.children}</Suspense>
-                  </main>
-                  <Footer />
-                  <PWAInstall />
-                </div>
-              </LocationProvider>
-            </AuthProviderSwitch>
-          )}
-        >
-          <FileRoutes />
-        </Router>
-      </ThemeProvider>
-    </QueryClientProvider>
-  );
+    return (
+        <QueryClientProvider client={queryClient}>
+            <ThemeProvider>
+                <Router
+                    root={props => (
+
+                        <LocationProvider>
+                            <AuthProviderSwitch>
+                                <div class="min-h-screen flex flex-col bg-white dark:bg-gray-900 transition-colors">
+                                    <Nav />
+                                    <main class="flex-grow min-h-screen ...">
+                                        <Suspense>{props.children}</Suspense>
+                                    </main>
+                                    <Footer />
+                                    <PWAInstall />
+                                </div>
+                            </AuthProviderSwitch>
+                        </LocationProvider>
+                    )}
+                >
+                    <FileRoutes />
+                </Router>
+            </ThemeProvider>
+        </QueryClientProvider>
+    );
 }

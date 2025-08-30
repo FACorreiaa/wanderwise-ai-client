@@ -110,10 +110,7 @@ export const AuthGrpcProvider = (props: AuthProviderProps) => {
   // Update loading state
   createEffect(() => {
     setIsLoading(
-      sessionQuery.isLoading || 
-      loginMutation.isLoading || 
-      registerMutation.isLoading || 
-      logoutMutation.isLoading
+      sessionQuery.isLoading 
     );
   });
 

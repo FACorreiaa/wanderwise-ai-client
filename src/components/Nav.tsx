@@ -19,7 +19,7 @@ import {
 import { createSignal, For, onCleanup, onMount, Show } from "solid-js";
 import PWAInstall from "~/components/PWAInstall";
 import ThemeSelector from "~/components/ThemeSelector";
-import { useAuth } from "~/contexts/AuthContext";
+import { useAuthGrpc } from "~/contexts/AuthContextGrpc";
 import { useTheme } from "~/contexts/ThemeContext";
 
 // Public navigation items (for non-authenticated users)
@@ -41,7 +41,7 @@ const authNavigationItems = [
 ];
 
 export default function Nav() {
-  const { isAuthenticated, user, logout } = useAuth();
+  const { isAuthenticated, user, logout } = useAuthGrpc();
   const { isDark, toggleTheme } = useTheme();
   const location = useLocation();
   const [isMenuOpen, setIsMenuOpen] = createSignal(false);
