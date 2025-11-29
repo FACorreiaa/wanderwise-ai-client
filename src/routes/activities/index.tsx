@@ -436,20 +436,20 @@ export default function ActivitiesPage() {
     };
 
     return (
-        <div class="min-h-screen bg-gray-50 dark:bg-gray-900">
+        <div class="min-h-screen relative">
             {/* Chat Success Banner */}
             <Show when={fromChat()}>
-                <div class="bg-gradient-to-r from-green-50 to-blue-50 border-b border-green-200 px-4 py-3 sm:px-6">
+                <div class="px-4 py-3 sm:px-6">
                     <div class="max-w-7xl mx-auto">
-                        <div class="flex items-center gap-3">
-                            <div class="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
+                        <div class="flex items-center gap-3 glass-panel gradient-border rounded-xl p-3">
+                            <div class="w-8 h-8 bg-emerald-500 rounded-full flex items-center justify-center text-white shadow">
                                 <Compass class="w-4 h-4 text-white" />
                             </div>
                             <div class="flex-1">
-                                <p class="text-sm font-medium text-green-900">
+                                <p class="text-sm font-medium text-emerald-900 dark:text-emerald-200">
                                     ✨ <TypingAnimation text="Your activity recommendations are ready!" />
                                 </p>
-                                <p class="text-xs text-green-700">
+                                <p class="text-xs text-emerald-700 dark:text-emerald-300">
                                     Generated from your chat: "{location.state?.originalMessage || 'Activity search'}"
                                 </p>
                             </div>
@@ -465,7 +465,7 @@ export default function ActivitiesPage() {
             </Show>
 
             {/* Header - Mobile First */}
-            <div class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-4 py-3 sm:px-6 sm:py-4">
+            <div class="bg-white/80 dark:bg-slate-900/70 backdrop-blur-xl border-b border-white/60 dark:border-slate-800/70 px-4 py-3 sm:px-6 sm:py-4">
                 <div class="max-w-7xl mx-auto">
                     <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                         <div>
@@ -499,7 +499,7 @@ export default function ActivitiesPage() {
                             <div class="flex flex-col gap-2 sm:flex-row sm:gap-3">
                                 <button
                                     onClick={() => chatSession.setShowChat(true)}
-                                    class="flex items-center justify-center gap-2 px-4 py-2 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-lg hover:from-green-700 hover:to-green-800 transition-all shadow-sm text-sm font-medium"
+                                    class="flex items-center justify-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-all shadow-sm text-sm font-medium shadow-[0_12px_28px_rgba(16,185,129,0.28)] border border-white/30 dark:border-slate-800/60"
                                 >
                                     <MessageCircle class="w-4 h-4" />
                                     Get Recommendations

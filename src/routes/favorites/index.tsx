@@ -176,7 +176,7 @@ export default function FavoritesPage() {
   const renderGridCard = (favorite) => (
     <div class="cb-card group hover:shadow-lg transition-all duration-300 overflow-hidden">
       {/* Image */}
-      <div class="relative h-40 bg-gradient-to-br from-blue-100 to-purple-100 overflow-hidden">
+      <div class="relative h-40 bg-white/70 dark:bg-slate-900/60 border-b border-white/50 dark:border-slate-800/60 overflow-hidden">
         <div class="absolute inset-0 flex items-center justify-center text-6xl">
           {getCategoryIcon(favorite.category)}
         </div>
@@ -279,7 +279,7 @@ export default function FavoritesPage() {
           />
 
           {/* Category icon */}
-          <div class="w-16 h-16 bg-gradient-to-br from-blue-100 to-purple-100 rounded-lg flex items-center justify-center text-3xl flex-shrink-0">
+        <div class="w-16 h-16 bg-white/70 dark:bg-slate-900/60 border border-white/60 dark:border-slate-800/70 rounded-lg flex items-center justify-center text-3xl flex-shrink-0">
             {getCategoryIcon(favorite.category)}
           </div>
 

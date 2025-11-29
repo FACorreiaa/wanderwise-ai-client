@@ -194,7 +194,7 @@ export default function StreamingChatDisplay(props: StreamingChatDisplayProps) {
       <div class={`flex gap-3 ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}>
         {/* Avatar */}
         <Show when={message.type === 'assistant'}>
-          <div class="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center flex-shrink-0">
+          <div class="w-8 h-8 rounded-full bg-[#0c7df2] flex items-center justify-center flex-shrink-0 text-white shadow ring-2 ring-white/50 dark:ring-slate-800">
             <Bot class="w-4 h-4 text-white" />
           </div>
         </Show>
@@ -240,7 +240,7 @@ export default function StreamingChatDisplay(props: StreamingChatDisplayProps) {
     <div class={`h-full flex flex-col ${props.className || ''}`}>
       {/* Header */}
       <div class="flex items-center gap-3 p-4 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
-        <div class="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
+        <div class="w-10 h-10 rounded-full bg-[#0c7df2] flex items-center justify-center text-white shadow ring-2 ring-white/50 dark:ring-slate-800">
           <MessageCircle class="w-5 h-5 text-white" />
         </div>
         <div>

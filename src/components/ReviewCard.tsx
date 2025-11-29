@@ -83,7 +83,7 @@ export default function ReviewCard(props: ReviewProps) {
                 {/* Header */}
                 <div class="flex items-start gap-3 mb-4">
                     {/* User Avatar */}
-                    <div class="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-semibold flex-shrink-0">
+                    <div class="w-10 h-10 rounded-full bg-[#0c7df2] flex items-center justify-center text-white font-semibold flex-shrink-0 shadow-md ring-2 ring-white/60 dark:ring-slate-800">
                         {review().userAvatar ? (
                             <img src={review().userAvatar} alt={review().userName} class="w-full h-full rounded-full object-cover" />
                         ) : (
@@ -179,9 +179,9 @@ export default function ReviewCard(props: ReviewProps) {
                             {review().photos.slice(0, 3).map((photo, index) => (
                                 <button
                                     onClick={() => setShowPhotos(true)}
-                                    class="relative aspect-square bg-gray-100 dark:bg-gray-700 rounded-lg overflow-hidden hover:opacity-90 transition-opacity"
+                                    class="relative aspect-square bg-white/70 dark:bg-slate-900/60 border border-white/60 dark:border-slate-800/70 rounded-lg overflow-hidden hover:opacity-90 transition-opacity"
                                 >
-                                    <div class="absolute inset-0 bg-gradient-to-br from-blue-100 to-purple-100 dark:from-blue-900 dark:to-purple-900 flex items-center justify-center">
+                                    <div class="absolute inset-0 flex items-center justify-center">
                                         <Camera class="w-6 h-6 text-gray-400 dark:text-gray-500" />
                                     </div>
                                     {index === 2 && review().photos.length > 3 && (

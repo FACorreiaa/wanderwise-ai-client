@@ -669,3 +669,42 @@ export interface BookmarkRequest {
   tags?: string[];
   is_public?: boolean;
 }
+
+// Discover feature types
+export interface TrendingDiscovery {
+  city_name: string;
+  search_count: number;
+  emoji: string;
+}
+
+export interface FeaturedCollection {
+  category: string;
+  title: string;
+  item_count: number;
+  emoji: string;
+}
+
+export interface DiscoverResult {
+  id: string;
+  name: string;
+  latitude: number;
+  longitude: number;
+  category: string;
+  description: string;
+  address: string;
+  website?: string;
+  phone_number?: string;
+  opening_hours?: string;
+  price_level: string;
+  rating: number;
+  tags?: string[];
+  images?: string[];
+  cuisine_type?: string;
+  star_rating?: string;
+}
+
+export interface DiscoverPageData {
+  trending: TrendingDiscovery[];
+  featured: FeaturedCollection[];
+  recent_discoveries: ChatSession[];
+}

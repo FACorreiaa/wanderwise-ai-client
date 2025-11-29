@@ -279,7 +279,7 @@ export default function ReviewsPage() {
                         <div class="cb-card hover:shadow-md transition-all duration-200">
                             <div class="p-4 flex items-center justify-between">
                                 <div class="flex items-center gap-3">
-                                    <div class="w-12 h-12 bg-gradient-to-br from-blue-100 to-purple-100 rounded-lg flex items-center justify-center">
+                                    <div class="w-12 h-12 bg-white/70 border border-white/60 rounded-lg flex items-center justify-center">
                                         🏛️
                                     </div>
                                     <div>

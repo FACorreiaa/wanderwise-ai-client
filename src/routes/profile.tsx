@@ -193,14 +193,14 @@ function ProfilePageContent() {
                 </Show>
 
                 {/* Badges */}
-                <div class="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
+                <div class="glass-panel gradient-border rounded-lg p-6 border-0">
                     <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Badges</h3>
                     <div class="flex flex-wrap gap-3">
                         <For each={profile.badges}>
                             {(badge) => (
-                                <div class="flex items-center gap-2 px-3 py-2 bg-gradient-to-r from-yellow-100 to-orange-100 dark:from-yellow-900 dark:to-orange-900 rounded-lg border border-yellow-200 dark:border-yellow-700">
-                                    <div class="w-6 h-6 bg-yellow-500 rounded-full"></div>
-                                    <span class="text-sm font-medium text-yellow-800 dark:text-yellow-200">{badge}</span>
+                                <div class="flex items-center gap-2 px-3 py-2 bg-white/70 dark:bg-slate-900/60 rounded-lg border border-white/60 dark:border-slate-800/70">
+                                    <div class="w-6 h-6 bg-amber-400 rounded-full"></div>
+                                    <span class="text-sm font-medium text-slate-900 dark:text-white">{badge}</span>
                                 </div>
                             )}
                         </For>
@@ -337,7 +337,7 @@ function ProfilePageContent() {
     }
 
     return (
-        <div class="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors">
+        <div class="min-h-screen relative transition-colors">
             {/* API Error notification - show if profile query failed but continue with auth data */}
             <Show when={profileQuery.isError && user()}>
                 <div class="fixed top-4 left-4 right-4 sm:left-auto sm:right-4 sm:w-96 z-50 p-4 rounded-lg shadow-lg border bg-yellow-50 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200 border-yellow-200 dark:border-yellow-700 animate-in slide-in-from-top-2 duration-300">
@@ -374,12 +374,12 @@ function ProfilePageContent() {
             
             <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
                 {/* Profile Header */}
-                <div class="bg-white dark:bg-gray-800 rounded-lg p-6 mb-6 border border-gray-200 dark:border-gray-700">
+                <div class="glass-panel gradient-border rounded-lg p-6 mb-6 border-0">
                     <div class="flex flex-col md:flex-row gap-6">
                         {/* Avatar Section */}
                         <div class="flex flex-col items-center md:items-start">
                             <div class="relative">
-                                <div class="w-24 h-24 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-2xl font-bold">
+                                <div class="w-24 h-24 rounded-full bg-[#0c7df2] flex items-center justify-center text-white text-2xl font-bold shadow-lg ring-2 ring-white/60 dark:ring-slate-800">
                                     {profileData()?.username?.charAt(0)?.toUpperCase() || 'T'}
                                 </div>
                                 <button class="absolute -bottom-1 -right-1 bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-600 rounded-full p-2 hover:bg-gray-50 dark:hover:bg-gray-700">

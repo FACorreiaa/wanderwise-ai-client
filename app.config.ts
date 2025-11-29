@@ -7,6 +7,23 @@ import path from "path";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+// SolidStart doesn't ship an index.html template that Vite PWA can patch.
+// Provide a minimal html transform so the plugin always sees <head> and <body>
+// and can inject the manifest/service worker without warnings.
+const ensureHtmlShell = {
+  name: "pwa-ensure-html-shell",
+  transformIndexHtml(html: string) {
+    const hasHead = html.includes("<head>");
+    const hasBody = html.includes("<body>");
+    if (hasHead && hasBody) return html;
+    if (!hasHead && !hasBody) {
+      return `<!DOCTYPE html><html><head></head><body>${html}</body></html>`;
+    }
+    if (!hasHead) return html.replace("<body>", "<head></head><body>");
+    return html.replace("</head>", "</head><body></body>");
+  },
+};
+
 export default defineConfig({
   ssr: false,
   server: {
@@ -16,6 +33,7 @@ export default defineConfig({
   vite: {
     plugins: [
       //cloudflare(),
+      ensureHtmlShell,
       tailwindcss(),
       VitePWA({
         registerType: "autoUpdate",

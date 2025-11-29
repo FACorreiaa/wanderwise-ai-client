@@ -1,5 +1,5 @@
 import { createEffect, createSignal, For, Show } from 'solid-js';
-import { User, Tag, Heart, Users, Camera, MapPin, Calendar, Globe, Bell, Lock, CreditCard, Trash2, Plus, X, Edit3, Save, Mail, Phone, Upload, Image as ImageIcon } from 'lucide-solid';
+import { User, Tag, Heart, Users, Camera, MapPin, Calendar, Globe, Bell, ChevronRight, X, Save, Mail, Phone, Upload } from 'lucide-solid';
 import { useUpdateProfileMutation, useUploadAvatarMutation, useUserProfileQuery } from '../../lib/api/user';
 import { useTags, useCreateTagMutation, useUpdateTagMutation, useDeleteTagMutation, useToggleTagActiveMutation } from '../../lib/api/tags';
 import { useInterests, useCreateInterestMutation, useUpdateInterestMutation, useDeleteInterestMutation, useToggleInterestActiveMutation } from '../../lib/api/interests';
@@ -215,184 +215,262 @@ export default function SettingsPage() {
     };
 
 
-    const renderSettings = () => (
-        <div class="space-y-8">
-            <div>
-                <h2 class="text-2xl font-bold text-gray-900 mb-6">Account Settings</h2>
+    const renderSettings = () => {
+        const profile = profileData();
 
-                {/* Profile Picture */}
-                <div class="bg-white rounded-lg border border-gray-200 p-4 sm:p-6 mb-4 sm:mb-6">
-                    <div class="flex flex-col sm:flex-row items-center sm:items-start space-y-4 sm:space-y-0 sm:space-x-6">
-                        <div class="relative">
-                            <Show
-                                when={photoPreview() || userProfile().avatar}
-                                fallback={
-                                    <div class="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-xl sm:text-2xl font-bold">
-                                        {(userProfile().firstname[0] || '') + (userProfile().lastname[0] || '') || userProfile().username[0] || ''}
-                                    </div>
-                                }
-                            >
-                                <img
-                                    src={photoPreview() || userProfile().avatar}
-                                    alt="Profile"
-                                    class="w-16 h-16 sm:w-20 sm:h-20 rounded-full object-cover border-2 border-gray-200"
-                                />
-                            </Show>
-                            <button
-                                onClick={triggerFileInput}
-                                disabled={isUploading()}
-                                class="absolute -bottom-1 -right-1 bg-white border-2 border-gray-200 rounded-full p-1 sm:p-1.5 hover:bg-gray-50 disabled:opacity-50"
-                            >
-                                <Show when={isUploading()} fallback={<Camera class="w-3 h-3 sm:w-4 sm:h-4 text-gray-600" />}>
-                                    <div class="w-3 h-3 sm:w-4 sm:h-4 border-2 border-gray-600 border-t-transparent rounded-full animate-spin" />
+        return (
+            <div class="space-y-8">
+                {/* Header card inspired by go-templui */}
+                <div class="relative overflow-hidden rounded-3xl border border-white/30 bg-gradient-to-br from-[#0c7df2] via-[#6aa5ff] to-[#0c1747] text-white shadow-2xl">
+                    <div class="absolute inset-0 opacity-30 bg-[radial-gradient(circle_at_20%_20%,rgba(255,255,255,0.45),transparent_35%),radial-gradient(circle_at_80%_0%,rgba(255,255,255,0.35),transparent_30%),radial-gradient(circle_at_50%_80%,rgba(255,255,255,0.25),transparent_32%)]" />
+                    <div class="relative p-6 sm:p-8 flex flex-col lg:flex-row gap-6 lg:items-center">
+                        <div class="flex flex-1 items-start gap-4">
+                            <div class="relative">
+                                <div class="absolute -inset-1 rounded-full bg-white/30 blur-lg" />
+                                <Show
+                                    when={photoPreview() || userProfile().avatar}
+                                    fallback={
+                                        <div class="relative w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-white/10 backdrop-blur flex items-center justify-center text-white text-xl sm:text-2xl font-bold ring-2 ring-white/40 shadow-lg">
+                                            {(userProfile().firstname[0] || '') + (userProfile().lastname[0] || '') || userProfile().username[0] || ''}
+                                        </div>
+                                    }
+                                >
+                                    <img
+                                        src={photoPreview() || userProfile().avatar}
+                                        alt="Profile"
+                                        class="relative w-16 h-16 sm:w-20 sm:h-20 rounded-2xl object-cover ring-2 ring-white/50 shadow-xl"
+                                    />
                                 </Show>
-                            </button>
-                        </div>
-                        <div class="text-center sm:text-left">
-                            <h3 class="text-base sm:text-lg font-semibold text-gray-900">Profile Photo</h3>
-                            <p class="text-xs sm:text-sm text-gray-500">
-                                {isUploading() ? 'Uploading...' : 'Update your profile picture'}
-                            </p>
-                            <div class="flex flex-col sm:flex-row gap-2 mt-2">
                                 <button
                                     onClick={triggerFileInput}
                                     disabled={isUploading()}
-                                    class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-xs sm:text-sm font-medium flex items-center gap-2 justify-center"
+                                    class="absolute -bottom-2 -right-2 bg-white text-gray-800 rounded-xl px-3 py-1 text-xs font-semibold shadow-lg border border-white/40 hover:-translate-y-0.5 transition-all disabled:opacity-60"
                                 >
-                                    <Show when={isUploading()} fallback={<Upload class="w-3 h-3 sm:w-4 sm:h-4" />}>
-                                        <div class="w-3 h-3 sm:w-4 sm:h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                    <Show when={isUploading()} fallback={<span class="flex items-center gap-1"><Upload class="w-3 h-3" />Update</span>}>
+                                        <span class="flex items-center gap-1">
+                                            <div class="w-3 h-3 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />
+                                            Uploading
+                                        </span>
                                     </Show>
-                                    {isUploading() ? 'Uploading...' : 'Upload Photo'}
                                 </button>
-                                <Show when={photoPreview() || userProfile().avatar}>
-                                    <button
-                                        onClick={() => {
-                                            setPhotoPreview(null);
-                                            updateProfile('avatar', null);
-                                        }}
-                                        class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 text-xs sm:text-sm font-medium"
-                                    >
-                                        Remove Photo
-                                    </button>
-                                </Show>
+                            </div>
+                            <div class="space-y-2">
+                                <div class="flex items-center gap-3">
+                                    <h1 class="text-2xl sm:text-3xl font-bold leading-tight">{profile?.username || 'Traveler'}</h1>
+                                    <span class="px-3 py-1 text-xs font-semibold rounded-full bg-white/15 backdrop-blur border border-white/20">Profile</span>
+                                </div>
+                                <div class="flex flex-wrap gap-2 text-sm text-white/80">
+                                    <Show when={profile?.email}>
+                                        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-white/10 border border-white/15">
+                                            <Mail class="w-4 h-4" /> {profile?.email}
+                                        </span>
+                                    </Show>
+                                    <Show when={profile?.location || userProfile().city || userProfile().country}>
+                                        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-white/10 border border-white/15">
+                                            <MapPin class="w-4 h-4" /> {profile?.location || `${userProfile().city}${userProfile().country ? `, ${userProfile().country}` : ''}`}
+                                        </span>
+                                    </Show>
+                                    <Show when={profile?.joinedDate}>
+                                        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-white/10 border border-white/15">
+                                            <Calendar class="w-4 h-4" /> Joined {new Date(profile?.joinedDate || '').toLocaleDateString()}
+                                        </span>
+                                    </Show>
+                                </div>
+                                <p class="text-sm text-white/85 max-w-2xl">{profile?.bio || 'Fine‑tune your profile so the AI tailors recommendations to your vibe.'}</p>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 w-full lg:w-auto">
+                            <div class="rounded-2xl bg-white/10 border border-white/20 p-4 shadow-lg backdrop-blur">
+                                <div class="text-xs uppercase tracking-wide text-white/70 mb-2">Tags</div>
+                                <div class="text-2xl font-bold">{tags().length || 0}</div>
+                                <div class="text-xs text-white/80">Personalized filters</div>
+                            </div>
+                            <div class="rounded-2xl bg-white/10 border border-white/20 p-4 shadow-lg backdrop-blur">
+                                <div class="text-xs uppercase tracking-wide text-white/70 mb-2">Interests</div>
+                                <div class="text-2xl font-bold">{interests().length || 0}</div>
+                                <div class="text-xs text-white/80">Signals for the AI</div>
+                            </div>
+                            <div class="rounded-2xl bg-white/10 border border-white/20 p-4 shadow-lg backdrop-blur col-span-2 sm:col-span-1">
+                                <div class="text-xs uppercase tracking-wide text-white/70 mb-2">Profiles</div>
+                                <div class="text-2xl font-bold">{profile?.stats?.lists_created ?? 1}</div>
+                                <div class="text-xs text-white/80">Trip styles saved</div>
                             </div>
                         </div>
                     </div>
-                    <input
-                        id="photo-upload"
-                        type="file"
-                        accept="image/*"
-                        onChange={handleFileSelect}
-                        class="hidden"
-                    />
                 </div>
 
-                {/* Personal Information */}
-                <div class="bg-white rounded-lg border border-gray-200 p-4 sm:p-6">
-                    <h3 class="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">Personal Information</h3>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-                        <div class="pb-2">
-                            <label class="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">Username</label>
-                            <input
-                                type="text"
-                                value={userProfile().username}
-                                onInput={(e) => updateProfile('username', e.target.value)}
-                                class="w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
-                            />
+                <div class="grid lg:grid-cols-3 gap-6">
+                    <div class="lg:col-span-2 space-y-6">
+                        {/* Personal Information */}
+                        <div class="rounded-2xl bg-white/80 backdrop-blur border border-gray-200 shadow-sm p-6 sm:p-7">
+                            <div class="flex items-start justify-between mb-4">
+                                <div>
+                                    <h3 class="text-lg sm:text-xl font-semibold text-gray-900">Personal Information</h3>
+                                    <p class="text-sm text-gray-500">Keep your profile details sharp so teammates and the AI know who you are.</p>
+                                </div>
+                                <button
+                                    onClick={saveProfile}
+                                    disabled={updateProfileMutation.isPending}
+                                    class="inline-flex items-center gap-2 rounded-xl px-4 py-2 bg-gradient-to-r from-[#0c7df2] to-[#0a6ed6] text-white text-sm font-semibold shadow-[0_12px_32px_rgba(12,125,242,0.25)] hover:translate-y-[-1px] transition-all disabled:opacity-60"
+                                >
+                                    <Save class="w-4 h-4" />
+                                    {updateProfileMutation.isPending ? 'Saving...' : 'Save changes'}
+                                </button>
+                            </div>
+
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+                                <div class="pb-2">
+                                    <label class="block text-xs sm:text-sm font-semibold text-gray-700 mb-2">Username</label>
+                                    <input
+                                        type="text"
+                                        value={userProfile().username}
+                                        onInput={(e) => updateProfile('username', e.target.value)}
+                                        class="w-full px-3 sm:px-4 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base bg-white shadow-inner"
+                                        placeholder="Your public handle"
+                                    />
+                                </div>
+                                <div class="pb-2">
+                                    <label class="block text-xs sm:text-sm font-semibold text-gray-700 mb-2">First Name</label>
+                                    <input
+                                        type="text"
+                                        value={userProfile().firstname}
+                                        onInput={(e) => updateProfile('firstname', e.target.value)}
+                                        class="w-full px-3 sm:px-4 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base bg-white shadow-inner"
+                                        placeholder="Jane"
+                                    />
+                                </div>
+                                <div class="pb-2">
+                                    <label class="block text-xs sm:text-sm font-semibold text-gray-700 mb-2">Last Name</label>
+                                    <input
+                                        type="text"
+                                        value={userProfile().lastname}
+                                        onInput={(e) => updateProfile('lastname', e.target.value)}
+                                        class="w-full px-3 sm:px-4 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base bg-white shadow-inner"
+                                        placeholder="Doe"
+                                    />
+                                </div>
+                                <div class="pb-2">
+                                    <label class="block text-xs sm:text-sm font-semibold text-gray-700 mb-2">Email</label>
+                                    <div class="relative">
+                                        <Mail class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                                        <input
+                                            type="email"
+                                            value={userProfile().email}
+                                            onInput={(e) => updateProfile('email', e.target.value)}
+                                            class="w-full pl-9 sm:pl-10 pr-3 sm:pr-4 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base bg-white shadow-inner"
+                                            placeholder="you@example.com"
+                                        />
+                                    </div>
+                                </div>
+                                <div class="pb-2">
+                                    <label class="block text-xs sm:text-sm font-semibold text-gray-700 mb-2">Phone</label>
+                                    <div class="relative">
+                                        <Phone class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                                        <input
+                                            type="tel"
+                                            value={userProfile().phone}
+                                            onInput={(e) => updateProfile('phone', e.target.value)}
+                                            class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base bg-white shadow-inner"
+                                            placeholder="+1 555 123 4567"
+                                        />
+                                    </div>
+                                </div>
+                                <div class="pb-2">
+                                    <label class="block text-xs sm:text-sm font-semibold text-gray-700 mb-2">City</label>
+                                    <div class="relative">
+                                        <MapPin class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                                        <input
+                                            type="text"
+                                            value={userProfile().city}
+                                            onInput={(e) => updateProfile('city', e.target.value)}
+                                            class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base bg-white shadow-inner"
+                                            placeholder="Barcelona"
+                                        />
+                                    </div>
+                                </div>
+                                <div class="pb-2">
+                                    <label class="block text-xs sm:text-sm font-semibold text-gray-700 mb-2">Country</label>
+                                    <div class="relative">
+                                        <Globe class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                                        <input
+                                            type="text"
+                                            value={userProfile().country}
+                                            onInput={(e) => updateProfile('country', e.target.value)}
+                                            class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base bg-white shadow-inner"
+                                            placeholder="Spain"
+                                        />
+                                    </div>
+                                </div>
+                                <div class="sm:col-span-2 pb-2">
+                                    <label class="block text-xs sm:text-sm font-semibold text-gray-700 mb-2">Bio</label>
+                                    <textarea
+                                        value={userProfile().bio}
+                                        onInput={(e) => updateProfile('bio', e.target.value)}
+                                        rows={3}
+                                        class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base bg-white shadow-inner"
+                                        placeholder="Tell us about your travel interests..."
+                                    />
+                                </div>
+                            </div>
                         </div>
                     </div>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-                        <div>
-                            <label class="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">First Name</label>
-                            <input
-                                type="text"
-                                value={userProfile().firstname}
-                                onInput={(e) => updateProfile('firstname', e.target.value)}
-                                class="w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
-                            />
+
+                    <div class="space-y-4">
+                        <div class="rounded-2xl bg-white/80 backdrop-blur border border-gray-200 shadow-sm p-5">
+                            <div class="flex items-center justify-between mb-3">
+                                <div>
+                                    <p class="text-xs uppercase tracking-wide text-gray-500">Profile strength</p>
+                                    <h4 class="text-lg font-semibold text-gray-900">Completion</h4>
+                                </div>
+                                <div class="px-3 py-1 rounded-full bg-blue-50 text-blue-700 text-xs font-semibold border border-blue-100">Smart Fill</div>
+                            </div>
+                            <div class="w-full h-2.5 rounded-full bg-gray-100 overflow-hidden">
+                                <div class="h-full rounded-full bg-gradient-to-r from-[#0c7df2] via-[#5fa3ff] to-[#0f4eea]" style={{ width: '78%' }} />
+                            </div>
+                            <p class="text-xs text-gray-500 mt-2">Complete your details and tune interests/tags for sharper recommendations.</p>
                         </div>
-                        <div>
-                            <label class="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2">Last Name</label>
-                            <input
-                                type="text"
-                                value={userProfile().lastname}
-                                onInput={(e) => updateProfile('lastname', e.target.value)}
-                                class="w-full px-3 sm:px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
-                            />
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Email</label>
-                            <div class="relative">
-                                <Mail class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                                <input
-                                    type="email"
-                                    value={userProfile().email}
-                                    onInput={(e) => updateProfile('email', e.target.value)}
-                                    class="w-full pl-8 sm:pl-10 pr-3 sm:pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base"
-                                />
+
+                        <div class="rounded-2xl bg-gradient-to-br from-white to-blue-50 border border-blue-100 shadow p-5 space-y-3">
+                            <div class="flex items-center gap-2">
+                                <Bell class="w-5 h-5 text-blue-600" />
+                                <h4 class="text-sm font-semibold text-gray-900">Quick actions</h4>
+                            </div>
+                            <div class="grid grid-cols-1 gap-2">
+                                <button
+                                    onClick={triggerFileInput}
+                                    class="w-full flex items-center justify-between px-4 py-3 rounded-xl bg-white text-gray-800 border border-gray-100 hover:border-blue-200 hover:shadow-sm transition-all"
+                                >
+                                    <span class="flex items-center gap-2 text-sm font-medium"><Camera class="w-4 h-4 text-blue-600" /> Update profile photo</span>
+                                    <ChevronRight class="w-4 h-4 text-gray-400" />
+                                </button>
+                                <button
+                                    onClick={() => setActiveTab('tags')}
+                                    class="w-full flex items-center justify-between px-4 py-3 rounded-xl bg-white text-gray-800 border border-gray-100 hover:border-blue-200 hover:shadow-sm transition-all"
+                                >
+                                    <span class="flex items-center gap-2 text-sm font-medium"><Tag class="w-4 h-4 text-blue-600" /> Curate tags</span>
+                                    <ChevronRight class="w-4 h-4 text-gray-400" />
+                                </button>
+                                <button
+                                    onClick={() => setActiveTab('interests')}
+                                    class="w-full flex items-center justify-between px-4 py-3 rounded-xl bg-white text-gray-800 border border-gray-100 hover:border-blue-200 hover:shadow-sm transition-all"
+                                >
+                                    <span class="flex items-center gap-2 text-sm font-medium"><Heart class="w-4 h-4 text-blue-600" /> Update interests</span>
+                                    <ChevronRight class="w-4 h-4 text-gray-400" />
+                                </button>
                             </div>
                         </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Phone</label>
-                            <div class="relative">
-                                <Phone class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                                <input
-                                    type="tel"
-                                    value={userProfile().phone}
-                                    onInput={(e) => updateProfile('phone', e.target.value)}
-                                    class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                />
-                            </div>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">City</label>
-                            <div class="relative">
-                                <MapPin class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                                <input
-                                    type="text"
-                                    value={userProfile().city}
-                                    onInput={(e) => updateProfile('city', e.target.value)}
-                                    class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                />
-                            </div>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Country</label>
-                            <div class="relative">
-                                <MapPin class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                                <input
-                                    type="text"
-                                    value={userProfile().country}
-                                    onInput={(e) => updateProfile('country', e.target.value)}
-                                    class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                />
-                            </div>
-                        </div>
-                        <div class="sm:col-span-2">
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Bio</label>
-                            <textarea
-                                value={userProfile().bio}
-                                onInput={(e) => updateProfile('bio', e.target.value)}
-                                rows={3}
-                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                placeholder="Tell us about your travel interests..."
-                            />
-                        </div>
-                    </div>
-                    <div class="flex justify-end mt-4 sm:mt-6">
-                        <button
-                            onClick={saveProfile}
-                            disabled={updateProfileMutation.isPending}
-                            class="px-4 sm:px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium flex items-center gap-2 text-sm sm:text-base"
-                        >
-                            <Save class="w-3 h-3 sm:w-4 sm:h-4" />
-                            {updateProfileMutation.isPending ? 'Saving...' : 'Save'}
-                        </button>
                     </div>
                 </div>
+                <input
+                    id="photo-upload"
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileSelect}
+                    class="hidden"
+                />
             </div>
-        </div>
-    );
+        );
+    };
 
     const renderTags = () => {
         return (
@@ -525,7 +603,8 @@ export default function SettingsPage() {
     };
 
     return (
-        <div class="min-h-screen bg-gray-50">
+        <div class="min-h-screen relative bg-gradient-to-b from-slate-50 via-white to-blue-50/60">
+            <div class="absolute inset-0 pointer-events-none bg-[radial-gradient(circle_at_20%_20%,rgba(12,125,242,0.08),transparent_35%),radial-gradient(circle_at_80%_0%,rgba(99,179,237,0.08),transparent_28%)]" />
             {/* Mobile-friendly notification */}
             <Show when={notification()}>
                 <div class={`fixed top-4 left-4 right-4 sm:left-auto sm:right-4 sm:w-96 z-50 p-4 rounded-lg shadow-lg border ${notification()?.type === 'success'
@@ -544,21 +623,21 @@ export default function SettingsPage() {
                 </div>
             </Show>
 
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8">
+            <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8">
                 <div class="flex flex-col lg:flex-row gap-4 lg:gap-8">
                     {/* Mobile Tab Navigation */}
                     <div class="lg:hidden">
-                        <div class="bg-white rounded-lg border border-gray-200 p-2">
-                            <div class="flex overflow-x-auto space-x-1">
+                        <div class="bg-white/80 backdrop-blur rounded-2xl border border-gray-200/80 p-2 shadow-sm">
+                            <div class="flex overflow-x-auto space-x-2">
                                 <For each={tabs}>
                                     {(tab) => {
                                         const Icon = tab.icon;
                                         return (
                                             <button
                                                 onClick={() => setActiveTab(tab.id)}
-                                                class={`flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 whitespace-nowrap ${activeTab() === tab.id
-                                                    ? 'bg-blue-600 text-white shadow-lg'
-                                                    : 'text-gray-700 hover:bg-gray-100'
+                                                class={`flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-xl transition-all duration-200 whitespace-nowrap border ${activeTab() === tab.id
+                                                    ? 'bg-gradient-to-r from-[#0c7df2] to-[#0a6ed6] text-white shadow-lg border-blue-500/40'
+                                                    : 'text-gray-700 hover:bg-gray-50 border-transparent'
                                                     }`}
                                             >
                                                 <Icon class="w-4 h-4" />
@@ -573,17 +652,17 @@ export default function SettingsPage() {
 
                     {/* Desktop Tab Navigation */}
                     <div class="hidden lg:block w-64 flex-shrink-0">
-                        <div class="bg-white rounded-lg border border-gray-200 p-2 sticky top-8">
-                            <nav class="space-y-1">
+                        <div class="bg-white/85 backdrop-blur rounded-2xl border border-gray-200/90 p-3 sticky top-8 shadow-sm">
+                            <nav class="space-y-1.5">
                                 <For each={tabs}>
                                     {(tab) => {
                                         const Icon = tab.icon;
                                         return (
                                             <button
                                                 onClick={() => setActiveTab(tab.id)}
-                                                class={`w-full flex items-center gap-3 px-4 py-3 text-left rounded-lg transition-all duration-200 font-medium ${activeTab() === tab.id
-                                                    ? 'bg-blue-600 text-white shadow-lg'
-                                                    : 'text-gray-700 hover:bg-gray-100'
+                                                class={`w-full flex items-center gap-3 px-4 py-3 text-left rounded-xl transition-all duration-200 font-semibold border ${activeTab() === tab.id
+                                                    ? 'bg-gradient-to-r from-[#0c7df2] to-[#0a6ed6] text-white shadow-lg border-blue-500/40'
+                                                    : 'text-gray-700 hover:bg-gray-50 border-transparent'
                                                     }`}
                                             >
                                                 <Icon class="w-5 h-5" />

@@ -49,7 +49,7 @@ const TrendingComponent: Component = () => {
                             <Card class="hover:shadow-lg transition-all duration-300 bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm border border-gray-200 dark:border-gray-700">
                                 <CardHeader class="pb-4">
                                     <div class="flex items-start space-x-4">
-                                        <div class="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center text-white text-xl">
+                                        <div class="w-12 h-12 bg-[#0c7df2] rounded-lg flex items-center justify-center text-white text-xl shadow ring-2 ring-white/50 dark:ring-slate-800">
                                             {company.logo}
                                         </div>
                                         <div class="flex-1">
@@ -82,4 +82,3 @@ const TrendingComponent: Component = () => {
 };
 
 export default TrendingComponent;
-

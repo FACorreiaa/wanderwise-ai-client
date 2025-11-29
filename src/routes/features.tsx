@@ -133,7 +133,7 @@ export default function Features() {
               const IconComponent = capability.icon;
               return (
                 <article 
-                  class="bg-gradient-to-r from-blue-50/50 to-purple-50/50 dark:from-blue-950/30 dark:to-purple-950/30 rounded-lg p-6 border border-blue-200/50 dark:border-blue-800/50"
+                  class="glass-panel gradient-border rounded-lg p-6 border-0 shadow-lg"
                   role="listitem"
                   aria-labelledby={`capability-${index}`}
                 >
@@ -153,41 +153,41 @@ export default function Features() {
         </section>
 
         {/* AI Capabilities */}
-        <section class="bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-700 dark:to-purple-700 rounded-lg p-8 mb-20 text-white" aria-labelledby="ai-capabilities">
+        <section class="glass-panel gradient-border rounded-lg p-8 mb-20" aria-labelledby="ai-capabilities">
           <div class="text-center mb-8">
-            <h2 id="ai-capabilities" class="text-3xl font-bold mb-4">AI-Generated Itineraries</h2>
-            <p class="text-lg text-white/90 max-w-3xl mx-auto">
+            <h2 id="ai-capabilities" class="text-3xl font-bold mb-4 text-foreground">AI-Generated Itineraries</h2>
+            <p class="text-lg text-muted-foreground max-w-3xl mx-auto">
               Let our advanced AI create personalized itineraries based on your interests, available time, 
               and location. From quick lunch breaks to full-day adventures.
             </p>
           </div>
           <div class="grid md:grid-cols-3 gap-6" role="list">
             <div class="text-center" role="listitem">
-              <div class="bg-white/20 rounded-lg p-4 mb-4" aria-hidden="true">
-                <Clock class="w-8 h-8 mx-auto" />
+              <div class="bg-white/70 dark:bg-slate-900/60 rounded-lg p-4 mb-4 shadow-md border border-white/30 dark:border-slate-800/60" aria-hidden="true">
+                <Clock class="w-8 h-8 mx-auto text-slate-900 dark:text-white" />
               </div>
-              <h3 class="font-semibold mb-2">Time-Optimized</h3>
-              <p class="text-sm text-white/80">Perfect timing for every activity</p>
+              <h3 class="font-semibold mb-2 text-foreground">Time-Optimized</h3>
+              <p class="text-sm text-muted-foreground">Perfect timing for every activity</p>
             </div>
             <div class="text-center" role="listitem">
-              <div class="bg-white/20 rounded-lg p-4 mb-4" aria-hidden="true">
-                <Brain class="w-8 h-8 mx-auto" />
+              <div class="bg-white/70 dark:bg-slate-900/60 rounded-lg p-4 mb-4 shadow-md border border-white/30 dark:border-slate-800/60" aria-hidden="true">
+                <Brain class="w-8 h-8 mx-auto text-slate-900 dark:text-white" />
               </div>
-              <h3 class="font-semibold mb-2">Personalized</h3>
-              <p class="text-sm text-white/80">Tailored to your unique interests</p>
+              <h3 class="font-semibold mb-2 text-foreground">Personalized</h3>
+              <p class="text-sm text-muted-foreground">Tailored to your unique interests</p>
             </div>
             <div class="text-center" role="listitem">
-              <div class="bg-white/20 rounded-lg p-4 mb-4" aria-hidden="true">
-                <MapPin class="w-8 h-8 mx-auto" />
+              <div class="bg-white/70 dark:bg-slate-900/60 rounded-lg p-4 mb-4 shadow-md border border-white/30 dark:border-slate-800/60" aria-hidden="true">
+                <MapPin class="w-8 h-8 mx-auto text-slate-900 dark:text-white" />
               </div>
-              <h3 class="font-semibold mb-2">Location-Aware</h3>
-              <p class="text-sm text-white/80">Optimized routes and distances</p>
+              <h3 class="font-semibold mb-2 text-foreground">Location-Aware</h3>
+              <p class="text-sm text-muted-foreground">Optimized routes and distances</p>
             </div>
           </div>
         </section>
 
         {/* Smart Memory & RAG Section */}
-        <section class="bg-muted/30 rounded-lg p-8 mb-20" aria-labelledby="smart-memory">
+        <section class="glass-panel gradient-border rounded-lg p-8 mb-20 border-0" aria-labelledby="smart-memory">
           <div class="text-center mb-8">
             <h2 id="smart-memory" class="text-3xl font-bold text-foreground mb-4">Smart Memory & Contextual Understanding</h2>
             <p class="text-lg text-muted-foreground max-w-4xl mx-auto">

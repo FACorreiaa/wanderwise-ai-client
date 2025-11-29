@@ -12,6 +12,7 @@ import { ThemeProvider } from "~/contexts/ThemeContext";
 // @ts-ignore - Context type
 import { LocationProvider } from "~/contexts/LocationContext";
 import queryClient from "~/lib/query-client";
+import PageBackground from "./components/PageBackground";
 
 export default function App() {
   return (
@@ -21,13 +22,19 @@ export default function App() {
           root={props => (
             <AuthProvider>
               <LocationProvider>
-                <div class="min-h-screen flex flex-col bg-white dark:bg-gray-900 transition-colors">
-                  <Nav />
-                  <main class="flex-grow min-h-screen bg-gradient-to-b from-blue-50 via-purple-50 to-white dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 transition-colors">
-                    <Suspense>{props.children}</Suspense>
-                  </main>
-                  <Footer />
-                  <PWAInstall />
+                <div class="min-h-screen flex flex-col relative overflow-hidden transition-colors">
+                  <PageBackground />
+
+                  <div class="relative z-10 flex flex-col min-h-screen">
+                    <Nav />
+                    <main class="relative flex-grow">
+                      <div class="relative min-h-screen">
+                        <Suspense>{props.children}</Suspense>
+                      </div>
+                    </main>
+                    <Footer />
+                    <PWAInstall />
+                  </div>
                 </div>
               </LocationProvider>
             </AuthProvider>

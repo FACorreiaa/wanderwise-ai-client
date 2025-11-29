@@ -2,14 +2,15 @@ import { Button } from "@/ui/button";
 
 export default function CTA() {
     return (
-        <section class="w-full py-12 sm:py-16 md:py-20 bg-background/50 dark:bg-gray-900/50" aria-labelledby="cta-heading">
-            <div class="container text-center px-4 sm:px-6 lg:px-8">
-                <div class="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6">
-                    <span id="cta-heading" class="text-base sm:text-lg text-foreground font-medium">
+        <section class="w-full py-12 sm:py-16 md:py-20 relative overflow-hidden" aria-labelledby="cta-heading">
+            <div class="pointer-events-none absolute inset-0 bg-white/20 dark:bg-slate-900/30" aria-hidden="true" />
+            <div class="container text-center px-4 sm:px-6 lg:px-8 relative z-10">
+                <div class="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6 glass-panel gradient-border rounded-2xl px-5 py-6 sm:px-8 sm:py-8">
+                    <span id="cta-heading" class="text-base sm:text-lg text-foreground font-semibold tracking-tight">
                         Ready to explore smarter?
                     </span>
                     <Button 
-                        class="bg-orange-500 hover:bg-orange-600 focus:bg-orange-600 dark:bg-orange-600 dark:hover:bg-orange-700 dark:focus:bg-orange-700 text-white font-bold px-6 sm:px-8 py-3 sm:py-4 text-base sm:text-lg rounded-lg w-full sm:w-auto focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 transition-colors"
+                        class="bg-[#0c7df2] hover:bg-[#0a6ed6] text-white font-bold px-6 sm:px-8 py-3 sm:py-4 text-base sm:text-lg rounded-lg w-full sm:w-auto focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:ring-offset-2 transition-all shadow-[0_14px_32px_rgba(12,125,242,0.22)] border border-white/20 dark:border-slate-800/60"
                         aria-label="Sign up for Loci to get started for free"
                     >
                         Get Started for Free

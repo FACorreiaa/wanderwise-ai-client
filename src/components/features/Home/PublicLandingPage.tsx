@@ -143,35 +143,32 @@ export default function PublicLandingPage(): JSX.Element {
   };
 
   return (
-    <div class="min-h-screen bg-gradient-to-b from-blue-50 via-purple-50 to-white dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 relative overflow-hidden">
-      {/* Background gradient effects */}
-      <div class="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-blue-100/20 via-transparent to-transparent pointer-events-none"></div>
-
+    <div class="min-h-screen relative overflow-hidden pb-16">
       <div class="relative">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-16 text-center">
-          <div class="space-y-8">
+          <div class="space-y-10">
             <div class="space-y-4">
-              <h1 class="text-4xl sm:text-5xl lg:text-6xl font-bold text-gray-900 dark:text-white leading-tight">
+              <h1 class="text-4xl sm:text-5xl lg:text-6xl font-bold text-slate-900 dark:text-white leading-tight tracking-tight">
                 Discover Your Perfect
-                <span class="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent block">
+                <span class="text-sky-700 dark:text-sky-300 block">
                   City Adventure
                 </span>
               </h1>
-              <p class="max-w-2xl mx-auto text-xl text-gray-600 dark:text-gray-300 leading-relaxed">
+              <p class="max-w-2xl mx-auto text-xl text-slate-600 dark:text-slate-300 leading-relaxed">
                 AI-powered recommendations that learn your preferences and adapt
                 to your time, location, and interests.
               </p>
             </div>
 
             {/* Main search interface */}
-            <div class="max-w-2xl mx-auto mb-8">
-              <div class="flex items-end gap-3 bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-lg border border-gray-200 dark:border-gray-700">
+            <div class="max-w-2xl mx-auto mb-10">
+              <div class="flex items-end gap-3 glass-panel gradient-border rounded-3xl p-4 sm:p-5">
                 <div class="flex-1">
                   <textarea
                     value={currentMessage()}
                     onInput={(e) => setCurrentMessage(e.target.value)}
                     placeholder="What would you like to discover? Try 'Hidden gems in Paris' or 'Best food markets in Italy'"
-                    class="w-full h-12 px-0 py-0 border-none resize-none focus:outline-none focus:ring-0 dark:bg-gray-800 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
+                    class="w-full h-12 px-0 py-0 border-none resize-none focus:outline-none focus:ring-0 bg-transparent text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400"
                     rows="1"
                     onKeyDown={(e) => {
                       if (e.key === "Enter" && !e.shiftKey) {
@@ -184,7 +181,7 @@ export default function PublicLandingPage(): JSX.Element {
                 <button
                   onClick={handleSearchClick}
                   disabled={isLoading() || !currentMessage().trim()}
-                  class="px-6 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white rounded-xl font-medium transition-colors flex items-center gap-2"
+                  class="px-6 py-3 bg-[#0c7df2] hover:bg-[#0a6ed6] disabled:bg-slate-400/70 disabled:cursor-not-allowed text-white rounded-2xl font-semibold transition-all flex items-center gap-2 shadow-[0_14px_32px_rgba(12,125,242,0.22)]"
                 >
                   <Show when={isLoading()} fallback={<Send class="w-4 h-4" />}>
                     <Loader2 class="w-4 h-4 animate-spin" />
@@ -201,8 +198,8 @@ export default function PublicLandingPage(): JSX.Element {
             {/* Loading State */}
             <Show when={isLoading()}>
               <div class="max-w-4xl mx-auto mt-8 mb-12">
-                <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-xl border border-gray-200 dark:border-gray-700">
-                  <div class="flex items-center gap-3 text-gray-600 dark:text-gray-400">
+                <div class="glass-panel gradient-border rounded-2xl p-6">
+                  <div class="flex items-center gap-3 text-slate-700 dark:text-slate-200">
                     <Loader2 class="w-5 h-5 animate-spin" />
                     <span>
                       AI is analyzing your request and preparing your
@@ -216,7 +213,7 @@ export default function PublicLandingPage(): JSX.Element {
             {/* Quick suggestion buttons */}
             <Show when={!isLoading()}>
               <div class="max-w-4xl mx-auto mt-12">
-                <p class="text-gray-600 dark:text-gray-400 mb-6 font-medium">
+                <p class="text-slate-600 dark:text-slate-300 mb-6 font-medium">
                   Try these popular searches for free:
                 </p>
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -226,15 +223,15 @@ export default function PublicLandingPage(): JSX.Element {
                       handleSearchClick();
                     }}
                     disabled={isLoading()}
-                    class="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border border-gray-200 dark:border-gray-700 hover:shadow-md hover:border-blue-300 dark:hover:border-blue-600 transition-all group text-left disabled:opacity-50 disabled:cursor-not-allowed"
+                    class="glass-panel gradient-border rounded-xl p-4 shadow-none hover:shadow-[0_16px_40px_rgba(14,165,233,0.25)] transition-all group text-left disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <div class="flex items-start gap-3">
                       <span class="text-2xl">🌟</span>
                       <div>
-                        <h4 class="font-medium text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                        <h4 class="font-semibold text-slate-900 dark:text-white group-hover:text-cyan-500 dark:group-hover:text-cyan-300 transition-colors">
                           Hidden gems in Paris
                         </h4>
-                        <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                        <p class="text-sm text-slate-600 dark:text-slate-300 mt-1">
                           Try free AI recommendations
                         </p>
                       </div>
@@ -247,15 +244,15 @@ export default function PublicLandingPage(): JSX.Element {
                       handleSearchClick();
                     }}
                     disabled={isLoading()}
-                    class="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border border-gray-200 dark:border-gray-700 hover:shadow-md hover:border-blue-300 dark:hover:border-blue-600 transition-all group text-left disabled:opacity-50 disabled:cursor-not-allowed"
+                    class="glass-panel gradient-border rounded-xl p-4 shadow-none hover:shadow-[0_16px_40px_rgba(14,165,233,0.25)] transition-all group text-left disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <div class="flex items-start gap-3">
                       <span class="text-2xl">🍕</span>
                       <div>
-                        <h4 class="font-medium text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                        <h4 class="font-semibold text-slate-900 dark:text-white group-hover:text-cyan-500 dark:group-hover:text-cyan-300 transition-colors">
                           Best food markets in Italy
                         </h4>
-                        <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                        <p class="text-sm text-slate-600 dark:text-slate-300 mt-1">
                           Try free AI recommendations
                         </p>
                       </div>
@@ -268,15 +265,15 @@ export default function PublicLandingPage(): JSX.Element {
                       handleSearchClick();
                     }}
                     disabled={isLoading()}
-                    class="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border border-gray-200 dark:border-gray-700 hover:shadow-md hover:border-blue-300 dark:hover:border-blue-600 transition-all group text-left disabled:opacity-50 disabled:cursor-not-allowed"
+                    class="glass-panel gradient-border rounded-xl p-4 shadow-none hover:shadow-[0_16px_40px_rgba(14,165,233,0.25)] transition-all group text-left disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <div class="flex items-start gap-3">
                       <span class="text-2xl">🏛️</span>
                       <div>
-                        <h4 class="font-medium text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                        <h4 class="font-semibold text-slate-900 dark:text-white group-hover:text-cyan-500 dark:group-hover:text-cyan-300 transition-colors">
                           3-day cultural tour of Rome
                         </h4>
-                        <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                        <p class="text-sm text-slate-600 dark:text-slate-300 mt-1">
                           Try free AI recommendations
                         </p>
                       </div>
@@ -289,15 +286,15 @@ export default function PublicLandingPage(): JSX.Element {
                       handleSearchClick();
                     }}
                     disabled={isLoading()}
-                    class="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border border-gray-200 dark:border-gray-700 hover:shadow-md hover:border-blue-300 dark:hover:border-blue-600 transition-all group text-left disabled:opacity  disabled:opacity-50 disabled:cursor-not-allowed"
+                    class="glass-panel gradient-border rounded-xl p-4 shadow-none hover:shadow-[0_16px_40px_rgba(14,165,233,0.25)] transition-all group text-left disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <div class="flex items-start gap-3">
                       <span class="text-2xl">🌃</span>
                       <div>
-                        <h4 class="font-medium text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                        <h4 class="font-semibold text-slate-900 dark:text-white group-hover:text-cyan-500 dark:group-hover:text-cyan-300 transition-colors">
                           Weekend nightlife in Barcelona
                         </h4>
-                        <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                        <p class="text-sm text-slate-600 dark:text-slate-300 mt-1">
                           Try free AI recommendations
                         </p>
                       </div>

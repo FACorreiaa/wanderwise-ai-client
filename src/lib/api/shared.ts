@@ -6,14 +6,16 @@ import {
   RateLimitError,
   showRateLimitNotification,
 } from "../rate-limiter";
+import { authAPI, clearAuthToken, getAuthToken, setAuthToken } from "../api";
 
 export const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api/v1";
+  import.meta.env.VITE_API_BASE_URL || "http://localhost:8080";
 
 // Enhanced request wrapper with better error handling and rate limiting
 export async function apiRequest<T>(
   endpoint: string,
   options: RequestInit = {},
+  isRetry: boolean = false,
 ): Promise<T> {
   // Apply client-side rate limiting for LLM endpoints
   const rateLimitCheck = await defaultLLMRateLimiter.checkRateLimit(endpoint);
@@ -28,9 +30,10 @@ export async function apiRequest<T>(
   }
 
   // Check both localStorage (persistent) and sessionStorage (temporary) for token
-  const token =
-    localStorage.getItem("access_token") ||
-    sessionStorage.getItem("access_token");
+  const token = getAuthToken();
+
+  const useLocalStorage =
+    !!localStorage.getItem("access_token") || !!localStorage.getItem("refresh_token");
 
   const config: RequestInit = {
     headers: {
@@ -71,21 +74,35 @@ export async function apiRequest<T>(
         );
       }
 
-      if (response.status === 401) {
-        // Check if this is a guest-accessible endpoint
-        const guestAccessibleEndpoints = [
-          "/llm/chat/stream/free",
-          "/cities",
-          "/statistics",
-          "/itinerary",
-        ];
+      const guestAccessibleEndpoints = [
+        "/llm/chat/stream/free",
+        "/cities",
+        "/statistics",
+        "/itinerary",
+      ];
 
-        const isGuestAccessible = guestAccessibleEndpoints.some(
-          (guestEndpoint) => endpoint.includes(guestEndpoint),
-        );
+      const isGuestAccessible = guestAccessibleEndpoints.some(
+        (guestEndpoint) => endpoint.includes(guestEndpoint),
+      );
+
+      if (response.status === 401) {
+        if (!isGuestAccessible && !isRetry) {
+          try {
+            const refreshResult = await authAPI.refreshToken();
+            if (refreshResult.access_token) {
+              setAuthToken(
+                refreshResult.access_token,
+                useLocalStorage,
+                refreshResult.refresh_token,
+              );
+              return apiRequest<T>(endpoint, options, true);
+            }
+          } catch (error) {
+            console.error("Token refresh failed:", error);
+          }
+        }
 
         if (isGuestAccessible) {
-          // Don't redirect for guest-accessible endpoints, just throw the error
           console.log(
             "Guest-accessible endpoint got 401, not redirecting:",
             endpoint,
@@ -98,8 +115,7 @@ export async function apiRequest<T>(
         }
 
         // Clear both storage types on unauthorized and redirect
-        localStorage.removeItem("access_token");
-        sessionStorage.removeItem("access_token");
+        clearAuthToken();
         window.location.href = "/auth/signin";
         throw new Error("Unauthorized");
       }

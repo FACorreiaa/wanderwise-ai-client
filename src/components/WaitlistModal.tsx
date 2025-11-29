@@ -45,29 +45,29 @@ export default function WaitlistModal(props: WaitlistModalProps) {
   return (
     <Show when={props.isOpen()}>
       <div 
-        class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+        class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/70 backdrop-blur-2xl"
         onClick={handleBackdropClick}
       >
-        <Card class="w-full max-w-md bg-white dark:bg-gray-800 border-0 shadow-2xl animate-in zoom-in-95 duration-200">
+        <Card class="w-full max-w-md shadow-2xl animate-in zoom-in-95 duration-200 glass-panel gradient-border">
           <CardHeader class="relative pb-4">
             <button
               onClick={props.onClose}
-              class="absolute right-4 top-4 p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+              class="absolute right-4 top-4 p-1 rounded-full hover:bg-white/60 dark:hover:bg-slate-800/70 transition-colors border border-transparent hover:border-white/40 dark:hover:border-slate-700"
               aria-label="Close modal"
             >
-              <X class="w-4 h-4 text-gray-500" />
+              <X class="w-4 h-4 text-slate-500 dark:text-slate-300" />
             </button>
             
             <div class="flex items-center gap-3 mb-2">
-              <div class="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
+              <div class="w-10 h-10 bg-[#0c7df2] rounded-lg flex items-center justify-center shadow-[0_12px_32px_rgba(12,125,242,0.22)] ring-2 ring-white/60 dark:ring-slate-800">
                 <Smartphone class="w-5 h-5 text-white" />
               </div>
-              <CardTitle class="text-xl font-bold text-gray-900 dark:text-white">
+              <CardTitle class="text-xl font-bold text-slate-900 dark:text-white tracking-tight">
                 Join the Waitlist
               </CardTitle>
             </div>
             
-            <p class="text-gray-600 dark:text-gray-300 text-sm">
+            <p class="text-slate-600 dark:text-slate-200 text-sm">
               Be the first to know when our mobile apps launch. We'll send you an exclusive early access invitation.
             </p>
           </CardHeader>
@@ -75,13 +75,13 @@ export default function WaitlistModal(props: WaitlistModalProps) {
           <CardContent class="pt-0">
             <Show when={!isSubmitted()} fallback={
               <div class="text-center py-6">
-                <div class="w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <CheckCircle class="w-8 h-8 text-green-600 dark:text-green-400" />
+                <div class="w-16 h-16 bg-emerald-100 dark:bg-emerald-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <CheckCircle class="w-8 h-8 text-emerald-600 dark:text-emerald-400" />
                 </div>
-                <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                <h3 class="text-lg font-semibold text-slate-900 dark:text-white mb-2">
                   You're on the list!
                 </h3>
-                <p class="text-gray-600 dark:text-gray-300 text-sm">
+                <p class="text-slate-600 dark:text-slate-200 text-sm">
                   Thanks for joining! We'll notify you as soon as the apps are ready.
                 </p>
               </div>
@@ -90,12 +90,12 @@ export default function WaitlistModal(props: WaitlistModalProps) {
                 <div class="space-y-2">
                   <label 
                     for="waitlist-email" 
-                    class="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                    class="block text-sm font-semibold text-slate-700 dark:text-slate-200"
                   >
                     Email Address
                   </label>
                   <div class="relative">
-                    <Mail class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                    <Mail class="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-4 h-4" />
                     <input
                       id="waitlist-email"
                       type="email"
@@ -103,7 +103,7 @@ export default function WaitlistModal(props: WaitlistModalProps) {
                       onInput={(e) => setEmail(e.target.value)}
                       placeholder="your@email.com"
                       required
-                      class="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
+                      class="w-full pl-10 pr-4 py-3 border border-white/50 dark:border-slate-800/70 rounded-lg focus:ring-2 focus:ring-cyan-400 focus:border-transparent bg-white/60 dark:bg-slate-900/60 text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400 backdrop-blur"
                     />
                   </div>
                 </div>
@@ -112,7 +112,7 @@ export default function WaitlistModal(props: WaitlistModalProps) {
                   <Button
                     type="submit"
                     disabled={isSubmitting() || !email().trim()}
-                    class="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-medium py-3 px-4 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+                    class="w-full text-white font-semibold py-3 px-4 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
                   >
                     {isSubmitting() ? (
                       <div class="flex items-center justify-center gap-2">
@@ -125,7 +125,7 @@ export default function WaitlistModal(props: WaitlistModalProps) {
                   </Button>
 
                   <div class="text-center">
-                    <p class="text-xs text-gray-500 dark:text-gray-400">
+                    <p class="text-xs text-slate-500 dark:text-slate-400">
                       We respect your privacy. No spam, just updates about our mobile apps.
                     </p>
                   </div>

@@ -105,14 +105,14 @@ export default function About() {
           </section>
 
           {/* Call to Action */}
-          <section class="text-center bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-700 dark:to-purple-700 rounded-lg p-8 text-white" aria-labelledby="cta-heading">
-            <h2 id="cta-heading" class="text-2xl font-bold mb-4">Ready to Discover Your City?</h2>
-            <p class="text-lg mb-6 text-white/90">
+          <section class="text-center glass-panel gradient-border rounded-lg p-8" aria-labelledby="cta-heading">
+            <h2 id="cta-heading" class="text-2xl font-bold mb-4 text-foreground">Ready to Discover Your City?</h2>
+            <p class="text-lg mb-6 text-muted-foreground">
               Join thousands of explorers who've already discovered their perfect spots with Loci.
             </p>
             <A href="/auth/signup" class="inline-block">
               <button 
-                class="bg-white text-blue-600 font-semibold px-8 py-3 rounded-lg hover:bg-gray-100 focus:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-blue-600 transition-colors"
+                class="bg-[#0c7df2] text-white font-semibold px-8 py-3 rounded-lg hover:bg-[#0a6ed6] focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-slate-900 transition-colors shadow-[0_14px_32px_rgba(12,125,242,0.22)] border border-white/30 dark:border-slate-800/60"
                 aria-label="Sign up for Loci to start discovering your city"
               >
                 Get Started Today

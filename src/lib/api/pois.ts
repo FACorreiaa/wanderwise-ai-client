@@ -4,6 +4,27 @@ import { apiRequest, queryKeys } from './shared';
 import type { POI, POIDetailedInfo } from './types';
 import { createResource } from 'solid-js';
 
+// Normalize different favorites response shapes to a plain POI array
+const normalizeFavoritesResponse = (response: unknown): POI[] => {
+  if (Array.isArray(response)) return response;
+  if (response && typeof response === 'object') {
+    const obj = response as Record<string, unknown>;
+    const candidates = [
+      obj.favorites,
+      obj.favorite_pois,
+      obj.data,
+      obj.results,
+    ];
+
+    for (const candidate of candidates) {
+      if (Array.isArray(candidate)) {
+        return candidate as POI[];
+      }
+    }
+  }
+  return [];
+};
+
 // ===============
 // POI QUERIES
 // ===============
@@ -14,9 +35,15 @@ export const useFavorites = () => {
     queryFn: async () => {
       console.log('🔄 Fetching user favorites...');
       try {
-        const response = await apiRequest<POI[]>('/pois/favourites');
-        console.log('✅ Favorites fetched:', response);
-        return response;
+        const response = await apiRequest<
+          POI[] | { favorites?: POI[]; favorite_pois?: POI[]; data?: POI[] }
+        >('/pois/favourites');
+        const normalized = normalizeFavoritesResponse(response);
+        console.log('✅ Favorites fetched:', {
+          raw: response,
+          normalizedCount: normalized.length,
+        });
+        return normalized;
       } catch (error) {
         console.error('❌ Failed to fetch favorites:', error);
         throw error;

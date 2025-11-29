@@ -109,7 +109,7 @@ export default function PWAInstall() {
       <Show when={showInstallBanner() && !isInstalled() && !wasDismissed()}>
         <div class="fixed bottom-4 left-4 right-4 md:left-auto md:right-4 md:max-w-sm bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg p-4 z-50 transition-all duration-300">
           <div class="flex items-start gap-3">
-            <div class="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center flex-shrink-0">
+            <div class="w-10 h-10 bg-[#0c7df2] rounded-lg flex items-center justify-center flex-shrink-0 text-white shadow-[0_12px_32px_rgba(12,125,242,0.22)] ring-2 ring-white/50 dark:ring-slate-800">
               <span class="text-white font-bold text-lg">L</span>
             </div>
             <div class="flex-1 min-w-0">

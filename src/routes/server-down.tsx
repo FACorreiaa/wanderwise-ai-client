@@ -43,14 +43,14 @@ const ServerDownPage: Component = () => {
   });
 
   return (
-    <div class="min-h-screen bg-gradient-to-b from-red-50 via-orange-50 to-yellow-50 dark:from-gray-900 dark:via-red-900/10 dark:to-gray-900 flex items-center justify-center px-4 py-8">
-      <div class="text-center max-w-lg mx-auto">
+    <div class="min-h-screen flex items-center justify-center px-4 py-8">
+      <div class="text-center max-w-lg mx-auto glass-panel gradient-border rounded-2xl p-8 shadow-xl">
         {/* Animated Icon */}
         <div class="mb-8 relative">
-          <div class="w-24 h-24 mx-auto bg-gradient-to-br from-red-500 to-orange-600 rounded-full flex items-center justify-center animate-pulse">
+          <div class="w-24 h-24 mx-auto bg-orange-500 rounded-full flex items-center justify-center animate-pulse shadow-[0_18px_38px_rgba(249,115,22,0.25)] ring-4 ring-white/60 dark:ring-slate-800">
             <ServerCrash class="w-12 h-12 text-white" />
           </div>
-          <div class="absolute -top-1 -right-1 w-8 h-8 bg-yellow-500 rounded-full flex items-center justify-center animate-bounce">
+          <div class="absolute -top-1 -right-1 w-8 h-8 bg-yellow-500 rounded-full flex items-center justify-center animate-bounce shadow-lg">
             <AlertTriangle class="w-4 h-4 text-white" />
           </div>
         </div>
@@ -68,7 +68,7 @@ const ServerDownPage: Component = () => {
         </p>
 
         {/* Status Information */}
-        <div class="mb-8 p-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+        <div class="mb-8 p-4 glass-panel gradient-border rounded-lg text-left border-0">
           <div class="flex items-center justify-center gap-2 mb-3">
             <Wifi class="w-5 h-5 text-red-500" />
             <span class="font-medium text-gray-900 dark:text-white">Connection Status</span>
@@ -96,14 +96,14 @@ const ServerDownPage: Component = () => {
           <button 
             onClick={handleRetry}
             disabled={isRetrying()}
-            class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 bg-red-600 disabled:bg-red-400 text-white rounded-lg hover:bg-red-700 disabled:hover:bg-red-400 transition-colors font-medium disabled:cursor-not-allowed"
+            class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 bg-orange-500 disabled:bg-orange-300 text-white rounded-lg hover:bg-orange-600 disabled:hover:bg-orange-300 transition-colors font-medium disabled:cursor-not-allowed shadow-[0_14px_32px_rgba(249,115,22,0.25)] border border-white/30 dark:border-slate-800/60"
           >
             <RefreshCw class={`w-4 h-4 ${isRetrying() ? 'animate-spin' : ''}`} />
             {isRetrying() ? 'Checking...' : 'Try Again'}
           </button>
           <A 
             href="/" 
-            class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors font-medium"
+            class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 bg-white/70 dark:bg-slate-900/60 text-gray-900 dark:text-white rounded-lg hover:bg-white/90 dark:hover:bg-slate-800/80 transition-colors font-medium border border-white/40 dark:border-slate-800/70"
           >
             <Home class="w-4 h-4" />
             Back to Home
@@ -111,24 +111,24 @@ const ServerDownPage: Component = () => {
         </div>
 
         {/* Offline Features */}
-        <div class="mb-8 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-          <h3 class="font-semibold text-blue-900 dark:text-blue-100 mb-3">
+        <div class="mb-8 p-4 glass-panel gradient-border rounded-lg text-left">
+          <h3 class="font-semibold text-slate-900 dark:text-white mb-3">
             What you can do while we're down:
           </h3>
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
-            <div class="flex items-center gap-2 text-blue-800 dark:text-blue-200">
+            <div class="flex items-center gap-2 text-slate-700 dark:text-slate-200">
               <span class="w-2 h-2 bg-blue-500 rounded-full"></span>
               Browse cached content
             </div>
-            <div class="flex items-center gap-2 text-blue-800 dark:text-blue-200">
+            <div class="flex items-center gap-2 text-slate-700 dark:text-slate-200">
               <span class="w-2 h-2 bg-blue-500 rounded-full"></span>
               View saved favorites
             </div>
-            <div class="flex items-center gap-2 text-blue-800 dark:text-blue-200">
+            <div class="flex items-center gap-2 text-slate-700 dark:text-slate-200">
               <span class="w-2 h-2 bg-blue-500 rounded-full"></span>
               Read downloaded itineraries
             </div>
-            <div class="flex items-center gap-2 text-blue-800 dark:text-blue-200">
+            <div class="flex items-center gap-2 text-slate-700 dark:text-slate-200">
               <span class="w-2 h-2 bg-blue-500 rounded-full"></span>
               Plan future trips
             </div>
@@ -163,12 +163,12 @@ const ServerDownPage: Component = () => {
         </div>
 
         {/* Travel Tip */}
-        <div class="mt-8 p-4 bg-orange-50 dark:bg-orange-900/20 rounded-lg">
+        <div class="mt-8 p-4 glass-panel gradient-border rounded-lg text-left">
           <div class="flex items-center justify-center gap-2 mb-2">
             <Compass class="w-4 h-4 text-orange-600 dark:text-orange-400" />
             <span class="text-sm font-medium text-orange-900 dark:text-orange-100">Travel Tip</span>
           </div>
-          <p class="text-xs text-orange-800 dark:text-orange-200">
+          <p class="text-xs text-slate-700 dark:text-slate-200">
             Server downtime is like weather delays - they happen! Use this time to review your saved places 
             or plan your next adventure. We'll be back online soon! ✈️
           </p>

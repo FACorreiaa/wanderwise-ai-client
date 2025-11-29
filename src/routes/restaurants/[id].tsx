@@ -245,7 +245,7 @@ export default function RestaurantDetailPage() {
             {/* Map placeholder */}
             <div class="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
                 <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Location</h3>
-                <div class="aspect-video bg-gradient-to-br from-green-100 to-blue-100 dark:from-green-900 dark:to-blue-900 rounded-lg flex items-center justify-center mb-4">
+                <div class="aspect-video bg-white/70 dark:bg-slate-900/60 border border-white/60 dark:border-slate-800/70 rounded-lg flex items-center justify-center mb-4">
                     <MapPin class="w-12 h-12 text-gray-400" />
                 </div>
                 <p class="text-gray-600 dark:text-gray-400">{restaurant()?.address}</p>
@@ -261,7 +261,7 @@ export default function RestaurantDetailPage() {
     );
 
     return (
-        <div class="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors">
+        <div class="min-h-screen relative transition-colors">
             <Show when={restaurant()}>
                 {/* Header */}
                 <div class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
@@ -277,12 +277,12 @@ export default function RestaurantDetailPage() {
                         <div class="flex flex-col lg:flex-row gap-6">
                             {/* Restaurant Images */}
                             <div class="lg:w-1/2">
-                                <div class="aspect-video bg-gradient-to-br from-orange-100 to-red-100 dark:from-orange-900 dark:to-red-900 rounded-lg flex items-center justify-center">
+                                <div class="aspect-video bg-white/70 dark:bg-slate-900/60 border border-white/60 dark:border-slate-800/70 rounded-lg flex items-center justify-center">
                                     🍽️
                                 </div>
                                 <div class="grid grid-cols-3 gap-2 mt-2">
                                     {Array.from({ length: 3 }).map((_, i) => (
-                                        <div class="aspect-video bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-800 rounded"></div>
+                                        <div class="aspect-video bg-white/70 dark:bg-slate-900/60 border border-white/60 dark:border-slate-800/70 rounded"></div>
                                     ))}
                                 </div>
                             </div>

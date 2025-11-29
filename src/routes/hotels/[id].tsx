@@ -85,7 +85,7 @@ export default function HotelDetailPage() {
                     <div class="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
                         <div class="flex flex-col lg:flex-row gap-6">
                             <div class="lg:w-1/3">
-                                <div class="aspect-video bg-gradient-to-br from-blue-100 to-purple-100 dark:from-blue-900 dark:to-purple-900 rounded-lg flex items-center justify-center">
+                                <div class="aspect-video bg-white/70 dark:bg-slate-900/60 border border-white/60 dark:border-slate-800/70 rounded-lg flex items-center justify-center">
                                     🏨
                                 </div>
                             </div>
@@ -167,7 +167,7 @@ export default function HotelDetailPage() {
             {/* Map placeholder */}
             <div class="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
                 <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Location</h3>
-                <div class="aspect-video bg-gradient-to-br from-green-100 to-blue-100 dark:from-green-900 dark:to-blue-900 rounded-lg flex items-center justify-center mb-4">
+                <div class="aspect-video bg-white/70 dark:bg-slate-900/60 border border-white/60 dark:border-slate-800/70 rounded-lg flex items-center justify-center mb-4">
                     <MapPin class="w-12 h-12 text-gray-400" />
                 </div>
                 <p class="text-gray-600 dark:text-gray-400">{hotel()?.address}</p>
@@ -202,7 +202,7 @@ export default function HotelDetailPage() {
     );
 
     return (
-        <div class="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors">
+        <div class="min-h-screen relative transition-colors">
             <Show when={hotel()}>
                 {/* Header */}
                 <div class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
@@ -218,12 +218,12 @@ export default function HotelDetailPage() {
                         <div class="flex flex-col lg:flex-row gap-6">
                             {/* Hotel Images */}
                             <div class="lg:w-1/2">
-                                <div class="aspect-video bg-gradient-to-br from-blue-100 to-purple-100 dark:from-blue-900 dark:to-purple-900 rounded-lg flex items-center justify-center">
+                                <div class="aspect-video bg-white/70 dark:bg-slate-900/60 border border-white/60 dark:border-slate-800/70 rounded-lg flex items-center justify-center">
                                     🏨
                                 </div>
                                 <div class="grid grid-cols-3 gap-2 mt-2">
                                     {Array.from({ length: 3 }).map((_, i) => (
-                                        <div class="aspect-video bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-800 rounded"></div>
+                                        <div class="aspect-video bg-white/70 dark:bg-slate-900/60 border border-white/60 dark:border-slate-800/70 rounded"></div>
                                     ))}
                                 </div>
                             </div>

@@ -8,9 +8,9 @@ const OfflinePage: Component = () => {
   };
 
   return (
-    <div class="min-h-screen flex items-center justify-center bg-gradient-to-b from-blue-50 via-purple-50 to-white dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
-      <div class="text-center max-w-md mx-auto px-6">
-        <div class="w-20 h-20 mx-auto mb-6 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
+    <div class="min-h-screen flex items-center justify-center px-4">
+      <div class="text-center max-w-md mx-auto px-6 glass-panel gradient-border rounded-2xl py-8 shadow-xl">
+        <div class="w-20 h-20 mx-auto mb-6 bg-[#0c7df2] rounded-full flex items-center justify-center shadow-[0_18px_38px_rgba(12,125,242,0.22)] ring-4 ring-white/60 dark:ring-slate-800">
           <Wifi class="w-10 h-10 text-white" />
         </div>
         
@@ -25,7 +25,7 @@ const OfflinePage: Component = () => {
         <div class="space-y-4">
           <Button 
             onClick={handleRetry}
-            class="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg font-medium transition-all flex items-center justify-center gap-2"
+            class="w-full py-3 font-semibold flex items-center justify-center gap-2 shadow-[0_14px_32px_rgba(12,125,242,0.22)] border border-white/30 dark:border-slate-800/60"
           >
             <RefreshCw class="w-5 h-5" />
             Try Again

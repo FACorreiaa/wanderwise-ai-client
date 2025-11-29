@@ -155,16 +155,16 @@ export default function Pricing() {
         {/* Promo Success Banner */}
         <Show when={appliedPromo()}>
           <div class="max-w-4xl mx-auto mb-12">
-            <div class="bg-gradient-to-r from-green-500 to-blue-500 text-white rounded-2xl p-6 shadow-lg">
+            <div class="glass-panel gradient-border text-slate-900 dark:text-white rounded-2xl p-6 shadow-lg border-0">
               <div class="flex items-center gap-4">
-                <div class="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
+                <div class="w-12 h-12 bg-[#0c7df2] rounded-full flex items-center justify-center text-white shadow-lg ring-2 ring-white/60 dark:ring-slate-800">
                   <Star class="w-6 h-6" />
                 </div>
                 <div class="flex-1">
                   <h3 class="text-xl font-bold mb-1">Promo Code Applied Successfully! 🎉</h3>
-                  <p class="text-white/90">{appliedPromo()?.description}</p>
+                  <p class="text-slate-700 dark:text-slate-200">{appliedPromo()?.description}</p>
                   <Show when={appliedPromo()?.type === 'discount'}>
-                    <p class="text-sm text-white/80 mt-1">Your discount will be applied at checkout</p>
+                    <p class="text-sm text-slate-500 dark:text-slate-300 mt-1">Your discount will be applied at checkout</p>
                   </Show>
                 </div>
               </div>
@@ -407,16 +407,16 @@ export default function Pricing() {
         </section>
 
         {/* Call to Action */}
-        <section class="text-center bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-700 dark:to-purple-700 rounded-2xl p-12 text-white" aria-labelledby="final-cta">
-          <h2 id="final-cta" class="text-3xl font-bold mb-4">Ready to Start Exploring?</h2>
-          <p class="text-lg mb-8 text-white/90 max-w-2xl mx-auto">
+        <section class="text-center glass-panel gradient-border rounded-2xl p-12" aria-labelledby="final-cta">
+          <h2 id="final-cta" class="text-3xl font-bold mb-4 text-foreground">Ready to Start Exploring?</h2>
+          <p class="text-lg mb-8 text-muted-foreground max-w-2xl mx-auto">
             Join thousands of users who've already discovered their perfect spots with Loci.
             Start free and upgrade when you're ready for more.
           </p>
           <div class="flex flex-col sm:flex-row gap-4 justify-center">
             <A href="/auth/signup" class="inline-block">
               <button
-                class="bg-white text-blue-600 font-semibold px-8 py-3 rounded-lg hover:bg-gray-100 focus:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-blue-600 transition-colors"
+                class="bg-[#0c7df2] text-white font-semibold px-8 py-3 rounded-lg hover:bg-[#0a6ed6] focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-slate-900 transition-colors shadow-[0_14px_32px_rgba(12,125,242,0.22)] border border-white/30 dark:border-slate-800/60"
                 aria-label="Sign up for Loci to start exploring for free"
               >
                 Start Free Today
@@ -424,7 +424,7 @@ export default function Pricing() {
             </A>
             <A href="/features" class="inline-block">
               <button
-                class="border border-white/20 text-white hover:bg-white/10 focus:bg-white/10 font-semibold px-8 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-blue-600 transition-colors"
+                class="border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 hover:bg-white/60 dark:hover:bg-slate-900/60 font-semibold px-8 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-slate-900 transition-colors"
                 aria-label="Learn more about Loci features"
               >
                 Learn More

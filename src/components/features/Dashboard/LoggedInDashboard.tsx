@@ -21,7 +21,7 @@ interface QuickAction {
   title: string;
   subtitle: string;
   prompt: string;
-  gradient: string;
+  tone: string;
 }
 
 interface RecentActivity {
@@ -60,7 +60,7 @@ export default function LoggedInDashboard(): JSX.Element {
       title: 'Discover Nearby',
       subtitle: 'Find hidden gems around you',
       prompt: 'Show me interesting places near my current location',
-      gradient: 'from-blue-500 to-cyan-500'
+      tone: 'bg-[#0c7df2]'
     },
     {
       id: 'food-adventure',
@@ -68,7 +68,7 @@ export default function LoggedInDashboard(): JSX.Element {
       title: 'Food Adventure',
       subtitle: 'Culinary discoveries await',
       prompt: 'Find the best local restaurants and food experiences near me',
-      gradient: 'from-orange-500 to-red-500'
+      tone: 'bg-[#f97316]'
     },
     {
       id: 'cultural-tour',
@@ -76,7 +76,7 @@ export default function LoggedInDashboard(): JSX.Element {
       title: 'Cultural Tour',
       subtitle: 'Museums, art, and history',
       prompt: 'Create a cultural itinerary with museums and historical sites',
-      gradient: 'from-purple-500 to-pink-500'
+      tone: 'bg-[#4338ca]'
     },
     {
       id: 'weekend-plan',
@@ -84,7 +84,7 @@ export default function LoggedInDashboard(): JSX.Element {
       title: 'Weekend Plan',
       subtitle: 'Perfect 2-day getaway',
       prompt: 'Plan a perfect weekend itinerary for this city',
-      gradient: 'from-green-500 to-emerald-500'
+      tone: 'bg-emerald-600'
     }
   ];
 
@@ -247,24 +247,24 @@ export default function LoggedInDashboard(): JSX.Element {
   const displayName = currentUser?.display_name || currentUser?.firstname || currentUser?.username || 'Explorer';
 
   return (
-    <div class="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 pb-16">
+    <div class="min-h-screen relative">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-10 pb-16 relative z-10">
         
         {/* Welcome Header */}
         <div class="mb-8">
           <div class="flex items-center justify-between mb-6">
             <div>
-              <h1 class="text-3xl font-bold text-gray-900 dark:text-white">
+              <h1 class="text-3xl font-bold text-slate-900 dark:text-white tracking-tight">
                 Welcome back, {displayName}! 👋
               </h1>
-              <p class="text-gray-600 dark:text-gray-300 mt-1">
+              <p class="text-slate-600 dark:text-slate-300 mt-1">
                 Ready to discover something amazing today?
               </p>
             </div>
             <div class="flex items-center gap-3">
               <button 
                 onClick={() => setIsQuickSettingsOpen(true)}
-                class="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                class="p-2 text-slate-500 hover:text-cyan-500 dark:text-slate-300 dark:hover:text-cyan-300 rounded-lg hover:bg-white/50 dark:hover:bg-slate-800/60 border border-transparent hover:border-white/40 dark:hover:border-slate-800 transition-colors"
                 title="Quick Settings"
               >
                 <Settings class="w-5 h-5" />
@@ -274,48 +274,48 @@ export default function LoggedInDashboard(): JSX.Element {
 
           {/* Quick Stats */}
           <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-            <div class="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border border-gray-200 dark:border-gray-700">
+            <div class="glass-panel gradient-border rounded-xl p-4">
               <div class="flex items-center justify-between">
                 <div>
-                  <p class="text-sm text-gray-600 dark:text-gray-400">Saved Places</p>
-                  <p class="text-2xl font-bold text-gray-900 dark:text-white">
+                  <p class="text-sm text-slate-600 dark:text-slate-300">Saved Places</p>
+                  <p class="text-2xl font-bold text-slate-900 dark:text-white">
                     {userStatsQuery.isLoading ? '--' : (userStatsQuery.data?.saved_places ?? '0')}
                   </p>
                 </div>
-                <Bookmark class="w-8 h-8 text-blue-500" />
+                <Bookmark class="w-8 h-8 text-cyan-500" />
               </div>
             </div>
-            <div class="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border border-gray-200 dark:border-gray-700">
+            <div class="glass-panel gradient-border rounded-xl p-4">
               <div class="flex items-center justify-between">
                 <div>
-                  <p class="text-sm text-gray-600 dark:text-gray-400">Itineraries</p>
-                  <p class="text-2xl font-bold text-gray-900 dark:text-white">
+                  <p class="text-sm text-slate-600 dark:text-slate-300">Itineraries</p>
+                  <p class="text-2xl font-bold text-slate-900 dark:text-white">
                     {userStatsQuery.isLoading ? '--' : (userStatsQuery.data?.itineraries ?? '0')}
                   </p>
                 </div>
-                <Calendar class="w-8 h-8 text-green-500" />
+                <Calendar class="w-8 h-8 text-emerald-500" />
               </div>
             </div>
-            <div class="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border border-gray-200 dark:border-gray-700">
+            <div class="glass-panel gradient-border rounded-xl p-4">
               <div class="flex items-center justify-between">
                 <div>
-                  <p class="text-sm text-gray-600 dark:text-gray-400">Cities Explored</p>
-                  <p class="text-2xl font-bold text-gray-900 dark:text-white">
+                  <p class="text-sm text-slate-600 dark:text-slate-300">Cities Explored</p>
+                  <p class="text-2xl font-bold text-slate-900 dark:text-white">
                     {userStatsQuery.isLoading ? '--' : (userStatsQuery.data?.cities_explored ?? '0')}
                   </p>
                 </div>
                 <Globe class="w-8 h-8 text-purple-500" />
               </div>
             </div>
-            <div class="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border border-gray-200 dark:border-gray-700">
+            <div class="glass-panel gradient-border rounded-xl p-4">
               <div class="flex items-center justify-between">
                 <div>
-                  <p class="text-sm text-gray-600 dark:text-gray-400">Discoveries</p>
-                  <p class="text-2xl font-bold text-gray-900 dark:text-white">
+                  <p class="text-sm text-slate-600 dark:text-slate-300">Discoveries</p>
+                  <p class="text-2xl font-bold text-slate-900 dark:text-white">
                     {userStatsQuery.isLoading ? '--' : (userStatsQuery.data?.discoveries ?? '0')}
                   </p>
                 </div>
-                <Sparkles class="w-8 h-8 text-orange-500" />
+                <Sparkles class="w-8 h-8 text-orange-400" />
               </div>
             </div>
           </div>
@@ -323,9 +323,9 @@ export default function LoggedInDashboard(): JSX.Element {
 
         {/* Main Search */}
         <div class="mb-8">
-          <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg border border-gray-200 dark:border-gray-700">
-            <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-              <Sparkles class="w-5 h-5 text-blue-500" />
+          <div class="glass-panel gradient-border rounded-2xl p-6 shadow-lg">
+            <h2 class="text-lg font-semibold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
+              <Sparkles class="w-5 h-5 text-cyan-500" />
               What would you like to discover?
             </h2>
             
@@ -335,7 +335,7 @@ export default function LoggedInDashboard(): JSX.Element {
                   value={currentMessage()}
                   onInput={(e) => setCurrentMessage(e.target.value)}
                   placeholder="Describe your perfect day, meal, or adventure..."
-                  class="w-full h-12 px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl resize-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
+                  class="w-full h-12 px-4 py-3 border border-white/50 dark:border-slate-800/70 rounded-xl resize-none focus:ring-2 focus:ring-cyan-400 focus:border-transparent bg-white/40 dark:bg-slate-900/40 text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400 backdrop-blur"
                   rows="1"
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' && !e.shiftKey) {
@@ -348,7 +348,7 @@ export default function LoggedInDashboard(): JSX.Element {
               <button
                 onClick={sendMessage}
                 disabled={!currentMessage().trim() || isLoading()}
-                class="px-6 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white rounded-xl font-medium transition-colors flex items-center gap-2 disabled:cursor-not-allowed"
+                class="px-6 py-3 bg-[#0c7df2] hover:bg-[#0a6ed6] disabled:bg-slate-400/70 text-white rounded-xl font-semibold transition-all flex items-center gap-2 disabled:cursor-not-allowed shadow-[0_14px_32px_rgba(12,125,242,0.22)] border border-white/30 dark:border-slate-800/60"
               >
                 <Show when={isLoading()} fallback={
                   <>
@@ -368,13 +368,13 @@ export default function LoggedInDashboard(): JSX.Element {
           
           {/* Quick Actions */}
           <div class="lg:col-span-2">
-            <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-4">Quick Discoveries</h2>
+            <h2 class="text-xl font-semibold text-slate-900 dark:text-white mb-4">Quick Discoveries</h2>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
               <For each={quickActions}>
                 {(action) => (
                   <button
                     onClick={() => handleQuickAction(action)}
-                    class={`bg-gradient-to-r ${action.gradient} rounded-xl p-6 text-white shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 text-left group`}
+                    class={`${action.tone} rounded-xl p-6 text-white shadow-lg hover:shadow-[0_16px_50px_rgba(12,74,110,0.2)] transform hover:translate-y-[-4px] transition-all duration-200 text-left group border border-white/30 dark:border-slate-800/60 backdrop-blur`}
                   >
                     <div class="flex items-start justify-between mb-3">
                       <action.icon class="w-8 h-8" />
@@ -388,27 +388,27 @@ export default function LoggedInDashboard(): JSX.Element {
             </div>
 
             {/* Personalized Suggestions */}
-            <div class="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-700">
-              <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-                <TrendingUp class="w-5 h-5 text-green-500" />
+            <div class="glass-panel gradient-border rounded-xl p-6 shadow-sm">
+              <h3 class="text-lg font-semibold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
+                <TrendingUp class="w-5 h-5 text-emerald-500" />
                 Just for You
               </h3>
               <div class="space-y-4">
                 <For each={personalizedSuggestions}>
                   {(suggestion) => (
-                    <div class="flex items-center justify-between p-4 rounded-lg border border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors group cursor-pointer">
+                    <div class="flex items-center justify-between p-4 rounded-lg border border-white/40 dark:border-slate-800/70 hover:bg-white/60 dark:hover:bg-slate-800/60 transition-colors group cursor-pointer">
                       <div class="flex items-center gap-3">
                         <span class="text-2xl">{suggestion.icon}</span>
                         <div>
-                          <h4 class="font-medium text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                          <h4 class="font-semibold text-slate-900 dark:text-white group-hover:text-cyan-500 dark:group-hover:text-cyan-300 transition-colors">
                             {suggestion.title}
                           </h4>
-                          <p class="text-sm text-gray-600 dark:text-gray-400">
+                          <p class="text-sm text-slate-600 dark:text-slate-300">
                             {suggestion.description}
                           </p>
                         </div>
                       </div>
-                      <button class="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 font-medium text-sm px-3 py-1 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors">
+                      <button class="text-cyan-600 hover:text-emerald-500 dark:text-cyan-300 dark:hover:text-emerald-300 font-semibold text-sm px-3 py-1 rounded-lg hover:bg-white/60 dark:hover:bg-slate-800/60 transition-colors">
                         {suggestion.action}
                       </button>
                     </div>
@@ -422,10 +422,10 @@ export default function LoggedInDashboard(): JSX.Element {
           <div class="space-y-6">
             
             {/* Recent Activity */}
-            <div class="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-700">
+            <div class="glass-panel gradient-border rounded-xl p-6 shadow-sm">
               <div class="flex items-center justify-between mb-4">
-                <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Recent Activity</h3>
-                <button class="text-blue-600 hover:text-blue-700 dark:text-blue-400 text-sm font-medium">
+                <h3 class="text-lg font-semibold text-slate-900 dark:text-white">Recent Activity</h3>
+                <button class="text-cyan-600 hover:text-emerald-500 dark:text-cyan-300 text-sm font-semibold">
                   View All
                 </button>
               </div>
@@ -434,18 +434,18 @@ export default function LoggedInDashboard(): JSX.Element {
                   {(activity) => {
                     const IconComponent = getActivityIcon(activity.type);
                     return (
-                      <div class="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors cursor-pointer group">
-                        <div class="flex-shrink-0 w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
-                          <IconComponent class="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                      <div class="flex items-center gap-3 p-3 rounded-lg hover:bg-white/60 dark:hover:bg-slate-800/60 transition-colors cursor-pointer group border border-transparent hover:border-white/40 dark:hover:border-slate-800">
+                        <div class="flex-shrink-0 w-10 h-10 bg-cyan-100/70 dark:bg-cyan-900/40 rounded-lg flex items-center justify-center">
+                          <IconComponent class="w-5 h-5 text-cyan-600 dark:text-cyan-300" />
                         </div>
                         <div class="flex-1 min-w-0">
-                          <h4 class="font-medium text-gray-900 dark:text-white text-sm group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors truncate">
+                          <h4 class="font-semibold text-slate-900 dark:text-white text-sm group-hover:text-cyan-500 dark:group-hover:text-cyan-300 transition-colors truncate">
                             {activity.title}
                           </h4>
-                          <p class="text-xs text-gray-600 dark:text-gray-400 truncate">
+                          <p class="text-xs text-slate-600 dark:text-slate-300 truncate">
                             {activity.location}
                           </p>
-                          <p class="text-xs text-gray-500 dark:text-gray-500">
+                          <p class="text-xs text-slate-500 dark:text-slate-400">
                             {activity.timestamp}
                           </p>
                         </div>
@@ -460,21 +460,21 @@ export default function LoggedInDashboard(): JSX.Element {
             </div>
 
             {/* Quick Actions Sidebar */}
-            <div class="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-700">
-              <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Quick Actions</h3>
+            <div class="glass-panel gradient-border rounded-xl p-6 shadow-sm">
+              <h3 class="text-lg font-semibold text-slate-900 dark:text-white mb-4">Quick Actions</h3>
               <div class="space-y-3">
                 <button 
                   onClick={() => navigate('/chat')}
-                  class="w-full flex items-center gap-3 p-3 text-left rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors group"
+                  class="w-full flex items-center gap-3 p-3 text-left rounded-lg hover:bg-white/60 dark:hover:bg-slate-800/60 transition-colors group border border-transparent hover:border-white/40 dark:hover:border-slate-800"
                 >
-                  <div class="flex-shrink-0 w-10 h-10 bg-purple-100 dark:bg-purple-900/30 rounded-lg flex items-center justify-center">
-                    <Sparkles class="w-5 h-5 text-purple-600 dark:text-purple-400" />
+                  <div class="flex-shrink-0 w-10 h-10 bg-purple-100/70 dark:bg-purple-900/40 rounded-lg flex items-center justify-center">
+                    <Sparkles class="w-5 h-5 text-purple-600 dark:text-purple-300" />
                   </div>
                   <div>
-                    <h4 class="font-medium text-gray-900 dark:text-white text-sm group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">
+                    <h4 class="font-semibold text-slate-900 dark:text-white text-sm group-hover:text-purple-500 dark:group-hover:text-purple-300 transition-colors">
                       AI Chat
                     </h4>
-                    <p class="text-xs text-gray-600 dark:text-gray-400">
+                    <p class="text-xs text-slate-600 dark:text-slate-300">
                       Chat with our AI assistant
                     </p>
                   </div>
@@ -482,30 +482,30 @@ export default function LoggedInDashboard(): JSX.Element {
                 
                 <button 
                   onClick={() => navigate('/itinerary')}
-                  class="w-full flex items-center gap-3 p-3 text-left rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors group"
+                  class="w-full flex items-center gap-3 p-3 text-left rounded-lg hover:bg-white/60 dark:hover:bg-slate-800/60 transition-colors group border border-transparent hover:border-white/40 dark:hover:border-slate-800"
                 >
-                  <div class="flex-shrink-0 w-10 h-10 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center">
-                    <Calendar class="w-5 h-5 text-green-600 dark:text-green-400" />
+                  <div class="flex-shrink-0 w-10 h-10 bg-emerald-100/70 dark:bg-emerald-900/40 rounded-lg flex items-center justify-center">
+                    <Calendar class="w-5 h-5 text-emerald-600 dark:text-emerald-300" />
                   </div>
                   <div>
-                    <h4 class="font-medium text-gray-900 dark:text-white text-sm group-hover:text-green-600 dark:group-hover:text-green-400 transition-colors">
+                    <h4 class="font-semibold text-slate-900 dark:text-white text-sm group-hover:text-emerald-500 dark:group-hover:text-emerald-300 transition-colors">
                       My Itineraries
                     </h4>
-                    <p class="text-xs text-gray-600 dark:text-gray-400">
+                    <p class="text-xs text-slate-600 dark:text-slate-300">
                       View saved plans
                     </p>
                   </div>
                 </button>
 
-                <button class="w-full flex items-center gap-3 p-3 text-left rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors group">
-                  <div class="flex-shrink-0 w-10 h-10 bg-orange-100 dark:bg-orange-900/30 rounded-lg flex items-center justify-center">
-                    <Heart class="w-5 h-5 text-orange-600 dark:text-orange-400" />
+                <button class="w-full flex items-center gap-3 p-3 text-left rounded-lg hover:bg-white/60 dark:hover:bg-slate-800/60 transition-colors group border border-transparent hover:border-white/40 dark:hover:border-slate-800">
+                  <div class="flex-shrink-0 w-10 h-10 bg-orange-100/70 dark:bg-orange-900/40 rounded-lg flex items-center justify-center">
+                    <Heart class="w-5 h-5 text-orange-600 dark:text-orange-300" />
                   </div>
                   <div>
-                    <h4 class="font-medium text-gray-900 dark:text-white text-sm group-hover:text-orange-600 dark:group-hover:text-orange-400 transition-colors">
+                    <h4 class="font-semibold text-slate-900 dark:text-white text-sm group-hover:text-orange-500 dark:group-hover:text-orange-300 transition-colors">
                       Saved Places
                     </h4>
-                    <p class="text-xs text-gray-600 dark:text-gray-400">
+                    <p class="text-xs text-slate-600 dark:text-slate-300">
                       Your favorites
                     </p>
                   </div>

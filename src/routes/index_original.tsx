@@ -209,17 +209,14 @@ const LandingPage: Component = () => {
     };
 
     return (
-        <div class="min-h-screen bg-gradient-to-b from-blue-50 via-purple-50 to-white dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 
-                   [&[data-theme='vt-news']]:from-gray-900 [&[data-theme='vt-news']]:via-gray-800 [&[data-theme='vt-news']]:to-gray-900
-                   [&[data-theme='valuetainment']]:from-gray-50 [&[data-theme='valuetainment']]:via-red-50 [&[data-theme='valuetainment']]:to-white
-                   transition-colors">
+        <div class="min-h-screen bg-white dark:bg-slate-950 transition-colors">
 
             {/* Main Hero Section with Chat Input */}
             <div class="relative">
                 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-16 text-center">
                     <h1 class="text-4xl md:text-6xl font-bold text-gray-900 dark:text-white mb-6">
                         Discover your next adventure,{' '}
-                        <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-400 dark:to-purple-400">
+                        <span class="text-sky-700 dark:text-sky-300">
                             smarter
                         </span>
                     </h1>
@@ -244,7 +241,7 @@ const LandingPage: Component = () => {
                             <button
                                 onClick={sendMessage}
                                 disabled={!currentMessage().trim() || isLoading()}
-                                class="bg-gradient-to-r from-blue-600 to-purple-600 text-white p-3 rounded-xl hover:from-blue-700 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center gap-2"
+                                class="bg-[#0c7df2] text-white p-3 rounded-xl hover:bg-[#0a6ed6] disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center gap-2 shadow-[0_12px_32px_rgba(12,125,242,0.22)] border border-white/30 dark:border-slate-800/60"
                             >
                                 <Show when={isLoading()} fallback={<Send class="w-5 h-5" />}>
                                     <Loader2 class="w-5 h-5 animate-spin" />

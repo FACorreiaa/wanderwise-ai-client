@@ -1,16 +1,24 @@
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=Epilogue:wght@500;600;700;800&display=swap');
 @import "tailwindcss";
 @config "../tailwind.config.cjs";
 
 @layer base {
   body {
-    font-family: 'Public Sans', 'Inter', sans-serif;
+    font-family: 'Manrope', 'Segoe UI', 'Helvetica Neue', sans-serif;
     font-size: 14px;
     line-height: 1.5;
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
+  }
+
+  h1, h2, h3, h4 {
+    font-family: 'Epilogue', 'Manrope', sans-serif;
+    letter-spacing: -0.02em;
   }
 
   /* VT News Typography */
   [data-theme="vt-news"] body {
-    font-family: 'Inter', 'Segoe UI', sans-serif;
+    font-family: 'Sora', 'Segoe UI', sans-serif;
     font-weight: 400;
   }
 
@@ -18,13 +26,13 @@
   [data-theme="vt-news"] h2,
   [data-theme="vt-news"] h3,
   [data-theme="vt-news"] h4 {
-    font-weight: 600;
-    letter-spacing: -0.025em;
+    font-weight: 700;
+    letter-spacing: -0.035em;
   }
 
   /* Valuetainment Typography */
   [data-theme="valuetainment"] body {
-    font-family: 'Barlow', 'Arial', sans-serif;
+    font-family: 'Sora', 'Barlow', sans-serif;
     font-weight: 400;
   }
 
@@ -121,36 +129,71 @@
     background: linear-gradient(135deg, #ea2127 0%, #c41e3a 100%);
   }
 
+  /* Loci profile-inspired surfaces */
+  .loci-hero {
+    position: relative;
+    overflow: hidden;
+    color: #fff;
+    background: linear-gradient(135deg, #0c7df2 0%, #6aa5ff 45%, #0c1747 100%);
+    border-radius: 1.5rem;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    box-shadow: 0 20px 60px rgba(12, 125, 242, 0.25);
+  }
+
+  .loci-hero::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    opacity: 0.35;
+    background:
+      radial-gradient(circle at 20% 20%, rgba(255, 255, 255, 0.45), transparent 35%),
+      radial-gradient(circle at 80% 0%, rgba(255, 255, 255, 0.35), transparent 30%),
+      radial-gradient(circle at 50% 80%, rgba(255, 255, 255, 0.25), transparent 32%);
+  }
+
+  .loci-hero__content {
+    position: relative;
+    backdrop-filter: blur(2px);
+  }
+
+  .loci-card {
+    @apply rounded-2xl bg-white/85 backdrop-blur border border-gray-200 shadow-sm;
+  }
+
+  .loci-chip {
+    @apply inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-white/15 backdrop-blur border border-white/20 text-white;
+  }
+
   :root {
-    --background: 0 0% 100%;
-    --foreground: 240 10% 3.9%;
+    --background: 220 33% 98%;
+    --foreground: 223 47% 6%;
 
-    --card: 0 0% 100%;
-    --card-foreground: 240 10% 3.9%;
+    --card: 220 52% 99%;
+    --card-foreground: 223 47% 6%;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 240 10% 3.9%;
+    --popover: 220 52% 99%;
+    --popover-foreground: 223 47% 6%;
 
-    --primary: 240 5.9% 10%;
-    --primary-foreground: 0 0% 98%;
+    --primary: 211 82% 48%;
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 240 4.8% 95.9%;
-    --secondary-foreground: 240 5.9% 10%;
+    --secondary: 208 46% 93%;
+    --secondary-foreground: 220 43% 22%;
 
-    --muted: 240 4.8% 95.9%;
-    --muted-foreground: 240 3.8% 46.1%;
+    --muted: 222 28% 94%;
+    --muted-foreground: 223 15% 36%;
 
-    --accent: 240 4.8% 95.9%;
-    --accent-foreground: 240 5.9% 10%;
+    --accent: 190 85% 42%;
+    --accent-foreground: 196 100% 12%;
 
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
 
-    --border: 240 5.9% 90%;
-    --input: 240 5.9% 90%;
-    --ring: 240 10% 3.9%;
+    --border: 220 26% 90%;
+    --input: 220 26% 90%;
+    --ring: 211 82% 48%;
 
-    --radius: 0.5rem;
+    --radius: 0.875rem;
   }
 
   /* VT News Theme */
@@ -216,33 +259,33 @@
   }
 
   .dark {
-    --background: 240 10% 3.9%;
-    --foreground: 0 0% 98%;
+    --background: 225 45% 4%;
+    --foreground: 210 40% 96%;
 
-    --card: 240 10% 3.9%;
-    --card-foreground: 0 0% 98%;
+    --card: 225 42% 8%;
+    --card-foreground: 210 40% 96%;
 
-    --popover: 240 10% 3.9%;
-    --popover-foreground: 0 0% 98%;
+    --popover: 225 42% 8%;
+    --popover-foreground: 210 40% 96%;
 
-    --primary: 0 0% 98%;
-    --primary-foreground: 240 5.9% 10%;
+    --primary: 186 93% 64%;
+    --primary-foreground: 0 0% 4%;
 
-    --secondary: 240 3.7% 15.9%;
-    --secondary-foreground: 0 0% 98%;
+    --secondary: 262 73% 16%;
+    --secondary-foreground: 210 40% 96%;
 
-    --muted: 240 3.7% 15.9%;
-    --muted-foreground: 240 5% 64.9%;
+    --muted: 224 35% 12%;
+    --muted-foreground: 220 17% 70%;
 
-    --accent: 240 3.7% 15.9%;
-    --accent-foreground: 0 0% 98%;
+    --accent: 171 78% 46%;
+    --accent-foreground: 0 0% 8%;
 
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 0 0% 98%;
 
-    --border: 240 3.7% 15.9%;
-    --input: 240 3.7% 15.9%;
-    --ring: 240 4.9% 83.9%;
+    --border: 220 25% 16%;
+    --input: 220 25% 16%;
+    --ring: 186 93% 64%;
   }
 
   [data-kb-theme="dark"] {
@@ -281,8 +324,79 @@
     @apply border-border;
   }
 
-
   body {
-    @apply bg-background text-foreground;
+    @apply text-foreground antialiased;
+  }
+}
+
+@layer utilities {
+  .aurora-sheen {
+    background-image:
+      radial-gradient(circle at 15% 20%, rgba(32, 148, 243, 0.18), transparent 24%),
+      radial-gradient(circle at 80% 12%, rgba(16, 185, 214, 0.16), transparent 28%),
+      radial-gradient(circle at 40% 85%, rgba(29, 78, 216, 0.1), transparent 30%),
+      linear-gradient(135deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.05));
+  }
+
+  .glass-panel {
+    @apply bg-white/70 dark:bg-slate-950/50 border border-white/50 dark:border-slate-800/70 shadow-[0_18px_60px_rgba(12,74,110,0.18)] backdrop-blur-2xl;
+  }
+
+  .gradient-border {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .gradient-border::before {
+    content: "";
+    position: absolute;
+    inset: -1px;
+    border-radius: inherit;
+    padding: 1px;
+    background: linear-gradient(120deg, rgba(14, 165, 233, 0.7), rgba(232, 121, 249, 0.6), rgba(52, 211, 153, 0.7));
+    -webkit-mask:
+      linear-gradient(#fff 0 0) content-box,
+      linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+            mask-composite: exclude;
+    pointer-events: none;
+  }
+
+  .soft-shadow {
+    box-shadow: 0 10px 45px rgba(15, 23, 42, 0.25);
+  }
+
+  .domain-grid {
+    background-image:
+      linear-gradient(to right, var(--grid-accent, rgba(12, 74, 110, 0.08)) 1px, transparent 1px),
+      linear-gradient(to bottom, var(--grid-accent, rgba(12, 74, 110, 0.08)) 1px, transparent 1px);
+    background-size: 140px 140px;
+    mask-image: radial-gradient(circle at 50% 50%, rgba(0,0,0,0.75), transparent 65%);
+    opacity: 0.5;
+  }
+
+  .domain-veil {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at 30% 20%, var(--glow-a, rgba(37, 99, 235, 0.12)), transparent 28%),
+      radial-gradient(circle at 75% 15%, var(--glow-b, rgba(8, 145, 178, 0.12)), transparent 32%),
+      radial-gradient(circle at 45% 80%, var(--glow-c, rgba(52, 211, 153, 0.1)), transparent 30%);
+    filter: saturate(110%);
+  }
+
+  .domain-halo {
+    position: absolute;
+    inset: -20%;
+    background: conic-gradient(from 120deg, transparent 0deg, var(--halo, rgba(37, 99, 235, 0.12)) 120deg, transparent 220deg);
+    mix-blend-mode: soft-light;
+    opacity: 0.9;
+  }
+
+  .domain-noise {
+    position: absolute;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160' viewBox='0 0 160 160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.05'/%3E%3C/svg%3E");
+    mix-blend-mode: soft-light;
+    pointer-events: none;
   }
 }

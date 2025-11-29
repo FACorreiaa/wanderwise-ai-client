@@ -199,7 +199,7 @@ export default function ListsPage() {
         return (
             <div class="cb-card hover:shadow-lg transition-all duration-300 group">
                 {/* Cover Image Placeholder */}
-                <div class="relative h-32 bg-gradient-to-br from-blue-100 via-purple-100 to-pink-100 overflow-hidden">
+                <div class="relative h-32 bg-white/70 dark:bg-slate-900/60 border-b border-white/50 dark:border-slate-800/60 overflow-hidden">
                     <div class="absolute inset-0 flex items-center justify-center">
                         <div class="grid grid-cols-3 gap-1 opacity-30">
                             {Array.from({ length: 9 }).map((_, i) => (

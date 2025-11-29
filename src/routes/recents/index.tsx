@@ -136,7 +136,7 @@ export default function RecentsPage() {
         class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden hover:shadow-md transition-all duration-200 cursor-pointer group"
       >
         {/* Header Image */}
-        <div class="relative h-32 bg-gradient-to-br from-blue-100 to-purple-100 dark:from-blue-900 dark:to-purple-900">
+        <div class="relative h-32 bg-white/70 dark:bg-slate-900/60 border-b border-white/50 dark:border-slate-800/60">
           <div class="absolute inset-0 flex items-center justify-center text-3xl">
             🏙️
           </div>
@@ -222,7 +222,7 @@ export default function RecentsPage() {
       >
         <div class="flex items-center gap-4">
           {/* City Icon */}
-          <div class="w-12 h-12 bg-gradient-to-br from-blue-100 to-purple-100 dark:from-blue-900 dark:to-purple-900 rounded-lg flex items-center justify-center text-xl flex-shrink-0">
+          <div class="w-12 h-12 bg-white/70 dark:bg-slate-900/60 border border-white/60 dark:border-slate-800/70 rounded-lg flex items-center justify-center text-xl flex-shrink-0">
             🏙️
           </div>
 

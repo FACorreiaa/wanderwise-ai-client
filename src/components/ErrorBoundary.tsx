@@ -59,14 +59,14 @@ export const ErrorBoundary: Component<ErrorBoundaryProps> = (props) => {
     const isNetworkError = error instanceof APIError && error.code === 'NETWORK_ERROR';
 
     return (
-      <div class="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center px-4 py-8">
-        <div class="text-center max-w-md mx-auto">
+      <div class="min-h-screen flex items-center justify-center px-4 py-8">
+        <div class="text-center max-w-md mx-auto glass-panel gradient-border rounded-2xl p-8 shadow-xl">
           {/* Dynamic Icon based on error type */}
           <div class="mb-8 relative">
-            <div class={`w-24 h-24 mx-auto rounded-full flex items-center justify-center animate-pulse ${
-              isConnectionError ? 'bg-gradient-to-br from-red-500 to-orange-600' : 
-              isNetworkError ? 'bg-gradient-to-br from-yellow-500 to-orange-500' :
-              'bg-gradient-to-br from-red-500 to-pink-600'
+            <div class={`w-24 h-24 mx-auto rounded-full flex items-center justify-center animate-pulse shadow-[0_18px_38px_rgba(248,113,113,0.25)] ${
+              isConnectionError ? 'bg-orange-500' : 
+              isNetworkError ? 'bg-amber-500' :
+              'bg-red-500'
             }`}>
               <Show
                 when={isConnectionError}

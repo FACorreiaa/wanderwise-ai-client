@@ -476,26 +476,26 @@ export default function RestaurantsPage() {
     };
 
     return (
-        <div class="min-h-screen bg-gray-50 dark:bg-gray-900">
+        <div class="min-h-screen relative">
             {/* Chat Success Banner */}
             <Show when={fromChat()}>
-                <div class="bg-gradient-to-r from-green-50 to-blue-50 border-b border-green-200 px-4 py-3 sm:px-6">
+                <div class="px-4 py-3 sm:px-6">
                     <div class="max-w-7xl mx-auto">
-                        <div class="flex items-center gap-3">
-                            <div class="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
+                        <div class="flex items-center gap-3 glass-panel gradient-border rounded-xl p-3">
+                            <div class="w-8 h-8 bg-amber-500 rounded-full flex items-center justify-center text-white shadow">
                                 <ChefHat class="w-4 h-4 text-white" />
                             </div>
                             <div class="flex-1">
-                                <p class="text-sm font-medium text-green-900">
+                                <p class="text-sm font-medium text-amber-900 dark:text-amber-100">
                                     ✨ <TypingAnimation text="Your restaurant recommendations are ready!" />
                                 </p>
-                                <p class="text-xs text-green-700">
+                                <p class="text-xs text-slate-700 dark:text-slate-300">
                                     Generated from your chat: "{location.state?.originalMessage || 'Restaurant search'}"
                                 </p>
                             </div>
                             <button
                                 onClick={() => setFromChat(false)}
-                                class="p-1 text-green-600 hover:text-green-700"
+                                class="p-1 text-amber-700 hover:text-amber-800 dark:text-amber-200 dark:hover:text-amber-100"
                             >
                                 <X class="w-4 h-4" />
                             </button>
@@ -505,58 +505,87 @@ export default function RestaurantsPage() {
             </Show>
 
             {/* Header - Mobile First */}
-            <div class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-4 py-3 sm:px-6 sm:py-4">
+            <div class="px-4 py-3 sm:px-6 sm:py-4">
                 <div class="max-w-7xl mx-auto">
-                    <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                        <div>
-                            <h1 class="text-xl font-bold text-gray-900 dark:text-white sm:text-2xl">Restaurants in {displayLocation()}</h1>
-                            <p class="text-sm text-gray-600 dark:text-gray-300 mt-1 sm:text-base">{restaurants().length} dining recommendations</p>
-                        </div>
-                        <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
-                            {/* View Mode Toggle */}
-                            <div class="flex bg-gray-100 dark:bg-gray-700 rounded-lg p-1 w-full sm:w-auto">
-                                <button
-                                    onClick={() => setViewMode('map')}
-                                    class={`flex-1 px-3 py-1 rounded text-sm font-medium transition-colors sm:flex-initial ${viewMode() === 'map' ? 'bg-white dark:bg-gray-600 text-gray-900 dark:text-white shadow-sm' : 'text-gray-600 dark:text-gray-300'}`}
-                                    title="Show only map"
-                                >
-                                    Map
-                                </button>
-                                <button
-                                    onClick={() => setViewMode('split')}
-                                    class={`flex-1 px-3 py-1 rounded text-sm font-medium transition-colors sm:flex-initial ${viewMode() === 'split' ? 'bg-white dark:bg-gray-600 text-gray-900 dark:text-white shadow-sm' : 'text-gray-600 dark:text-gray-300'}`}
-                                    title="Split view: Map + Cards"
-                                >
-                                    Split
-                                </button>
-                                <button
-                                    onClick={() => setViewMode('list')}
-                                    class={`flex-1 px-3 py-1 rounded text-sm font-medium transition-colors sm:flex-initial ${viewMode() === 'list' ? 'bg-white dark:bg-gray-600 text-gray-900 dark:text-white shadow-sm' : 'text-gray-600 dark:text-gray-300'}`}
-                                    title="Show only cards"
-                                >
-                                    List
-                                </button>
-                            </div>
+                    <div class="loci-hero">
+                        <div class="loci-hero__content p-6 sm:p-8 flex flex-col gap-4">
+                            <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                                <div class="space-y-2">
+                                    <div class="flex items-center gap-2">
+                                        <span class="loci-chip uppercase tracking-wide text-[10px] sm:text-xs">Dining</span>
+                                        <Show when={isAuthenticated()}>
+                                            <span class="loci-chip bg-white/25 text-white">
+                                                <Heart class="w-4 h-4" />
+                                                {favoritesQuery.data?.length || 0} favorites
+                                            </span>
+                                        </Show>
+                                    </div>
+                                    <h1 class="text-3xl sm:text-4xl font-bold leading-tight">Restaurants · {displayLocation()}</h1>
+                                    <p class="text-white/80 text-sm sm:text-base">
+                                        {filteredRestaurants().length} dining recommendations tuned to your profile
+                                    </p>
+                                    <div class="flex flex-wrap gap-2 text-sm">
+                                        <span class="loci-chip">
+                                            <Utensils class="w-4 h-4" />
+                                            {viewMode() === 'split' ? 'Map + List' : viewMode()}
+                                        </span>
+                                        <span class="loci-chip">
+                                            <Calendar class="w-4 h-4" />
+                                            {searchParams().checkIn} - {searchParams().checkOut}
+                                        </span>
+                                        <span class="loci-chip">
+                                            <Users class="w-4 h-4" />
+                                            {searchParams().guests} guests
+                                        </span>
+                                    </div>
+                                </div>
+                                <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
+                                    {/* View Mode Toggle */}
+                                    <div class="flex bg-white/15 border border-white/30 rounded-xl p-1 w-full sm:w-auto shadow-inner">
+                                        <button
+                                            onClick={() => setViewMode('map')}
+                                            class={`flex-1 px-3 py-1 rounded text-sm font-medium transition-colors sm:flex-initial ${viewMode() === 'map' ? 'bg-white/90 text-gray-900 shadow-sm' : 'text-white/80 hover:bg-white/10'}`}
+                                            title="Show only map"
+                                        >
+                                            Map
+                                        </button>
+                                        <button
+                                            onClick={() => setViewMode('split')}
+                                            class={`flex-1 px-3 py-1 rounded text-sm font-medium transition-colors sm:flex-initial ${viewMode() === 'split' ? 'bg-white/90 text-gray-900 shadow-sm' : 'text-white/80 hover:bg-white/10'}`}
+                                            title="Split view: Map + Cards"
+                                        >
+                                            Split
+                                        </button>
+                                        <button
+                                            onClick={() => setViewMode('list')}
+                                            class={`flex-1 px-3 py-1 rounded text-sm font-medium transition-colors sm:flex-initial ${viewMode() === 'list' ? 'bg-white/90 text-gray-900 shadow-sm' : 'text-white/80 hover:bg-white/10'}`}
+                                            title="Show only cards"
+                                        >
+                                            List
+                                        </button>
+                                    </div>
 
-                            {/* Action Buttons */}
-                            <div class="flex flex-col gap-2 sm:flex-row sm:gap-3">
-                                <button
-                                    onClick={() => chatSession.setShowChat(true)}
-                                    class="flex items-center justify-center gap-2 px-4 py-2 bg-gradient-to-r from-orange-600 to-orange-700 text-white rounded-lg hover:from-orange-700 hover:to-orange-800 transition-all shadow-sm text-sm font-medium"
-                                >
-                                    <MessageCircle class="w-4 h-4" />
-                                    Get Recommendations
-                                </button>
+                                    {/* Action Buttons */}
+                                    <div class="flex flex-col gap-2 sm:flex-row sm:gap-3">
+                                        <button
+                                            onClick={() => chatSession.setShowChat(true)}
+                                            class="flex items-center justify-center gap-2 px-4 py-2 bg-white text-gray-900 rounded-lg transition-all text-sm font-semibold shadow-[0_12px_28px_rgba(12,125,242,0.25)] border border-white/40 hover:-translate-y-0.5"
+                                        >
+                                            <MessageCircle class="w-4 h-4 text-blue-600" />
+                                            Get Recommendations
+                                        </button>
 
-                                <div class="flex gap-2">
-                                    <button class="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors text-sm sm:flex-initial">
-                                        <Heart class="w-4 h-4" />
-                                        <span class="hidden sm:inline">Favorites</span>
-                                    </button>
-                                    <button class="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors text-sm sm:flex-initial">
-                                        <Share2 class="w-4 h-4" />
-                                        <span class="hidden sm:inline">Share</span>
-                                    </button>
+                                        <div class="flex gap-2">
+                                            <button class="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-white bg-white/10 border border-white/20 rounded-lg transition-colors text-sm sm:flex-initial hover:bg-white/20">
+                                                <Heart class="w-4 h-4" />
+                                                <span class="hidden sm:inline">Favorites</span>
+                                            </button>
+                                            <button class="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-white bg-white/10 border border-white/20 rounded-lg transition-colors text-sm sm:flex-initial hover:bg-white/20">
+                                                <Share2 class="w-4 h-4" />
+                                                <span class="hidden sm:inline">Share</span>
+                                            </button>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>

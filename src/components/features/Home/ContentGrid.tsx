@@ -19,19 +19,20 @@ interface ContentGridProps {
 
 export default function ContentGrid(props: ContentGridProps) {
     return (
-        <section class="w-full py-12 sm:py-16 md:py-20 lg:py-24 bg-muted/30 dark:bg-gray-900/30" aria-labelledby="content-grid-heading">
-            <div class="container px-4 sm:px-6 lg:px-8">
+        <section class="w-full py-12 sm:py-16 md:py-20 lg:py-24 relative overflow-hidden" aria-labelledby="content-grid-heading">
+            <div class="pointer-events-none absolute inset-0 bg-white/25 dark:bg-slate-900/30" aria-hidden="true" />
+            <div class="container relative z-10 px-4 sm:px-6 lg:px-8">
                 <h2 id="content-grid-heading" class="sr-only">Featured Content</h2>
                 {/* Mobile-first filter buttons */}
                 <div class="flex flex-wrap justify-center mb-8 sm:mb-10 md:mb-12 gap-2 sm:gap-3" role="tablist" aria-label="Content filters">
-                    <Button variant="ghost" class="font-semibold text-blue-600 dark:text-blue-400 text-sm sm:text-base px-3 py-2 sm:px-4" role="tab" aria-selected="true">
+                    <Button variant="ghost" class="font-semibold text-cyan-600 dark:text-cyan-300 bg-white/60 dark:bg-slate-900/40 border border-white/40 dark:border-slate-800/70 rounded-full px-4 py-2 sm:px-5 shadow-sm" role="tab" aria-selected="true">
                         Trending
                     </Button>
-                    <Button variant="ghost" class="text-muted-foreground text-sm sm:text-base px-3 py-2 sm:px-4" role="tab" aria-selected="false">
-                        Insights <Badge class="ml-1 sm:ml-2 text-xs">New</Badge>
+                    <Button variant="ghost" class="text-muted-foreground text-sm sm:text-base px-3 py-2 sm:px-4 rounded-full hover:text-cyan-500" role="tab" aria-selected="false">
+                        Insights <Badge class="ml-1 sm:ml-2 text-xs bg-cyan-100 text-cyan-700 dark:bg-cyan-900/40 dark:text-cyan-200 border-cyan-200/80 dark:border-cyan-700/70">New</Badge>
                     </Button>
-                    <Button variant="ghost" class="text-muted-foreground text-sm sm:text-base px-3 py-2 sm:px-4" role="tab" aria-selected="false">
-                        Predictions <Badge class="ml-1 sm:ml-2 text-xs">New</Badge>
+                    <Button variant="ghost" class="text-muted-foreground text-sm sm:text-base px-3 py-2 sm:px-4 rounded-full hover:text-cyan-500" role="tab" aria-selected="false">
+                        Predictions <Badge class="ml-1 sm:ml-2 text-xs bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-200 border-purple-200/80 dark:border-purple-700/70">New</Badge>
                     </Button>
                 </div>
 
@@ -40,15 +41,15 @@ export default function ContentGrid(props: ContentGridProps) {
                     <For each={props.items}>
                         {(item, index) => (
                             <Card 
-                                class="overflow-hidden transition-all hover:shadow-lg hover:-translate-y-1 duration-200 focus-within:ring-2 focus-within:ring-blue-500 focus-within:ring-offset-2" 
+                                class="overflow-hidden transition-all hover:shadow-[0_18px_50px_rgba(14,165,233,0.25)] hover:-translate-y-1 duration-200 focus-within:ring-2 focus-within:ring-cyan-400 focus-within:ring-offset-2 glass-panel gradient-border" 
                                 role="listitem"
                                 aria-labelledby={`card-title-${index()}`}
                             >
-                                <div class="h-32 sm:h-36 md:h-40 bg-muted flex items-center justify-center" aria-hidden="true">
+                                <div class="h-32 sm:h-36 md:h-40 bg-white/40 dark:bg-slate-900/40 flex items-center justify-center" aria-hidden="true">
                                     <span class="text-muted-foreground text-3xl sm:text-4xl md:text-5xl">{item.logo}</span>
                                 </div>
                                 <CardHeader class="p-4 sm:p-6">
-                                    <CardTitle id={`card-title-${index()}`} class="text-base sm:text-lg leading-tight text-card-foreground">{item.title}</CardTitle>
+                                    <CardTitle id={`card-title-${index()}`} class="text-base sm:text-lg leading-tight text-card-foreground tracking-tight">{item.title}</CardTitle>
                                 </CardHeader>
                                 <CardContent class="p-4 pt-0 sm:p-6 sm:pt-0">
                                     <CardDescription class="text-sm sm:text-base leading-relaxed mb-3 sm:mb-4 text-muted-foreground">
@@ -76,7 +77,7 @@ export default function ContentGrid(props: ContentGridProps) {
                 <div class="text-center mt-8 sm:mt-10 md:mt-12">
                     <Button 
                         variant="outline" 
-                        class="text-sm sm:text-base px-4 sm:px-6 py-2.5 sm:py-3 border-border text-foreground hover:bg-muted focus:bg-muted focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                        class="text-sm sm:text-base px-4 sm:px-6 py-2.5 sm:py-3 border-white/40 dark:border-slate-800/70 bg-white/40 dark:bg-slate-900/40 text-foreground hover:border-cyan-400 hover:text-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:ring-offset-2"
                         aria-label="Explore all travel guides"
                     >
                         Explore All Guides <ArrowRight class="w-3 h-3 sm:w-4 sm:h-4 ml-1.5 sm:ml-2" aria-hidden="true" />

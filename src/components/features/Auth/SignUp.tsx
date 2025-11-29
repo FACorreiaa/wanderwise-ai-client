@@ -79,13 +79,13 @@ const SignUp: Component<{ onSwitchMode?: (mode: AuthMode) => void }> = (props) =
     return (
         <AuthLayout>
             <div class="text-center mb-4 sm:mb-6">
-                <h1 class="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white mb-1 sm:mb-2">Create your account</h1>
-                <p class="text-gray-600 dark:text-gray-300 text-sm sm:text-base">Start discovering personalized travel experiences</p>
+                <h1 class="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white mb-1 sm:mb-2 tracking-tight">Create your account</h1>
+                <p class="text-slate-600 dark:text-slate-300 text-sm sm:text-base">Start discovering personalized travel experiences</p>
             </div>
 
             <form onSubmit={handleSubmit} class="space-y-3 sm:space-y-4">
                 <div>
-                    <label class="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 sm:mb-2">
+                    <label class="block text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-200 mb-1 sm:mb-2">
                         Username
                     </label>
                     <TextFieldRoot>
@@ -94,14 +94,14 @@ const SignUp: Component<{ onSwitchMode?: (mode: AuthMode) => void }> = (props) =
                             placeholder="John"
                             value={formData().username || ''}
                             onInput={(e) => setFormData(prev => ({ ...prev, username: e.currentTarget.value }))}
-                            class="w-full px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-sm sm:text-base"
+                            class="w-full px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg border border-white/50 dark:border-slate-800/70 bg-white/40 dark:bg-slate-900/40 text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400 focus:ring-2 focus:ring-cyan-400 focus:border-transparent transition-all text-sm sm:text-base backdrop-blur"
                             required
                         />
                     </TextFieldRoot>
                 </div>
 
                 <div>
-                    <label class="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 sm:mb-2">
+                    <label class="block text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-200 mb-1 sm:mb-2">
                         Work email
                     </label>
                     <TextFieldRoot>
@@ -110,15 +110,15 @@ const SignUp: Component<{ onSwitchMode?: (mode: AuthMode) => void }> = (props) =
                             placeholder="john@company.com"
                             value={formData().email || ''}
                             onInput={(e) => setFormData(prev => ({ ...prev, email: e.currentTarget.value }))}
-                            class="w-full px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-sm sm:text-base"
+                            class="w-full px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg border border-white/50 dark:border-slate-800/70 bg-white/40 dark:bg-slate-900/40 text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400 focus:ring-2 focus:ring-cyan-400 focus:border-transparent transition-all text-sm sm:text-base backdrop-blur"
                             required
                         />
                     </TextFieldRoot>
                 </div>
 
                 <div>
-                    <label class="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 sm:mb-2">
-                        Company <span class="text-gray-400">(optional)</span>
+                    <label class="block text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-200 mb-1 sm:mb-2">
+                        Company <span class="text-slate-400">(optional)</span>
                     </label>
                     <TextFieldRoot>
                         <TextField
@@ -126,13 +126,13 @@ const SignUp: Component<{ onSwitchMode?: (mode: AuthMode) => void }> = (props) =
                             placeholder="Acme Inc."
                             value={formData().company || ''}
                             onInput={(e) => setFormData(prev => ({ ...prev, company: e.currentTarget.value }))}
-                            class="w-full px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-sm sm:text-base"
+                            class="w-full px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg border border-white/50 dark:border-slate-800/70 bg-white/40 dark:bg-slate-900/40 text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400 focus:ring-2 focus:ring-cyan-400 focus:border-transparent transition-all text-sm sm:text-base backdrop-blur"
                         />
                     </TextFieldRoot>
                 </div>
 
                 <div>
-                    <label class="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 sm:mb-2">
+                    <label class="block text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-200 mb-1 sm:mb-2">
                         Password
                     </label>
                     <div class="relative">
@@ -142,7 +142,7 @@ const SignUp: Component<{ onSwitchMode?: (mode: AuthMode) => void }> = (props) =
                                 placeholder="Create a strong password"
                                 value={formData().password || ''}
                                 onInput={(e) => setFormData(prev => ({ ...prev, password: e.currentTarget.value }))}
-                                class="w-full px-3 sm:px-4 py-2.5 sm:py-3 pr-10 sm:pr-12 rounded-lg border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-sm sm:text-base"
+                                class="w-full px-3 sm:px-4 py-2.5 sm:py-3 pr-10 sm:pr-12 rounded-lg border border-white/50 dark:border-slate-800/70 bg-white/40 dark:bg-slate-900/40 text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400 focus:ring-2 focus:ring-cyan-400 focus:border-transparent transition-all text-sm sm:text-base backdrop-blur"
                                 required
                             />
                         </TextFieldRoot>
@@ -150,13 +150,13 @@ const SignUp: Component<{ onSwitchMode?: (mode: AuthMode) => void }> = (props) =
                         <button
                             type="button"
                             onClick={() => setShowPassword(!showPassword())}
-                            class="absolute right-2 sm:right-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300"
+                            class="absolute right-2 sm:right-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 hover:text-cyan-500 dark:hover:text-cyan-300"
                         >
                             {showPassword() ? <VsEyeClosed class="w-4 h-4 sm:w-5 sm:h-5" /> : <VsEye class="w-4 h-4 sm:w-5 sm:h-5" />}
                         </button>
                     </div>
 
-                    <label class="block text-xs sm:text-sm font-medium text-gray-700 mb-1 sm:mb-2 pt-2">
+                    <label class="block text-xs sm:text-sm font-semibold text-slate-700 mb-1 sm:mb-2 pt-2">
                         Confirm Password
                     </label>
                     <div class="relative">
@@ -166,7 +166,7 @@ const SignUp: Component<{ onSwitchMode?: (mode: AuthMode) => void }> = (props) =
                                 placeholder="Create a strong password"
                                 value={formData().confirmPassword || ''}
                                 onInput={(e) => setFormData(prev => ({ ...prev, confirmPassword: e.currentTarget.value }))}
-                                class="w-full px-3 sm:px-4 py-2.5 sm:py-3 pr-10 sm:pr-12 rounded-lg border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-sm sm:text-base"
+                                class="w-full px-3 sm:px-4 py-2.5 sm:py-3 pr-10 sm:pr-12 rounded-lg border border-white/50 dark:border-slate-800/70 bg-white/40 dark:bg-slate-900/40 text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400 focus:ring-2 focus:ring-cyan-400 focus:border-transparent transition-all text-sm sm:text-base backdrop-blur"
                                 required
                             />
                         </TextFieldRoot>
@@ -174,7 +174,7 @@ const SignUp: Component<{ onSwitchMode?: (mode: AuthMode) => void }> = (props) =
                         <button
                             type="button"
                             onClick={() => setShowPassword(!showPassword())}
-                            class="absolute right-2 sm:right-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300"
+                            class="absolute right-2 sm:right-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 hover:text-cyan-500 dark:hover:text-cyan-300"
                         >
                             {showPassword() ? <VsEyeClosed class="w-4 h-4 sm:w-5 sm:h-5" /> : <VsEye class="w-4 h-4 sm:w-5 sm:h-5" />}
                         </button>
@@ -201,30 +201,30 @@ const SignUp: Component<{ onSwitchMode?: (mode: AuthMode) => void }> = (props) =
 
                 {/* Error message */}
                 <Show when={error()}>
-                    <div class="p-3 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800">
-                        <p class="text-red-600 dark:text-red-400 text-sm">{error()}</p>
+                    <div class="p-3 rounded-lg bg-red-50/80 dark:bg-red-900/30 border border-red-200/70 dark:border-red-800/70 backdrop-blur">
+                        <p class="text-red-600 dark:text-red-300 text-sm">{error()}</p>
                     </div>
                 </Show>
 
                 <Button
                     type="submit"
                     disabled={registerMutation.isPending}
-                    class="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white py-3 rounded-lg font-medium transition-all disabled:opacity-50"
+                    class="w-full py-3"
                 >
                     {registerMutation.isPending ? 'Creating account...' : 'Create account'}
                 </Button>
 
                 <div class="relative my-6">
                     <div class="absolute inset-0 flex items-center">
-                        <div class="w-full border-t border-gray-200 dark:border-gray-600"></div>
+                        <div class="w-full border-t border-white/40 dark:border-slate-800/70"></div>
                     </div>
                     <div class="relative flex justify-center text-sm">
-                        <span class="px-2 bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400">Or continue with</span>
+                        <span class="px-2 bg-white/80 dark:bg-slate-900/80 text-slate-500 dark:text-slate-400 rounded-full backdrop-blur">Or continue with</span>
                     </div>
                 </div>
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <Button variant="outline" class="py-2.5 sm:py-3 border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 dark:bg-gray-800 dark:text-white text-sm sm:text-base">
+                    <Button variant="outline" class="py-2.5 sm:py-3 text-sm sm:text-base">
                         <svg class="w-4 h-4 sm:w-5 sm:h-5 mr-1.5 sm:mr-2" viewBox="0 0 24 24">
                             <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
                             <path fill="currentColor" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
@@ -233,7 +233,7 @@ const SignUp: Component<{ onSwitchMode?: (mode: AuthMode) => void }> = (props) =
                         </svg>
                         Google
                     </Button>
-                    <Button variant="outline" class="py-2.5 sm:py-3 border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 dark:bg-gray-800 dark:text-white text-sm sm:text-base">
+                    <Button variant="outline" class="py-2.5 sm:py-3 text-sm sm:text-base">
                         <svg class="w-4 h-4 sm:w-5 sm:h-5 mr-1.5 sm:mr-2" fill="currentColor" viewBox="0 0 24 24">
                             <path d="M12.017 0C5.396 0 .029 5.367.029 11.987c0 5.079 3.158 9.417 7.618 11.024-.105-.949-.199-2.403.042-3.441.219-.937 1.407-5.965 1.407-5.965s-.359-.719-.359-1.782c0-1.668.967-2.914 2.171-2.914 1.023 0 1.518.769 1.518 1.69 0 1.029-.653 2.567-.992 3.992-.285 1.193.6 2.165 1.775 2.165 2.128 0 3.768-2.245 3.768-5.487 0-2.861-2.063-4.869-5.008-4.869-3.41 0-5.409 2.562-5.409 5.199 0 1.033.394 2.143.889 2.741.097.118.112.222.083.343-.09.369-.293 1.199-.334 1.363-.053.225-.172.271-.402.165-1.495-.69-2.433-2.878-2.433-4.646 0-3.776 2.748-7.252 7.92-7.252 4.158 0 7.392 2.967 7.392 6.923 0 4.135-2.607 7.462-6.233 7.462-1.214 0-2.357-.629-2.845-1.378l-.759 2.893c-.276 1.071-1.009 2.422-1.522 3.256 1.143.35 2.738.542 4.217.542 6.624 0 11.99-5.367 11.99-11.987C24.007 5.367 18.641.001 12.017.001z" />
                         </svg>
@@ -243,10 +243,10 @@ const SignUp: Component<{ onSwitchMode?: (mode: AuthMode) => void }> = (props) =
             </form>
 
             <div class="text-center mt-4 sm:mt-6">
-                <span class="text-gray-600 dark:text-gray-300 text-sm sm:text-base">Already have an account? </span>
+                <span class="text-slate-600 dark:text-slate-300 text-sm sm:text-base">Already have an account? </span>
                 <button
                     onClick={handleSwitchToSignIn}
-                    class="text-blue-600 dark:text-blue-400 hover:underline font-medium text-sm sm:text-base"
+                    class="text-cyan-600 dark:text-cyan-300 hover:underline font-semibold text-sm sm:text-base"
                 >
                     Sign in
                 </button>

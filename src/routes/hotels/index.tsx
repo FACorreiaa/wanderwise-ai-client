@@ -1036,26 +1036,26 @@ export default function HotelsPage() {
     };
 
     return (
-        <div class="min-h-screen bg-gray-50 dark:bg-gray-900">
+        <div class="min-h-screen relative">
             {/* Chat Success Banner */}
             <Show when={fromChat()}>
-                <div class="bg-gradient-to-r from-green-50 to-blue-50 border-b border-green-200 px-4 py-3 sm:px-6">
+                <div class="px-4 py-3 sm:px-6">
                     <div class="max-w-7xl mx-auto">
-                        <div class="flex items-center gap-3">
-                            <div class="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
+                        <div class="flex items-center gap-3 glass-panel gradient-border rounded-xl p-3">
+                            <div class="w-8 h-8 bg-sky-600 rounded-full flex items-center justify-center text-white shadow">
                                 <Bed class="w-4 h-4 text-white" />
                             </div>
                             <div class="flex-1">
-                                <p class="text-sm font-medium text-green-900">
+                                <p class="text-sm font-medium text-sky-900 dark:text-sky-100">
                                     ✨ <TypingAnimation text="Your hotel recommendations are ready!" />
                                 </p>
-                                <p class="text-xs text-green-700">
+                                <p class="text-xs text-slate-700 dark:text-slate-300">
                                     Generated from your chat: "{location.state?.originalMessage || 'Hotel search'}"
                                 </p>
                             </div>
                             <button
                                 onClick={() => setFromChat(false)}
-                                class="p-1 text-green-600 hover:text-green-700"
+                                class="p-1 text-sky-700 hover:text-sky-800 dark:text-sky-300 dark:hover:text-sky-200"
                             >
                                 <X class="w-4 h-4" />
                             </button>
@@ -1065,7 +1065,7 @@ export default function HotelsPage() {
             </Show>
 
             {/* Header - Mobile First */}
-            <div class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-4 py-3 sm:px-6 sm:py-4">
+            <div class="bg-white/80 dark:bg-slate-900/70 backdrop-blur-xl border-b border-white/60 dark:border-slate-800/70 px-4 py-3 sm:px-6 sm:py-4">
                 <div class="max-w-7xl mx-auto">
                     <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                         <div>
@@ -1104,7 +1104,7 @@ export default function HotelsPage() {
                             <div class="flex flex-col gap-2 sm:flex-row sm:gap-3">
                                 <button
                                     onClick={() => setShowChat(true)}
-                                    class="flex items-center justify-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all shadow-sm text-sm font-medium"
+                                    class="flex items-center justify-center gap-2 px-4 py-2 bg-[#0c7df2] hover:bg-[#0a6ed6] text-white rounded-lg transition-all shadow-sm text-sm font-medium shadow-[0_12px_32px_rgba(12,125,242,0.22)] border border-white/30 dark:border-slate-800/60"
                                 >
                                     <MessageCircle class="w-4 h-4" />
                                     Get Help

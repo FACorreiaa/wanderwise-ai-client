@@ -7,14 +7,14 @@ export default function ServerError() {
   };
 
   return (
-    <div class="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center px-4 py-8">
-      <div class="text-center max-w-md mx-auto">
+    <div class="min-h-screen flex items-center justify-center px-4 py-8">
+      <div class="text-center max-w-md mx-auto glass-panel gradient-border rounded-2xl p-8 shadow-xl">
         {/* Animated Icon */}
         <div class="mb-8 relative">
-          <div class="w-24 h-24 mx-auto bg-gradient-to-br from-red-500 to-orange-600 rounded-full flex items-center justify-center animate-pulse">
+          <div class="w-24 h-24 mx-auto bg-orange-500 rounded-full flex items-center justify-center animate-pulse shadow-[0_18px_38px_rgba(249,115,22,0.25)] ring-4 ring-white/60 dark:ring-slate-800">
             <AlertTriangle class="w-12 h-12 text-white" />
           </div>
-          <div class="absolute -top-2 -right-2 w-6 h-6 bg-yellow-500 rounded-full flex items-center justify-center">
+          <div class="absolute -top-2 -right-2 w-6 h-6 bg-yellow-500 rounded-full flex items-center justify-center shadow-lg">
             <span class="text-white text-xs font-bold">!</span>
           </div>
         </div>
@@ -34,14 +34,14 @@ export default function ServerError() {
         <div class="space-y-3 sm:space-y-0 sm:space-x-4 sm:flex sm:justify-center">
           <button 
             onClick={handleRefresh}
-            class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium"
+            class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors font-medium shadow-[0_14px_32px_rgba(249,115,22,0.25)] border border-white/30 dark:border-slate-800/60"
           >
             <RefreshCw class="w-4 h-4" />
             Try Again
           </button>
           <A 
             href="/" 
-            class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors font-medium"
+            class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 bg-white/70 dark:bg-slate-900/60 text-slate-900 dark:text-white rounded-lg hover:bg-white/90 dark:hover:bg-slate-800/80 transition-colors font-medium border border-white/40 dark:border-slate-800/70"
           >
             <Home class="w-4 h-4" />
             Back to Home
@@ -76,12 +76,12 @@ export default function ServerError() {
         </div>
 
         {/* Fun Travel Tip */}
-        <div class="mt-8 p-4 bg-orange-50 dark:bg-orange-900/20 rounded-lg">
+        <div class="mt-8 p-4 glass-panel gradient-border rounded-lg text-left">
           <div class="flex items-center justify-center gap-2 mb-2">
             <Compass class="w-4 h-4 text-orange-600 dark:text-orange-400" />
             <span class="text-sm font-medium text-orange-900 dark:text-orange-100">Travel Tip</span>
           </div>
-          <p class="text-xs text-orange-800 dark:text-orange-200">
+          <p class="text-xs text-slate-700 dark:text-slate-200">
             Even the best travel plans hit unexpected delays. Sometimes the best stories come from the unplanned moments!
           </p>
         </div>

@@ -165,7 +165,25 @@ Whether you're a tourist on a tight schedule or a local looking for something ne
 
 ## 🧪 Getting Started
 
-> 🔧 _Instructions for local setup coming soon._
+### Demo Credentials
+
+For demo purposes, you can use the following hardcoded test credentials to login without requiring backend authentication (only works in development mode):
+
+- **Email:** `test@email.com`
+- **Password:** `test12345`
+
+### Local Development
+
+```bash
+# Install dependencies
+npm install
+
+# Start development server
+npm run dev
+
+# Build for production
+npm run build
+```
 
 ## 🤝 Contributing
 

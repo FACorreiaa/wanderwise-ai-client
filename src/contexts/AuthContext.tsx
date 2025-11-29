@@ -156,8 +156,8 @@ export const AuthProvider = (props: AuthProviderProps) => {
       // Authenticate with server and get access token
       const response = await authAPI.login(email, password);
       console.log('AuthProvider: Login successful, got token');
-      
-      setAuthToken(response.access_token, rememberMe);
+      const refreshToken = (response as any).refresh_token ?? (response as any).refreshToken;
+      setAuthToken(response.access_token, rememberMe, refreshToken);
       console.log('AuthProvider: Token stored, verifying...');
       
       // Verify token was stored correctly

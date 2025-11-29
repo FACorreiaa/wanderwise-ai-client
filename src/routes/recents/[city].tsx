@@ -113,7 +113,7 @@ export default function CityDetailsPage() {
     <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4 hover:shadow-md transition-all duration-200">
       <div class="flex gap-3">
         {/* Icon */}
-        <div class="w-12 h-12 bg-gradient-to-br from-blue-100 to-purple-100 dark:from-blue-900 dark:to-purple-900 rounded-lg flex items-center justify-center text-xl flex-shrink-0">
+        <div class="w-12 h-12 bg-white/70 dark:bg-slate-900/60 border border-white/60 dark:border-slate-800/70 rounded-lg flex items-center justify-center text-xl flex-shrink-0">
           {getCategoryIcon(place.category)}
         </div>
 

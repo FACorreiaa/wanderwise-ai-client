@@ -3,7 +3,7 @@
 // the query-based functions from './api-queries.ts' which provide better caching,
 // optimistic updates, and error handling with @tanstack/solid-query.
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
 
 // Token management functions - moved to top to avoid circular dependency
 export const getAuthToken = (): string | null => {
@@ -11,19 +11,32 @@ export const getAuthToken = (): string | null => {
   return localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
 };
 
-export const setAuthToken = (token: string, rememberMe: boolean = false): void => {
-  if (rememberMe) {
-    localStorage.setItem('access_token', token);
-    sessionStorage.removeItem('access_token');
-  } else {
-    sessionStorage.setItem('access_token', token);
-    localStorage.removeItem('access_token');
+export const getRefreshToken = (): string | null => {
+  return localStorage.getItem('refresh_token') || sessionStorage.getItem('refresh_token');
+};
+
+export const setAuthToken = (
+  token: string,
+  rememberMe: boolean = false,
+  refreshToken?: string
+): void => {
+  const primaryStorage = rememberMe ? localStorage : sessionStorage;
+  const secondaryStorage = rememberMe ? sessionStorage : localStorage;
+
+  primaryStorage.setItem('access_token', token);
+  if (refreshToken) {
+    primaryStorage.setItem('refresh_token', refreshToken);
   }
+
+  secondaryStorage.removeItem('access_token');
+  secondaryStorage.removeItem('refresh_token');
 };
 
 export const clearAuthToken = (): void => {
   localStorage.removeItem('access_token');
   sessionStorage.removeItem('access_token');
+  localStorage.removeItem('refresh_token');
+  sessionStorage.removeItem('refresh_token');
 };
 
 export const isAuthenticated = (): boolean => {
@@ -45,6 +58,8 @@ async function makeRequest<T>(
   isRetry: boolean = false
 ): Promise<T> {
   const token = getAuthToken();
+  const useLocalStorage = !!localStorage.getItem('access_token') || !!localStorage.getItem('refresh_token');
+  const isRefreshRequest = endpoint.includes('AuthService/RefreshToken');
 
   const config: RequestInit = {
     headers: {
@@ -62,13 +77,13 @@ async function makeRequest<T>(
 
   console.log('url', url)
   if (!response.ok) {
-    if (response.status === 401 && !isRetry) {
+    if (response.status === 401 && !isRetry && !isRefreshRequest) {
       // Try to refresh token before giving up
       console.log('apiRequest: 401 error, attempting token refresh...');
       try {
         const refreshResult = await authAPI.refreshToken();
         if (refreshResult.access_token) {
-          setAuthToken(refreshResult.access_token, false);
+          setAuthToken(refreshResult.access_token, useLocalStorage, refreshResult.refresh_token);
           console.log('apiRequest: Token refreshed, retrying original request...');
           // Retry the original request with new token
           return makeRequest<T>(endpoint, options, true);
@@ -93,22 +108,38 @@ async function makeRequest<T>(
 // Authentication API
 export const authAPI = {
   async login(email: string, password: string) {
-    return apiRequest<{ access_token: string; message: string }>('/auth/login', {
+    // Demo mode: Allow hardcoded test user to login without backend
+    if (import.meta.env.DEV && email === 'test@email.com' && password === 'test12345') {
+      console.log('🎭 Demo mode: Logging in test user without backend authentication');
+      return {
+        access_token: 'demo-token-' + Date.now(),
+        refresh_token: 'demo-refresh-' + Date.now(),
+        message: 'Demo login successful'
+      };
+    }
+    
+    return apiRequest<{ access_token: string; refresh_token: string; message: string }>('/loci.auth.AuthService/Login', {
       method: 'POST',
       body: JSON.stringify({ email, password }),
     });
   },
 
   async register(username: string, email: string, password: string, role: string = 'user') {
-    return apiRequest<{ message: string }>('/auth/register', {
+    return apiRequest<{ message: string }>('/loci.auth.AuthService/Register', {
       method: 'POST',
       body: JSON.stringify({ username, email, password, role }),
     });
   },
 
   async logout() {
-    return apiRequest<{ message: string }>('/auth/logout', {
+    const refreshToken = getRefreshToken();
+    if (!refreshToken) {
+      throw new Error('No refresh token available for logout');
+    }
+
+    return apiRequest<{ message: string }>('/loci.auth.AuthService/Logout', {
       method: 'POST',
+      body: JSON.stringify({ refresh_token: refreshToken }),
     });
   },
 
@@ -120,18 +151,29 @@ export const authAPI = {
       return { valid: false };
     }
 
+    // Demo mode: Validate demo token without backend call
+    if (import.meta.env.DEV && token.startsWith('demo-token-')) {
+      console.log('🎭 Demo mode: Validating demo token without backend call');
+      return { 
+        valid: true, 
+        user_id: 'demo-user', 
+        username: 'Test User', 
+        email: 'test@email.com' 
+      };
+    }
+
     console.log('validateSession: Making API request to validate JWT...');
     try {
-      const result = await apiRequest<{ valid: boolean; user_id?: string; username?: string; email?: string }>('/auth/validate-session', {
+      const result = await apiRequest<{ valid: boolean; user_id?: string; username?: string; email?: string }>('/loci.auth.AuthService/ValidateSession', {
         method: 'POST',
-        body: JSON.stringify({}), // Token is sent in Authorization header by apiRequest
+        body: JSON.stringify({ session_id: token }),
       });
       console.log('validateSession: API response:', result);
       return result;
     } catch (error) {
       console.error('validateSession: API error:', error);
       // If it's unauthorized, the apiRequest will handle token refresh automatically
-      if (error?.message === 'Unauthorized') {
+      if ((error as any)?.message === 'Unauthorized') {
         return { valid: false };
       }
       throw error;
@@ -139,11 +181,15 @@ export const authAPI = {
   },
 
   async refreshToken() {
-    console.log('refreshToken: Attempting to refresh token using HttpOnly cookie...');
+    console.log('refreshToken: Attempting to refresh token using refresh_token...');
+    const refreshToken = getRefreshToken();
+    if (!refreshToken) {
+      throw new Error('No refresh token available');
+    }
     try {
-      const result = await apiRequest<{ access_token: string }>('/auth/refresh', {
+      const result = await apiRequest<{ access_token: string; refresh_token?: string }>('/loci.auth.AuthService/RefreshToken', {
         method: 'POST',
-        body: JSON.stringify({}), // Refresh token comes from HttpOnly cookie
+        body: JSON.stringify({ refresh_token: refreshToken }),
       });
       console.log('refreshToken: Refresh successful');
       return result;
@@ -154,7 +200,7 @@ export const authAPI = {
   },
 
   async updatePassword(oldPassword: string, newPassword: string) {
-    return apiRequest<{ message: string }>('/auth/update-password', {
+    return apiRequest<{ message: string }>('/loci.auth.AuthService/ChangePassword', {
       method: 'PUT',
       body: JSON.stringify({ old_password: oldPassword, new_password: newPassword }),
     });
@@ -166,7 +212,36 @@ export const authAPI = {
       throw new Error('No authentication token available');
     }
 
-    return apiRequest<any>('/user/profile');
+    // Demo mode: Return hardcoded user profile for demo token
+    if (import.meta.env.DEV && token.startsWith('demo-token-')) {
+      console.log('🎭 Demo mode: Returning hardcoded user profile for demo token');
+      return {
+        id: 'demo-user',
+        email: 'test@email.com',
+        username: 'testuser',
+        firstname: 'Test',
+        lastname: 'User',
+        display_name: 'Test User',
+        is_active: true,
+        role: 'user',
+        created_at: '2024-01-01T00:00:00Z',
+        updated_at: '2024-01-01T00:00:00Z'
+      };
+    }
+
+    const session = await authAPI.validateSession();
+    if (!session.valid) {
+      throw new Error('Session invalid');
+    }
+
+    return {
+      id: session.user_id || '',
+      email: session.email || '',
+      username: session.username || session.email || '',
+      is_active: true,
+      created_at: '',
+      updated_at: ''
+    };
   }
 };
 
