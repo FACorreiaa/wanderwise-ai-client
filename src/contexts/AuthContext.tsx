@@ -1,6 +1,7 @@
 import { createContext, useContext, createSignal, createEffect, onMount, JSX } from 'solid-js';
 import { useNavigate } from '@solidjs/router';
-import { authAPI, getAuthToken, setAuthToken, clearAuthToken } from '~/lib/api';
+import { getAuthToken, setAuthToken, clearAuthToken } from '~/lib/auth/tokens';
+import { authAPI } from '~/lib/api';
 
 interface User {
   id: string;

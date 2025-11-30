@@ -46,7 +46,7 @@ declare module 'virtual:pwa-register' {
 
 // Global environment variables
 declare module '@env' {
-  export const VITE_API_BASE_URL: string;
+  export const VITE_CONNECT_BASE_URL: string;
   export const VITE_MAPBOX_API_KEY: string;
 }
 

@@ -11,7 +11,7 @@
     "cf-typegen": "wrangler types"
   },
   "dependencies": {
-    "@buf/loci_loci-proto.connectrpc_query-es": "2.2.0-20251127204032-0d70752c8202.1",
+    "@buf/loci_loci-proto.bufbuild_es": "2.10.1-20251127204032-0d70752c8202.1",
     "@bufbuild/protobuf": "^2.10.1",
     "@connectrpc/connect": "^2.1.1",
     "@connectrpc/connect-web": "^2.1.1",

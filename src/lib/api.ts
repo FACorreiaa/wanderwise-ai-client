@@ -1,9 +1,25 @@
 // Legacy API Service for Loci Travel App
-// NOTE: This file contains legacy API functions. For new development, prefer using 
+// NOTE: This file contains legacy API functions. For new development, prefer using
 // the query-based functions from './api-queries.ts' which provide better caching,
 // optimistic updates, and error handling with @tanstack/solid-query.
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
+// Import Connect RPC client for auth
+import { createClient } from '@connectrpc/connect';
+import { create } from '@bufbuild/protobuf';
+import { AuthService } from '@buf/loci_loci-proto.bufbuild_es/proto/auth_pb.js';
+import {
+  LoginRequestSchema,
+  RegisterRequestSchema,
+  ValidateSessionRequestSchema,
+  LogoutRequestSchema,
+  RefreshTokenRequestSchema,
+} from '@buf/loci_loci-proto.bufbuild_es/proto/auth_pb.js';
+import { transport } from './connect-transport';
+
+const API_BASE_URL = import.meta.env.VITE_CONNECT_BASE_URL || 'http://localhost:8080';
+
+// Create auth client once
+const authClient = createClient(AuthService, transport);
 
 // Token management functions - moved to top to avoid circular dependency
 export const getAuthToken = (): string | null => {
@@ -91,7 +107,7 @@ async function makeRequest<T>(
       } catch (refreshError) {
         console.error('apiRequest: Token refresh failed:', refreshError);
       }
-      
+
       // If refresh failed or no new token, clear auth and redirect
       clearAuthToken();
       window.location.href = '/auth/signin';
@@ -117,18 +133,26 @@ export const authAPI = {
         message: 'Demo login successful'
       };
     }
-    
-    return apiRequest<{ access_token: string; refresh_token: string; message: string }>('/loci.auth.AuthService/Login', {
-      method: 'POST',
-      body: JSON.stringify({ email, password }),
-    });
+
+    // Use Connect RPC
+    const request = create(LoginRequestSchema, { email, password });
+    const response = await authClient.login(request);
+
+    return {
+      access_token: response.accessToken,
+      refresh_token: response.refreshToken,
+      message: response.message,
+    };
   },
 
   async register(username: string, email: string, password: string, role: string = 'user') {
-    return apiRequest<{ message: string }>('/loci.auth.AuthService/Register', {
-      method: 'POST',
-      body: JSON.stringify({ username, email, password, role }),
-    });
+    const request = create(RegisterRequestSchema, { username, email, password, role });
+    const response = await authClient.register(request);
+
+    return {
+      success: response.success,
+      message: response.message,
+    };
   },
 
   async logout() {
@@ -137,10 +161,13 @@ export const authAPI = {
       throw new Error('No refresh token available for logout');
     }
 
-    return apiRequest<{ message: string }>('/loci.auth.AuthService/Logout', {
-      method: 'POST',
-      body: JSON.stringify({ refresh_token: refreshToken }),
-    });
+    const request = create(LogoutRequestSchema, { refreshToken });
+    const response = await authClient.logout(request);
+
+    return {
+      success: response.success,
+      message: response.message,
+    };
   },
 
   async validateSession() {
@@ -154,26 +181,30 @@ export const authAPI = {
     // Demo mode: Validate demo token without backend call
     if (import.meta.env.DEV && token.startsWith('demo-token-')) {
       console.log('🎭 Demo mode: Validating demo token without backend call');
-      return { 
-        valid: true, 
-        user_id: 'demo-user', 
-        username: 'Test User', 
-        email: 'test@email.com' 
+      return {
+        valid: true,
+        user_id: 'demo-user',
+        username: 'Test User',
+        email: 'test@email.com'
       };
     }
 
-    console.log('validateSession: Making API request to validate JWT...');
+    console.log('validateSession: Making Connect RPC call to validate JWT...');
     try {
-      const result = await apiRequest<{ valid: boolean; user_id?: string; username?: string; email?: string }>('/loci.auth.AuthService/ValidateSession', {
-        method: 'POST',
-        body: JSON.stringify({ session_id: token }),
-      });
-      console.log('validateSession: API response:', result);
-      return result;
+      const request = create(ValidateSessionRequestSchema, { sessionId: token });
+      const response = await authClient.validateSession(request);
+
+      console.log('validateSession: API response:', response);
+      return {
+        valid: response.valid,
+        user_id: response.userId,
+        username: response.username,
+        email: response.email,
+      };
     } catch (error) {
       console.error('validateSession: API error:', error);
-      // If it's unauthorized, the apiRequest will handle token refresh automatically
-      if ((error as any)?.message === 'Unauthorized') {
+      // If it's unauthorized, return invalid
+      if ((error as any)?.code === 'unauthenticated') {
         return { valid: false };
       }
       throw error;
@@ -187,12 +218,14 @@ export const authAPI = {
       throw new Error('No refresh token available');
     }
     try {
-      const result = await apiRequest<{ access_token: string; refresh_token?: string }>('/loci.auth.AuthService/RefreshToken', {
-        method: 'POST',
-        body: JSON.stringify({ refresh_token: refreshToken }),
-      });
+      const request = create(RefreshTokenRequestSchema, { refreshToken });
+      const response = await authClient.refreshToken(request);
+
       console.log('refreshToken: Refresh successful');
-      return result;
+      return {
+        access_token: response.accessToken,
+        refresh_token: response.refreshToken,
+      };
     } catch (error) {
       console.error('refreshToken: Refresh failed:', error);
       throw error;

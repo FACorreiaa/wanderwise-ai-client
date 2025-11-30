@@ -17,7 +17,7 @@ import PageBackground from "./components/PageBackground";
 export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <ThemeProvider>
+        <ThemeProvider>
         <Router
           root={props => (
             <AuthProvider>
@@ -42,7 +42,7 @@ export default function App() {
         >
           <FileRoutes />
         </Router>
-      </ThemeProvider>
+        </ThemeProvider>
     </QueryClientProvider>
   );
 }
