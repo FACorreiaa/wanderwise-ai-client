@@ -65,6 +65,7 @@ import { useChatSession } from "~/lib/hooks/useChatSession";
 import ChatInterface from "~/components/ui/ChatInterface";
 // @ts-ignore - Auth context type
 import { useAuth } from "~/contexts/AuthContext";
+import RegisterBanner from "~/components/ui/RegisterBanner";
 
 interface LocationState {
   streamingData?: any;
@@ -1937,7 +1938,22 @@ export default function ItineraryResultsPage() {
       </div>
 
       {/* Chat Interface - Mobile Optimized - Only for authenticated users */}
-      <Show when={isAuthenticated()}>
+      <Show
+        when={isAuthenticated()}
+        fallback={
+          <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+            <RegisterBanner
+              title="Unlock chat to keep refining this itinerary"
+              description="Preview searches work without an account. Register to keep the conversation going, save edits, and export routes."
+              helper={
+                <p class="text-xs text-slate-600 dark:text-slate-300">
+                  Favorites and downloads stay behind the sign-in.
+                </p>
+              }
+            />
+          </div>
+        }
+      >
         <ChatInterface
           showChat={chatSession.showChat()}
           chatMessage={chatSession.chatMessage()}

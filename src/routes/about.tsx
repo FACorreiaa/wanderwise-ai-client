@@ -3,16 +3,32 @@ import { A } from "@solidjs/router";
 export default function About() {
   return (
     <div class="min-h-screen bg-background text-foreground transition-colors">
-      <div class="max-w-4xl mx-auto px-4 py-12">
+      <div class="max-w-5xl mx-auto px-4 py-12 space-y-12">
         {/* Hero Section */}
-        <header class="text-center mb-16">
-          <h1 class="text-4xl md:text-6xl font-bold text-foreground mb-6">
-            About <span class="text-blue-600 dark:text-blue-400">Loci</span>
-          </h1>
-          <p class="text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
-            Personalized City Discovery 🗺️✨
-          </p>
+        <header class="text-center">
+          <div class="rounded-3xl bg-gradient-to-br from-[#1e66f5]/10 via-[#04a5e5]/12 to-[#40a02b]/10 border border-[hsl(223,16%,83%)]/70 dark:border-white/10 shadow-[0_30px_80px_rgba(4,165,229,0.18)] p-10">
+            <p class="text-sm uppercase tracking-[0.2em] text-[hsl(11,59%,67%)] dark:text-emerald-200 mb-3">About Loci</p>
+            <h1 class="text-4xl md:text-6xl font-bold text-foreground dark:text-white mb-4">
+              The taste-aware travel OS.
+            </h1>
+            <p class="text-xl text-[hsl(233,13%,41%)] dark:text-slate-200/85 max-w-3xl mx-auto leading-relaxed">
+              Personalized City Discovery 🗺️✨ powered by Catppuccin Latte hues for clarity in light mode.
+            </p>
+          </div>
         </header>
+
+        <section class="grid md:grid-cols-3 gap-4">
+          {[
+            { title: "Human-grade curation", body: "Annotated picks with source notes, not generic lists.", tone: "from-[#dc8a78]/25 to-[#dd7878]/20" },
+            { title: "Glass accessibility", body: "High-contrast cards that stay legible in Latte or dark.", tone: "from-[#04a5e5]/25 to-[#1e66f5]/20" },
+            { title: "Native-first future", body: "iOS + Android launching with offline brains for paid users.", tone: "from-[#40a02b]/25 to-[#df8e1d]/20" },
+          ].map((item) => (
+            <div class={`rounded-2xl p-5 border border-[hsl(223,16%,83%)]/80 dark:border-white/10 bg-gradient-to-br ${item.tone} backdrop-blur`}>
+              <h3 class="text-lg font-semibold text-foreground dark:text-white mb-2">{item.title}</h3>
+              <p class="text-[hsl(233,10%,47%)] dark:text-slate-200/85 text-sm leading-relaxed">{item.body}</p>
+            </div>
+          ))}
+        </section>
 
         {/* Main Content */}
         <main class="max-w-none">

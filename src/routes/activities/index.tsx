@@ -10,6 +10,7 @@ import { TypingAnimation } from '~/components/TypingAnimation';
 import { useChatSession } from '~/lib/hooks/useChatSession';
 import ChatInterface from '~/components/ui/ChatInterface';
 import { useAuth } from '~/contexts/AuthContext';
+import RegisterBanner from '~/components/ui/RegisterBanner';
 
 export default function ActivitiesPage() {
     const location = useLocation();
@@ -605,26 +606,38 @@ export default function ActivitiesPage() {
             </div>
 
             {/* Chat Interface */}
-            <ChatInterface
-                showChat={chatSession.showChat()}
-                chatMessage={chatSession.chatMessage()}
-                chatHistory={chatSession.chatHistory()}
-                isLoading={chatSession.isLoading()}
-                setShowChat={chatSession.setShowChat}
-                setChatMessage={chatSession.setChatMessage}
-                sendChatMessage={chatSession.sendChatMessage}
-                handleKeyPress={chatSession.handleKeyPress}
-                title="Activity Recommendations"
-                placeholder="Ask for activity recommendations..."
-                emptyStateIcon={Compass}
-                emptyStateTitle="Ask me for activity recommendations!"
-                emptyStateSubtitle='Try: "Museums in the city center" or "Outdoor activities for families"'
-                loadingMessage="Finding amazing activities..."
-                headerColor="bg-green-600"
-                userMessageColor="bg-green-600"
-                floatingButtonColor="bg-green-600 hover:bg-green-700"
-                focusRingColor="focus:ring-green-500"
-            />
+            <Show
+                when={auth.isAuthenticated()}
+                fallback={
+                    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+                        <RegisterBanner
+                            title="Register to keep refining activities"
+                            description="Search and filter activities now. Save, tweak, and chat with the planner once you create your account."
+                        />
+                    </div>
+                }
+            >
+                <ChatInterface
+                    showChat={chatSession.showChat()}
+                    chatMessage={chatSession.chatMessage()}
+                    chatHistory={chatSession.chatHistory()}
+                    isLoading={chatSession.isLoading()}
+                    setShowChat={chatSession.setShowChat}
+                    setChatMessage={chatSession.setChatMessage}
+                    sendChatMessage={chatSession.sendChatMessage}
+                    handleKeyPress={chatSession.handleKeyPress}
+                    title="Activity Recommendations"
+                    placeholder="Ask for activity recommendations..."
+                    emptyStateIcon={Compass}
+                    emptyStateTitle="Ask me for activity recommendations!"
+                    emptyStateSubtitle='Try: "Museums in the city center" or "Outdoor activities for families"'
+                    loadingMessage="Finding amazing activities..."
+                    headerColor="bg-green-600"
+                    userMessageColor="bg-green-600"
+                    floatingButtonColor="bg-green-600 hover:bg-green-700"
+                    focusRingColor="focus:ring-green-500"
+                />
+            </Show>
 
             {/* Selected Activity Details Modal */}
             <Show when={selectedActivity()}>

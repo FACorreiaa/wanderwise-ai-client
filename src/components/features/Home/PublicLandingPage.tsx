@@ -1,8 +1,20 @@
-import { Component, createSignal, Show } from "solid-js";
-import { useNavigate } from "@solidjs/router";
-import { Send, Loader2 } from "lucide-solid";
-import CTA from "~/components/features/Home/CTA";
-import ContentGrid from "~/components/features/Home/ContentGrid";
+import { createSignal, Show } from "solid-js";
+import { A, useNavigate } from "@solidjs/router";
+import {
+  Send,
+  Loader2,
+  Sparkles,
+  Mail,
+  ArrowRight,
+  Smartphone,
+  ShieldCheck,
+  Clock3,
+  MapPin,
+  Utensils,
+  Compass,
+  Bed,
+  Star,
+} from "lucide-solid";
 import RealTimeStats from "~/components/features/Home/RealTimeStats";
 import MobileAppAnnouncement from "~/components/features/Home/MobileAppAnnouncement";
 import LocationPermissionPrompt from "~/components/LocationPermissionPrompt";
@@ -15,52 +27,100 @@ import {
 } from "~/lib/streaming-service";
 
 const statsData = {
-  badgeText: "This month on Loci",
-  items: [
-    { value: "69,420", label: "Users registered" },
-    { value: "12,109", label: "Personalized Itineraries Saved" },
-    { value: "41,004", label: "Unique Points of Interest" },
-  ],
+  badgeText: "Seen in beta",
 };
 
-const contentData = [
+const previewCards = [
   {
-    logo: <span class="text-5xl">🗺️</span>,
-    title: "New in Paris: Hidden Gems",
-    description:
-      "Our AI has uncovered 15 new unique spots in Le Marais, from artisan shops to quiet courtyards.",
-    tag: "New Itinerary",
-    tagColorClass: "bg-blue-100 text-blue-800",
-    imageUrl: "",
+    title: "Itinerary Lab",
+    description: "Map-first previews that respect your timebox and mood.",
+    icon: Compass,
+    href: "/itinerary",
+    accent: "from-cyan-400/80 to-blue-600/70",
   },
   {
-    logo: <span class="text-5xl">🤖</span>,
-    title: "AI-Curated: A Foodie's Weekend in Lisbon",
-    description:
-      "From classic Pastéis de Nata to modern seafood, let our AI guide your taste buds through Lisbon's best.",
-    tag: "AI-Powered",
-    tagColorClass: "bg-purple-100 text-purple-800",
-    imageUrl: "",
+    title: "Restaurants",
+    description: "Taste-aware picks you can sort by vibe, diet, or budget.",
+    icon: Utensils,
+    href: "/restaurants",
+    accent: "from-amber-300/80 to-orange-500/70",
   },
   {
-    logo: <span class="text-5xl">⭐️</span>,
-    title: "User Favorite: The Ancient Rome Route",
-    description:
-      "Explore the Colosseum, Forum, and Palatine Hill with a personalized route optimized for a 4-hour window.",
-    tag: "Top Rated",
-    tagColorClass: "bg-amber-100 text-amber-800",
-    imageUrl: "",
+    title: "Activities",
+    description: "Workshops, trails, and tickets that match your pace.",
+    icon: Sparkles,
+    href: "/activities",
+    accent: "from-emerald-300/70 to-teal-500/70",
+  },
+  {
+    title: "Hotels",
+    description: "Sleep, soak, or sprint — filtered for your rituals.",
+    icon: Bed,
+    href: "/hotels",
+    accent: "from-indigo-300/80 to-slate-600/70",
+  },
+  {
+    title: "Discover",
+    description: "Search any city. Trends stay gated until you register.",
+    icon: MapPin,
+    href: "/discover",
+    accent: "from-fuchsia-300/70 to-purple-600/70",
+  },
+];
+
+const valueStack = [
+  {
+    label: "Problem agitation",
+    copy: "Travel research is endless tabs, ads, and FOMO. Loci compresses the chaos into one calm brief.",
+  },
+  {
+    label: "Value stack",
+    copy: "Taste profiles, timeboxing, and local nuance sit in one recommendation brain.",
+  },
+  {
+    label: "Objection handling",
+    copy: "Not another generic AI. Every suggestion is annotated, source-linked, and filterable.",
+  },
+  {
+    label: "Risk reversal",
+    copy: "Try searches free. No credit card. Keep chat and saves once you register.",
+  },
+  {
+    label: "Scarcity",
+    copy: "We onboard in weekly cohorts to keep suggestions pristine. Join the next drop.",
+  },
+];
+
+const socialProof = [
+  {
+    quote:
+      "Feels like a concierge who already knows my taste in coffee, museums, and bedtime.",
+    name: "Nadia — prototype user in Lisbon",
+  },
+  {
+    quote: "The glass UI makes even the planning feel like travel.",
+    name: "Kenji — weekend warrior in Tokyo",
   },
 ];
 
 export default function PublicLandingPage(): JSX.Element {
   const navigate = useNavigate();
   const [currentMessage, setCurrentMessage] = createSignal("");
+  const [email, setEmail] = createSignal("");
+  const [emailSubmitted, setEmailSubmitted] = createSignal(false);
   const [isLoading, setIsLoading] = createSignal(false);
   const { userLocation } = useUserLocation();
 
   const handleGetStarted = () => {
     navigate("/auth/signin");
+  };
+
+  const handleEmailSubmit = (event: Event) => {
+    event.preventDefault();
+    if (!email().trim()) return;
+    setEmailSubmitted(true);
+    setEmail("");
+    setTimeout(() => setEmailSubmitted(false), 3200);
   };
 
   const handleSearchClick = async () => {
@@ -70,21 +130,15 @@ export default function PublicLandingPage(): JSX.Element {
     setIsLoading(true);
 
     try {
-      // Detect domain from the message
       const domain = detectDomain(message);
-      console.log("Detected domain:", domain);
-
-      // Create streaming session with detected domain
       const session = createStreamingSession(domain);
       session.query = message;
 
-      // Store session in sessionStorage for consistency with LoggedInDashboard
       sessionStorage.setItem(
         "currentStreamingSession",
         JSON.stringify(session),
       );
 
-      // Start free streaming request
       const response = await sendUnifiedChatMessageStreamFree({
         profileId: "free",
         message: message,
@@ -100,7 +154,6 @@ export default function PublicLandingPage(): JSX.Element {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      // Set up streaming manager
       streamingService.startStream(response, {
         session,
         onProgress: (updatedSession) => {
@@ -142,34 +195,134 @@ export default function PublicLandingPage(): JSX.Element {
     }
   };
 
+  const prefillAndSearch = (prompt: string) => {
+    setCurrentMessage(prompt);
+    handleSearchClick();
+  };
+
   return (
-    <div class="min-h-screen relative overflow-hidden pb-16">
-      <div class="relative">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-16 text-center">
-          <div class="space-y-10">
-            <div class="space-y-4">
-              <h1 class="text-4xl sm:text-5xl lg:text-6xl font-bold text-slate-900 dark:text-white leading-tight tracking-tight">
-                Discover Your Perfect
-                <span class="text-sky-700 dark:text-sky-300 block">
-                  City Adventure
+    <div class="min-h-screen relative overflow-hidden pb-16 bg-gradient-to-br from-[#050915] via-[#0b1c36] to-[#030712] text-white">
+      <div class="absolute inset-0 opacity-60">
+        <div class="domain-grid" aria-hidden="true" />
+        <div class="domain-veil" aria-hidden="true" />
+        <div class="domain-halo" aria-hidden="true" />
+      </div>
+
+      <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-16">
+        {/* Hero */}
+        <section class="rounded-3xl border border-white/10 bg-white/5 backdrop-blur-2xl shadow-[0_35px_120px_rgba(3,7,18,0.55)] overflow-hidden">
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-10 p-8 sm:p-10 lg:p-12">
+            <div class="space-y-6">
+              <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm font-semibold bg-emerald-400/10 text-emerald-200 border border-emerald-300/30 w-fit">
+                <Sparkles class="w-4 h-4" />
+                Taste-first city intelligence
+              </div>
+              <h1 class="text-4xl sm:text-5xl lg:text-6xl font-extrabold leading-tight tracking-tight text-white">
+                Plan like a local.
+                <span class="block text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 via-emerald-200 to-blue-300">
+                  Preview for free.
                 </span>
               </h1>
-              <p class="max-w-2xl mx-auto text-xl text-slate-600 dark:text-slate-300 leading-relaxed">
-                AI-powered recommendations that learn your preferences and adapt
-                to your time, location, and interests.
+              <p class="text-lg sm:text-xl text-slate-200/90 leading-relaxed max-w-xl">
+                Loci learns what you actually like — coffee strength, gallery pace,
+                bedtime — then curates itineraries, restaurants, activities, and hotels
+                that feel handpicked.
               </p>
+              <div class="flex flex-wrap gap-3">
+                <button
+                  onClick={() => prefillAndSearch("48 hours in Kyoto with coffee and design stops")}
+                  class="inline-flex items-center gap-2 px-5 py-3 rounded-xl font-semibold bg-cyan-500 text-slate-950 hover:bg-cyan-400 transition-all shadow-[0_14px_40px_rgba(8,145,178,0.35)]"
+                >
+                  Start a free preview
+                  <ArrowRight class="w-4 h-4" />
+                </button>
+                <button
+                  onClick={handleGetStarted}
+                  class="inline-flex items-center gap-2 px-5 py-3 rounded-xl font-semibold border border-white/30 text-white hover:bg-white/10 transition-all"
+                >
+                  Create my account
+                </button>
+              </div>
+              <div class="grid grid-cols-2 gap-4 text-sm text-slate-200/80">
+                <div class="glass-panel gradient-border rounded-2xl p-4">
+                  <p class="font-semibold text-white mb-1">Problem → Solution</p>
+                  <p class="text-slate-200/80">
+                    Endless tabs? We compress everything into one AI co-pilot that cites sources.
+                  </p>
+                </div>
+                <div class="glass-panel gradient-border rounded-2xl p-4">
+                  <p class="font-semibold text-white mb-1">Value stack</p>
+                  <p class="text-slate-200/80">
+                    Taste profiles, accessibility cues, and timeboxing baked into every suggestion.
+                  </p>
+                </div>
+              </div>
             </div>
 
-            {/* Main search interface */}
-            <div class="max-w-2xl mx-auto mb-10">
-              <div class="flex items-end gap-3 glass-panel gradient-border rounded-3xl p-4 sm:p-5">
-                <div class="flex-1">
+            <div class="space-y-6">
+              {/* Email capture */}
+              <form
+                onSubmit={handleEmailSubmit}
+                class="glass-panel gradient-border rounded-2xl p-4 sm:p-5 space-y-4"
+              >
+                <div class="flex items-center gap-3">
+                  <div class="p-3 rounded-2xl bg-white/10 border border-white/15">
+                    <Mail class="w-5 h-5 text-emerald-200" />
+                  </div>
+                  <div>
+                    <p class="text-sm uppercase tracking-[0.2em] text-slate-200/70">
+                      Stay in the loop
+                    </p>
+                    <p class="text-base text-white font-semibold">
+                      Early updates + native app drop
+                    </p>
+                  </div>
+                </div>
+                <div class="flex flex-col sm:flex-row gap-3">
+                  <label class="sr-only" for="beta-email">
+                    Email for product updates
+                  </label>
+                  <input
+                    id="beta-email"
+                    type="email"
+                    required
+                    value={email()}
+                    onInput={(e) => setEmail(e.currentTarget.value)}
+                    class="flex-1 px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder:text-slate-300/70 focus:outline-none focus:ring-2 focus:ring-emerald-300/70"
+                    placeholder="you@travelersclub.com"
+                  />
+                  <button
+                    type="submit"
+                    class="px-5 py-3 rounded-xl font-semibold bg-emerald-400 text-slate-950 hover:bg-emerald-300 transition-all shadow-[0_12px_32px_rgba(52,211,153,0.35)]"
+                  >
+                    Join updates
+                  </button>
+                </div>
+                <Show when={emailSubmitted()}>
+                  <p class="text-sm text-emerald-200">
+                    Added — we’ll only email when something real ships.
+                  </p>
+                </Show>
+              </form>
+
+              {/* Search preview */}
+              <div class="glass-panel gradient-border rounded-2xl p-4 sm:p-5 space-y-4">
+                <div class="flex items-center justify-between gap-3">
+                  <div class="flex items-center gap-2 text-slate-200">
+                    <Smartphone class="w-4 h-4" />
+                    <span class="text-sm">Try a search without logging in</span>
+                  </div>
+                  <span class="text-xs px-2 py-1 rounded-full bg-white/10 border border-white/15 text-emerald-100">
+                    Free preview
+                  </span>
+                </div>
+                <div class="flex items-end gap-3">
                   <textarea
                     value={currentMessage()}
                     onInput={(e) => setCurrentMessage(e.target.value)}
-                    placeholder="What would you like to discover? Try 'Hidden gems in Paris' or 'Best food markets in Italy'"
-                    class="w-full h-12 px-0 py-0 border-none resize-none focus:outline-none focus:ring-0 bg-transparent text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400"
-                    rows="1"
+                    placeholder={'"Best vinyl bars near Barcelona" or "Quiet art walks in Copenhagen"'}
+                    class="w-full h-14 px-0 py-0 border-none resize-none focus:outline-none focus:ring-0 bg-transparent text-white placeholder:text-slate-300/70"
+                    rows="2"
                     onKeyDown={(e) => {
                       if (e.key === "Enter" && !e.shiftKey) {
                         e.preventDefault();
@@ -177,142 +330,159 @@ export default function PublicLandingPage(): JSX.Element {
                       }
                     }}
                   />
-                </div>
-                <button
-                  onClick={handleSearchClick}
-                  disabled={isLoading() || !currentMessage().trim()}
-                  class="px-6 py-3 bg-[#0c7df2] hover:bg-[#0a6ed6] disabled:bg-slate-400/70 disabled:cursor-not-allowed text-white rounded-2xl font-semibold transition-all flex items-center gap-2 shadow-[0_14px_32px_rgba(12,125,242,0.22)]"
-                >
-                  <Show when={isLoading()} fallback={<Send class="w-4 h-4" />}>
-                    <Loader2 class="w-4 h-4 animate-spin" />
-                  </Show>
-                  <span class="hidden sm:inline">
-                    <Show when={isLoading()} fallback="Try Free">
-                      Discovering...
+                  <button
+                    onClick={handleSearchClick}
+                    disabled={isLoading() || !currentMessage().trim()}
+                    class="px-5 py-3 bg-cyan-500 hover:bg-cyan-400 disabled:bg-slate-500/60 disabled:cursor-not-allowed text-slate-950 rounded-xl font-semibold transition-all flex items-center gap-2 shadow-[0_14px_32px_rgba(12,125,242,0.28)]"
+                  >
+                    <Show when={isLoading()} fallback={<Send class="w-4 h-4" />}>
+                      <Loader2 class="w-4 h-4 animate-spin" />
                     </Show>
-                  </span>
-                </button>
+                    <span class="hidden sm:inline">
+                      <Show when={isLoading()} fallback="Preview">
+                        Working...
+                      </Show>
+                    </span>
+                  </button>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <button
+                    onClick={() => prefillAndSearch("Hidden ateliers in Paris for a rainy afternoon")}
+                    class="glass-panel rounded-xl px-4 py-3 text-left hover:bg-white/10 transition-colors"
+                  >
+                    <div class="flex items-center gap-2 text-sm text-emerald-100">
+                      <Sparkles class="w-4 h-4" />
+                      Preview panel
+                    </div>
+                    <p class="text-white font-semibold">Paris ateliers, rainy day</p>
+                  </button>
+                  <button
+                    onClick={() => prefillAndSearch("Street food in Mexico City with live music nearby")}
+                    class="glass-panel rounded-xl px-4 py-3 text-left hover:bg-white/10 transition-colors"
+                  >
+                    <div class="flex items-center gap-2 text-sm text-emerald-100">
+                      <Sparkles class="w-4 h-4" />
+                      Preview panel
+                    </div>
+                    <p class="text-white font-semibold">CDMX street food + music</p>
+                  </button>
+                </div>
+                <Show when={isLoading()}>
+                  <div class="flex items-center gap-3 text-slate-100">
+                    <Loader2 class="w-5 h-5 animate-spin" />
+                    <span>Curating a mini-brief for you...</span>
+                  </div>
+                </Show>
               </div>
             </div>
-
-            {/* Loading State */}
-            <Show when={isLoading()}>
-              <div class="max-w-4xl mx-auto mt-8 mb-12">
-                <div class="glass-panel gradient-border rounded-2xl p-6">
-                  <div class="flex items-center gap-3 text-slate-700 dark:text-slate-200">
-                    <Loader2 class="w-5 h-5 animate-spin" />
-                    <span>
-                      AI is analyzing your request and preparing your
-                      personalized recommendations...
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </Show>
-
-            {/* Quick suggestion buttons */}
-            <Show when={!isLoading()}>
-              <div class="max-w-4xl mx-auto mt-12">
-                <p class="text-slate-600 dark:text-slate-300 mb-6 font-medium">
-                  Try these popular searches for free:
-                </p>
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                  <button
-                    onClick={() => {
-                      setCurrentMessage("Hidden gems in Paris");
-                      handleSearchClick();
-                    }}
-                    disabled={isLoading()}
-                    class="glass-panel gradient-border rounded-xl p-4 shadow-none hover:shadow-[0_16px_40px_rgba(14,165,233,0.25)] transition-all group text-left disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    <div class="flex items-start gap-3">
-                      <span class="text-2xl">🌟</span>
-                      <div>
-                        <h4 class="font-semibold text-slate-900 dark:text-white group-hover:text-cyan-500 dark:group-hover:text-cyan-300 transition-colors">
-                          Hidden gems in Paris
-                        </h4>
-                        <p class="text-sm text-slate-600 dark:text-slate-300 mt-1">
-                          Try free AI recommendations
-                        </p>
-                      </div>
-                    </div>
-                  </button>
-
-                  <button
-                    onClick={() => {
-                      setCurrentMessage("Best food markets in Italy");
-                      handleSearchClick();
-                    }}
-                    disabled={isLoading()}
-                    class="glass-panel gradient-border rounded-xl p-4 shadow-none hover:shadow-[0_16px_40px_rgba(14,165,233,0.25)] transition-all group text-left disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    <div class="flex items-start gap-3">
-                      <span class="text-2xl">🍕</span>
-                      <div>
-                        <h4 class="font-semibold text-slate-900 dark:text-white group-hover:text-cyan-500 dark:group-hover:text-cyan-300 transition-colors">
-                          Best food markets in Italy
-                        </h4>
-                        <p class="text-sm text-slate-600 dark:text-slate-300 mt-1">
-                          Try free AI recommendations
-                        </p>
-                      </div>
-                    </div>
-                  </button>
-
-                  <button
-                    onClick={() => {
-                      setCurrentMessage("3-day cultural tour of Rome");
-                      handleSearchClick();
-                    }}
-                    disabled={isLoading()}
-                    class="glass-panel gradient-border rounded-xl p-4 shadow-none hover:shadow-[0_16px_40px_rgba(14,165,233,0.25)] transition-all group text-left disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    <div class="flex items-start gap-3">
-                      <span class="text-2xl">🏛️</span>
-                      <div>
-                        <h4 class="font-semibold text-slate-900 dark:text-white group-hover:text-cyan-500 dark:group-hover:text-cyan-300 transition-colors">
-                          3-day cultural tour of Rome
-                        </h4>
-                        <p class="text-sm text-slate-600 dark:text-slate-300 mt-1">
-                          Try free AI recommendations
-                        </p>
-                      </div>
-                    </div>
-                  </button>
-
-                  <button
-                    onClick={() => {
-                      setCurrentMessage("Weekend nightlife in Barcelona");
-                      handleSearchClick();
-                    }}
-                    disabled={isLoading()}
-                    class="glass-panel gradient-border rounded-xl p-4 shadow-none hover:shadow-[0_16px_40px_rgba(14,165,233,0.25)] transition-all group text-left disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    <div class="flex items-start gap-3">
-                      <span class="text-2xl">🌃</span>
-                      <div>
-                        <h4 class="font-semibold text-slate-900 dark:text-white group-hover:text-cyan-500 dark:group-hover:text-cyan-300 transition-colors">
-                          Weekend nightlife in Barcelona
-                        </h4>
-                        <p class="text-sm text-slate-600 dark:text-slate-300 mt-1">
-                          Try free AI recommendations
-                        </p>
-                      </div>
-                    </div>
-                  </button>
-                </div>
-              </div>
-            </Show>
           </div>
-        </div>
+        </section>
+
+        {/* Domain previews */}
+        <section class="mt-12 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {previewCards.map((card) => (
+            <A
+              href={card.href}
+              class="group relative overflow-hidden rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl p-5 shadow-[0_20px_80px_rgba(3,7,18,0.45)] hover:-translate-y-1 transition-all"
+            >
+              <div class={`absolute inset-0 bg-gradient-to-br ${card.accent} opacity-40`} aria-hidden="true" />
+              <div class="relative flex items-start gap-3">
+                <div class="p-3 rounded-2xl bg-white/15 border border-white/20 text-white">
+                  <card.icon class="w-5 h-5" />
+                </div>
+                <div class="flex-1">
+                  <p class="text-xs uppercase tracking-[0.2em] text-slate-200/70">
+                    Try without login
+                  </p>
+                  <h3 class="text-lg font-semibold text-white">{card.title}</h3>
+                  <p class="text-sm text-slate-100/80 mt-1">{card.description}</p>
+                </div>
+              </div>
+              <div class="relative mt-4 flex items-center gap-2 text-sm text-emerald-100 group-hover:text-white">
+                <ShieldCheck class="w-4 h-4" />
+                Search works. Chat and saves unlock once you register.
+              </div>
+            </A>
+          ))}
+        </section>
+
+        {/* Value stack + social proof */}
+        <section class="mt-14 grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div class="lg:col-span-2 space-y-4">
+            <h2 class="text-2xl font-bold text-white">Why travelers stay</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {valueStack.map((item) => (
+                <div class="glass-panel gradient-border rounded-2xl p-4">
+                  <p class="text-xs uppercase tracking-[0.16em] text-emerald-200 mb-2">
+                    {item.label}
+                  </p>
+                  <p class="text-sm text-slate-100/85">{item.copy}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div class="space-y-4">
+            <h3 class="text-lg font-semibold text-white flex items-center gap-2">
+              <Star class="w-4 h-4 text-amber-300" />
+              Social proof
+            </h3>
+            <div class="space-y-3">
+              {socialProof.map((proof) => (
+                <div class="glass-panel rounded-2xl p-4">
+                  <p class="text-sm text-white/90">{proof.quote}</p>
+                  <p class="text-xs text-slate-200/70 mt-2">{proof.name}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Stats + future mobile */}
+        <RealTimeStats badgeText={statsData.badgeText} />
+        <MobileAppAnnouncement />
+
+        {/* Objection handling */}
+        <section class="mt-6">
+          <div class="glass-panel gradient-border rounded-3xl p-6 sm:p-8 grid grid-cols-1 md:grid-cols-3 gap-6 items-center">
+            <div class="space-y-2">
+              <p class="text-xs uppercase tracking-[0.2em] text-emerald-200">
+                Objections handled
+              </p>
+              <h3 class="text-2xl font-bold text-white">Safe to try. Easy to leave.</h3>
+              <p class="text-sm text-slate-100/80">
+                Search without logging in. No spam. Delete your data from settings anytime.
+              </p>
+            </div>
+            <div class="space-y-3">
+              <div class="flex items-center gap-3 text-white/90">
+                <Clock3 class="w-4 h-4 text-emerald-200" />
+                <span class="text-sm">Twice-daily stat refresh — no flaky SSE calls.</span>
+              </div>
+              <div class="flex items-center gap-3 text-white/90">
+                <ShieldCheck class="w-4 h-4 text-emerald-200" />
+                <span class="text-sm">Transparent recommendations with source notes.</span>
+              </div>
+              <div class="flex items-center gap-3 text-white/90">
+                <Smartphone class="w-4 h-4 text-emerald-200" />
+                <span class="text-sm">Native iOS + Android in the works; join the drop list.</span>
+              </div>
+            </div>
+            <div class="flex flex-col gap-3">
+              <button
+                onClick={handleGetStarted}
+                class="w-full inline-flex justify-center items-center gap-2 px-5 py-3 rounded-xl font-semibold bg-white text-slate-950 hover:bg-emerald-100 transition-all"
+              >
+                Register to unlock chat
+                <ArrowRight class="w-4 h-4" />
+              </button>
+              <p class="text-xs text-slate-200/70 text-center">
+                Risk-free beta · cancel anytime
+              </p>
+            </div>
+          </div>
+        </section>
       </div>
 
-      <RealTimeStats badgeText={statsData.badgeText} />
-      <ContentGrid items={contentData} />
-      <MobileAppAnnouncement />
-      <CTA />
-
-      {/* Location Permission Prompt */}
       <LocationPermissionPrompt
         onPermissionGranted={() => {
           console.log("Location permission granted");

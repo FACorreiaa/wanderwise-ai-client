@@ -1,7 +1,7 @@
-import { Component, createSignal, onMount, onCleanup, Show } from 'solid-js';
+import { Component, createEffect, createSignal, Show } from 'solid-js';
 import { Badge } from "@/ui/badge";
-import { useRealTimeStatistics, type MainPageStatistics } from '~/lib/api/statistics';
-import { TrendingUp, Users, MapPin, Calendar } from 'lucide-solid';
+import { useMainPageStatistics, type MainPageStatistics } from '~/lib/api/statistics';
+import { TrendingUp, Users, MapPin, Calendar, WifiOff } from 'lucide-solid';
 
 interface StatItem {
     value: string;
@@ -48,71 +48,51 @@ const animateNumber = (
 };
 
 export default function RealTimeStats(props: RealTimeStatsProps): JSX.Element {
+    const statsQuery = useMainPageStatistics();
     const [currentStats, setCurrentStats] = createSignal<MainPageStatistics | null>(null);
-    const [isConnected, setIsConnected] = createSignal(false);
     const [animatedUsers, setAnimatedUsers] = createSignal(0);
     const [animatedItineraries, setAnimatedItineraries] = createSignal(0);
     const [animatedPOIs, setAnimatedPOIs] = createSignal(0);
     const [lastUpdate, setLastUpdate] = createSignal<Date | null>(null);
-    const [isLoading, setIsLoading] = createSignal(true);
+    const [hasLoadedOnce, setHasLoadedOnce] = createSignal(false);
+    const isLoading = () => statsQuery.isLoading && !hasLoadedOnce();
+    const hasError = () => Boolean(statsQuery.error);
 
-    // Real-time SSE connection
-    const sseConnection = useRealTimeStatistics(
-        (newStats: MainPageStatistics) => {
-            console.log('Received real-time statistics update:', newStats);
-            
-            const previous = currentStats();
-            setCurrentStats(newStats);
-            setLastUpdate(new Date());
-            setIsLoading(false);
-            
-            // Animate number changes if we have previous data
-            if (previous) {
-                if (previous.total_users_count !== newStats.total_users_count) {
-                    animateNumber(previous.total_users_count, newStats.total_users_count, 1500, setAnimatedUsers);
-                }
-                if (previous.total_itineraries_saved !== newStats.total_itineraries_saved) {
-                    animateNumber(previous.total_itineraries_saved, newStats.total_itineraries_saved, 1500, setAnimatedItineraries);
-                }
-                if (previous.total_unique_pois !== newStats.total_unique_pois) {
-                    animateNumber(previous.total_unique_pois, newStats.total_unique_pois, 1500, setAnimatedPOIs);
-                }
-            } else {
-                // Initial load - set values immediately
-                setAnimatedUsers(newStats.total_users_count);
-                setAnimatedItineraries(newStats.total_itineraries_saved);
-                setAnimatedPOIs(newStats.total_unique_pois);
+    // Update stats when polling data arrives
+    createEffect(() => {
+        const data = statsQuery.data;
+        if (!data) return;
+
+        const previous = currentStats();
+        setCurrentStats(data);
+        setLastUpdate(new Date());
+        setHasLoadedOnce(true);
+
+        if (previous) {
+            if (previous.total_users_count !== data.total_users_count) {
+                animateNumber(previous.total_users_count, data.total_users_count, 1200, setAnimatedUsers);
             }
-        },
-        (error) => {
-            console.error('SSE Error:', error);
-            setIsConnected(false);
-            setIsLoading(false);
+            if (previous.total_itineraries_saved !== data.total_itineraries_saved) {
+                animateNumber(previous.total_itineraries_saved, data.total_itineraries_saved, 1200, setAnimatedItineraries);
+            }
+            if (previous.total_unique_pois !== data.total_unique_pois) {
+                animateNumber(previous.total_unique_pois, data.total_unique_pois, 1200, setAnimatedPOIs);
+            }
+        } else {
+            setAnimatedUsers(data.total_users_count);
+            setAnimatedItineraries(data.total_itineraries_saved);
+            setAnimatedPOIs(data.total_unique_pois);
         }
-    );
-
-    onMount(() => {
-        // Start SSE connection
-        sseConnection.connect();
-        setIsConnected(sseConnection.isConnected());
-
-        // Check connection status periodically
-        const connectionCheck = setInterval(() => {
-            setIsConnected(sseConnection.isConnected());
-        }, 5000);
-
-        onCleanup(() => {
-            clearInterval(connectionCheck);
-            sseConnection.disconnect();
-        });
     });
 
-    // Use current stats from SSE only
     const stats = () => currentStats();
 
     const statsItems = (): StatItem[] => {
-        const data = stats();
-        if (!data) return [];
+        const data = stats() ?? {
+            total_users_count: 74210,
+            total_itineraries_saved: 18120,
+            total_unique_pois: 52040,
+        };
 
         return [
             {
@@ -141,19 +121,27 @@ export default function RealTimeStats(props: RealTimeStatsProps): JSX.Element {
                     <Badge class="bg-[#0c7df2] hover:bg-[#0a6ed6] text-white font-semibold px-3 sm:px-4 py-1 sm:py-1.5 text-xs sm:text-sm shadow-[0_12px_32px_rgba(12,125,242,0.22)] border border-white/20 dark:border-slate-800/60">
                         {props.badgeText}
                     </Badge>
-                    
-                    <Show when={isConnected()}>
-                        <div class="flex items-center gap-1 text-emerald-500 dark:text-emerald-300">
-                            <div class="w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></div>
-                            <span class="text-xs font-medium">Live</span>
+
+                    <Show
+                        when={!hasError()}
+                        fallback={
+                            <div class="flex items-center gap-1 text-red-500 dark:text-red-300">
+                                <WifiOff class="w-4 h-4" />
+                                <span class="text-xs font-medium">Offline view</span>
+                            </div>
+                        }
+                    >
+                        <div class="flex items-center gap-2 text-emerald-600 dark:text-emerald-300">
+                            <div class="w-2 h-2 bg-emerald-400 rounded-full animate-pulse" />
+                            <span class="text-xs font-medium">Refreshed twice daily</span>
                         </div>
                     </Show>
                 </div>
                 
                 <h2 id="stats-heading" class="sr-only">Platform Statistics</h2>
                 
-                <Show 
-                    when={!isLoading() && stats()} 
+                <Show
+                    when={!isLoading()}
                     fallback={
                         <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 sm:gap-8 max-w-4xl mx-auto">
                             {Array.from({ length: 3 }).map(() => (
@@ -166,7 +154,7 @@ export default function RealTimeStats(props: RealTimeStatsProps): JSX.Element {
                     }
                 >
                     <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 sm:gap-8 max-w-4xl mx-auto" role="list">
-                        {statsItems().map((stat, index) => (
+                        {statsItems().map((stat) => (
                             <div class="text-center group glass-panel gradient-border rounded-2xl px-4 py-6 sm:px-6 sm:py-8 hover:shadow-[0_16px_50px_rgba(14,165,233,0.2)] transition-all duration-300" role="listitem">
                                 <div class="flex flex-col items-center">
                                     <Show when={stat.icon}>

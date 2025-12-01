@@ -10,6 +10,7 @@ import { useChatSession } from '~/lib/hooks/useChatSession';
 import ChatInterface from '~/components/ui/ChatInterface';
 import { API_BASE_URL } from '~/lib/api/shared';
 import { useAuth } from '~/contexts/AuthContext';
+import RegisterBanner from '~/components/ui/RegisterBanner';
 
 export default function HotelsPage() {
     const location = useLocation();
@@ -1230,17 +1231,29 @@ export default function HotelsPage() {
                 </div>
             </div>
 
-            {/* Chat Interface */}
-            {renderChatInterface()}
+            <Show
+                when={auth.isAuthenticated()}
+                fallback={
+                    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+                        <RegisterBanner
+                            title="Register to chat with the hotel concierge"
+                            description="Browse hotels now. Unlock the live planner, bookmarks, and shareable links once you sign in."
+                        />
+                    </div>
+                }
+            >
+                {/* Chat Interface */}
+                {renderChatInterface()}
 
-            {/* Floating Chat Button */}
-            <Show when={!showChat()}>
-                <button
-                    onClick={() => setShowChat(true)}
-                    class="fixed bottom-4 right-4 w-12 h-12 bg-blue-600 text-white rounded-full shadow-lg hover:bg-blue-700 transition-all hover:scale-105 flex items-center justify-center z-40 sm:bottom-6 sm:right-6 sm:w-14 sm:h-14"
-                >
-                    <Bed class="w-5 h-5 sm:w-6 sm:h-6" />
-                </button>
+                {/* Floating Chat Button */}
+                <Show when={!showChat()}>
+                    <button
+                        onClick={() => setShowChat(true)}
+                        class="fixed bottom-4 right-4 w-12 h-12 bg-blue-600 text-white rounded-full shadow-lg hover:bg-blue-700 transition-all hover:scale-105 flex items-center justify-center z-40 sm:bottom-6 sm:right-6 sm:w-14 sm:h-14"
+                    >
+                        <Bed class="w-5 h-5 sm:w-6 sm:h-6" />
+                    </button>
+                </Show>
             </Show>
 
             {/* Selected Hotel Details Modal */}

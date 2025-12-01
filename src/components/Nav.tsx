@@ -2,7 +2,7 @@ import { Badge } from "@/ui/badge";
 import { Button } from "@/ui/button";
 import { useLocation } from "@solidjs/router";
 import { A } from '@solidjs/router';
-import { Menu, X, User, Settings, LogOut, MessageCircle, Heart, List, MapPin, Sun, Moon, Clock, Compass } from "lucide-solid";
+import { Menu, X, User, Settings, LogOut, MessageCircle, Heart, List, MapPin, Clock, Compass } from "lucide-solid";
 import { createSignal, For, Show, onMount, onCleanup } from "solid-js";
 import { ImageRoot, ImageFallback, Image } from "@/ui/image";
 import { useAuth } from "~/contexts/AuthContext";
@@ -57,7 +57,7 @@ export default function Nav() {
   });
 
   return (
-    <nav class={`${isMenuOpen() ? 'bg-white/80 dark:bg-slate-950/80' : 'bg-white/40 dark:bg-slate-950/40'} border-b border-white/30 dark:border-slate-800/70 sticky top-0 z-50 backdrop-blur-2xl shadow-[0_10px_45px_rgba(15,23,42,0.22)] transition-all`}>
+    <nav class="sticky top-0 z-50 backdrop-blur-2xl bg-gradient-to-r from-[#050915]/85 via-[#0b1c36]/85 to-[#050915]/85 border-b border-white/10 shadow-[0_18px_60px_rgba(3,7,18,0.45)] transition-all">
       <div class="px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between items-center h-14 sm:h-16">
           {/* Logo - Mobile First */}
@@ -69,9 +69,9 @@ export default function Nav() {
                   <ImageFallback class="w-full h-full bg-blue-600 text-white rounded flex items-center justify-center text-sm font-bold">L</ImageFallback>
                 </ImageRoot>
               </div>
-              <span class="ml-2 text-lg sm:text-xl font-bold text-slate-900 dark:text-white tracking-tight transition-colors">Loci</span>
+              <span class="ml-2 text-lg sm:text-xl font-bold text-white tracking-tight transition-colors">Loci</span>
               <Show when={isAuthenticated()}>
-                <Badge variant="secondary" class="ml-1 sm:ml-2 bg-blue-100 text-blue-800 text-xs px-1.5 py-0.5 sm:px-2 sm:py-1">AI</Badge>
+                <Badge variant="secondary" class="ml-1 sm:ml-2 bg-emerald-400/20 text-emerald-100 border border-emerald-300/40 text-xs px-1.5 py-0.5 sm:px-2 sm:py-1">AI</Badge>
               </Show>
             </A>
           </div>
@@ -80,7 +80,7 @@ export default function Nav() {
           <Button
             variant="ghost"
             size="sm"
-            class="md:hidden p-2"
+            class="md:hidden p-2 text-white hover:text-emerald-200"
             onClick={() => setIsMenuOpen(!isMenuOpen())}
           >
             <Show when={!isMenuOpen()} fallback={<X class="w-5 h-5" />}>
@@ -97,7 +97,7 @@ export default function Nav() {
                   {(item) => (
                     <A
                       href={item.href}
-                      class="text-slate-700 dark:text-slate-200 hover:text-cyan-500 dark:hover:text-cyan-300 font-medium transition-colors text-sm lg:text-base"
+                      class="text-slate-200 hover:text-emerald-200 font-medium transition-colors text-sm lg:text-base"
                     >
                       {item.name}
                     </A>
@@ -113,9 +113,9 @@ export default function Nav() {
                   return (
                     <A
                       href={item.href}
-                      class={`flex items-center gap-2 px-3 py-2 rounded-lg font-medium transition-all text-sm border ${location.pathname === item.href
-                        ? 'bg-white/70 dark:bg-slate-900/60 text-slate-900 dark:text-white border-white/60 dark:border-slate-800 shadow-[0_12px_32px_rgba(12,74,110,0.18)]'
-                        : 'text-slate-700 dark:text-slate-200 hover:text-sky-600 dark:hover:text-sky-200 hover:bg-white/50 dark:hover:bg-slate-900/50 border-transparent hover:border-sky-200/70 dark:hover:border-slate-700'
+                      class={`flex items-center gap-2 px-3 py-2 rounded-xl font-medium transition-all text-sm border ${location.pathname === item.href
+                        ? 'bg-white/10 text-white border-white/20 shadow-[0_16px_50px_rgba(12,165,233,0.2)]'
+                        : 'text-slate-200 hover:text-emerald-200 hover:bg-white/5 border-transparent hover:border-emerald-200/40'
                         }`}
                     >
                       <IconComponent class="w-4 h-4" />
@@ -144,14 +144,12 @@ export default function Nav() {
                 <ThemeSelector />
 
                 <A href="/auth/signin">
-                  <Button variant="ghost" class="text-slate-800 dark:text-slate-200 hover:text-cyan-400 dark:hover:text-cyan-300 text-sm lg:text-base px-3 lg:px-4">
+                  <Button variant="ghost" class="text-white hover:text-emerald-200 text-sm lg:text-base px-3 lg:px-4">
                     Log In
                   </Button>
                 </A>
                 <A href="/auth/signup">
-                  <Button class="text-sm lg:text-base px-3 lg:px-4 shadow-[0_12px_32px_rgba(12,125,242,0.22)]">
-                    Get Started
-                  </Button>
+                  <Button class="text-sm lg:text-base px-3 lg:px-4 bg-emerald-400 hover:bg-emerald-300 text-slate-950 shadow-[0_14px_40px_rgba(52,211,153,0.35)]">Get Started</Button>
                 </A>
               </div>
             }
@@ -167,20 +165,20 @@ export default function Nav() {
                 variant="ghost"
                 size="sm"
                 onClick={() => setShowUserMenu(!showUserMenu())}
-                class="flex items-center gap-2 p-2 hover:text-cyan-400 dark:hover:text-cyan-300"
+                class="flex items-center gap-2 p-2 text-white hover:text-emerald-200"
               >
-                <div class="w-8 h-8 rounded-full bg-[#0c7df2] flex items-center justify-center text-white text-sm font-bold shadow-lg ring-2 ring-white/60 dark:ring-slate-800">
+                <div class="w-8 h-8 rounded-full bg-emerald-400 flex items-center justify-center text-slate-950 text-sm font-bold shadow-lg ring-2 ring-white/40">
                   {user()?.username?.charAt(0).toUpperCase() || 'U'}
                 </div>
-                <span class="text-sm font-medium text-slate-700 dark:text-slate-200">{user()?.username || 'User'}</span>
+                <span class="text-sm font-medium text-white">{user()?.username || 'User'}</span>
               </Button>
 
               {/* User Dropdown Menu */}
               <Show when={showUserMenu()}>
-                <div class="absolute top-full right-0 mt-2 w-48 bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl rounded-lg shadow-2xl border border-white/30 dark:border-slate-800/70 py-1 z-50 transition-colors">
+                <div class="absolute top-full right-0 mt-2 w-48 bg-[#0b1c36]/95 backdrop-blur-xl rounded-2xl shadow-[0_24px_70px_rgba(3,7,18,0.55)] border border-white/10 py-1 z-50 transition-colors">
                   <A
                     href="/settings"
-                    class="flex items-center gap-3 px-4 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-white/60 dark:hover:bg-slate-800/60 transition-colors rounded-md mx-1"
+                    class="flex items-center gap-3 px-4 py-2 text-sm text-white hover:bg-white/5 transition-colors rounded-md mx-1"
                     onClick={() => setShowUserMenu(false)}
                   >
                     <Settings class="w-4 h-4" />
@@ -191,7 +189,7 @@ export default function Nav() {
                       setShowUserMenu(false);
                       handleLogout();
                     }}
-                    class="w-full flex items-center gap-3 px-4 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-white/60 dark:hover:bg-slate-800/60 transition-colors rounded-md mx-1"
+                    class="w-full flex items-center gap-3 px-4 py-2 text-sm text-white hover:bg-white/5 transition-colors rounded-md mx-1"
                   >
                     <LogOut class="w-4 h-4" />
                     Sign Out
@@ -205,10 +203,10 @@ export default function Nav() {
 
       {/* Mobile Menu - Full Screen Overlay */}
       <Show when={isMenuOpen()}>
-        <div class="md:hidden fixed inset-0 z-50 bg-transparent backdrop-blur-2xl border-t border-white/20 dark:border-slate-800/50 transition-colors">
+        <div class="md:hidden fixed inset-0 z-50 bg-[#050915]/90 backdrop-blur-2xl border-t border-white/10 transition-colors">
           <div class="flex flex-col h-full">
             {/* Mobile Header */}
-            <div class="flex justify-between items-center px-4 py-4 border-b border-white/40 dark:border-slate-800/60">
+            <div class="flex justify-between items-center px-4 py-4 border-b border-white/15">
               <A href="/" class="flex items-center" onClick={() => setIsMenuOpen(false)}>
                 <div class="w-6 h-6 flex items-center justify-center">
                   <ImageRoot>
@@ -216,7 +214,7 @@ export default function Nav() {
                     <ImageFallback class="w-full h-full bg-blue-600 text-white rounded flex items-center justify-center text-sm font-bold">L</ImageFallback>
                   </ImageRoot>
                 </div>
-                <span class="ml-2 text-lg font-bold text-slate-900 dark:text-white tracking-tight">Loci</span>
+                <span class="ml-2 text-lg font-bold text-white tracking-tight">Loci</span>
                 <Show when={isAuthenticated()}>
                   <Badge variant="secondary" class="ml-1 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-300 text-xs px-1.5 py-0.5">AI</Badge>
                 </Show>
@@ -240,7 +238,7 @@ export default function Nav() {
                     {(item) => (
                       <A
                         href={item.href}
-                      class="block px-4 py-3 text-lg font-medium text-slate-900 dark:text-slate-100 bg-white/60 dark:bg-slate-900/50 rounded-lg transition-all border border-white/40 dark:border-slate-800 shadow-[0_10px_30px_rgba(15,23,42,0.2)] hover:translate-y-[-1px]"
+                      class="block px-4 py-3 text-lg font-medium text-white bg-white/5 rounded-xl transition-all border border-white/15 shadow-[0_10px_30px_rgba(3,7,18,0.35)] hover:translate-y-[-1px]"
                         onClick={() => setIsMenuOpen(false)}
                       >
                         {item.name}
@@ -255,14 +253,14 @@ export default function Nav() {
                   return (
                     <A
                       href={item.href}
-                      class="flex items-center gap-3 px-4 py-3 text-lg font-medium text-slate-900 dark:text-slate-100 bg-white/60 dark:bg-slate-900/50 rounded-lg transition-all border border-white/40 dark:border-slate-800 shadow-[0_10px_30px_rgba(15,23,42,0.2)] hover:translate-y-[-1px]"
+                      class="flex items-center gap-3 px-4 py-3 text-lg font-medium text-white bg-white/5 rounded-xl transition-all border border-white/15 shadow-[0_10px_30px_rgba(3,7,18,0.35)] hover:translate-y-[-1px]"
                       onClick={() => setIsMenuOpen(false)}
                     >
                       <IconComponent class="w-5 h-5" />
                       <div class="flex items-center gap-2">
                         {item.name}
                           <Show when={item.experimental}>
-                            <Badge variant="secondary" class="bg-orange-100 dark:bg-orange-900 text-orange-700 dark:text-orange-300 text-xs px-1.5 py-0.5">
+                            <Badge variant="secondary" class="bg-orange-100/20 text-orange-200 text-xs px-1.5 py-0.5">
                               Experimental
                             </Badge>
                           </Show>
@@ -280,17 +278,17 @@ export default function Nav() {
               fallback={
                 <div class="px-4 py-6 space-y-3 border-t border-white/40 dark:border-slate-800/60">
                   <div class="flex items-center gap-3 px-4 py-3">
-                  <div class="w-10 h-10 rounded-full bg-[#0c7df2] flex items-center justify-center text-white text-lg font-bold shadow-lg ring-2 ring-white/60 dark:ring-slate-800">
-                    {user()?.username?.charAt(0).toUpperCase() || 'U'}
-                  </div>
+                    <div class="w-10 h-10 rounded-full bg-emerald-400 flex items-center justify-center text-slate-950 text-lg font-bold shadow-lg ring-2 ring-white/30">
+                      {user()?.username?.charAt(0).toUpperCase() || 'U'}
+                    </div>
                     <div class="flex-1">
-                      <div class="font-medium text-slate-900 dark:text-white">{user()?.username || 'User'}</div>
-                      <div class="text-sm text-slate-500 dark:text-slate-400">{user()?.email || 'user@example.com'}</div>
+                      <div class="font-medium text-white">{user()?.username || 'User'}</div>
+                      <div class="text-sm text-slate-300/80">{user()?.email || 'user@example.com'}</div>
                     </div>
                     <ThemeSelector />
                   </div>
                   <A href="/settings" class="block" onClick={() => setIsMenuOpen(false)}>
-                    <Button variant="outline" class="w-full justify-center py-3 text-base border-white/40 dark:border-slate-800/70 bg-white/40 dark:bg-slate-900/50 hover:border-cyan-300 hover:text-cyan-500">
+                    <Button variant="outline" class="w-full justify-center py-3 text-base border-white/15 bg-white/5 text-white hover:border-emerald-200 hover:text-emerald-200">
                       Settings
                     </Button>
                   </A>
@@ -300,7 +298,7 @@ export default function Nav() {
                       handleLogout();
                     }}
                     variant="outline"
-                    class="w-full justify-center py-3 text-base text-red-500 border-red-200/70 dark:border-red-500/40 hover:bg-red-50/70 dark:hover:bg-red-500/10"
+                    class="w-full justify-center py-3 text-base text-red-200 border-red-500/40 hover:bg-red-500/10"
                   >
                     Sign Out
                   </Button>
@@ -312,12 +310,12 @@ export default function Nav() {
                   <ThemeSelector />
                 </div>
                 <A href="/auth/signin" class="block" onClick={() => setIsMenuOpen(false)}>
-                  <Button variant="outline" class="w-full justify-center py-3 text-base border-white/50 dark:border-slate-800/70 bg-white/50 dark:bg-slate-900/50 hover:border-cyan-300 hover:text-cyan-500">
+                  <Button variant="outline" class="w-full justify-center py-3 text-base border-white/20 bg-white/10 text-white hover:border-emerald-200 hover:text-emerald-200">
                     Log In
                   </Button>
                 </A>
                 <A href="/auth/signup" class="block" onClick={() => setIsMenuOpen(false)}>
-                  <Button class="w-full justify-center py-3 text-base shadow-[0_12px_32px_rgba(12,125,242,0.22)]">
+                  <Button class="w-full justify-center py-3 text-base bg-emerald-400 hover:bg-emerald-300 text-slate-950 shadow-[0_14px_40px_rgba(52,211,153,0.35)]">
                     Get Started
                   </Button>
                 </A>

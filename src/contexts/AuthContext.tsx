@@ -1,7 +1,7 @@
 import { createContext, useContext, createSignal, createEffect, onMount, JSX } from 'solid-js';
 import { useNavigate } from '@solidjs/router';
 import { getAuthToken, setAuthToken, clearAuthToken } from '~/lib/auth/tokens';
-import { authAPI } from '~/lib/api';
+import { authAPI, profileAPI } from '~/lib/api';
 
 interface User {
   id: string;
@@ -76,43 +76,18 @@ export const AuthProvider = (props: AuthProviderProps) => {
     console.log('AuthProvider: Initializing authentication state...');
     const token = getAuthToken();
     console.log('AuthProvider: Token found?', !!token);
-    
+
     if (token) {
       try {
-        console.log('AuthProvider: Validating session...');
-        // Validate session and get user profile data
-        const sessionResult = await authAPI.validateSession();
-        console.log('AuthProvider: Session validation result:', sessionResult);
-        
-        if (sessionResult.valid) {
-          console.log('AuthProvider: Session valid, fetching user profile...');
-          // Fetch complete user profile from server
-          const userProfile = await authAPI.getCurrentUser();
-          console.log('AuthProvider: User profile fetched:', userProfile);
-          setUser(userProfile);
-        } else {
-          console.log('AuthProvider: Session invalid, clearing token');
-          clearAuthToken();
-          setUser(null);
-        }
+        console.log('AuthProvider: Restoring session by fetching user profile...');
+        const userProfile = await profileAPI.getDefaultProfile();
+        console.log('AuthProvider: User profile fetched:', userProfile);
+        setUser(userProfile);
       } catch (error) {
-        console.error('AuthProvider: Session validation failed:', error);
-        console.error('AuthProvider: Error details:', {
-          message: (error as any)?.message,
-          status: (error as any)?.status,
-          name: (error as any)?.name
-        });
-        
-        // Don't clear token on network errors - could be temporary
-        if ((error as any)?.message === 'Unauthorized' || (error as any)?.status === 401) {
-          console.log('AuthProvider: Unauthorized error, clearing token');
-          clearAuthToken();
-          setUser(null);
-        } else {
-          // Keep token but set user as null for retry
-          console.log('AuthProvider: Network/other error, keeping token for retry');
-          setUser(null);
-        }
+        console.error('AuthProvider: Session restoration failed:', error);
+        // The apiRequest handler in api.ts should handle token clearing on 401s.
+        // We just need to ensure the user state is null.
+        setUser(null);
       }
     } else {
       console.log('AuthProvider: No token found');
@@ -132,13 +107,10 @@ export const AuthProvider = (props: AuthProviderProps) => {
           setUser(null);
           navigate('/auth/signin');
         } else if (token && !user()) {
-          // Token was set in another tab
+          // Token was set in another tab, fetch profile
           try {
-            const sessionResult = await authAPI.validateSession();
-            if (sessionResult.valid) {
-              const userProfile = await authAPI.getCurrentUser();
-              setUser(userProfile);
-            }
+            const userProfile = await profileAPI.getDefaultProfile();
+            setUser(userProfile);
           } catch (error) {
             console.error('Cross-tab session validation failed:', error);
           }
@@ -159,14 +131,10 @@ export const AuthProvider = (props: AuthProviderProps) => {
       console.log('AuthProvider: Login successful, got token');
       const refreshToken = (response as any).refresh_token ?? (response as any).refreshToken;
       setAuthToken(response.access_token, rememberMe, refreshToken);
-      console.log('AuthProvider: Token stored, verifying...');
-      
-      // Verify token was stored correctly
-      const storedToken = getAuthToken();
-      console.log('AuthProvider: Token verification:', !!storedToken);
-      
+      console.log('AuthProvider: Token stored, fetching profile...');
+
       // Fetch complete user profile after successful login
-      const userProfile = await authAPI.getCurrentUser();
+      const userProfile = await profileAPI.getDefaultProfile();
       console.log('AuthProvider: User profile fetched:', userProfile);
       setUser(userProfile);
       

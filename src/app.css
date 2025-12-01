@@ -164,34 +164,35 @@
     @apply inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-white/15 backdrop-blur border border-white/20 text-white;
   }
 
+  /* Catppuccin Latte palette for light mode */
   :root {
-    --background: 220 33% 98%;
-    --foreground: 223 47% 6%;
+    --background: 220 23% 95%; /* Base */
+    --foreground: 234 16% 35%; /* Text */
 
-    --card: 220 52% 99%;
-    --card-foreground: 223 47% 6%;
+    --card: 220 22% 92%; /* Mantle */
+    --card-foreground: 234 16% 35%;
 
-    --popover: 220 52% 99%;
-    --popover-foreground: 223 47% 6%;
+    --popover: 220 21% 89%; /* Crust */
+    --popover-foreground: 234 16% 35%;
 
-    --primary: 211 82% 48%;
+    --primary: 220 91% 54%; /* Blue */
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 208 46% 93%;
-    --secondary-foreground: 220 43% 22%;
+    --secondary: 197 97% 46%; /* Sky */
+    --secondary-foreground: 234 16% 35%;
 
-    --muted: 222 28% 94%;
-    --muted-foreground: 223 15% 36%;
+    --muted: 225 14% 77%; /* Surface1 */
+    --muted-foreground: 233 10% 47%; /* Subtext0 */
 
-    --accent: 190 85% 42%;
-    --accent-foreground: 196 100% 12%;
+    --accent: 35 77% 49%; /* Yellow */
+    --accent-foreground: 234 16% 35%;
 
-    --destructive: 0 84.2% 60.2%;
+    --destructive: 347 87% 44%; /* Red */
     --destructive-foreground: 0 0% 98%;
 
-    --border: 220 26% 90%;
-    --input: 220 26% 90%;
-    --ring: 211 82% 48%;
+    --border: 223 16% 83%; /* Surface0 */
+    --input: 223 16% 83%;
+    --ring: 109 58% 40%; /* Green */
 
     --radius: 0.875rem;
   }

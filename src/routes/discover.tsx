@@ -1,12 +1,15 @@
 import { createSignal, For, Show } from 'solid-js';
 import { useNavigate } from '@solidjs/router';
-import { Search, TrendingUp, Star, Sparkles, ChevronRight, Calendar, Clock, MapPin } from 'lucide-solid';
+import { Search, TrendingUp, Star, Sparkles, ChevronRight, Calendar, Clock, MapPin, Smartphone } from 'lucide-solid';
 import { useDiscoverPageData } from '~/lib/api/discover';
-import type { TrendingDiscovery, FeaturedCollection, ChatSession, POI } from '~/lib/api/types';
+import type { TrendingDiscovery, FeaturedCollection, POI } from '~/lib/api/types';
 import { apiRequest } from '~/lib/api/shared';
+import { useAuth } from '~/contexts/AuthContext';
+import RegisterBanner from '~/components/ui/RegisterBanner';
 
 export default function DiscoverPage() {
     const navigate = useNavigate();
+    const { isAuthenticated } = useAuth();
     const [searchQuery, setSearchQuery] = createSignal('');
     const [searchLocation, setSearchLocation] = createSignal('');
     const [selectedCategory, setSelectedCategory] = createSignal<string | null>(null);
@@ -242,168 +245,200 @@ export default function DiscoverPage() {
                 </div>
 
                 {/* Main Content Grid */}
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                    {/* Trending & Featured - Takes 2 columns */}
-                    <div class="lg:col-span-2 space-y-8">
-                        {/* Trending Now */}
-                        <div>
-                            <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-                                <TrendingUp class="w-5 h-5 text-blue-500" />
-                                Trending Now
-                            </h2>
-                            <Show
-                                when={!discoverData.isLoading}
-                                fallback={
-                                    <div class="space-y-3">
-                                        <For each={[1, 2, 3]}>
-                                            {() => (
-                                                <div class="animate-pulse bg-gray-200 dark:bg-gray-700 rounded-xl h-20"></div>
-                                            )}
-                                        </For>
+                <Show
+                    when={isAuthenticated()}
+                    fallback={
+                        <div class="space-y-6 my-8">
+                            <RegisterBanner
+                                title="Sign in to see trending searches and your recent discoveries"
+                                description="Search is open to everyone. Trending, recent history, and personalized highlights unlock once you register."
+                                helper={<p class="text-xs text-gray-600">Stay in guest mode to search only.</p>}
+                            />
+                            <div class="rounded-2xl border border-[hsl(223,16%,83%)]/70 dark:border-white/10 bg-gradient-to-br from-[#1e66f5]/10 via-[#04a5e5]/10 to-[#df8e1d]/10 p-5 sm:p-6 shadow-[0_20px_70px_rgba(4,165,229,0.18)]">
+                                <div class="flex items-start gap-3">
+                                    <div class="p-3 rounded-xl bg-white/70 dark:bg-white/10 text-[#1e66f5] dark:text-white border border-white/60 dark:border-white/20">
+                                        <Smartphone class="w-5 h-5" />
                                     </div>
-                                }
-                            >
-                                <div class="space-y-3">
-                                    <Show
-                                        when={trendingList().length > 0}
-                                        fallback={
-                                            <p class="text-sm text-gray-500 dark:text-gray-400 py-4 text-center">
-                                                No trending discoveries yet today
-                                            </p>
-                                        }
-                                    >
-                                        <For each={trendingList()}>
-                                            {(item, index) => (
-                                                <button
-                                                    onClick={() => handleTrendingClick(item)}
-                                                    class="w-full flex items-center gap-3 p-4 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-600 hover:shadow-md cursor-pointer transition-all group"
-                                                >
-                                                    <div class="flex items-center justify-center w-8 h-8 bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300 rounded-full text-sm font-bold">
-                                                        {index() + 1}
-                                                    </div>
-                                                    <span class="text-2xl">{item.emoji}</span>
-                                                    <div class="flex-1 text-left">
-                                                        <p class="font-semibold text-gray-900 dark:text-white text-sm">{item.city_name}</p>
-                                                        <p class="text-xs text-gray-500 dark:text-gray-400">{item.search_count} searches today</p>
-                                                    </div>
-                                                    <ChevronRight class="w-5 h-5 text-blue-500 group-hover:translate-x-1 transition-transform" />
-                                                </button>
-                                            )}
-                                        </For>
-                                    </Show>
-                                </div>
-                            </Show>
-                        </div>
-
-                        {/* Featured Collections */}
-                        <div>
-                            <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-                                <Star class="w-5 h-5 text-yellow-500 fill-current" />
-                                Featured Collections
-                            </h2>
-                            <Show
-                                when={!discoverData.isLoading}
-                                fallback={
-                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        <For each={[1, 2, 3, 4]}>
-                                            {() => (
-                                                <div class="animate-pulse bg-gray-200 dark:bg-gray-700 rounded-xl h-24"></div>
-                                            )}
-                                        </For>
-                                    </div>
-                                }
-                            >
-                                <Show
-                                    when={featuredList().length > 0}
-                                    fallback={
-                                        <p class="text-sm text-gray-500 dark:text-gray-400 py-4 text-center">
-                                            No featured collections available
+                                    <div class="space-y-2">
+                                        <p class="text-xs uppercase tracking-[0.16em] text-[hsl(233,10%,47%)] dark:text-slate-300">Native apps incoming</p>
+                                        <h3 class="text-lg font-semibold text-gray-900 dark:text-white">iOS + Android with paid-only perks</h3>
+                                        <p class="text-sm text-gray-700 dark:text-slate-200/85">
+                                            Join the waitlist to unlock offline brains, background updates twice daily, and taste profiles synced across devices.
                                         </p>
-                                    }
-                                >
-                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        <For each={featuredList()}>
-                                            {(item) => (
-                                                <button
-                                                    onClick={() => handleCategoryClick(item.category, item.title)}
-                                                    class="flex items-center gap-3 p-4 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 hover:border-yellow-300 dark:hover:border-yellow-600 hover:shadow-md cursor-pointer transition-all group"
-                                                >
-                                                    <span class="text-3xl">{item.emoji}</span>
-                                                    <div class="flex-1 text-left">
-                                                        <p class="font-semibold text-gray-900 dark:text-white text-sm">{item.title}</p>
-                                                        <p class="text-xs text-gray-500 dark:text-gray-400">{item.item_count} items</p>
-                                                    </div>
-                                                </button>
-                                            )}
-                                        </For>
+                                        <div class="flex flex-wrap gap-2 text-xs">
+                                            {["Offline maps", "Push nearby picks", "Premium taste graph", "Download itineraries"].map((chip) => (
+                                                <span class="px-2 py-1 rounded-full bg-white/70 dark:bg-white/10 border border-white/40 dark:border-white/20 text-gray-800 dark:text-white">{chip}</span>
+                                            ))}
+                                        </div>
                                     </div>
-                                </Show>
-                            </Show>
+                                </div>
+                            </div>
                         </div>
-                    </div>
-
-                    {/* Recent Discoveries - Sidebar */}
-                    <div class="lg:col-span-1">
-                        <div class="sticky top-4">
-                            <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-                                <Clock class="w-5 h-5 text-gray-500" />
-                                Recent Discoveries
-                            </h2>
-                            <Show
-                                when={!discoverData.isLoading}
-                                fallback={
-                                    <div class="space-y-3">
-                                        <For each={[1, 2, 3]}>
-                                            {() => (
-                                                <div class="animate-pulse bg-gray-200 dark:bg-gray-700 rounded-xl h-32"></div>
-                                            )}
-                                        </For>
-                                    </div>
-                                }
-                            >
+                    }
+                >
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                        {/* Trending & Featured - Takes 2 columns */}
+                        <div class="lg:col-span-2 space-y-8">
+                            {/* Trending Now */}
+                            <div>
+                                <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                                    <TrendingUp class="w-5 h-5 text-blue-500" />
+                                    Trending Now
+                                </h2>
                                 <Show
-                                    when={recentList().length > 0}
+                                    when={!discoverData.isLoading}
                                     fallback={
-                                        <div class="text-center py-8 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700">
-                                            <div class="text-4xl mb-3">🔍</div>
-                                            <p class="text-sm text-gray-500 dark:text-gray-400 mb-2">No recent discoveries yet</p>
-                                            <p class="text-xs text-gray-400 dark:text-gray-500">Start exploring to see your history</p>
+                                        <div class="space-y-3">
+                                            <For each={[1, 2, 3]}>
+                                                {() => (
+                                                    <div class="animate-pulse bg-gray-200 dark:bg-gray-700 rounded-xl h-20"></div>
+                                                )}
+                                            </For>
                                         </div>
                                     }
                                 >
                                     <div class="space-y-3">
-                                        <For each={recentList()}>
-                                            {(session) => (
-                                                <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4 hover:shadow-md transition-all cursor-pointer">
-                                                    <div class="flex items-start gap-3 mb-3">
-                                                        <span class="text-2xl">🗺️</span>
-                                                        <div class="flex-1 min-w-0">
-                                                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-300 mb-2">
-                                                                Discovery
-                                                            </span>
-                                                            <h3 class="font-semibold text-gray-900 dark:text-white text-sm truncate">
-                                                                {session.city_name || 'Unknown City'}
-                                                            </h3>
+                                        <Show
+                                            when={trendingList().length > 0}
+                                            fallback={
+                                                <p class="text-sm text-gray-500 dark:text-gray-400 py-4 text-center">
+                                                    No trending discoveries yet today
+                                                </p>
+                                            }
+                                        >
+                                            <For each={trendingList()}>
+                                                {(item, index) => (
+                                                    <button
+                                                        onClick={() => handleTrendingClick(item)}
+                                                        class="w-full flex items-center gap-3 p-4 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-600 hover:shadow-md cursor-pointer transition-all group"
+                                                    >
+                                                        <div class="flex items-center justify-center w-8 h-8 bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300 rounded-full text-sm font-bold">
+                                                            {index() + 1}
                                                         </div>
-                                                    </div>
-                                                    <div class="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400 mb-2">
-                                                        <Calendar class="w-3 h-3" />
-                                                        <span>{formatDate(session.created_at)}</span>
-                                                    </div>
-                                                    <Show when={(session as any).conversation_history && (session as any).conversation_history.length > 0}>
-                                                        <p class="text-xs text-gray-600 dark:text-gray-400 line-clamp-2">
-                                                            {(session as any).conversation_history[0]?.content || 'No description'}
-                                                        </p>
-                                                    </Show>
-                                                </div>
-                                            )}
-                                        </For>
+                                                        <span class="text-2xl">{item.emoji}</span>
+                                                        <div class="flex-1 text-left">
+                                                            <p class="font-semibold text-gray-900 dark:text-white text-sm">{item.city_name}</p>
+                                                            <p class="text-xs text-gray-500 dark:text-gray-400">{item.search_count} searches today</p>
+                                                        </div>
+                                                        <ChevronRight class="w-5 h-5 text-blue-500 group-hover:translate-x-1 transition-transform" />
+                                                    </button>
+                                                )}
+                                            </For>
+                                        </Show>
                                     </div>
                                 </Show>
-                            </Show>
+                            </div>
+
+                            {/* Featured Collections */}
+                            <div>
+                                <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                                    <Star class="w-5 h-5 text-yellow-500 fill-current" />
+                                    Featured Collections
+                                </h2>
+                                <Show
+                                    when={!discoverData.isLoading}
+                                    fallback={
+                                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            <For each={[1, 2, 3, 4]}>
+                                                {() => (
+                                                    <div class="animate-pulse bg-gray-200 dark:bg-gray-700 rounded-xl h-24"></div>
+                                                )}
+                                            </For>
+                                        </div>
+                                    }
+                                >
+                                    <Show
+                                        when={featuredList().length > 0}
+                                        fallback={
+                                            <p class="text-sm text-gray-500 dark:text-gray-400 py-4 text-center">
+                                                No featured collections available
+                                            </p>
+                                        }
+                                    >
+                                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            <For each={featuredList()}>
+                                                {(item) => (
+                                                    <button
+                                                        onClick={() => handleCategoryClick(item.category, item.title)}
+                                                        class="flex items-center gap-3 p-4 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 hover:border-yellow-300 dark:hover:border-yellow-600 hover:shadow-md cursor-pointer transition-all group"
+                                                    >
+                                                        <span class="text-3xl">{item.emoji}</span>
+                                                        <div class="flex-1 text-left">
+                                                            <p class="font-semibold text-gray-900 dark:text-white text-sm">{item.title}</p>
+                                                            <p class="text-xs text-gray-500 dark:text-gray-400">{item.item_count} items</p>
+                                                        </div>
+                                                    </button>
+                                                )}
+                                            </For>
+                                        </div>
+                                    </Show>
+                                </Show>
+                            </div>
+                        </div>
+
+                        {/* Recent Discoveries - Sidebar */}
+                        <div class="lg:col-span-1">
+                            <div class="sticky top-4">
+                                <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                                    <Clock class="w-5 h-5 text-gray-500" />
+                                    Recent Discoveries
+                                </h2>
+                                <Show
+                                    when={!discoverData.isLoading}
+                                    fallback={
+                                        <div class="space-y-3">
+                                            <For each={[1, 2, 3]}>
+                                                {() => (
+                                                    <div class="animate-pulse bg-gray-200 dark:bg-gray-700 rounded-xl h-32"></div>
+                                                )}
+                                            </For>
+                                        </div>
+                                    }
+                                >
+                                    <Show
+                                        when={recentList().length > 0}
+                                        fallback={
+                                            <div class="text-center py-8 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700">
+                                                <div class="text-4xl mb-3">🔍</div>
+                                                <p class="text-sm text-gray-500 dark:text-gray-400 mb-2">No recent discoveries yet</p>
+                                                <p class="text-xs text-gray-400 dark:text-gray-500">Start exploring to see your history</p>
+                                            </div>
+                                        }
+                                    >
+                                        <div class="space-y-3">
+                                            <For each={recentList()}>
+                                                {(session) => (
+                                                    <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4 hover:shadow-md transition-all cursor-pointer">
+                                                        <div class="flex items-start gap-3 mb-3">
+                                                            <span class="text-2xl">🗺️</span>
+                                                            <div class="flex-1 min-w-0">
+                                                                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-300 mb-2">
+                                                                    Discovery
+                                                                </span>
+                                                                <h3 class="font-semibold text-gray-900 dark:text-white text-sm truncate">
+                                                                    {session.city_name || 'Unknown City'}
+                                                                </h3>
+                                                            </div>
+                                                        </div>
+                                                        <div class="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400 mb-2">
+                                                            <Calendar class="w-3 h-3" />
+                                                            <span>{formatDate(session.created_at)}</span>
+                                                        </div>
+                                                        <Show when={(session as any).conversation_history && (session as any).conversation_history.length > 0}>
+                                                            <p class="text-xs text-gray-600 dark:text-gray-400 line-clamp-2">
+                                                                {(session as any).conversation_history[0]?.content || 'No description'}
+                                                            </p>
+                                                        </Show>
+                                                    </div>
+                                                )}
+                                            </For>
+                                        </div>
+                                    </Show>
+                                </Show>
+                            </div>
                         </div>
                     </div>
-                </div>
+                </Show>
             </div>
         </div>
     );

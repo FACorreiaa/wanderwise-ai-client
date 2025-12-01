@@ -73,8 +73,10 @@ export const useMainPageStatistics = () => {
   return useQuery(() => ({
     queryKey: ["statistics", "main-page"],
     queryFn: getMainPageStatistics,
-    refetchInterval: 60000, // Refetch every minute as fallback
-    staleTime: 30000, // Consider data stale after 30 seconds
+    // Twice a day is enough for the landing observability surface
+    refetchInterval: 1000 * 60 * 60 * 12,
+    staleTime: 1000 * 60 * 60 * 6,
+    retry: 1,
   }));
 };
 

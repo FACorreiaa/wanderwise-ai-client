@@ -10,6 +10,7 @@ import { useChatSession } from '~/lib/hooks/useChatSession';
 import ChatInterface from '~/components/ui/ChatInterface';
 import { useAuth } from '~/contexts/AuthContext';
 import { useFavorites, useAddToFavoritesMutation, useRemoveFromFavoritesMutation } from '~/lib/api/pois';
+import RegisterBanner from '~/components/ui/RegisterBanner';
 
 export default function RestaurantsPage() {
     const location = useLocation();
@@ -694,26 +695,43 @@ export default function RestaurantsPage() {
             </div>
 
             {/* Chat Interface */}
-            <ChatInterface
-                showChat={chatSession.showChat()}
-                chatMessage={chatSession.chatMessage()}
-                chatHistory={chatSession.chatHistory()}
-                isLoading={chatSession.isLoading()}
-                setShowChat={chatSession.setShowChat}
-                setChatMessage={chatSession.setChatMessage}
-                sendChatMessage={chatSession.sendChatMessage}
-                handleKeyPress={chatSession.handleKeyPress}
-                title="Restaurant Recommendations"
-                placeholder="Ask for restaurant recommendations..."
-                emptyStateIcon={Utensils}
-                emptyStateTitle="Ask me for restaurant recommendations!"
-                emptyStateSubtitle='Try: "Find me a romantic dinner spot" or "Vegetarian restaurants with good reviews"'
-                loadingMessage="Finding perfect restaurants..."
-                headerColor="bg-orange-600"
-                userMessageColor="bg-orange-600"
-                floatingButtonColor="bg-orange-600 hover:bg-orange-700"
-                focusRingColor="focus:ring-orange-500"
-            />
+            <Show
+                when={isAuthenticated()}
+                fallback={
+                    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+                        <RegisterBanner
+                            title="Register to keep the dinner conversation going"
+                            description="Preview restaurant searches now. Unlock chat tweaks, saves, and sharing once you sign in."
+                            helper={
+                                <p class="text-xs text-slate-600">
+                                    Favorites and downloads need an account.
+                                </p>
+                            }
+                        />
+                    </div>
+                }
+            >
+                <ChatInterface
+                    showChat={chatSession.showChat()}
+                    chatMessage={chatSession.chatMessage()}
+                    chatHistory={chatSession.chatHistory()}
+                    isLoading={chatSession.isLoading()}
+                    setShowChat={chatSession.setShowChat}
+                    setChatMessage={chatSession.setChatMessage}
+                    sendChatMessage={chatSession.sendChatMessage}
+                    handleKeyPress={chatSession.handleKeyPress}
+                    title="Restaurant Recommendations"
+                    placeholder="Ask for restaurant recommendations..."
+                    emptyStateIcon={Utensils}
+                    emptyStateTitle="Ask me for restaurant recommendations!"
+                    emptyStateSubtitle='Try: "Find me a romantic dinner spot" or "Vegetarian restaurants with good reviews"'
+                    loadingMessage="Finding perfect restaurants..."
+                    headerColor="bg-orange-600"
+                    userMessageColor="bg-orange-600"
+                    floatingButtonColor="bg-orange-600 hover:bg-orange-700"
+                    focusRingColor="focus:ring-orange-500"
+                />
+            </Show>
 
             {/* Selected Restaurant Details Modal */}
             <Show when={selectedRestaurant()}>

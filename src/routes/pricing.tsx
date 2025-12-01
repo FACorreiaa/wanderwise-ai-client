@@ -134,18 +134,20 @@ export default function Pricing() {
 
   return (
     <div class="min-h-screen bg-background text-foreground transition-colors">
-      <div class="max-w-7xl mx-auto px-4 py-12">
+      <div class="max-w-7xl mx-auto px-4 py-12 space-y-12">
         {/* Hero Section */}
-        <header class="text-center mb-16">
-          <h1 class="text-4xl md:text-6xl font-bold text-foreground mb-6">
-            Simple <span class="text-blue-600 dark:text-blue-400">Pricing</span>
-          </h1>
-          <p class="text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed mb-8">
-            Choose the perfect plan for your exploration needs. Start free and upgrade anytime as you discover more.
-          </p>
-          <div class="inline-flex items-center bg-green-100 dark:bg-green-900/50 text-green-800 dark:text-green-200 px-4 py-2 rounded-full text-sm font-medium border border-green-200 dark:border-green-800">
-            <Star class="w-4 h-4 mr-2" aria-hidden="true" />
-            30-day money-back guarantee on all paid plans
+        <header class="text-center">
+          <div class="rounded-3xl bg-gradient-to-br from-[#1e66f5]/12 via-[#04a5e5]/12 to-[#df8e1d]/12 border border-[hsl(223,16%,83%)]/70 dark:border-white/10 shadow-[0_30px_80px_rgba(4,165,229,0.18)] p-10 space-y-4">
+            <h1 class="text-4xl md:text-6xl font-bold text-foreground dark:text-white">
+              Simple <span class="text-[#1e66f5] dark:text-blue-400">Pricing</span>
+            </h1>
+            <p class="text-xl text-[hsl(233,13%,41%)] dark:text-slate-200/85 max-w-3xl mx-auto leading-relaxed">
+              Choose the perfect plan for your exploration needs. Catppuccin Latte keeps light mode calm; dark stays bold.
+            </p>
+            <div class="inline-flex items-center bg-[hsl(109,58%,40%)]/10 text-[hsl(109,58%,40%)] dark:bg-green-900/50 dark:text-green-200 px-4 py-2 rounded-full text-sm font-medium border border-[hsl(223,16%,83%)] dark:border-green-800">
+              <Star class="w-4 h-4 mr-2" aria-hidden="true" />
+              30-day money-back guarantee on all paid plans
+            </div>
           </div>
         </header>
 

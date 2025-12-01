@@ -78,16 +78,18 @@ export default function Features() {
 
   return (
     <div class="min-h-screen bg-background text-foreground transition-colors">
-      <div class="max-w-6xl mx-auto px-4 py-12">
+      <div class="max-w-6xl mx-auto px-4 py-12 space-y-12">
         {/* Hero Section */}
-        <header class="text-center mb-16">
-          <h1 class="text-4xl md:text-6xl font-bold text-foreground mb-6">
-            Powerful <span class="text-blue-600 dark:text-blue-400">Features</span>
-          </h1>
-          <p class="text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
-            Discover what makes Loci the smartest way to explore cities. Our AI-powered platform 
-            offers everything you need for personalized urban discovery.
-          </p>
+        <header class="text-center">
+          <div class="rounded-3xl bg-gradient-to-br from-[#1e66f5]/12 via-[#04a5e5]/12 to-[#8839ef]/12 border border-[hsl(223,16%,83%)]/70 dark:border-white/10 shadow-[0_30px_80px_rgba(30,102,245,0.18)] p-10">
+            <p class="text-sm uppercase tracking-[0.2em] text-[hsl(22,99%,52%)] dark:text-amber-200 mb-3">Features</p>
+            <h1 class="text-4xl md:text-6xl font-bold text-foreground dark:text-white mb-4">
+              Catppuccin-powered clarity, AI-powered travel.
+            </h1>
+            <p class="text-xl text-[hsl(233,13%,41%)] dark:text-slate-200/85 max-w-3xl mx-auto leading-relaxed">
+              Discover what makes Loci the smartest way to explore cities. Our AI platform adapts to you in Latte or Dark.
+            </p>
+          </div>
         </header>
 
         {/* Core Features Grid */}
