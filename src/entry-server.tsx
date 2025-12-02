@@ -38,19 +38,23 @@ export default createHandler(() => (
           <meta name="msapplication-TileImage" content="/images/loci.png" />
           <meta name="msapplication-config" content="/browserconfig.xml" />
           
-          {/* Open Graph */}
+          {/* Open Graph - Using absolute URLs for better sharing */}
           <meta property="og:type" content="website" />
           <meta property="og:title" content="Loci - AI Travel Companion" />
           <meta property="og:description" content="Discover, plan, and explore your next adventure with AI-powered travel recommendations" />
           <meta property="og:site_name" content="Loci" />
           <meta property="og:url" content="https://loci.app" />
-          <meta property="og:image" content="/images/loci.png" />
-          
-          {/* Twitter */}
+          <meta property="og:image" content="https://loci.app/images/loci.png" />
+          <meta property="og:image:width" content="1200" />
+          <meta property="og:image:height" content="630" />
+
+          {/* Twitter - Using absolute URLs */}
           <meta name="twitter:card" content="summary_large_image" />
           <meta name="twitter:title" content="Loci - AI Travel Companion" />
           <meta name="twitter:description" content="Discover, plan, and explore your next adventure with AI-powered travel recommendations" />
-          <meta name="twitter:image" content="/images/loci.png" />
+          <meta name="twitter:image" content="https://loci.app/images/loci.png" />
+          <meta name="twitter:site" content="@loci" />
+          <meta name="twitter:creator" content="@loci" />
           
           {assets}
         </head>

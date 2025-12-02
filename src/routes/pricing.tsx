@@ -1,4 +1,5 @@
 import { A } from "@solidjs/router";
+import { Title, Meta } from "@solidjs/meta";
 import { Check, Star, Zap, Crown, Heart, MapPin, Brain, Clock } from "lucide-solid";
 import { createSignal, Show } from "solid-js";
 import PromoCodeSection from "~/components/PromoCodeSection";
@@ -136,6 +137,101 @@ export default function Pricing() {
   };
 
   return (
+    <>
+      <Title>Pricing Plans - Free, Explorer & Pro | Loci AI Travel Companion</Title>
+      <Meta name="description" content="Choose the perfect Loci plan for your travel needs. Start free with basic AI recommendations or upgrade to Explorer ($3.99/mo) or Pro ($9.99/mo) for unlimited searches, advanced features, and premium perks. 30-day money-back guarantee." />
+      <Meta name="keywords" content="Loci pricing, travel app plans, AI travel subscription, free travel planner, premium travel features, Explorer plan, Pro plan, travel app cost" />
+      <Meta property="og:title" content="Pricing Plans - Free, Explorer & Pro | Loci" />
+      <Meta property="og:description" content="Flexible pricing for every traveler. Free plan available, Explorer at $3.99/mo, Pro at $9.99/mo. 30-day money-back guarantee on all paid plans." />
+      <Meta property="og:url" content="https://loci.app/pricing" />
+      <Meta name="twitter:title" content="Pricing Plans - Loci AI Travel Companion" />
+      <Meta name="twitter:description" content="Start free or choose Explorer ($3.99/mo) or Pro ($9.99/mo) for advanced AI travel features. 30-day money-back guarantee." />
+      <link rel="canonical" href="https://loci.app/pricing" />
+
+      {/* Structured Data - Product with Multiple Offers */}
+      <script type="application/ld+json">
+        {JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "Product",
+          "name": "Loci - AI Travel Companion",
+          "description": "AI-powered travel discovery platform with personalized recommendations",
+          "brand": {
+            "@type": "Brand",
+            "name": "Loci"
+          },
+          "offers": [
+            {
+              "@type": "Offer",
+              "name": "Free Plan",
+              "price": "0",
+              "priceCurrency": "USD",
+              "description": "Perfect for casual explorers with core AI recommendations",
+              "availability": "https://schema.org/InStock"
+            },
+            {
+              "@type": "Offer",
+              "name": "Explorer Plan",
+              "price": "3.99",
+              "priceCurrency": "USD",
+              "billingIncrement": "monthly",
+              "description": "For regular city discoverers with unlimited searches and advanced features",
+              "availability": "https://schema.org/InStock"
+            },
+            {
+              "@type": "Offer",
+              "name": "Pro Plan",
+              "price": "9.99",
+              "priceCurrency": "USD",
+              "billingIncrement": "monthly",
+              "description": "For travel enthusiasts with offline access, 24/7 AI agent, and premium features",
+              "availability": "https://schema.org/PreOrder"
+            }
+          ]
+        })}
+      </script>
+
+      {/* Structured Data - FAQ */}
+      <script type="application/ld+json">
+        {JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "FAQPage",
+          "mainEntity": [
+            {
+              "@type": "Question",
+              "name": "Can I upgrade or downgrade my plan anytime?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Yes, you can change your plan at any time. Changes take effect immediately, and we'll prorate the charges accordingly."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Is there a free trial for paid plans?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "We don't offer a traditional free trial, but our Free plan gives you access to core features. Plus, all paid plans come with a 30-day money-back guarantee."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "How does the AI learn my preferences?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Our AI analyzes your explicit preferences, saved locations, and interaction patterns to provide increasingly personalized recommendations over time."
+              }
+            },
+            {
+              "@type": "Question",
+              "name": "Do you offer discounts for annual subscriptions?",
+              "acceptedAnswer": {
+                "@type": "Answer",
+                "text": "Yes! Annual subscriptions receive a 20% discount. Contact our support team to set up annual billing."
+              }
+            }
+          ]
+        })}
+      </script>
+
     <div class="min-h-screen bg-background text-foreground transition-colors">
       <div class="max-w-7xl mx-auto px-4 py-12 space-y-12">
         {/* Hero Section */}
@@ -447,5 +543,6 @@ export default function Pricing() {
         </section>
       </div>
     </div>
+    </>
   );
 }

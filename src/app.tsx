@@ -1,8 +1,9 @@
 import { Router } from "@solidjs/router";
 import { FileRoutes } from "@solidjs/start/router";
 import { Suspense } from "solid-js";
+import { MetaProvider } from "@solidjs/meta";
 import Nav from "~/components/Nav";
-import Footer from "~/components/Footer"; // Import the new component
+import Footer from "~/components/Footer";
 import PWAInstall from "~/components/PWAInstall";
 import "./app.css";
 import { QueryClientProvider } from "@tanstack/solid-query";
@@ -17,6 +18,7 @@ import PageBackground from "./components/PageBackground";
 export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
+      <MetaProvider>
         <ThemeProvider>
         <Router
           root={props => (
@@ -43,6 +45,7 @@ export default function App() {
           <FileRoutes />
         </Router>
         </ThemeProvider>
+      </MetaProvider>
     </QueryClientProvider>
   );
 }

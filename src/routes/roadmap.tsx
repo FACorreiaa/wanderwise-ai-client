@@ -1,4 +1,5 @@
 import { createSignal, For, Show } from "solid-js";
+import { Title, Meta } from "@solidjs/meta";
 import {
   Sparkles,
   Brain,
@@ -145,11 +146,22 @@ export default function Roadmap() {
   };
 
   return (
-    <div class="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-gray-100 dark:from-[#050915] dark:via-[#0b1c36] dark:to-[#030712] text-gray-900 dark:text-white transition-colors">
-      <div class="absolute inset-0 opacity-40 dark:opacity-60 pointer-events-none">
-        <div class="domain-grid" aria-hidden="true" />
-        <div class="domain-veil" aria-hidden="true" />
-      </div>
+    <>
+      <Title>Product Roadmap - Loci AI Travel Companion</Title>
+      <Meta name="description" content="Explore Loci's product roadmap and vision. See our development phases from MVP to global scale, including AI enhancements, native apps, and premium features." />
+      <Meta name="keywords" content="Loci roadmap, travel app development, AI travel features, product roadmap, travel tech, personalized travel planning" />
+      <Meta property="og:title" content="Product Roadmap - Loci" />
+      <Meta property="og:description" content="Follow our journey as we build intelligent, personalized travel experiences. See our development phases and upcoming features." />
+      <Meta property="og:url" content="https://loci.app/roadmap" />
+      <Meta name="twitter:title" content="Product Roadmap - Loci" />
+      <Meta name="twitter:description" content="Follow our journey as we build intelligent, personalized travel experiences." />
+      <link rel="canonical" href="https://loci.app/roadmap" />
+
+      <div class="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-gray-100 dark:from-[#050915] dark:via-[#0b1c36] dark:to-[#030712] text-gray-900 dark:text-white transition-colors">
+        <div class="absolute inset-0 opacity-40 dark:opacity-60 pointer-events-none">
+          <div class="domain-grid" aria-hidden="true" />
+          <div class="domain-veil" aria-hidden="true" />
+        </div>
 
       <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16 lg:py-20">
         {/* Header */}
@@ -364,5 +376,6 @@ export default function Roadmap() {
         </section>
       </div>
     </div>
+    </>
   );
 }

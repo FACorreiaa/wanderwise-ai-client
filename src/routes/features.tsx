@@ -1,4 +1,5 @@
 import { A } from "@solidjs/router";
+import { Title, Meta } from "@solidjs/meta";
 import { Brain, MapPin, Filter, Heart, List, Clock, Smartphone, Zap, Globe, Users, Search, Database } from "lucide-solid";
 
 export default function Features() {
@@ -77,6 +78,17 @@ export default function Features() {
   ];
 
   return (
+    <>
+      <Title>Features - AI-Powered Travel Discovery & Personalization | Loci</Title>
+      <Meta name="description" content="Discover Loci's powerful features: AI-powered personalization, semantic search, contextual filtering, interactive maps, smart memory, and time-aware recommendations for perfect travel experiences." />
+      <Meta name="keywords" content="AI travel features, semantic search, personalized recommendations, interactive maps, smart memory, contextual filtering, travel technology, AI itinerary planning" />
+      <Meta property="og:title" content="Features - AI-Powered Travel Discovery | Loci" />
+      <Meta property="og:description" content="Explore Loci's advanced features: AI personalization, semantic search, smart memory, and time-aware recommendations for intelligent travel planning." />
+      <Meta property="og:url" content="https://loci.app/features" />
+      <Meta name="twitter:title" content="Features - AI-Powered Travel Discovery | Loci" />
+      <Meta name="twitter:description" content="AI personalization, semantic search, smart memory, and contextual understanding for your perfect travel experience." />
+      <link rel="canonical" href="https://loci.app/features" />
+
     <div class="min-h-screen bg-background text-foreground transition-colors">
       <div class="max-w-6xl mx-auto px-4 py-12 space-y-12">
         {/* Hero Section */}
@@ -336,5 +348,6 @@ export default function Features() {
         </section>
       </div>
     </div>
+    </>
   );
 }

@@ -1,5 +1,6 @@
 import { createSignal, For, Show } from 'solid-js';
 import { useNavigate } from '@solidjs/router';
+import { Title, Meta } from '@solidjs/meta';
 import { Search, TrendingUp, Star, Sparkles, ChevronRight, Calendar, Clock, MapPin, Smartphone } from 'lucide-solid';
 import { useDiscoverPageData } from '~/lib/api/discover';
 import type { TrendingDiscovery, FeaturedCollection, POI } from '~/lib/api/types';
@@ -99,6 +100,17 @@ export default function DiscoverPage() {
     };
 
     return (
+        <>
+            <Title>Discover - Trending Cities & AI-Curated Travel Experiences | Loci</Title>
+            <Meta name="description" content="Explore trending destinations, featured collections, and AI-curated travel experiences. Search for restaurants, hotels, activities, and attractions with intelligent recommendations." />
+            <Meta name="keywords" content="travel discovery, trending cities, travel search, featured collections, AI recommendations, restaurants, hotels, activities, travel trends" />
+            <Meta property="og:title" content="Discover - Trending Cities & Curated Experiences | Loci" />
+            <Meta property="og:description" content="Explore trending destinations and AI-curated travel collections. Search for the perfect restaurants, hotels, and activities." />
+            <Meta property="og:url" content="https://loci.app/discover" />
+            <Meta name="twitter:title" content="Discover - Trending Travel Experiences | Loci" />
+            <Meta name="twitter:description" content="Explore trending cities and AI-curated collections for restaurants, hotels, and activities." />
+            <link rel="canonical" href="https://loci.app/discover" />
+
         <div class="min-h-screen relative transition-colors">
             {/* Header */}
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -441,5 +453,6 @@ export default function DiscoverPage() {
                 </Show>
             </div>
         </div>
+        </>
     );
 }

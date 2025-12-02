@@ -1,0 +1,23 @@
+# Loci AI Travel Companion - Robots.txt
+# https://loci.app
+
+User-agent: *
+Allow: /
+
+# Disallow private/authenticated routes
+Disallow: /admin
+Disallow: /api/
+Disallow: /auth/signin
+Disallow: /auth/forgot-password
+Disallow: /profile
+Disallow: /settings
+Disallow: /favorites
+Disallow: /lists
+Disallow: /itinerary
+Disallow: /recents
+
+# Allow signup page for better indexing
+Allow: /auth/signup
+
+# Sitemap location
+Sitemap: https://loci.app/sitemap.xml

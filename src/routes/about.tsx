@@ -1,7 +1,44 @@
 import { A } from "@solidjs/router";
+import { Title, Meta } from "@solidjs/meta";
 
 export default function About() {
   return (
+    <>
+      <Title>About Loci - The Taste-Aware Travel OS | AI-Powered City Discovery</Title>
+      <Meta name="description" content="Learn about Loci, the intelligent travel companion that delivers hyper-personalized city exploration. Powered by Google Gemini AI, PostGIS, and advanced semantic search technology." />
+      <Meta name="keywords" content="about Loci, travel technology, AI travel companion, Google Gemini, PostGIS, semantic search, personalized travel, city discovery, travel innovation" />
+      <Meta property="og:title" content="About Loci - The Taste-Aware Travel OS" />
+      <Meta property="og:description" content="Discover how Loci uses AI, geospatial intelligence, and semantic search to deliver hyper-personalized city exploration experiences." />
+      <Meta property="og:url" content="https://loci.app/about" />
+      <Meta name="twitter:title" content="About Loci - AI-Powered City Discovery" />
+      <Meta name="twitter:description" content="The intelligent travel companion powered by Google Gemini AI and advanced geospatial technology." />
+      <link rel="canonical" href="https://loci.app/about" />
+
+      {/* Structured Data - AboutPage */}
+      <script type="application/ld+json">
+        {JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "AboutPage",
+          "name": "About Loci",
+          "description": "Learn about Loci, the intelligent travel companion that delivers hyper-personalized city exploration",
+          "mainEntity": {
+            "@type": "Organization",
+            "name": "Loci",
+            "url": "https://loci.app",
+            "description": "AI-powered travel discovery platform delivering hyper-personalized city exploration recommendations based on user interests, time, location, and an evolving AI engine",
+            "foundingDate": "2024",
+            "slogan": "The taste-aware travel OS",
+            "knowsAbout": [
+              "Travel Technology",
+              "Artificial Intelligence",
+              "Personalized Recommendations",
+              "City Discovery",
+              "Geospatial Intelligence"
+            ]
+          }
+        })}
+      </script>
+
     <div class="min-h-screen bg-background text-foreground transition-colors">
       <div class="max-w-5xl mx-auto px-4 py-12 space-y-12">
         {/* Hero Section */}
@@ -138,5 +175,6 @@ export default function About() {
         </main>
       </div>
     </div>
+    </>
   );
 }

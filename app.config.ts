@@ -25,7 +25,7 @@ const ensureHtmlShell = {
 };
 
 export default defineConfig({
-  ssr: false,
+  ssr: true, // ✅ Enabled for better SEO and performance
   server: {
     preset: "cloudflare_module",
     compatibilityDate: "2025-06-12",
