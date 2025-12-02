@@ -1,7 +1,43 @@
 // Search Profile queries and mutations
 import { useQuery, useMutation, useQueryClient } from '@tanstack/solid-query';
+import { createClient } from '@connectrpc/connect';
+import { create } from '@bufbuild/protobuf';
+import { ProfileService, GetUserPreferenceProfilesRequestSchema } from '@buf/loci_loci-proto.bufbuild_es/proto/profile_pb.js';
+import { transport } from '../connect-transport';
 import { apiRequest, queryKeys } from './shared';
+import { getAuthToken } from '../api';
 import type { SearchProfile, TravelProfileFormData, AccommodationPreferences, DiningPreferences, ActivityPreferences, ItineraryPreferences } from './types';
+
+const profileClient = createClient(ProfileService, transport);
+
+const mapProtoToSearchProfile = (profile: any): SearchProfile => ({
+  id: profile.id,
+  user_id: profile.userId,
+  profile_name: profile.profileName,
+  is_default: profile.isDefault ?? false,
+  search_radius_km: profile.searchRadiusKm ?? 0,
+  preferred_time: profile.preferredTime ?? 'DAY_PREFERENCE_ANY',
+  budget_level: profile.budgetLevel ?? 0,
+  preferred_pace: profile.preferredPace ?? 'SEARCH_PACE_ANY',
+  prefer_accessible_pois: false,
+  prefer_outdoor_seating: false,
+  prefer_dog_friendly: false,
+  preferred_vibes: [],
+  preferred_transport: profile.preferredTransport ?? 'TRANSPORT_PREFERENCE_ANY',
+  dietary_needs: [],
+  interests: null,
+  tags: null,
+  user_latitude: null,
+  user_longitude: null,
+  created_at: profile.createdAt ?? '',
+  updated_at: profile.updatedAt ?? '',
+});
+
+export const fetchPreferenceProfilesRPC = async (): Promise<SearchProfile[]> => {
+  const request = create(GetUserPreferenceProfilesRequestSchema, {});
+  const response = await profileClient.getUserPreferenceProfiles(request);
+  return (response.profiles || []).map(mapProtoToSearchProfile);
+};
 
 // ==================
 // SEARCH PROFILE QUERIES
@@ -11,8 +47,9 @@ import type { SearchProfile, TravelProfileFormData, AccommodationPreferences, Di
 export const useSearchProfiles = () => {
   return useQuery(() => ({
     queryKey: queryKeys.profiles,
-    queryFn: () => apiRequest<SearchProfile[]>('/user/search-profile'),
+    queryFn: () => fetchPreferenceProfilesRPC(),
     staleTime: 10 * 60 * 1000,
+    enabled: !!getAuthToken(),
   }));
 };
 
@@ -20,8 +57,11 @@ export const useSearchProfiles = () => {
 export const useSearchProfile = (profileId: string) => {
   return useQuery(() => ({
     queryKey: queryKeys.profile(profileId),
-    queryFn: () => apiRequest<SearchProfile>(`/user/search-profile/${profileId}`),
-    enabled: !!profileId,
+    queryFn: async () => {
+      const profiles = await fetchPreferenceProfilesRPC();
+      return profiles.find((p) => p.id === profileId) as SearchProfile;
+    },
+    enabled: !!profileId && !!getAuthToken(),
     staleTime: 10 * 60 * 1000,
   }));
 };
@@ -30,8 +70,12 @@ export const useSearchProfile = (profileId: string) => {
 export const useDefaultSearchProfile = () => {
   return useQuery(() => ({
     queryKey: queryKeys.defaultProfile,
-    queryFn: () => apiRequest<SearchProfile>('/user/search-profile/default'),
+    queryFn: async () => {
+      const profiles = await fetchPreferenceProfilesRPC();
+      return profiles.find((p) => p.is_default) || profiles[0];
+    },
     staleTime: 10 * 60 * 1000,
+    enabled: !!getAuthToken(),
   }));
 };
 

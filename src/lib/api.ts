@@ -309,7 +309,9 @@ export const profileAPI = {
   },
 
   async getDefaultProfile() {
-    return apiRequest<any>('/user/search-profile/default');
+    const { fetchPreferenceProfilesRPC } = await import('./api/profiles');
+    const profiles = await fetchPreferenceProfilesRPC();
+    return profiles.find((p: any) => p.is_default) || profiles[0];
   },
 
   async setDefaultProfile(profileId: string) {

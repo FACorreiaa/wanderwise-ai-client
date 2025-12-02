@@ -1,6 +1,7 @@
 // User profile queries and mutations
 import { useQuery, useMutation, useQueryClient } from '@tanstack/solid-query';
 import { apiRequest, queryKeys } from './shared';
+import { fetchPreferenceProfilesRPC } from './profiles';
 import type { UserProfile, UserProfileResponse } from './types';
 
 // ===================
@@ -10,7 +11,7 @@ import type { UserProfile, UserProfileResponse } from './types';
 export const useProfiles = () => {
   return useQuery(() => ({
     queryKey: queryKeys.profiles,
-    queryFn: () => apiRequest<UserProfile[]>('/user/search-profile/'),
+    queryFn: () => fetchPreferenceProfilesRPC() as unknown as Promise<UserProfile[]>,
     staleTime: 10 * 60 * 1000, // 10 minutes
   }));
 };
@@ -26,7 +27,10 @@ export const useProfile = (profileId: string) => {
 export const useDefaultProfile = () => {
   return useQuery(() => ({
     queryKey: queryKeys.defaultProfile,
-    queryFn: () => apiRequest<UserProfile>('/user/search-profile/default'),
+    queryFn: async () => {
+      const profiles = await fetchPreferenceProfilesRPC();
+      return (profiles.find((p) => (p as any).is_default) || profiles[0]) as unknown as UserProfile;
+    },
   }));
 };
 
