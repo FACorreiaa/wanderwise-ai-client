@@ -40,50 +40,50 @@ export default function Footer() {
                     <div class="grid grid-cols-2 gap-8 sm:grid-cols-3 lg:grid-cols-4">
                         <div class="space-y-3">
                             <h3 class="text-sm font-semibold text-white">Products</h3>
-                            <ul class="space-y-2 text-sm text-slate-200/75">
-                                <li><a class="transition-colors duration-200 hover:text-cyan-200" href="#">Platform</a></li>
-                                <li><a class="transition-colors duration-200 hover:text-cyan-200" href="#">Enterprise</a></li>
-                                <li><a class="transition-colors duration-200 hover:text-cyan-200" href="#">API</a></li>
+                            <ul class="space-y-2 text-sm text-slate-100">
+                                <li><a class="transition-colors duration-200 hover:text-cyan-300 hover:underline focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:ring-offset-2 focus:ring-offset-slate-950 rounded" href="#">Platform</a></li>
+                                <li><a class="transition-colors duration-200 hover:text-cyan-300 hover:underline focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:ring-offset-2 focus:ring-offset-slate-950 rounded" href="#">Enterprise</a></li>
+                                <li><a class="transition-colors duration-200 hover:text-cyan-300 hover:underline focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:ring-offset-2 focus:ring-offset-slate-950 rounded" href="#">API</a></li>
                             </ul>
                         </div>
                         <div class="space-y-3">
                             <h3 class="text-sm font-semibold text-white">Resources</h3>
-                            <ul class="space-y-2 text-sm text-slate-200/75">
-                                <li><a class="transition-colors duration-200 hover:text-cyan-200" href="#">Blog</a></li>
-                                <li><a class="transition-colors duration-200 hover:text-cyan-200" href="#">Reports</a></li>
-                                <li><a class="transition-colors duration-200 hover:text-cyan-200" href="#">Help Center</a></li>
+                            <ul class="space-y-2 text-sm text-slate-100">
+                                <li><a class="transition-colors duration-200 hover:text-cyan-300 hover:underline focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:ring-offset-2 focus:ring-offset-slate-950 rounded" href="#">Blog</a></li>
+                                <li><a class="transition-colors duration-200 hover:text-cyan-300 hover:underline focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:ring-offset-2 focus:ring-offset-slate-950 rounded" href="#">Reports</a></li>
+                                <li><a class="transition-colors duration-200 hover:text-cyan-300 hover:underline focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:ring-offset-2 focus:ring-offset-slate-950 rounded" href="#">Help Center</a></li>
                             </ul>
                         </div>
                         <div class="space-y-3">
                             <h3 class="text-sm font-semibold text-white">Company</h3>
-                            <ul class="space-y-2 text-sm text-slate-200/75">
-                                <li><a class="transition-colors duration-200 hover:text-cyan-200" href="#">About</a></li>
-                                <li><a class="transition-colors duration-200 hover:text-cyan-200" href="#">Careers</a></li>
-                                <li><a class="transition-colors duration-200 hover:text-cyan-200" href="#">Contact</a></li>
+                            <ul class="space-y-2 text-sm text-slate-100">
+                                <li><a class="transition-colors duration-200 hover:text-cyan-300 hover:underline focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:ring-offset-2 focus:ring-offset-slate-950 rounded" href="#">About</a></li>
+                                <li><a class="transition-colors duration-200 hover:text-cyan-300 hover:underline focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:ring-offset-2 focus:ring-offset-slate-950 rounded" href="#">Careers</a></li>
+                                <li><a class="transition-colors duration-200 hover:text-cyan-300 hover:underline focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:ring-offset-2 focus:ring-offset-slate-950 rounded" href="#">Contact</a></li>
                             </ul>
                         </div>
                         <div class="space-y-3">
                             <h3 class="text-sm font-semibold text-white">Stay in touch</h3>
-                            <ul class="space-y-2 text-sm text-slate-200/75">
-                                <li><a class="transition-colors duration-200 hover:text-cyan-200" href="#">Status</a></li>
-                                <li><a class="transition-colors duration-200 hover:text-cyan-200" href="#">Security</a></li>
-                                <li><a class="transition-colors duration-200 hover:text-cyan-200" href="#">Press</a></li>
+                            <ul class="space-y-2 text-sm text-slate-100">
+                                <li><a class="transition-colors duration-200 hover:text-cyan-300 hover:underline focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:ring-offset-2 focus:ring-offset-slate-950 rounded" href="#">Status</a></li>
+                                <li><a class="transition-colors duration-200 hover:text-cyan-300 hover:underline focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:ring-offset-2 focus:ring-offset-slate-950 rounded" href="#">Security</a></li>
+                                <li><a class="transition-colors duration-200 hover:text-cyan-300 hover:underline focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:ring-offset-2 focus:ring-offset-slate-950 rounded" href="#">Press</a></li>
                             </ul>
                         </div>
                     </div>
                 </div>
 
-                <div class="flex flex-col gap-3 border-t border-white/10 pt-6 text-sm text-slate-300/80 sm:flex-row sm:items-center sm:justify-between">
+                <div class="flex flex-col gap-3 border-t border-white/10 pt-6 text-sm sm:flex-row sm:items-center sm:justify-between">
                     <div class="flex items-center gap-2 text-white">
-                        <Building2 class="h-4 w-4 text-cyan-200" />
+                        <Building2 class="h-4 w-4 text-cyan-300" />
                         <span class="font-medium">Loci</span>
                     </div>
-                    <div class="flex flex-wrap gap-4 text-slate-400">
-                        <a class="hover:text-cyan-200 transition-colors" href="#">Privacy</a>
-                        <a class="hover:text-cyan-200 transition-colors" href="#">Terms</a>
-                        <a class="hover:text-cyan-200 transition-colors" href="#">Support</a>
+                    <div class="flex flex-wrap gap-4 text-slate-100">
+                        <a class="hover:text-cyan-300 hover:underline transition-colors focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:ring-offset-2 focus:ring-offset-slate-950 rounded" href="#">Privacy</a>
+                        <a class="hover:text-cyan-300 hover:underline transition-colors focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:ring-offset-2 focus:ring-offset-slate-950 rounded" href="#">Terms</a>
+                        <a class="hover:text-cyan-300 hover:underline transition-colors focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:ring-offset-2 focus:ring-offset-slate-950 rounded" href="#">Support</a>
                     </div>
-                    <p class="text-slate-400">© 2025 Loci Inc. All rights reserved.</p>
+                    <p class="text-slate-200">© 2025 Loci Inc. All rights reserved.</p>
                 </div>
             </div>
         </footer>

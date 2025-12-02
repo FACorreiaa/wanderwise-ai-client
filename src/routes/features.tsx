@@ -84,10 +84,10 @@ export default function Features() {
           <div class="rounded-3xl bg-gradient-to-br from-[#1e66f5]/12 via-[#04a5e5]/12 to-[#8839ef]/12 border border-[hsl(223,16%,83%)]/70 dark:border-white/10 shadow-[0_30px_80px_rgba(30,102,245,0.18)] p-10">
             <p class="text-sm uppercase tracking-[0.2em] text-[hsl(22,99%,52%)] dark:text-amber-200 mb-3">Features</p>
             <h1 class="text-4xl md:text-6xl font-bold text-foreground dark:text-white mb-4">
-              Catppuccin-powered clarity, AI-powered travel.
+              AI-powered travel.
             </h1>
             <p class="text-xl text-[hsl(233,13%,41%)] dark:text-slate-200/85 max-w-3xl mx-auto leading-relaxed">
-              Discover what makes Loci the smartest way to explore cities. Our AI platform adapts to you in Latte or Dark.
+              Discover what makes Loci the smartest way to explore cities. We aim for WCAG AA/AAA contrast in both Light (Latte) and Dark mode so it stays readable everywhere.
             </p>
           </div>
         </header>
@@ -99,7 +99,7 @@ export default function Features() {
             {features.map((feature, index) => {
               const IconComponent = feature.icon;
               return (
-                <article 
+                <article
                   class="bg-card border border-border rounded-lg p-6 shadow-lg hover:shadow-xl transition-all duration-300 focus-within:ring-2 focus-within:ring-blue-500 focus-within:ring-offset-2"
                   role="listitem"
                   aria-labelledby={`feature-${index}`}
@@ -134,7 +134,7 @@ export default function Features() {
             {searchCapabilities.map((capability, index) => {
               const IconComponent = capability.icon;
               return (
-                <article 
+                <article
                   class="glass-panel gradient-border rounded-lg p-6 border-0 shadow-lg"
                   role="listitem"
                   aria-labelledby={`capability-${index}`}
@@ -159,7 +159,7 @@ export default function Features() {
           <div class="text-center mb-8">
             <h2 id="ai-capabilities" class="text-3xl font-bold mb-4 text-foreground">AI-Generated Itineraries</h2>
             <p class="text-lg text-muted-foreground max-w-3xl mx-auto">
-              Let our advanced AI create personalized itineraries based on your interests, available time, 
+              Let our advanced AI create personalized itineraries based on your interests, available time,
               and location. From quick lunch breaks to full-day adventures.
             </p>
           </div>
@@ -193,7 +193,7 @@ export default function Features() {
           <div class="text-center mb-8">
             <h2 id="smart-memory" class="text-3xl font-bold text-foreground mb-4">Smart Memory & Contextual Understanding</h2>
             <p class="text-lg text-muted-foreground max-w-4xl mx-auto">
-              Our AI doesn't just answer your questions - it remembers your conversations and builds a personalized 
+              Our AI doesn't just answer your questions - it remembers your conversations and builds a personalized
               knowledge base that gets smarter with every interaction.
             </p>
           </div>
@@ -206,7 +206,7 @@ export default function Features() {
                 <h3 class="text-xl font-semibold text-card-foreground">Conversation Memory</h3>
               </div>
               <p class="text-muted-foreground mb-4">
-                Unlike traditional chatbots that forget your previous messages, Loci remembers your entire conversation history. 
+                Unlike traditional chatbots that forget your previous messages, Loci remembers your entire conversation history.
                 Ask follow-up questions, reference earlier discussions, and build on previous recommendations naturally.
               </p>
               <ul class="space-y-2" role="list">
@@ -232,7 +232,7 @@ export default function Features() {
                 <h3 class="text-xl font-semibold text-card-foreground">Intelligent Retrieval</h3>
               </div>
               <p class="text-muted-foreground mb-4">
-                When you ask a question, our AI doesn't just generate a generic response. It searches through your 
+                When you ask a question, our AI doesn't just generate a generic response. It searches through your
                 conversation history and preferences to provide personalized, contextually relevant recommendations.
               </p>
               <ul class="space-y-2" role="list">
@@ -255,9 +255,9 @@ export default function Features() {
             <div class="bg-gradient-to-r from-purple-50 to-emerald-50 dark:from-purple-950/30 dark:to-emerald-950/30 rounded-lg p-6 border border-purple-200/50 dark:border-purple-800/50">
               <h4 class="text-lg font-semibold text-foreground mb-2">Example in Action</h4>
               <p class="text-sm text-muted-foreground">
-                <strong>You:</strong> "Show me some good restaurants in downtown."<br/>
-                <strong>Later:</strong> "What about something similar but vegetarian?"<br/>
-                <strong>Loci:</strong> Remembers your downtown preference and suggests vegetarian restaurants in the same area, 
+                <strong>You:</strong> "Show me some good restaurants in downtown."<br />
+                <strong>Later:</strong> "What about something similar but vegetarian?"<br />
+                <strong>Loci:</strong> Remembers your downtown preference and suggests vegetarian restaurants in the same area,
                 taking into account your conversation history to provide exactly what you're looking for.
               </p>
             </div>
@@ -317,7 +317,7 @@ export default function Features() {
           </p>
           <div class="flex flex-col sm:flex-row gap-4 justify-center">
             <A href="/auth/signup" class="inline-block">
-              <button 
+              <button
                 class="bg-blue-600 hover:bg-blue-700 focus:bg-blue-700 text-white font-semibold px-8 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
                 aria-label="Sign up for free to start using Loci features"
               >
@@ -325,7 +325,7 @@ export default function Features() {
               </button>
             </A>
             <A href="/pricing" class="inline-block">
-              <button 
+              <button
                 class="border border-border text-foreground hover:bg-muted focus:bg-muted font-semibold px-8 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
                 aria-label="View pricing plans for Loci"
               >

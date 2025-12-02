@@ -16,6 +16,7 @@ export default function Pricing() {
       name: "Free",
       price: "$0",
       period: "forever",
+      yearlyPrice: null,
       description: "Perfect for casual explorers",
       icon: Heart,
       color: "gray",
@@ -39,6 +40,7 @@ export default function Pricing() {
       name: "Explorer",
       price: "$3.99",
       period: "per month",
+      yearlyPrice: "$39.90 / yr",
       description: "For regular city discoverers",
       icon: MapPin,
       color: "blue",
@@ -60,6 +62,7 @@ export default function Pricing() {
       name: "Pro",
       price: "$9.99",
       period: "per month",
+      yearlyPrice: "$99.90 / yr",
       description: "For travel enthusiasts & professionals",
       icon: Crown,
       color: "purple",
@@ -218,6 +221,14 @@ export default function Pricing() {
                       <span class={`text-4xl font-bold ${plan.disabled ? 'text-gray-500 dark:text-gray-400' : 'text-card-foreground'}`}>{plan.price}</span>
                       <span class={`ml-2 ${plan.disabled ? 'text-gray-500 dark:text-gray-400' : 'text-muted-foreground'}`}>/{plan.period}</span>
                     </div>
+                    <Show when={plan.yearlyPrice}>
+                      <div class="flex items-center gap-2 mt-1 text-sm">
+                        <span class="px-2 py-0.5 rounded-full bg-[hsl(223,16%,83%)]/70 dark:bg-white/10 text-[hsl(233,13%,41%)] dark:text-slate-200">
+                          Yearly: {plan.yearlyPrice}
+                        </span>
+                        <span class="text-[hsl(233,10%,47%)] dark:text-slate-400">Save vs monthly</span>
+                      </div>
+                    </Show>
                     {/* Show discount for applicable plans */}
                     <Show when={appliedPromo() && appliedPromo()?.type === 'discount' && plan.name !== 'Free' && (appliedPromo()?.planAccess === 'any' || appliedPromo()?.planAccess === plan.name.toLowerCase())}>
                       <div class="flex items-center gap-2 mt-2">

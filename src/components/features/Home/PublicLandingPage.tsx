@@ -201,8 +201,8 @@ export default function PublicLandingPage(): JSX.Element {
   };
 
   return (
-    <div class="min-h-screen relative overflow-hidden pb-16 bg-gradient-to-br from-[#050915] via-[#0b1c36] to-[#030712] text-white">
-      <div class="absolute inset-0 opacity-60">
+    <div class="min-h-screen relative overflow-hidden pb-16 bg-gradient-to-br from-gray-50 via-blue-50 to-gray-100 dark:from-[#050915] dark:via-[#0b1c36] dark:to-[#030712] text-gray-900 dark:text-white transition-colors">
+      <div class="absolute inset-0 opacity-40 dark:opacity-60">
         <div class="domain-grid" aria-hidden="true" />
         <div class="domain-veil" aria-hidden="true" />
         <div class="domain-halo" aria-hidden="true" />
@@ -210,20 +210,20 @@ export default function PublicLandingPage(): JSX.Element {
 
       <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-16">
         {/* Hero */}
-        <section class="rounded-3xl border border-white/10 bg-white/5 backdrop-blur-2xl shadow-[0_35px_120px_rgba(3,7,18,0.55)] overflow-hidden">
+        <section class="rounded-3xl border border-gray-300 dark:border-white/10 bg-white/90 dark:bg-white/5 backdrop-blur-2xl shadow-xl dark:shadow-[0_35px_120px_rgba(3,7,18,0.55)] overflow-hidden">
           <div class="grid grid-cols-1 lg:grid-cols-2 gap-10 p-8 sm:p-10 lg:p-12">
             <div class="space-y-6">
-              <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm font-semibold bg-emerald-400/10 text-emerald-200 border border-emerald-300/30 w-fit">
+              <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm font-semibold bg-emerald-100 dark:bg-emerald-400/10 text-emerald-800 dark:text-emerald-200 border border-emerald-300 dark:border-emerald-300/30 w-fit">
                 <Sparkles class="w-4 h-4" />
                 Taste-first city intelligence
               </div>
-              <h1 class="text-4xl sm:text-5xl lg:text-6xl font-extrabold leading-tight tracking-tight text-white">
+              <h1 class="text-4xl sm:text-5xl lg:text-6xl font-extrabold leading-tight tracking-tight text-gray-900 dark:text-white">
                 Plan like a local.
-                <span class="block text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 via-emerald-200 to-blue-300">
+                <span class="block text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-cyan-600 to-teal-600 dark:from-cyan-300 dark:via-emerald-200 dark:to-blue-300">
                   Preview for free.
                 </span>
               </h1>
-              <p class="text-lg sm:text-xl text-slate-200/90 leading-relaxed max-w-xl">
+              <p class="text-lg sm:text-xl text-gray-700 dark:text-slate-200/90 leading-relaxed max-w-xl">
                 Loci learns what you actually like — coffee strength, gallery pace,
                 bedtime — then curates itineraries, restaurants, activities, and hotels
                 that feel handpicked.
@@ -231,28 +231,28 @@ export default function PublicLandingPage(): JSX.Element {
               <div class="flex flex-wrap gap-3">
                 <button
                   onClick={() => prefillAndSearch("48 hours in Kyoto with coffee and design stops")}
-                  class="inline-flex items-center gap-2 px-5 py-3 rounded-xl font-semibold bg-cyan-500 text-slate-950 hover:bg-cyan-400 transition-all shadow-[0_14px_40px_rgba(8,145,178,0.35)]"
+                  class="inline-flex items-center gap-2 px-5 py-3 rounded-xl font-semibold bg-gradient-to-r from-cyan-600 to-blue-600 dark:bg-cyan-500 text-white dark:text-slate-950 hover:from-cyan-700 hover:to-blue-700 dark:hover:bg-cyan-400 transition-all shadow-lg"
                 >
                   Start a free preview
                   <ArrowRight class="w-4 h-4" />
                 </button>
                 <button
                   onClick={handleGetStarted}
-                  class="inline-flex items-center gap-2 px-5 py-3 rounded-xl font-semibold border border-white/30 text-white hover:bg-white/10 transition-all"
+                  class="inline-flex items-center gap-2 px-5 py-3 rounded-xl font-semibold border border-gray-300 dark:border-white/30 text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-white/10 transition-all"
                 >
                   Create my account
                 </button>
               </div>
-              <div class="grid grid-cols-2 gap-4 text-sm text-slate-200/80">
+              <div class="grid grid-cols-2 gap-4 text-sm">
                 <div class="glass-panel gradient-border rounded-2xl p-4">
-                  <p class="font-semibold text-white mb-1">Problem → Solution</p>
-                  <p class="text-slate-200/80">
+                  <p class="font-semibold text-gray-900 dark:text-white mb-1">Problem → Solution</p>
+                  <p class="text-gray-700 dark:text-slate-200/80">
                     Endless tabs? We compress everything into one AI co-pilot that cites sources.
                   </p>
                 </div>
                 <div class="glass-panel gradient-border rounded-2xl p-4">
-                  <p class="font-semibold text-white mb-1">Value stack</p>
-                  <p class="text-slate-200/80">
+                  <p class="font-semibold text-gray-900 dark:text-white mb-1">Value stack</p>
+                  <p class="text-gray-700 dark:text-slate-200/80">
                     Taste profiles, accessibility cues, and timeboxing baked into every suggestion.
                   </p>
                 </div>
@@ -266,14 +266,14 @@ export default function PublicLandingPage(): JSX.Element {
                 class="glass-panel gradient-border rounded-2xl p-4 sm:p-5 space-y-4"
               >
                 <div class="flex items-center gap-3">
-                  <div class="p-3 rounded-2xl bg-white/10 border border-white/15">
-                    <Mail class="w-5 h-5 text-emerald-200" />
+                  <div class="p-3 rounded-2xl bg-emerald-100 dark:bg-white/10 border border-emerald-300 dark:border-white/15">
+                    <Mail class="w-5 h-5 text-emerald-700 dark:text-emerald-200" />
                   </div>
                   <div>
-                    <p class="text-sm uppercase tracking-[0.2em] text-slate-200/70">
+                    <p class="text-sm uppercase tracking-[0.2em] text-gray-600 dark:text-slate-200/70">
                       Stay in the loop
                     </p>
-                    <p class="text-base text-white font-semibold">
+                    <p class="text-base text-gray-900 dark:text-white font-semibold">
                       Early updates + native app drop
                     </p>
                   </div>
@@ -288,19 +288,19 @@ export default function PublicLandingPage(): JSX.Element {
                     required
                     value={email()}
                     onInput={(e) => setEmail(e.currentTarget.value)}
-                    class="flex-1 px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder:text-slate-300/70 focus:outline-none focus:ring-2 focus:ring-emerald-300/70"
+                    class="flex-1 px-4 py-3 rounded-xl bg-white dark:bg-white/10 border-2 border-gray-300 dark:border-white/20 text-gray-900 dark:text-white placeholder:text-gray-500 dark:placeholder:text-slate-300/70 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
                     placeholder="you@travelersclub.com"
                   />
                   <button
                     type="submit"
-                    class="px-5 py-3 rounded-xl font-semibold bg-emerald-400 text-slate-950 hover:bg-emerald-300 transition-all shadow-[0_12px_32px_rgba(52,211,153,0.35)]"
+                    class="px-5 py-3 rounded-xl font-semibold bg-gradient-to-r from-emerald-600 to-teal-600 dark:bg-emerald-400 text-white dark:text-slate-950 hover:from-emerald-700 hover:to-teal-700 dark:hover:bg-emerald-300 transition-all shadow-lg"
                   >
                     Join updates
                   </button>
                 </div>
                 <Show when={emailSubmitted()}>
-                  <p class="text-sm text-emerald-200">
-                    Added — we’ll only email when something real ships.
+                  <p class="text-sm text-emerald-700 dark:text-emerald-200 font-medium">
+                    Added — we'll only email when something real ships.
                   </p>
                 </Show>
               </form>
@@ -308,11 +308,11 @@ export default function PublicLandingPage(): JSX.Element {
               {/* Search preview */}
               <div class="glass-panel gradient-border rounded-2xl p-4 sm:p-5 space-y-4">
                 <div class="flex items-center justify-between gap-3">
-                  <div class="flex items-center gap-2 text-slate-200">
+                  <div class="flex items-center gap-2 text-gray-700 dark:text-slate-200">
                     <Smartphone class="w-4 h-4" />
-                    <span class="text-sm">Try a search without logging in</span>
+                    <span class="text-sm font-medium">Try a search without logging in</span>
                   </div>
-                  <span class="text-xs px-2 py-1 rounded-full bg-white/10 border border-white/15 text-emerald-100">
+                  <span class="text-xs px-2 py-1 rounded-full bg-emerald-100 dark:bg-white/10 border border-emerald-300 dark:border-white/15 text-emerald-800 dark:text-emerald-100 font-semibold">
                     Free preview
                   </span>
                 </div>
@@ -321,7 +321,7 @@ export default function PublicLandingPage(): JSX.Element {
                     value={currentMessage()}
                     onInput={(e) => setCurrentMessage(e.target.value)}
                     placeholder={'"Best vinyl bars near Barcelona" or "Quiet art walks in Copenhagen"'}
-                    class="w-full h-14 px-0 py-0 border-none resize-none focus:outline-none focus:ring-0 bg-transparent text-white placeholder:text-slate-300/70"
+                    class="w-full h-14 px-0 py-0 border-none resize-none focus:outline-none focus:ring-0 bg-transparent text-gray-900 dark:text-white placeholder:text-gray-600 dark:placeholder:text-slate-300/70"
                     rows="2"
                     onKeyDown={(e) => {
                       if (e.key === "Enter" && !e.shiftKey) {
@@ -333,7 +333,7 @@ export default function PublicLandingPage(): JSX.Element {
                   <button
                     onClick={handleSearchClick}
                     disabled={isLoading() || !currentMessage().trim()}
-                    class="px-5 py-3 bg-cyan-500 hover:bg-cyan-400 disabled:bg-slate-500/60 disabled:cursor-not-allowed text-slate-950 rounded-xl font-semibold transition-all flex items-center gap-2 shadow-[0_14px_32px_rgba(12,125,242,0.28)]"
+                    class="px-5 py-3 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 dark:bg-cyan-500 dark:hover:bg-cyan-400 disabled:bg-gray-400 dark:disabled:bg-slate-500/60 disabled:cursor-not-allowed text-white dark:text-slate-950 rounded-xl font-semibold transition-all flex items-center gap-2 shadow-lg"
                   >
                     <Show when={isLoading()} fallback={<Send class="w-4 h-4" />}>
                       <Loader2 class="w-4 h-4 animate-spin" />
@@ -348,29 +348,29 @@ export default function PublicLandingPage(): JSX.Element {
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <button
                     onClick={() => prefillAndSearch("Hidden ateliers in Paris for a rainy afternoon")}
-                    class="glass-panel rounded-xl px-4 py-3 text-left hover:bg-white/10 transition-colors"
+                    class="glass-panel rounded-xl px-4 py-3 text-left hover:bg-gray-100 dark:hover:bg-white/10 transition-colors"
                   >
-                    <div class="flex items-center gap-2 text-sm text-emerald-100">
+                    <div class="flex items-center gap-2 text-sm text-emerald-700 dark:text-emerald-100 font-medium">
                       <Sparkles class="w-4 h-4" />
                       Preview panel
                     </div>
-                    <p class="text-white font-semibold">Paris ateliers, rainy day</p>
+                    <p class="text-gray-900 dark:text-white font-semibold">Paris ateliers, rainy day</p>
                   </button>
                   <button
                     onClick={() => prefillAndSearch("Street food in Mexico City with live music nearby")}
-                    class="glass-panel rounded-xl px-4 py-3 text-left hover:bg-white/10 transition-colors"
+                    class="glass-panel rounded-xl px-4 py-3 text-left hover:bg-gray-100 dark:hover:bg-white/10 transition-colors"
                   >
-                    <div class="flex items-center gap-2 text-sm text-emerald-100">
+                    <div class="flex items-center gap-2 text-sm text-emerald-700 dark:text-emerald-100 font-medium">
                       <Sparkles class="w-4 h-4" />
                       Preview panel
                     </div>
-                    <p class="text-white font-semibold">CDMX street food + music</p>
+                    <p class="text-gray-900 dark:text-white font-semibold">CDMX street food + music</p>
                   </button>
                 </div>
                 <Show when={isLoading()}>
-                  <div class="flex items-center gap-3 text-slate-100">
+                  <div class="flex items-center gap-3 text-gray-700 dark:text-slate-100">
                     <Loader2 class="w-5 h-5 animate-spin" />
-                    <span>Curating a mini-brief for you...</span>
+                    <span class="font-medium">Curating a mini-brief for you...</span>
                   </div>
                 </Show>
               </div>
