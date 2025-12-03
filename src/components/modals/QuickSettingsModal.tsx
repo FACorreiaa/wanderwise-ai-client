@@ -32,7 +32,7 @@ export default function QuickSettingsModal(props: QuickSettingsModalProps) {
   const { userLocation, requestLocation } = useUserLocation();
   
   // API hooks
-  const userProfileQuery = useUserProfileQuery();
+  // const userProfileQuery = useUserProfileQuery(); // Disabled /user/profile endpoint call
   const updateProfileMutation = useUpdateProfileMutation();
   const profilesQuery = useSearchProfiles();
   const defaultProfileQuery = useDefaultSearchProfile();

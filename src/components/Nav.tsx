@@ -30,7 +30,7 @@ const authNavigationItems = [
 ];
 
 export default function Nav() {
-  const { isAuthenticated, user, logout } = useAuth();
+  const { isAuthenticated, user, logout, isLoading } = useAuth();
   const { isDark, toggleTheme } = useTheme();
   const location = useLocation();
   const [isMenuOpen, setIsMenuOpen] = createSignal(false);
@@ -90,23 +90,24 @@ export default function Nav() {
           </Button>
 
           {/* Desktop Navigation */}
-          <Show
-            when={isAuthenticated()}
-            fallback={
-              <div class="hidden md:flex items-center space-x-6 lg:space-x-8">
-                <For each={publicNavigationItems}>
-                  {(item) => (
-                    <A
-                      href={item.href}
-                      class="text-gray-700 dark:text-slate-200 hover:text-blue-700 dark:hover:text-emerald-200 font-medium transition-colors text-sm lg:text-base"
-                    >
-                      {item.name}
-                    </A>
-                  )}
-                </For>
-              </div>
-            }
-          >
+          <Show when={!isLoading()}>
+            <Show
+              when={isAuthenticated()}
+              fallback={
+                <div class="hidden md:flex items-center space-x-6 lg:space-x-8">
+                  <For each={publicNavigationItems}>
+                    {(item) => (
+                      <A
+                        href={item.href}
+                        class="text-gray-700 dark:text-slate-200 hover:text-blue-700 dark:hover:text-emerald-200 font-medium transition-colors text-sm lg:text-base"
+                      >
+                        {item.name}
+                      </A>
+                    )}
+                  </For>
+                </div>
+              }
+            >
             <div class="hidden md:flex items-center space-x-1">
               <For each={authNavigationItems}>
                 {(item) => {
@@ -131,30 +132,32 @@ export default function Nav() {
                 }}
               </For>
             </div>
+            </Show>
           </Show>
 
           {/* Desktop User Menu or Auth Buttons */}
-          <Show
-            when={isAuthenticated()}
-            fallback={
-              <div class="hidden md:flex items-center space-x-3 lg:space-x-4">
-                {/* PWA Install Button */}
-                <PWAInstall />
+          <Show when={!isLoading()}>
+            <Show
+              when={isAuthenticated()}
+              fallback={
+                <div class="hidden md:flex items-center space-x-3 lg:space-x-4">
+                  {/* PWA Install Button */}
+                  <PWAInstall />
 
-                {/* Theme Selector for non-authenticated users */}
-                <ThemeSelector />
+                  {/* Theme Selector for non-authenticated users */}
+                  <ThemeSelector />
 
-                <A href="/auth/signin">
-                  <Button variant="ghost" class="text-gray-700 dark:text-white hover:text-blue-700 dark:hover:text-emerald-200 text-sm lg:text-base px-3 lg:px-4 font-semibold">
-                    Log In
-                  </Button>
-                </A>
-                <A href="/auth/signup">
-                  <Button class="text-sm lg:text-base px-3 lg:px-4 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 dark:bg-emerald-400 dark:hover:bg-emerald-300 text-white dark:text-slate-950 font-semibold shadow-[0_14px_40px_rgba(52,211,153,0.35)]">Get Started</Button>
-                </A>
-              </div>
-            }
-          >
+                  <A href="/auth/signin">
+                    <Button variant="ghost" class="text-gray-700 dark:text-white hover:text-blue-700 dark:hover:text-emerald-200 text-sm lg:text-base px-3 lg:px-4 font-semibold">
+                      Log In
+                    </Button>
+                  </A>
+                  <A href="/auth/signup">
+                    <Button class="text-sm lg:text-base px-3 lg:px-4 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 dark:bg-emerald-400 dark:hover:bg-emerald-300 text-white dark:text-slate-950 font-semibold shadow-[0_14px_40px_rgba(52,211,153,0.35)]">Get Started</Button>
+                  </A>
+                </div>
+              }
+            >
             <div class="hidden md:flex items-center space-x-3 relative user-menu-container">
               {/* PWA Install Button */}
               <PWAInstall />
@@ -198,6 +201,7 @@ export default function Nav() {
                 </div>
               </Show>
             </div>
+            </Show>
           </Show>
         </div>
       </div>
@@ -232,22 +236,23 @@ export default function Nav() {
 
             {/* Mobile Navigation Links */}
             <div class="flex-1 px-4 py-6 space-y-1">
-              <Show
-                when={isAuthenticated()}
-                fallback={
-                  <For each={publicNavigationItems}>
-                    {(item) => (
-                      <A
-                        href={item.href}
-                      class="block px-4 py-3 text-lg font-semibold text-gray-900 dark:text-white bg-gray-100 dark:bg-white/5 rounded-xl transition-all border border-gray-300 dark:border-white/15 shadow-sm hover:shadow-md hover:translate-y-[-1px]"
-                        onClick={() => setIsMenuOpen(false)}
-                      >
-                        {item.name}
-                      </A>
-                    )}
-                  </For>
-                }
-              >
+              <Show when={!isLoading()}>
+                <Show
+                  when={isAuthenticated()}
+                  fallback={
+                    <For each={publicNavigationItems}>
+                      {(item) => (
+                        <A
+                          href={item.href}
+                        class="block px-4 py-3 text-lg font-semibold text-gray-900 dark:text-white bg-gray-100 dark:bg-white/5 rounded-xl transition-all border border-gray-300 dark:border-white/15 shadow-sm hover:shadow-md hover:translate-y-[-1px]"
+                          onClick={() => setIsMenuOpen(false)}
+                        >
+                          {item.name}
+                        </A>
+                      )}
+                    </For>
+                  }
+                >
                 <For each={authNavigationItems}>
                   {(item) => {
                     const IconComponent = item.icon;
@@ -270,13 +275,15 @@ export default function Nav() {
                     );
                   }}
                 </For>
+                </Show>
               </Show>
             </div>
 
             {/* Mobile Action Buttons */}
-            <Show
-              when={!isAuthenticated()}
-              fallback={
+            <Show when={!isLoading()}>
+              <Show
+                when={!isAuthenticated()}
+                fallback={
                 <div class="px-4 py-6 space-y-3 border-t border-white/40 dark:border-slate-800/60">
                   <div class="flex items-center gap-3 px-4 py-3">
                     <div class="w-10 h-10 rounded-full bg-emerald-400 flex items-center justify-center text-slate-950 text-lg font-bold shadow-lg ring-2 ring-white/30">
@@ -321,6 +328,7 @@ export default function Nav() {
                   </Button>
                 </A>
               </div>
+              </Show>
             </Show>
           </div>
         </div>

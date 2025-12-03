@@ -14,6 +14,7 @@ import { useDefaultSearchProfile } from '~/lib/api/profiles';
 import { useAuth } from '~/contexts/AuthContext';
 import { useLandingPageStatistics } from '~/lib/api/statistics';
 import QuickSettingsModal from '~/components/modals/QuickSettingsModal';
+import ProfileQuickSelect from './ProfileQuickSelect';
 
 interface QuickAction {
   id: string;
@@ -168,7 +169,7 @@ export default function LoggedInDashboard() {
       }
 
       // Start streaming request
-      const response = await sendUnifiedChatMessageStream({
+      const stream = await sendUnifiedChatMessageStream({
         profileId: currentProfileId,
         message: currentMessage(),
         contextType: domainToContextType(domain),
@@ -178,12 +179,8 @@ export default function LoggedInDashboard() {
         }
       });
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
       // Set up streaming manager
-      streamingService.startStream(response, {
+      streamingService.startStreamFromReadable(stream, {
         session,
         onProgress: (updatedSession) => {
           setStreamingSession(updatedSession);
@@ -334,6 +331,9 @@ export default function LoggedInDashboard() {
               <Sparkles class="w-5 h-5 text-emerald-600 dark:text-emerald-200" />
               What would you like to discover?
             </h2>
+
+            {/* Profile Quick Select */}
+            <ProfileQuickSelect />
 
             <div class="flex items-end gap-3">
               <div class="flex-1">
