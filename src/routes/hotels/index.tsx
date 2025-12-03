@@ -175,6 +175,7 @@ export default function HotelsPage() {
 
     // Convert streaming hotel data to display format
     const convertHotelToDisplayFormat = (hotel: HotelDetailedInfo) => {
+        const price = hotel.price_level || hotel.price_range || '€€';
         return {
             id: hotel.id || `hotel-${Math.random().toString(36).substr(2, 9)}`,
             name: hotel.name || 'Unknown Hotel',
@@ -183,8 +184,8 @@ export default function HotelsPage() {
             latitude: hotel.latitude || 0,
             longitude: hotel.longitude || 0,
             address: hotel.address || 'Address not available',
-            priceRange: hotel.price_level || '€€',
-            pricePerNight: hotel.price_level || '€€',
+            priceRange: price,
+            pricePerNight: price,
             rating: hotel.rating || 4.0,
             reviewCount: 0, // Not available in streaming data
             amenities: Array.isArray(hotel.amenities) ? hotel.amenities : [],

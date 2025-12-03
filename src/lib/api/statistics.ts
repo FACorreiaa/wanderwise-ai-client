@@ -65,7 +65,14 @@ export const getDetailedPOIStatistics =
 
 export const getLandingPageStatistics =
   async (): Promise<LandingPageUserStats> => {
-    return statisticsRequest<LandingPageUserStats>("/user-statistics/landing-page");
+    // return statisticsRequest<LandingPageUserStats>("/user-statistics/landing-page");
+    console.log("⏸ Landing page stats call disabled for /user-statistics/landing-page");
+    return {
+      saved_places: 0,
+      itineraries: 0,
+      cities_explored: 0,
+      discoveries: 0,
+    };
   };
 
 // Custom hooks for statistics

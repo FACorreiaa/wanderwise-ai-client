@@ -20,7 +20,10 @@ import {
   AiCityResponse as ProtoAiCityResponse,
 } from "@buf/loci_loci-proto.bufbuild_es/proto/chat_pb.js";
 import { GeneralCityData as ProtoGeneralCityData } from "@buf/loci_loci-proto.bufbuild_es/proto/city_pb.js";
-import { POIDetailedInfo as ProtoPOIDetailedInfo } from "@buf/loci_loci-proto.bufbuild_es/proto/poi_pb.js";
+import {
+  POIDetailedInfo as ProtoPOIDetailedInfo,
+  RestaurantDetailedInfo as ProtoRestaurantDetailedInfo,
+} from "@buf/loci_loci-proto.bufbuild_es/proto/poi_pb.js";
 import { transport } from "../connect-transport";
 //import { createGraphQLClient, gql } from '@solid-primitives/graphql';
 import type {
@@ -32,6 +35,7 @@ import type {
   AIItineraryResponse,
   AiCityResponse,
   POIDetailedInfo,
+  RestaurantDetailedInfo,
   StreamEvent,
   UnifiedChatResponse,
   ApiResponse,
@@ -56,6 +60,8 @@ const EMPTY_ITINERARY: AIItineraryResponse = {
   itinerary_name: "",
   overall_description: "",
   points_of_interest: [],
+  restaurants: [],
+  bars: [],
 };
 
 const toProtoDomainType = (
@@ -127,13 +133,20 @@ const mapGeneralCityData = (
   };
 };
 
-const mapPoi = (poi: ProtoPOIDetailedInfo): POIDetailedInfo => ({
-  id: poi.id,
-  city: poi.city,
-  city_id: poi.cityId,
-  name: poi.name,
-  latitude: poi.latitude ?? 0,
-  longitude: poi.longitude ?? 0,
+const mapPoi = (poi: ProtoPOIDetailedInfo): POIDetailedInfo => {
+  const placeholderId = poi.id === "00000000-0000-0000-0000-000000000000";
+  const safeId =
+    !placeholderId && poi.id
+      ? poi.id
+      : `${poi.name}-${poi.city || "unknown"}`.toLowerCase().replace(/\s+/g, "-");
+
+  return {
+    id: safeId,
+    city: poi.city,
+    city_id: poi.cityId,
+    name: poi.name,
+    latitude: poi.latitude ?? 0,
+    longitude: poi.longitude ?? 0,
   category: poi.category,
   description: poi.description || poi.descriptionPoi || "",
   address: poi.address || "",
@@ -157,6 +170,52 @@ const mapPoi = (poi: ProtoPOIDetailedInfo): POIDetailedInfo => ({
     poi.createdAt && typeof poi.createdAt.toDate === "function"
       ? poi.createdAt.toDate().toISOString()
       : undefined,
+  };
+};
+
+const mapRestaurant = (
+  restaurant: ProtoRestaurantDetailedInfo | ProtoPOIDetailedInfo,
+): RestaurantDetailedInfo => ({
+  id: restaurant.id,
+  city: restaurant.city,
+  name: restaurant.name,
+  latitude: restaurant.latitude ?? 0,
+  longitude: restaurant.longitude ?? 0,
+  category: restaurant.category,
+  description:
+    (restaurant as ProtoRestaurantDetailedInfo).description ||
+    (restaurant as ProtoPOIDetailedInfo).description ||
+    (restaurant as ProtoPOIDetailedInfo).descriptionPoi ||
+    "",
+  address: restaurant.address || "",
+  website: restaurant.website || "",
+  phone_number:
+    (restaurant as ProtoRestaurantDetailedInfo).phoneNumber ||
+    (restaurant as ProtoPOIDetailedInfo).phone_number ||
+    "",
+  opening_hours:
+    typeof (restaurant as ProtoRestaurantDetailedInfo).openingHours === "object"
+      ? JSON.stringify(
+          (restaurant as ProtoRestaurantDetailedInfo).openingHours,
+        )
+      : (restaurant as ProtoRestaurantDetailedInfo).openingHours ||
+        (restaurant as ProtoPOIDetailedInfo).opening_hours ||
+        "",
+  price_level:
+    (restaurant as ProtoRestaurantDetailedInfo).priceLevel ||
+    (restaurant as ProtoPOIDetailedInfo).price_level ||
+    "",
+  cuisine_type:
+    (restaurant as ProtoRestaurantDetailedInfo).cuisineType ||
+    (restaurant as ProtoPOIDetailedInfo).cuisine_type ||
+    "",
+  tags: restaurant.tags || [],
+  images: restaurant.images || [],
+  rating: restaurant.rating ?? 0,
+  llm_interaction_id:
+    (restaurant as ProtoRestaurantDetailedInfo).llmInteractionId ||
+    (restaurant as ProtoPOIDetailedInfo).llm_interaction_id ||
+    "",
 });
 
 const mapItineraryResponse = (
@@ -169,6 +228,8 @@ const mapItineraryResponse = (
     overall_description: response.overallDescription,
     points_of_interest:
       response.pointsOfInterest?.map(mapPoi) ?? [],
+    restaurants: response.restaurants?.map(mapRestaurant) ?? [],
+    bars: response.bars?.map(mapRestaurant) ?? [],
   };
 };
 
@@ -177,11 +238,51 @@ const mapAiCityResponse = (
 ): AiCityResponse | undefined => {
   if (!response) return undefined;
 
+  const mappedItinerary =
+    mapItineraryResponse(response.itineraryResponse) || EMPTY_ITINERARY;
+
+  const hotelsFromAccommodation =
+    // @ts-expect-error: backend may return accommodationResponse
+    response.accommodationResponse?.hotels?.map(mapPoi) ||
+    // Older snake_case variant
+    // @ts-expect-error
+    response.accommodation_response?.hotels?.map(mapPoi) ||
+    undefined;
+
+  const deriveLists = () => {
+    const points =
+      response.pointsOfInterest?.map(mapPoi) ||
+      mappedItinerary.points_of_interest ||
+      [];
+
+    const hotels = points.filter((poi) =>
+      (poi.category || '').toLowerCase().includes('hotel'),
+    );
+    const restaurants = points.filter((poi) => {
+      const cat = (poi.category || '').toLowerCase();
+      return cat.includes('restaurant') || cat.includes('dining');
+    });
+    const activities = points.filter(
+      (poi) =>
+        !(poi.category || '').toLowerCase().includes('hotel') &&
+        !(poi.category || '').toLowerCase().includes('restaurant') &&
+        !(poi.category || '').toLowerCase().includes('dining'),
+    );
+
+    return { hotels, restaurants, activities };
+  };
+
+  const derived = deriveLists();
+
   return {
     general_city_data: mapGeneralCityData(response.generalCityData),
     points_of_interest: response.pointsOfInterest?.map(mapPoi) ?? [],
-    itinerary_response:
-      mapItineraryResponse(response.itineraryResponse) || EMPTY_ITINERARY,
+    itinerary_response: mappedItinerary,
+    hotels: hotelsFromAccommodation || derived.hotels,
+    restaurants: mappedItinerary.restaurants?.length
+      ? mappedItinerary.restaurants
+      : derived.restaurants,
+    bars: mappedItinerary.bars,
     session_id: response.sessionId,
   };
 };
@@ -247,14 +348,29 @@ const buildChatStreamResponse = (
   });
 
   if (response.domain === "accommodation") {
-    if (response.updatedItinerary?.points_of_interest?.length) {
+    const hotels =
+      response.updatedItinerary?.hotels?.length
+        ? response.updatedItinerary.hotels
+        : response.updatedItinerary?.points_of_interest;
+    if (hotels?.length) {
       events.push({
         type: "hotels",
-        data: response.updatedItinerary.points_of_interest,
+        data: hotels,
       });
     }
   } else if (response.domain === "dining") {
-    if (response.updatedItinerary?.points_of_interest?.length) {
+    const restaurants =
+      response.updatedItinerary?.restaurants?.length
+        ? response.updatedItinerary.restaurants
+        : response.updatedItinerary?.itinerary_response?.restaurants;
+
+    if (restaurants?.length) {
+      events.push({
+        type: "restaurants",
+        data: restaurants,
+      });
+    } else if (response.updatedItinerary?.points_of_interest?.length) {
+      // Fallback to generic POIs when dedicated restaurants field is missing
       events.push({
         type: "restaurants",
         data: response.updatedItinerary.points_of_interest,

@@ -306,10 +306,10 @@ export const usePrefetchUserData = () => {
       staleTime: 15 * 60 * 1000,
     });
 
-    queryClient.prefetchQuery({
-      queryKey: queryKeys.favorites,
-      queryFn: () => apiRequest<POI[]>("/pois/favourites"),
-      staleTime: 5 * 60 * 1000,
-    });
+    // queryClient.prefetchQuery({
+    //   queryKey: queryKeys.favorites,
+    //   queryFn: () => apiRequest<POI[]>("/pois/favourites"),
+    //   staleTime: 5 * 60 * 1000,
+    // });
   };
 };

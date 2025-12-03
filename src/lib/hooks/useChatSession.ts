@@ -8,6 +8,7 @@ import {
   markStreamingComplete,
   clearStreamingSession,
 } from '~/lib/streaming-state';
+import type { POIDetailedInfo } from '../api/types';
 
 export interface ChatMessage {
   type: 'user' | 'assistant' | 'error';
@@ -30,6 +31,78 @@ export interface UseChatSessionOptions {
   enableNavigation?: boolean; // New option to enable URL navigation
   onNavigationData?: (navigation: any) => void; // Callback for navigation data
 }
+
+// Derive domain-specific lists from mixed POI payloads so Hotels/Restaurants/Activities pages can render them
+const deriveDomainLists = (data: any) => {
+  const points: POIDetailedInfo[] = [
+    ...(data?.points_of_interest || data?.pointsOfInterest || []),
+    ...(data?.itinerary_response?.points_of_interest || data?.itineraryResponse?.pointsOfInterest || []),
+  ].filter(Boolean);
+
+  const isHotel = (poi: POIDetailedInfo) => {
+    const cat = (poi.category || '').toLowerCase();
+    return (
+      cat.includes('hotel') ||
+      cat.includes('hostel') ||
+      cat.includes('lodg') || // lodge/lodging
+      cat.includes('resort') ||
+      cat.includes('bnb') ||
+      cat.includes('inn') ||
+      cat.includes('accommodation') ||
+      cat.includes('guesthouse') ||
+      cat.includes('guest house') ||
+      cat.includes('stay') ||
+      cat.includes('sleep') ||
+      cat.includes('room') ||
+      cat.includes('booking') ||
+      cat.includes('bookings')
+    );
+  };
+
+  const isRestaurant = (poi: POIDetailedInfo) =>
+    (poi.category || '').toLowerCase().includes('restaurant') ||
+    Boolean((poi as any).cuisine_type || (poi as any).cuisineType);
+
+  const hotels = points.filter(isHotel);
+  const restaurants = points.filter(isRestaurant);
+  const activities = points.filter((poi) => !isHotel(poi) && !isRestaurant(poi));
+
+  return { hotels, restaurants, activities };
+};
+
+const mergeUniqueById = (prev: any[] = [], next: any[] = []) => {
+  const map = new Map<string, any>();
+  const keyFor = (item: any) => {
+    const placeholderId = item?.id === '00000000-0000-0000-0000-000000000000';
+    return (!placeholderId && item?.id) ? item.id : item?.name || item?.llm_interaction_id || Math.random().toString(36).slice(2);
+  };
+  prev.forEach((item) => map.set(keyFor(item), item));
+  next.forEach((item) => map.set(keyFor(item), item));
+  return Array.from(map.values());
+};
+
+const persistCompletedSession = (sessionIdValue: string | null, data: any) => {
+  if (!data) return;
+
+  const resolvedSessionId =
+    sessionIdValue ||
+    data?.session_id ||
+    data?.sessionId ||
+    data?.itinerary_response?.session_id ||
+    data?.itineraryResponse?.sessionId;
+
+  if (!resolvedSessionId) return;
+
+  const wrapper = {
+    sessionId: resolvedSessionId,
+    data,
+    timestamp: new Date().toISOString(),
+  };
+
+  sessionStorage.setItem('completedStreamingSession', JSON.stringify(wrapper));
+  // Store a data-only payload for deep links expecting direct domain data
+  sessionStorage.setItem(`session_${resolvedSessionId}`, JSON.stringify(data));
+};
 
 export function useChatSession(options: UseChatSessionOptions = {}) {
   const auth = useAuth();
@@ -250,10 +323,137 @@ export function useChatSession(options: UseChatSessionOptions = {}) {
                     console.log('Semantic context generated:', eventData.Data || eventData.data);
                     break;
 
+                  case 'restaurants': {
+                    const restaurantsData = eventData.Data || eventData.data;
+                    console.log('🍽️ Received restaurants data:', restaurantsData);
+
+                    if (restaurantsData) {
+                      const currentSession =
+                        sessionId() ||
+                        eventData.SessionId ||
+                        eventData.sessionId ||
+                        (Array.isArray(restaurantsData) && restaurantsData[0]?.session_id);
+                      let mergedRestaurants = restaurantsData;
+                      if (options.setStreamingData) {
+                        options.setStreamingData((prev: any) => {
+                          mergedRestaurants = mergeUniqueById(prev?.restaurants, restaurantsData);
+                          return {
+                            ...prev,
+                            domain: 'dining',
+                            session_id: prev?.session_id || currentSession,
+                            restaurants: mergedRestaurants,
+                          };
+                        });
+                      }
+
+                      updateStreamingData({
+                        session_id: currentSession,
+                        restaurants: mergedRestaurants,
+                      });
+
+                      // Persist for deep links
+                      const snapshot = {
+                        session_id: currentSession,
+                        ...(options.getStreamingData?.() || {}),
+                        restaurants: mergedRestaurants,
+                      };
+                      persistCompletedSession(currentSession || sessionId(), snapshot);
+                      assistantMessage += 'Updated restaurant picks. ';
+                    }
+                    break;
+                  }
+
+                  case 'hotels': {
+                    const hotelsData = eventData.Data || eventData.data;
+                    console.log('🏨 Received hotels data:', hotelsData);
+
+                    if (hotelsData) {
+                      const currentSession =
+                        sessionId() ||
+                        eventData.SessionId ||
+                        eventData.sessionId ||
+                        (Array.isArray(hotelsData) && hotelsData[0]?.session_id);
+                      let mergedHotels = hotelsData;
+                      if (options.setStreamingData) {
+                        options.setStreamingData((prev: any) => ({
+                          ...prev,
+                          domain: 'accommodation',
+                          session_id: prev?.session_id || currentSession,
+                          hotels: mergeUniqueById(prev?.hotels, hotelsData),
+                        }));
+                      }
+
+                      updateStreamingData({
+                        session_id: currentSession,
+                        hotels: mergeUniqueById(
+                          options.getStreamingData?.()?.hotels,
+                          hotelsData,
+                        ),
+                      });
+
+                      // Persist for deep links
+                      mergedHotels = mergeUniqueById(
+                        options.getStreamingData?.()?.hotels,
+                        hotelsData,
+                      );
+                      const snapshot = {
+                        session_id: currentSession,
+                        ...(options.getStreamingData?.() || {}),
+                        hotels: mergedHotels,
+                      };
+                      persistCompletedSession(currentSession || sessionId(), snapshot);
+                      assistantMessage += 'Updated hotel options. ';
+                    }
+                    break;
+                  }
+
+                  case 'activities': {
+                    const activitiesData = eventData.Data || eventData.data;
+                    console.log('🎯 Received activities data:', activitiesData);
+
+                    if (activitiesData) {
+                      const currentSession =
+                        sessionId() ||
+                        eventData.SessionId ||
+                        eventData.sessionId ||
+                        (Array.isArray(activitiesData) && activitiesData[0]?.session_id);
+                      let mergedActivities = activitiesData;
+                      if (options.setStreamingData) {
+                        options.setStreamingData((prev: any) => ({
+                          ...prev,
+                          domain: 'activities',
+                          session_id: prev?.session_id || currentSession,
+                          activities: mergeUniqueById(prev?.activities, activitiesData),
+                        }));
+                      }
+
+                      mergedActivities = mergeUniqueById(
+                        options.getStreamingData?.()?.activities,
+                        activitiesData,
+                      );
+
+                      updateStreamingData({
+                        session_id: currentSession,
+                        activities: mergedActivities,
+                      });
+
+                      // Persist for deep links
+                      const snapshot = {
+                        session_id: currentSession,
+                        ...(options.getStreamingData?.() || {}),
+                        activities: mergedActivities,
+                      };
+                      persistCompletedSession(currentSession || sessionId(), snapshot);
+                      assistantMessage += 'Updated activities list. ';
+                    }
+                    break;
+                  }
+
                   case 'itinerary':
                     // This is the key event - update the itinerary data
                     const itineraryData = eventData.Data || eventData.data;
                     const message = eventData.Message || eventData.message;
+                    const derivedLists = deriveDomainLists(itineraryData);
 
                     console.log('📦 Received itinerary update:', itineraryData);
                     console.log('Itinerary message:', message);
@@ -291,7 +491,22 @@ export function useChatSession(options: UseChatSessionOptions = {}) {
                               console.log('✅ Updating ONLY custom itinerary, preserving general POIs');
                             }
 
-                            return {
+                            const mergedHotels = mergeUniqueById(
+                              prev?.hotels,
+                              itineraryData.hotels || derivedLists.hotels,
+                            );
+
+                            const mergedRestaurants = mergeUniqueById(
+                              prev?.restaurants,
+                              itineraryData.restaurants || derivedLists.restaurants,
+                            );
+
+                            const mergedActivities = mergeUniqueById(
+                              prev?.activities,
+                              itineraryData.activities || derivedLists.activities,
+                            );
+
+                            const updatedData = {
                               ...prev,
                               // Update general city data if provided
                               ...(itineraryData.general_city_data && {
@@ -314,11 +529,31 @@ export function useChatSession(options: UseChatSessionOptions = {}) {
                               ...(itineraryData.restaurants && {
                                 restaurants: itineraryData.restaurants
                               }),
+                              ...(derivedLists.restaurants?.length && {
+                                restaurants: mergedRestaurants
+                              }),
                               // Update hotels if provided (for hotels page)
                               ...(itineraryData.hotels && {
-                                hotels: itineraryData.hotels
+                                hotels: mergedHotels
+                              }),
+                              ...(derivedLists.hotels?.length && {
+                                hotels: mergedHotels
+                              }),
+                              ...(mergedActivities.length && {
+                                activities: mergedActivities
                               })
                             };
+
+                            // Persist for cross-page usage
+                            persistCompletedSession(
+                              sessionId() || workingSessionId || itineraryData.session_id,
+                              updatedData
+                            );
+
+                            // Keep streaming state in sync for cross-page navigation
+                            updateStreamingData(updatedData);
+
+                            return updatedData;
                           });
                         }
 
@@ -589,28 +824,84 @@ export function useChatSession(options: UseChatSessionOptions = {}) {
                   case 'itinerary':
                     const itineraryData = eventData.Data || eventData.data;
                     const message = eventData.Message || eventData.message;
+                    const derivedLists = deriveDomainLists(itineraryData);
 
                     if (itineraryData) {
                       if (options.setStreamingData) {
-                        options.setStreamingData((prev: any) => ({
-                          ...prev,
-                          ...(itineraryData.general_city_data && {
-                            general_city_data: itineraryData.general_city_data
-                          }),
-                          ...(itineraryData.points_of_interest && {
-                            points_of_interest: itineraryData.points_of_interest
-                          }),
-                          ...(itineraryData.itinerary_response && {
-                            itinerary_response: itineraryData.itinerary_response
-                          }),
-                          ...(itineraryData.activities && {
-                            activities: itineraryData.activities
-                          }),
-                          ...(itineraryData.restaurants && {
-                            restaurants: itineraryData.restaurants
-                          })
-                        }));
+                        options.setStreamingData((prev: any) => {
+                          const mergedHotels = hasAuthoritativeList
+                            ? derivedLists.hotels
+                            : mergeUniqueById(
+                                prev?.hotels,
+                                itineraryData.hotels || derivedLists.hotels,
+                              );
+
+                          const mergedRestaurants = hasAuthoritativeList
+                            ? derivedLists.restaurants
+                            : mergeUniqueById(
+                                prev?.restaurants,
+                                itineraryData.restaurants || derivedLists.restaurants,
+                              );
+
+                          const mergedActivities = hasAuthoritativeList
+                            ? derivedLists.activities
+                            : mergeUniqueById(
+                                prev?.activities,
+                                itineraryData.activities || derivedLists.activities,
+                              );
+
+                          return {
+                            ...prev,
+                            ...(itineraryData.general_city_data && {
+                              general_city_data: itineraryData.general_city_data
+                            }),
+                            ...(itineraryData.points_of_interest && {
+                              points_of_interest: itineraryData.points_of_interest
+                            }),
+                            ...(itineraryData.itinerary_response && {
+                              itinerary_response: itineraryData.itinerary_response
+                            }),
+                            ...(mergedActivities.length && {
+                              activities: mergedActivities
+                            }),
+                            ...(mergedRestaurants.length && {
+                              restaurants: mergedRestaurants
+                            }),
+                            ...(mergedHotels.length && {
+                              hotels: mergedHotels
+                            })
+                          };
+                        });
                       }
+
+                      const mergedHotels = mergeUniqueById(
+                        (options.getStreamingData?.() as any)?.hotels,
+                        itineraryData.hotels || derivedLists.hotels,
+                      );
+                      const mergedRestaurants = mergeUniqueById(
+                        (options.getStreamingData?.() as any)?.restaurants,
+                        itineraryData.restaurants || derivedLists.restaurants,
+                      );
+                      const mergedActivities = mergeUniqueById(
+                        (options.getStreamingData?.() as any)?.activities,
+                        itineraryData.activities || derivedLists.activities,
+                      );
+
+                      const mergedDataForPersistence = {
+                        ...(options.getStreamingData?.() || {}),
+                        ...itineraryData,
+                        hotels: mergedHotels,
+                        restaurants: mergedRestaurants,
+                        activities: mergedActivities,
+                      };
+
+                      persistCompletedSession(
+                        sessionId() || itineraryData.session_id,
+                        mergedDataForPersistence
+                      );
+
+                      // Persist derived lists for navigation/storage consistency
+                      updateStreamingData(mergedDataForPersistence);
 
                       if (message) {
                         newSessionMessage += message + ' ';

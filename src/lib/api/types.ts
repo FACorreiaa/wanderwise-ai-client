@@ -415,12 +415,17 @@ export interface AIItineraryResponse {
   itinerary_name: string;
   overall_description: string;
   points_of_interest: POIDetailedInfo[];
+  restaurants?: RestaurantDetailedInfo[];
+  bars?: RestaurantDetailedInfo[];
 }
 
 export interface AiCityResponse {
   general_city_data: GeneralCityData;
   points_of_interest: POIDetailedInfo[];
   itinerary_response: AIItineraryResponse;
+  hotels?: HotelDetailedInfo[];
+  restaurants?: RestaurantDetailedInfo[];
+  bars?: RestaurantDetailedInfo[];
   session_id: string;
 }
 

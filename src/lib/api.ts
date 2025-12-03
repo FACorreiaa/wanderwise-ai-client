@@ -437,21 +437,27 @@ export const chatAPI = {
 // POI & Favorites API
 export const poiAPI = {
   async getFavorites() {
-    return apiRequest<any[]>('/pois/favourites');
+    // return apiRequest<any[]>('/pois/favourites');
+    console.log('⏸ getFavorites call disabled for /pois/favourites');
+    return [];
   },
 
   async addToFavorites(poiId: string) {
-    return apiRequest<{ message: string }>('/pois/favourites', {
-      method: 'POST',
-      body: JSON.stringify({ poi_id: poiId }),
-    });
+    // return apiRequest<{ message: string }>('/pois/favourites', {
+    //   method: 'POST',
+    //   body: JSON.stringify({ poi_id: poiId }),
+    // });
+    console.log('⏸ addToFavorites call disabled for /pois/favourites');
+    return { message: 'Favorites API disabled' };
   },
 
   async removeFromFavorites(poiId: string) {
-    return apiRequest<{ message: string }>('/pois/favourites', {
-      method: 'DELETE',
-      body: JSON.stringify({ poi_id: poiId }),
-    });
+    // return apiRequest<{ message: string }>('/pois/favourites', {
+    //   method: 'DELETE',
+    //   body: JSON.stringify({ poi_id: poiId }),
+    // });
+    console.log('⏸ removeFromFavorites call disabled for /pois/favourites');
+    return { message: 'Favorites API disabled' };
   },
 
   async getPOIsByCity(cityId: string) {

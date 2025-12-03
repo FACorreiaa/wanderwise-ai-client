@@ -35,15 +35,17 @@ export const useFavorites = () => {
     queryFn: async () => {
       console.log('🔄 Fetching user favorites...');
       try {
-        const response = await apiRequest<
-          POI[] | { favorites?: POI[]; favorite_pois?: POI[]; data?: POI[] }
-        >('/pois/favourites');
-        const normalized = normalizeFavoritesResponse(response);
-        console.log('✅ Favorites fetched:', {
-          raw: response,
-          normalizedCount: normalized.length,
-        });
-        return normalized;
+        // const response = await apiRequest<
+        //   POI[] | { favorites?: POI[]; favorite_pois?: POI[]; data?: POI[] }
+        // >('/pois/favourites');
+        // const normalized = normalizeFavoritesResponse(response);
+        // console.log('✅ Favorites fetched:', {
+        //   raw: response,
+        //   normalizedCount: normalized.length,
+        // });
+        // return normalized;
+        console.log('⏸ Favorites fetch disabled to avoid hitting /pois/favourites');
+        return [];
       } catch (error) {
         console.error('❌ Failed to fetch favorites:', error);
         throw error;
@@ -66,12 +68,13 @@ export const useAddToFavoritesMutation = () => {
       };
       console.log('📤 Request body:', requestBody);
 
-      const response = await apiRequest<{ message: string }>('/pois/favourites', {
-        method: 'POST',
-        body: JSON.stringify(requestBody),
-      });
-      console.log('✅ Add to favorites response:', response);
-      return response;
+      // const response = await apiRequest<{ message: string }>('/pois/favourites', {
+      //   method: 'POST',
+      //   body: JSON.stringify(requestBody),
+      // });
+      // console.log('✅ Add to favorites response:', response);
+      console.log('⏸ Add to favorites API call disabled for /pois/favourites');
+      return { message: 'Favorites API disabled' };
     },
     onMutate: async (params) => {
       // Cancel any outgoing refetches
@@ -111,13 +114,14 @@ export const useRemoveFromFavoritesMutation = () => {
         ...(params.poiData && { poi_data: params.poiData })
       };
       console.log('📤 Remove request body:', requestBody);
-      
-      const response = await apiRequest<{ message: string }>('/pois/favourites', {
-        method: 'DELETE',
-        body: JSON.stringify(requestBody),
-      });
-      console.log('✅ Remove from favorites response:', response);
-      return response;
+
+      // const response = await apiRequest<{ message: string }>('/pois/favourites', {
+      //   method: 'DELETE',
+      //   body: JSON.stringify(requestBody),
+      // });
+      // console.log('✅ Remove from favorites response:', response);
+      console.log('⏸ Remove from favorites API call disabled for /pois/favourites');
+      return { message: 'Favorites API disabled' };
     },
     onMutate: async (params) => {
       console.log('🔄 Optimistically removing POI:', params.poiId);

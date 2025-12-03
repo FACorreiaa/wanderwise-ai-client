@@ -80,10 +80,10 @@ export const queryUtils = {
         queryKey: ['interests'],
         queryFn: () => fetch('/api/v1/user/interests/').then(r => r.json()),
       },
-      {
-        queryKey: ['favorites'],
-        queryFn: () => fetch('/api/v1/pois/favourites').then(r => r.json()),
-      },
+      // {
+      //   queryKey: ['favorites'],
+      //   queryFn: () => fetch('/api/v1/pois/favourites').then(r => r.json()),
+      // },
     ];
     
     await Promise.all(
