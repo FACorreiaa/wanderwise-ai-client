@@ -47,7 +47,7 @@ const animateNumber = (
     requestAnimationFrame(updateNumber);
 };
 
-export default function RealTimeStats(props: RealTimeStatsProps): JSX.Element {
+export default function RealTimeStats(props: RealTimeStatsProps) {
     const statsQuery = useMainPageStatistics();
     const [currentStats, setCurrentStats] = createSignal<MainPageStatistics | null>(null);
     const [animatedUsers, setAnimatedUsers] = createSignal(0);

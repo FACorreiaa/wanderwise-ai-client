@@ -3,7 +3,7 @@ import { getAuthToken } from "../api";
 
 // Get API base URL
 const API_BASE_URL =
-  import.meta.env.VITE_CONNECT_BASE_URL || "http://localhost:8080";
+  import.meta.env.VITE_CONNECT_BASE_URL || "http://localhost:8000";
 
 // Statistics types
 export interface MainPageStatistics {

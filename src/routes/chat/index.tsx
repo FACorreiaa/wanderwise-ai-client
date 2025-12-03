@@ -27,6 +27,8 @@ import {
   detectDomain,
   getUserChatSessions,
   useGetChatSessionsQuery,
+  ContinueChatStream,
+  domainToContextType,
 } from "~/lib/api/llm";
 import {
   streamingService,
@@ -280,6 +282,7 @@ export default function ChatPage() {
     const response = await sendUnifiedChatMessageStream({
       profileId: currentProfileId,
       message: messageContent,
+      contextType: domainToContextType(domain),
       userLocation: {
         userLat: userLatitude,
         userLon: userLongitude,
@@ -457,38 +460,14 @@ export default function ChatPage() {
   ) => {
     setStreamProgress("Continuing conversation...");
 
-    // Create request payload
-    const requestPayload = {
+    const domain =
+      streamingSession()?.domain || detectDomain(messageContent);
+    const response = await ContinueChatStream({
+      sessionId,
       message: messageContent,
-      user_location: {
-        userLat: userLatitude,
-        userLon: userLongitude,
-      },
-    };
-
-    console.log("🚀 Making request to continue session:", sessionId);
-    const response = await fetch(
-      `${API_BASE_URL}/llm/prompt-response/chat/sessions/${sessionId}/continue`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("access_token") || sessionStorage.getItem("access_token") || ""}`,
-        },
-        body: JSON.stringify(requestPayload),
-      },
-    );
-
-    if (!response.ok) {
-      if (response.status === 404) {
-        // Session not found, start a new one
-        console.log("Session not found, starting new session...");
-        setSessionId(null);
-        await startNewSession(messageContent);
-        return;
-      }
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
+      cityName: streamingSession()?.city,
+      contextType: domainToContextType(domain),
+    });
 
     // Handle Server-Sent Events (SSE) streaming response
     const reader = response.body?.getReader();

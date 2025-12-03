@@ -66,6 +66,11 @@ import ChatInterface from "~/components/ui/ChatInterface";
 // @ts-ignore - Auth context type
 import { useAuth } from "~/contexts/AuthContext";
 import RegisterBanner from "~/components/ui/RegisterBanner";
+import {
+  getStreamingSession,
+  hasActiveStreamingSession,
+  clearStreamingSession,
+} from "~/lib/streaming-state";
 
 interface LocationState {
   streamingData?: any;
@@ -117,6 +122,21 @@ export default function ItineraryResultsPage() {
   const [poisUpdateTrigger, setPoisUpdateTrigger] = createSignal(0);
   const [mapDisabled, setMapDisabled] = createSignal(false);
   const [showAllGeneralPOIs, setShowAllGeneralPOIs] = createSignal(false);
+  const [isStreamingActive, setIsStreamingActive] = createSignal(false);
+
+  // Debug effect to track itinerary POI changes
+  createEffect(() => {
+    const pois = streamingData()?.itinerary_response?.points_of_interest;
+    if (pois) {
+      console.log('🔄 Itinerary POIs changed! Count:', pois.length);
+      console.log('🔄 POI names:', pois.map((p: any) => p.name));
+    }
+  });
+
+  // Track streaming status
+  createEffect(() => {
+    setIsStreamingActive(hasActiveStreamingSession());
+  });
 
   // Chat functionality using the reusable hook
   const chatSession = useChatSession({
@@ -184,8 +204,29 @@ export default function ItineraryResultsPage() {
     const urlSessionId = searchParams.sessionId;
     const urlCityName = searchParams.cityName;
     const urlDomain = searchParams.domain;
+    const isStreaming = searchParams.streaming === 'true';
 
-    if (urlSessionId) {
+    console.log('🔄 Is streaming mode:', isStreaming);
+
+    // Progressive loading: Check for partial streaming data
+    if (isStreaming && hasActiveStreamingSession()) {
+      const streamingSession = getStreamingSession();
+      console.log('📦 Found active streaming session:', streamingSession);
+
+      if (streamingSession && streamingSession.data) {
+        console.log('✅ Loading partial streaming data');
+        setStreamingData(streamingSession.data);
+        setFromChat(true);
+
+        // Set session ID if available
+        if (streamingSession.sessionId) {
+          chatSession.setSessionId(streamingSession.sessionId);
+        }
+
+        // Data will continue to update as streaming progresses
+        console.log('⏳ Waiting for more streaming data...');
+      }
+    } else if (urlSessionId) {
       console.log("Found session ID in URL parameters:", urlSessionId);
       chatSession.setSessionId(urlSessionId);
 
@@ -1377,6 +1418,23 @@ export default function ItineraryResultsPage() {
         </div>
       </Show>
 
+      {/* Streaming Status Banner */}
+      <Show when={isStreamingActive()}>
+        <div class="bg-gradient-to-r from-blue-500 to-purple-600 text-white px-4 py-2 sm:px-6 sm:py-3">
+          <div class="max-w-7xl mx-auto flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <Loader2 class="w-4 h-4 sm:w-5 sm:h-5 animate-spin" />
+              <span class="text-sm sm:text-base font-medium">
+                Loading your itinerary...
+              </span>
+            </div>
+            <span class="text-xs sm:text-sm opacity-90">
+              Data is streaming in real-time
+            </span>
+          </div>
+        </div>
+      </Show>
+
       {/* Header - Mobile First */}
       <div class="bg-white/80 dark:bg-slate-900/70 backdrop-blur-xl border-b border-white/60 dark:border-slate-800/70 px-4 py-3 sm:px-6 sm:py-4">
         <div class="max-w-7xl mx-auto">
@@ -1384,6 +1442,11 @@ export default function ItineraryResultsPage() {
             <div>
               <h1 class="text-xl font-bold text-gray-900 dark:text-white sm:text-2xl">
                 {itinerary().name}
+                <Show when={streamingData()?.itinerary_response?.points_of_interest?.length}>
+                  <span class="text-base font-normal text-gray-600 dark:text-gray-400 ml-2">
+                    ({streamingData()?.itinerary_response?.points_of_interest?.length || 0} stops)
+                  </span>
+                </Show>
               </h1>
               <p class="text-sm text-gray-600 dark:text-gray-300 mt-1 sm:text-base">
                 {itinerary().city}, {itinerary().country} •{" "}

@@ -103,7 +103,7 @@ const socialProof = [
   },
 ];
 
-export default function PublicLandingPage(): JSX.Element {
+export default function PublicLandingPage() {
   const navigate = useNavigate();
   const [currentMessage, setCurrentMessage] = createSignal("");
   const [email, setEmail] = createSignal("");
@@ -383,22 +383,22 @@ export default function PublicLandingPage(): JSX.Element {
           {previewCards.map((card) => (
             <A
               href={card.href}
-              class="group relative overflow-hidden rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl p-5 shadow-[0_20px_80px_rgba(3,7,18,0.45)] hover:-translate-y-1 transition-all"
+              class="group relative overflow-hidden rounded-2xl border border-gray-200 dark:border-white/10 bg-white/90 dark:bg-white/5 backdrop-blur-xl p-5 shadow-xl dark:shadow-[0_20px_80px_rgba(3,7,18,0.45)] hover:-translate-y-1 transition-all"
             >
-              <div class={`absolute inset-0 bg-gradient-to-br ${card.accent} opacity-40`} aria-hidden="true" />
+              <div class={`absolute inset-0 bg-gradient-to-br ${card.accent} opacity-20 dark:opacity-40`} aria-hidden="true" />
               <div class="relative flex items-start gap-3">
-                <div class="p-3 rounded-2xl bg-white/15 border border-white/20 text-white">
+                <div class="p-3 rounded-2xl bg-gray-100 dark:bg-white/15 border border-gray-300 dark:border-white/20 text-gray-900 dark:text-white">
                   <card.icon class="w-5 h-5" />
                 </div>
                 <div class="flex-1">
-                  <p class="text-xs uppercase tracking-[0.2em] text-slate-200/70">
+                  <p class="text-xs uppercase tracking-[0.2em] text-gray-600 dark:text-slate-200/70">
                     Try without login
                   </p>
-                  <h3 class="text-lg font-semibold text-white">{card.title}</h3>
-                  <p class="text-sm text-slate-100/80 mt-1">{card.description}</p>
+                  <h3 class="text-lg font-semibold text-gray-900 dark:text-white">{card.title}</h3>
+                  <p class="text-sm text-gray-700 dark:text-slate-100/80 mt-1">{card.description}</p>
                 </div>
               </div>
-              <div class="relative mt-4 flex items-center gap-2 text-sm text-emerald-100 group-hover:text-white">
+              <div class="relative mt-4 flex items-center gap-2 text-sm text-emerald-700 dark:text-emerald-100 group-hover:text-emerald-800 dark:group-hover:text-white">
                 <ShieldCheck class="w-4 h-4" />
                 Search works. Chat and saves unlock once you register.
               </div>
@@ -409,28 +409,28 @@ export default function PublicLandingPage(): JSX.Element {
         {/* Value stack + social proof */}
         <section class="mt-14 grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div class="lg:col-span-2 space-y-4">
-            <h2 class="text-2xl font-bold text-white">Why travelers stay</h2>
+            <h2 class="text-2xl font-bold text-gray-900 dark:text-white">Why travelers stay</h2>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               {valueStack.map((item) => (
-                <div class="glass-panel gradient-border rounded-2xl p-4">
-                  <p class="text-xs uppercase tracking-[0.16em] text-emerald-200 mb-2">
+                <div class="glass-panel gradient-border rounded-2xl p-4 bg-white/90 dark:bg-white/5">
+                  <p class="text-xs uppercase tracking-[0.16em] text-emerald-700 dark:text-emerald-200 mb-2">
                     {item.label}
                   </p>
-                  <p class="text-sm text-slate-100/85">{item.copy}</p>
+                  <p class="text-sm text-gray-700 dark:text-slate-100/85">{item.copy}</p>
                 </div>
               ))}
             </div>
           </div>
           <div class="space-y-4">
-            <h3 class="text-lg font-semibold text-white flex items-center gap-2">
-              <Star class="w-4 h-4 text-amber-300" />
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+              <Star class="w-4 h-4 text-amber-500 dark:text-amber-300" />
               Social proof
             </h3>
             <div class="space-y-3">
               {socialProof.map((proof) => (
-                <div class="glass-panel rounded-2xl p-4">
-                  <p class="text-sm text-white/90">{proof.quote}</p>
-                  <p class="text-xs text-slate-200/70 mt-2">{proof.name}</p>
+                <div class="glass-panel rounded-2xl p-4 bg-white/90 dark:bg-white/5">
+                  <p class="text-sm text-gray-900 dark:text-white/90">{proof.quote}</p>
+                  <p class="text-xs text-gray-600 dark:text-slate-200/70 mt-2">{proof.name}</p>
                 </div>
               ))}
             </div>
@@ -443,39 +443,39 @@ export default function PublicLandingPage(): JSX.Element {
 
         {/* Objection handling */}
         <section class="mt-6">
-          <div class="glass-panel gradient-border rounded-3xl p-6 sm:p-8 grid grid-cols-1 md:grid-cols-3 gap-6 items-center">
+          <div class="glass-panel gradient-border rounded-3xl p-6 sm:p-8 grid grid-cols-1 md:grid-cols-3 gap-6 items-center bg-white/90 dark:bg-white/5">
             <div class="space-y-2">
-              <p class="text-xs uppercase tracking-[0.2em] text-emerald-200">
+              <p class="text-xs uppercase tracking-[0.2em] text-emerald-700 dark:text-emerald-200">
                 Objections handled
               </p>
-              <h3 class="text-2xl font-bold text-white">Safe to try. Easy to leave.</h3>
-              <p class="text-sm text-slate-100/80">
+              <h3 class="text-2xl font-bold text-gray-900 dark:text-white">Safe to try. Easy to leave.</h3>
+              <p class="text-sm text-gray-700 dark:text-slate-100/80">
                 Search without logging in. No spam. Delete your data from settings anytime.
               </p>
             </div>
             <div class="space-y-3">
-              <div class="flex items-center gap-3 text-white/90">
-                <Clock3 class="w-4 h-4 text-emerald-200" />
+              <div class="flex items-center gap-3 text-gray-700 dark:text-white/90">
+                <Clock3 class="w-4 h-4 text-emerald-600 dark:text-emerald-200" />
                 <span class="text-sm">Twice-daily stat refresh — no flaky SSE calls.</span>
               </div>
-              <div class="flex items-center gap-3 text-white/90">
-                <ShieldCheck class="w-4 h-4 text-emerald-200" />
+              <div class="flex items-center gap-3 text-gray-700 dark:text-white/90">
+                <ShieldCheck class="w-4 h-4 text-emerald-600 dark:text-emerald-200" />
                 <span class="text-sm">Transparent recommendations with source notes.</span>
               </div>
-              <div class="flex items-center gap-3 text-white/90">
-                <Smartphone class="w-4 h-4 text-emerald-200" />
+              <div class="flex items-center gap-3 text-gray-700 dark:text-white/90">
+                <Smartphone class="w-4 h-4 text-emerald-600 dark:text-emerald-200" />
                 <span class="text-sm">Native iOS + Android in the works; join the drop list.</span>
               </div>
             </div>
             <div class="flex flex-col gap-3">
               <button
                 onClick={handleGetStarted}
-                class="w-full inline-flex justify-center items-center gap-2 px-5 py-3 rounded-xl font-semibold bg-white text-slate-950 hover:bg-emerald-100 transition-all"
+                class="w-full inline-flex justify-center items-center gap-2 px-5 py-3 rounded-xl font-semibold bg-gradient-to-r from-gray-900 to-gray-800 dark:bg-white text-white dark:text-slate-950 hover:from-gray-800 hover:to-gray-700 dark:hover:bg-emerald-100 transition-all shadow-lg"
               >
                 Register to unlock chat
                 <ArrowRight class="w-4 h-4" />
               </button>
-              <p class="text-xs text-slate-200/70 text-center">
+              <p class="text-xs text-gray-600 dark:text-slate-200/70 text-center">
                 Risk-free beta · cancel anytime
               </p>
             </div>

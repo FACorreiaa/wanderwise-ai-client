@@ -1,7 +1,13 @@
 import { createSignal, batch } from 'solid-js';
 import { useNavigate } from '@solidjs/router';
 import { useAuth } from '~/contexts/AuthContext';
-import { API_BASE_URL } from '~/lib/api/shared';
+import { ContinueChatStream, detectDomain, domainToContextType, sendUnifiedChatMessageStream } from '~/lib/api/llm';
+import {
+  setStreamingSession,
+  updateStreamingData,
+  markStreamingComplete,
+  clearStreamingSession,
+} from '~/lib/streaming-state';
 
 export interface ChatMessage {
   type: 'user' | 'assistant' | 'error';
@@ -100,29 +106,29 @@ export function useChatSession(options: UseChatSessionOptions = {}) {
     // Add user message to chat history
     setChatHistory(prev => [...prev, { type: 'user', content: userMessage, timestamp: new Date() }]);
 
-    let eventSource = null;
-
     try {
-      // Create request payload
-      const requestPayload = {
-        message: userMessage,
-        user_location: null // Add user location if available
-      };
+      const streamingData = options.getStreamingData?.();
+      const domain = streamingData?.domain || 'general';
 
-      // Try to continue the existing session
-      console.log('🚀 Making request to continue session:', workingSessionId);
-      const response = await fetch(`${API_BASE_URL}/llm/prompt-response/chat/sessions/${workingSessionId}/continue`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('access_token') || sessionStorage.getItem('access_token') || ''}`,
-        },
-        body: JSON.stringify(requestPayload)
-      });
+      // Extract city name from various possible sources in the streaming data
+      const cityName = streamingData?.general_city_data?.city ||
+                       streamingData?.activities?.[0]?.city ||
+                       streamingData?.restaurants?.[0]?.city ||
+                       streamingData?.hotels?.[0]?.city ||
+                       streamingData?.points_of_interest?.[0]?.city;
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+      console.log('🏙️ Extracted city name for continue chat:', cityName);
+
+      if (!cityName) {
+        console.warn('⚠️ No city name found in streaming data. API may require it.');
       }
+
+      const response = await ContinueChatStream({
+        sessionId: workingSessionId,
+        message: userMessage,
+        cityName: cityName,
+        contextType: domainToContextType(domain),
+      });
 
       // Handle Server-Sent Events (SSE) streaming response
       const reader = response.body?.getReader();
@@ -155,27 +161,56 @@ export function useChatSession(options: UseChatSessionOptions = {}) {
                     // Extract session ID from start event when a new session is created
                     const startData = eventData.Data || eventData.data;
                     if (startData && startData.session_id) {
-                      console.log('New session started with ID:', startData.session_id);
+                      console.log('🚀 New session started with ID:', startData.session_id);
                       setSessionId(startData.session_id);
 
-                      // Update session storage with new session ID - ensure consistency
+                      // Initialize streaming session for progressive loading
+                      const domain = startData.domain || 'general';
+                      const city = startData.city || cityName;
+
+                      setStreamingSession({
+                        sessionId: startData.session_id,
+                        domain: domain,
+                        city: city,
+                        isComplete: false,
+                        data: {
+                          session_id: startData.session_id,
+                          sessionId: startData.session_id,
+                          domain: domain,
+                        },
+                      });
+
+                      // Early navigation if enabled and we have a domain
+                      if (options.enableNavigation && domain !== 'general') {
+                        const domainRoutes: Record<string, string> = {
+                          accommodation: '/hotels',
+                          dining: '/restaurants',
+                          itinerary: '/itinerary',
+                        };
+
+                        const targetRoute = domainRoutes[domain];
+                        if (targetRoute) {
+                          const navUrl = `${targetRoute}?sessionId=${startData.session_id}&cityName=${encodeURIComponent(city || 'Unknown')}&domain=${domain}&streaming=true`;
+                          console.log('🧭 Early navigation to:', navUrl);
+                          navigate(navUrl);
+                        }
+                      }
+
+                      // Also update legacy session storage for backward compatibility
                       const storedSession = sessionStorage.getItem('completedStreamingSession');
                       if (storedSession) {
                         try {
                           const session = JSON.parse(storedSession);
                           session.sessionId = startData.session_id;
-                          // Also store in data.session_id for consistency
                           if (session.data) {
                             session.data.session_id = startData.session_id;
                             session.data.sessionId = startData.session_id;
                           }
                           sessionStorage.setItem('completedStreamingSession', JSON.stringify(session));
-                          console.log('✅ Updated session storage with session ID:', startData.session_id);
                         } catch (error) {
                           console.error('Error updating session storage with new session ID:', error);
                         }
                       } else {
-                        // Create a new session storage entry if none exists
                         const newSession = {
                           sessionId: startData.session_id,
                           data: {
@@ -184,7 +219,6 @@ export function useChatSession(options: UseChatSessionOptions = {}) {
                           }
                         };
                         sessionStorage.setItem('completedStreamingSession', JSON.stringify(newSession));
-                        console.log('✅ Created new session storage with session ID:', startData.session_id);
                       }
                     }
                     break;
@@ -221,10 +255,15 @@ export function useChatSession(options: UseChatSessionOptions = {}) {
                     const itineraryData = eventData.Data || eventData.data;
                     const message = eventData.Message || eventData.message;
 
-                    console.log('Received itinerary update:', itineraryData);
+                    console.log('📦 Received itinerary update:', itineraryData);
                     console.log('Itinerary message:', message);
+                    console.log('Updated POIs count:', itineraryData?.itinerary_response?.points_of_interest?.length);
+                    console.log('Updated POIs:', itineraryData?.itinerary_response?.points_of_interest);
 
                     if (itineraryData) {
+                      // Store partial data in streaming session for progressive loading
+                      updateStreamingData(itineraryData);
+
                       // Batch all related updates to prevent multiple re-renders
                       batch(() => {
                         // Temporarily disable map during updates if available
@@ -241,27 +280,43 @@ export function useChatSession(options: UseChatSessionOptions = {}) {
                           options.setStreamingData((prev: any) => {
                             if (!prev) return itineraryData;
 
+                            // Check if this is an incremental update (adding to itinerary)
+                            // vs a full new query response
+                            const isIncrementalUpdate =
+                              itineraryData.itinerary_response &&
+                              !itineraryData.general_city_data;
+
+                            console.log('🔍 Update type:', isIncrementalUpdate ? 'INCREMENTAL (add to itinerary)' : 'FULL (new query)');
+                            if (isIncrementalUpdate) {
+                              console.log('✅ Updating ONLY custom itinerary, preserving general POIs');
+                            }
+
                             return {
                               ...prev,
                               // Update general city data if provided
                               ...(itineraryData.general_city_data && {
                                 general_city_data: itineraryData.general_city_data
                               }),
-                              // Update points of interest if provided
-                              ...(itineraryData.points_of_interest && {
+                              // Only update general points of interest for NEW queries, not incremental updates
+                              // This prevents new POIs from appearing in the general list when they should only be in the custom itinerary
+                              ...(!isIncrementalUpdate && itineraryData.points_of_interest && {
                                 points_of_interest: itineraryData.points_of_interest
                               }),
-                              // Update itinerary response if provided
+                              // ALWAYS update itinerary response (this is the custom itinerary)
                               ...(itineraryData.itinerary_response && {
                                 itinerary_response: itineraryData.itinerary_response
                               }),
-                              // Update activities if provided
+                              // Update activities if provided (for restaurants page)
                               ...(itineraryData.activities && {
                                 activities: itineraryData.activities
                               }),
-                              // Update restaurants if provided
+                              // Update restaurants if provided (for restaurants page)
                               ...(itineraryData.restaurants && {
                                 restaurants: itineraryData.restaurants
+                              }),
+                              // Update hotels if provided (for hotels page)
+                              ...(itineraryData.hotels && {
+                                hotels: itineraryData.hotels
                               })
                             };
                           });
@@ -288,7 +343,7 @@ export function useChatSession(options: UseChatSessionOptions = {}) {
                         assistantMessage += 'Your request has been updated. ';
                       }
 
-                      console.log('Content updated successfully');
+                      console.log('✅ Content updated successfully');
                     }
                     break;
 
@@ -298,25 +353,35 @@ export function useChatSession(options: UseChatSessionOptions = {}) {
                     if (completeMessage && completeMessage !== 'Turn completed.') {
                       assistantMessage += completeMessage;
                     }
-                    
-                    // Handle navigation data if present
+
+                    // Mark streaming as complete
+                    markStreamingComplete();
+                    console.log('✅ Streaming complete - data finalized');
+
+                    // Handle navigation data if present (fallback for late navigation)
                     const navigationData = eventData.Navigation || eventData.navigation;
                     if (navigationData && options.enableNavigation) {
                       console.log('Received navigation data:', navigationData);
-                      
+
                       if (options.onNavigationData) {
                         options.onNavigationData(navigationData);
                       }
-                      
-                      // Navigate to the specified URL if present
+
+                      // Only navigate if we haven't already (for sessions that didn't get early navigation)
+                      // Check if we're already on the target page
                       if (navigationData.url || navigationData.URL) {
                         const targetUrl = navigationData.url || navigationData.URL;
-                        console.log('Navigating to:', targetUrl);
-                        navigate(targetUrl);
+                        const currentPath = window.location.pathname + window.location.search;
+
+                        // Only navigate if we're not already there
+                        if (!currentPath.includes(new URL(targetUrl, window.location.origin).pathname)) {
+                          console.log('🧭 Late navigation to:', targetUrl);
+                          navigate(targetUrl);
+                        } else {
+                          console.log('📍 Already on target page, skipping navigation');
+                        }
                       }
                     }
-                    
-                    console.log('Streaming complete');
                     break;
 
                   case 'error':
@@ -393,19 +458,31 @@ export function useChatSession(options: UseChatSessionOptions = {}) {
 
     } catch (error) {
       console.error('Error sending message:', error);
-      setChatHistory(prev => [...prev, {
-        type: 'error',
-        content: `Sorry, there was an error processing your request: ${error.message}`,
-        timestamp: new Date()
-      }]);
+
+      // Handle token expiration errors specifically
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      const isTokenExpired = errorMessage.includes('token is expired') ||
+                            errorMessage.includes('invalid token') ||
+                            errorMessage.includes('unauthenticated');
+
+      if (isTokenExpired) {
+        setChatHistory(prev => [...prev, {
+          type: 'error',
+          content: 'Your session has expired. Please refresh the page to continue.',
+          timestamp: new Date()
+        }]);
+      } else {
+        setChatHistory(prev => [...prev, {
+          type: 'error',
+          content: `Sorry, there was an error processing your request: ${errorMessage}`,
+          timestamp: new Date()
+        }]);
+      }
 
       if (options.onError) {
         options.onError(error as Error);
       }
     } finally {
-      if (eventSource) {
-        eventSource.close();
-      }
       setIsLoading(false);
       setIsUpdatingItinerary(false);
     }
@@ -433,13 +510,11 @@ export function useChatSession(options: UseChatSessionOptions = {}) {
         user_location: null
       };
 
-      const response = await fetch(`${API_BASE_URL}/llm/prompt-response/chat/sessions/stream/${userId}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('access_token') || sessionStorage.getItem('access_token') || ''}`,
-        },
-        body: JSON.stringify(newSessionPayload)
+      const response = await sendUnifiedChatMessageStream({
+        profileId: userId,
+        message: newSessionPayload.message,
+        cityName,
+        contextType: domainToContextType(detectDomain(userMessage)),
       });
 
       if (!response.ok) {

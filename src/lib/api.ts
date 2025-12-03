@@ -16,7 +16,7 @@ import {
 } from '@buf/loci_loci-proto.bufbuild_es/proto/auth_pb.js';
 import { transport } from './connect-transport';
 
-const API_BASE_URL = import.meta.env.VITE_CONNECT_BASE_URL || 'http://localhost:8080';
+const API_BASE_URL = import.meta.env.VITE_CONNECT_BASE_URL || 'http://localhost:8000';
 
 // Create auth client once
 const authClient = createClient(AuthService, transport);

@@ -1,7 +1,7 @@
 import { Component, createSignal, Show } from 'solid-js';
 import { useNavigate } from '@solidjs/router';
 import { Send, Loader2, MapPin } from 'lucide-solid';
-import { sendUnifiedChatMessageStream, detectDomain } from '~/lib/api/llm';
+import { sendUnifiedChatMessageStream, detectDomain, domainToContextType } from '~/lib/api/llm';
 import { streamingService, createStreamingSession, getDomainRoute } from '~/lib/streaming-service';
 import type { StreamingSession } from '~/lib/api/types';
 import CTA from '~/components/features/Home/CTA';
@@ -111,6 +111,7 @@ const LandingPage: Component = () => {
             const response = await sendUnifiedChatMessageStream({
                 profileId: currentProfileId,
                 message: messageContent,
+                contextType: domainToContextType(domain),
                 userLocation: {
                     userLat: userLatitude,
                     userLon: userLongitude

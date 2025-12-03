@@ -1,16 +1,37 @@
 // LLM and chat queries and mutations
 import { useMutation } from "@tanstack/solid-query";
+import { create } from "@bufbuild/protobuf";
+import { createClient } from "@connectrpc/connect";
 import { apiRequest, API_BASE_URL } from "./shared";
 import {
   defaultLLMRateLimiter,
   RateLimitError,
   showRateLimitNotification,
 } from "../rate-limiter";
+import {
+  ChatService,
+  ChatResponse as ProtoChatResponse,
+  ContinueChatRequestSchema as ContinueChatRequestSchema,
+  DomainType as ChatDomainType,
+  StartChatRequestSchema as StartChatRequestSchema,
+} from "@buf/loci_loci-proto.bufbuild_es/proto/chat_pb.js";
+import {
+  AIItineraryResponse as ProtoAIItineraryResponse,
+  AiCityResponse as ProtoAiCityResponse,
+} from "@buf/loci_loci-proto.bufbuild_es/proto/chat_pb.js";
+import { GeneralCityData as ProtoGeneralCityData } from "@buf/loci_loci-proto.bufbuild_es/proto/city_pb.js";
+import { POIDetailedInfo as ProtoPOIDetailedInfo } from "@buf/loci_loci-proto.bufbuild_es/proto/poi_pb.js";
+import { transport } from "../connect-transport";
 //import { createGraphQLClient, gql } from '@solid-primitives/graphql';
 import type {
   ChatSession,
   ChatMessage,
   ChatSessionResponse,
+  DomainType as ClientDomainType,
+  GeneralCityData,
+  AIItineraryResponse,
+  AiCityResponse,
+  POIDetailedInfo,
   StreamEvent,
   UnifiedChatResponse,
   ApiResponse,
@@ -28,6 +49,264 @@ export type ChatContextType =
   | "restaurants"
   | "itineraries"
   | "general";
+
+const chatClient = createClient(ChatService, transport);
+
+const EMPTY_ITINERARY: AIItineraryResponse = {
+  itinerary_name: "",
+  overall_description: "",
+  points_of_interest: [],
+};
+
+const toProtoDomainType = (
+  contextType?: ChatContextType,
+): ChatDomainType => {
+  switch (contextType) {
+    case "hotels":
+      return ChatDomainType.ACCOMMODATION;
+    case "restaurants":
+      return ChatDomainType.DINING;
+    case "itineraries":
+      return ChatDomainType.ITINERARY;
+    default:
+      return ChatDomainType.GENERAL;
+  }
+};
+
+const toClientDomainType = (
+  contextType?: ChatContextType,
+): ClientDomainType => {
+  switch (contextType) {
+    case "hotels":
+      return "accommodation";
+    case "restaurants":
+      return "dining";
+    case "itineraries":
+      return "itinerary";
+    default:
+      return "general";
+  }
+};
+
+export const domainToContextType = (
+  domain: ClientDomainType | string,
+): ChatContextType => {
+  switch (domain) {
+    case "accommodation":
+      return "hotels";
+    case "dining":
+      return "restaurants";
+    case "itinerary":
+      return "itineraries";
+    case "activities":
+      return "general";
+    default:
+      return "general";
+  }
+};
+
+const mapGeneralCityData = (
+  data?: ProtoGeneralCityData,
+): GeneralCityData | undefined => {
+  if (!data) return undefined;
+
+  return {
+    city: data.city || "",
+    country: data.country || "",
+    state_province: data.stateProvince || "",
+    description: data.description || "",
+    center_latitude: data.centerLatitude ?? 0,
+    center_longitude: data.centerLongitude ?? 0,
+    population: data.population || "",
+    area: data.area || "",
+    timezone: data.timezone || "",
+    language: data.language || "",
+    weather: data.weather || "",
+    attractions: data.attractions || "",
+    history: data.history || "",
+  };
+};
+
+const mapPoi = (poi: ProtoPOIDetailedInfo): POIDetailedInfo => ({
+  id: poi.id,
+  city: poi.city,
+  city_id: poi.cityId,
+  name: poi.name,
+  latitude: poi.latitude ?? 0,
+  longitude: poi.longitude ?? 0,
+  category: poi.category,
+  description: poi.description || poi.descriptionPoi || "",
+  address: poi.address || "",
+  website: poi.website || "",
+  phone_number: poi.phoneNumber || "",
+  opening_hours:
+    typeof poi.openingHours === "object"
+      ? JSON.stringify(poi.openingHours)
+      : (poi.openingHours as unknown as string) || "",
+  price_level: poi.priceLevel || "",
+  price_range: poi.priceRange || "",
+  rating: poi.rating,
+  tags: poi.tags || [],
+  images: poi.images || [],
+  llm_interaction_id: poi.llmInteractionId || "",
+  cuisine_type: poi.cuisineType,
+  star_rating: poi.starRating,
+  distance: poi.distance,
+  description_poi: poi.descriptionPoi || "",
+  created_at:
+    poi.createdAt && typeof poi.createdAt.toDate === "function"
+      ? poi.createdAt.toDate().toISOString()
+      : undefined,
+});
+
+const mapItineraryResponse = (
+  response?: ProtoAIItineraryResponse,
+): AIItineraryResponse | undefined => {
+  if (!response) return undefined;
+
+  return {
+    itinerary_name: response.itineraryName,
+    overall_description: response.overallDescription,
+    points_of_interest:
+      response.pointsOfInterest?.map(mapPoi) ?? [],
+  };
+};
+
+const mapAiCityResponse = (
+  response?: ProtoAiCityResponse,
+): AiCityResponse | undefined => {
+  if (!response) return undefined;
+
+  return {
+    general_city_data: mapGeneralCityData(response.generalCityData),
+    points_of_interest: response.pointsOfInterest?.map(mapPoi) ?? [],
+    itinerary_response:
+      mapItineraryResponse(response.itineraryResponse) || EMPTY_ITINERARY,
+    session_id: response.sessionId,
+  };
+};
+
+export interface NormalizedChatResponse {
+  sessionId: string;
+  message: string;
+  updatedItinerary?: AiCityResponse;
+  domain: ClientDomainType;
+  isNewSession: boolean;
+  requiresClarification: boolean;
+  suggestedActions: string[];
+}
+
+const normalizeChatResponse = (
+  response: ProtoChatResponse,
+  contextType?: ChatContextType,
+): NormalizedChatResponse => {
+  const domain = toClientDomainType(contextType);
+
+  return {
+    sessionId: response.sessionId,
+    message: response.message,
+    updatedItinerary: mapAiCityResponse(response.updatedItinerary),
+    domain,
+    isNewSession: response.isNewSession,
+    requiresClarification: response.requiresClarification,
+    suggestedActions: response.suggestedActions || [],
+  };
+};
+
+const createSseResponse = (events: StreamEvent[]): Response => {
+  const encoder = new TextEncoder();
+  const stream = new ReadableStream({
+    start(controller) {
+      for (const event of events) {
+        controller.enqueue(encoder.encode(`data: ${JSON.stringify(event)}\n\n`));
+      }
+      controller.close();
+    },
+  });
+
+  return new Response(stream, {
+    status: 200,
+    headers: { "Content-Type": "text/event-stream" },
+  });
+};
+
+const buildChatStreamResponse = (
+  response: NormalizedChatResponse,
+): Response => {
+  const events: StreamEvent[] = [];
+  const sessionCity =
+    response.updatedItinerary?.general_city_data?.city;
+
+  events.push({
+    type: "start",
+    data: {
+      session_id: response.sessionId,
+      domain: response.domain,
+      city: sessionCity,
+    },
+  });
+
+  if (response.domain === "accommodation") {
+    if (response.updatedItinerary?.points_of_interest?.length) {
+      events.push({
+        type: "hotels",
+        data: response.updatedItinerary.points_of_interest,
+      });
+    }
+  } else if (response.domain === "dining") {
+    if (response.updatedItinerary?.points_of_interest?.length) {
+      events.push({
+        type: "restaurants",
+        data: response.updatedItinerary.points_of_interest,
+      });
+    }
+  } else if (response.domain === "activities") {
+    if (response.updatedItinerary?.points_of_interest?.length) {
+      events.push({
+        type: "activities",
+        data: response.updatedItinerary.points_of_interest,
+      });
+    }
+  } else {
+    if (response.updatedItinerary?.general_city_data) {
+      events.push({
+        type: "city_data",
+        data: response.updatedItinerary.general_city_data,
+      });
+    }
+
+    if (response.updatedItinerary?.points_of_interest?.length) {
+      events.push({
+        type: "general_pois",
+        data: response.updatedItinerary.points_of_interest,
+      });
+    }
+
+    if (response.updatedItinerary?.itinerary_response) {
+      events.push({
+        type: "itinerary",
+        data: response.updatedItinerary.itinerary_response,
+      });
+    }
+  }
+
+  events.push({ type: "complete" });
+
+  return createSseResponse(events);
+};
+
+const enforceRateLimit = async (endpoint: string) => {
+  const rateLimitCheck = await defaultLLMRateLimiter.checkRateLimit(endpoint);
+  if (!rateLimitCheck.allowed) {
+    const retryAfter = rateLimitCheck.retryAfter || 60;
+    showRateLimitNotification(retryAfter, endpoint);
+    throw new RateLimitError(
+      `Rate limit exceeded for ${endpoint}. Retry after ${retryAfter} seconds.`,
+      retryAfter,
+      endpoint,
+    );
+  }
+};
 
 // Rate-limited fetch function for streaming endpoints
 async function rateLimitedFetch(
@@ -64,8 +343,8 @@ async function rateLimitedFetch(
 }
 
 export interface StartChatRequest {
-  profileId: string;
-  contextType: ChatContextType;
+  profileId?: string;
+  contextType?: ChatContextType;
   cityName?: string;
   initialMessage?: string;
 }
@@ -74,7 +353,7 @@ export interface ContinueChatRequest {
   sessionId: string;
   message: string;
   cityName?: string;
-  contextType: ChatContextType;
+  contextType?: ChatContextType;
 }
 
 // ==================
@@ -129,113 +408,52 @@ export const useGetRecommendationsMutation = () => {
 
 export const StartChat = async (
   request: StartChatRequest,
-): Promise<ChatSession> => {
-  const endpoint = getContextualEndpoint("sessions", request.contextType);
+): Promise<NormalizedChatResponse> => {
+  const endpoint = "loci.chat.ChatService/StartChat";
+  await enforceRateLimit(endpoint);
 
-  return apiRequest<ChatSession>(`${endpoint}/${request.profileId}`, {
-    method: "POST",
-    body: JSON.stringify({
-      context_type: request.contextType,
-      city_name: request.cityName,
-      initial_message: request.initialMessage,
+  const response = await chatClient.startChat(
+    create(StartChatRequestSchema, {
+      cityName: request.cityName || "",
+      contextType: toProtoDomainType(request.contextType),
+      initialMessage: request.initialMessage || "",
     }),
-  });
+  );
+
+  return normalizeChatResponse(response, request.contextType);
 };
 
 export const StartChatStream = async (
   request: StartChatRequest,
 ): Promise<Response> => {
-  const endpoint = getContextualEndpoint(
-    "sessions/stream",
-    request.contextType,
-  );
-  const token =
-    localStorage.getItem("access_token") ||
-    sessionStorage.getItem("access_token");
-  const fullEndpoint = `${endpoint}/${request.profileId}`;
-
-  return rateLimitedFetch(
-    `${API_BASE_URL}/${fullEndpoint}`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        ...(token && { Authorization: `Bearer ${token}` }),
-      },
-      body: JSON.stringify({
-        context_type: request.contextType,
-        city_name: request.cityName,
-        initial_message: request.initialMessage,
-      }),
-    },
-    fullEndpoint,
-  );
+  const normalized = await StartChat(request);
+  return buildChatStreamResponse(normalized);
 };
 
 export const ContinueChat = async (
   request: ContinueChatRequest,
-): Promise<ChatMessage> => {
-  const endpoint = getContextualEndpoint(
-    `sessions/${request.sessionId}/messages`,
-    request.contextType,
+): Promise<NormalizedChatResponse> => {
+  const endpoint = "loci.chat.ChatService/ContinueChat";
+  await enforceRateLimit(endpoint);
+
+  const response = await chatClient.continueChat(
+    create(ContinueChatRequestSchema, {
+      sessionId: request.sessionId,
+      message: request.message,
+      cityName: request.cityName || "",
+      contextType: toProtoDomainType(request.contextType),
+    }),
   );
 
-  return apiRequest<ChatMessage>(endpoint, {
-    method: "POST",
-    body: JSON.stringify({
-      message: request.message,
-      city_name: request.cityName,
-      context_type: request.contextType,
-    }),
-  });
+  return normalizeChatResponse(response, request.contextType);
 };
 
 export const ContinueChatStream = async (
   request: ContinueChatRequest,
 ): Promise<Response> => {
-  const endpoint = getContextualEndpoint(
-    `sessions/${request.sessionId}/messages/stream`,
-    request.contextType,
-  );
-  const token =
-    localStorage.getItem("access_token") ||
-    sessionStorage.getItem("access_token");
-
-  return rateLimitedFetch(
-    `${API_BASE_URL}/${endpoint}`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        ...(token && { Authorization: `Bearer ${token}` }),
-      },
-      body: JSON.stringify({
-        message: request.message,
-        city_name: request.cityName,
-        context_type: request.contextType,
-      }),
-    },
-    endpoint,
-  );
+  const normalized = await ContinueChat(request);
+  return buildChatStreamResponse(normalized);
 };
-
-// ==================
-// HELPER FUNCTIONS
-// ==================
-
-function getContextualEndpoint(
-  basePath: string,
-  contextType: ChatContextType,
-): string {
-  const contextMap = {
-    hotels: `/llm/hotels/chat/${basePath}`,
-    restaurants: `/llm/restaurants/chat/${basePath}`,
-    itineraries: `/llm/itineraries/chat/${basePath}`,
-    general: `/llm/prompt-response/chat/${basePath}`,
-  };
-
-  return contextMap[contextType];
-}
 
 // ==================
 // MUTATION HOOKS FOR ENHANCED SERVICES
@@ -260,6 +478,8 @@ export const useContinueChatMutation = () => {
 export interface UnifiedChatRequest {
   profileId: string;
   message: string;
+  cityName?: string;
+  contextType?: ChatContextType;
   userLocation?: {
     userLat: number;
     userLon: number;
@@ -298,30 +518,15 @@ export const sendUnifiedChatMessage = async (
 export const sendUnifiedChatMessageStream = async (
   request: UnifiedChatStreamRequest,
 ): Promise<Response> => {
-  const token =
-    localStorage.getItem("access_token") ||
-    sessionStorage.getItem("access_token");
-  const endpoint = `/llm/prompt-response/chat/sessions/stream/${request.profileId}`;
+  const contextType = request.contextType || "general";
+  const normalized = await StartChat({
+    profileId: request.profileId,
+    cityName: request.cityName,
+    contextType,
+    initialMessage: request.message,
+  });
 
-  console.log("=== STREAMING API CALL ===");
-  console.log("Token found:", !!token);
-  console.log("Request:", request);
-
-  return rateLimitedFetch(
-    `${API_BASE_URL}${endpoint}`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        ...(token && { Authorization: `Bearer ${token}` }),
-      },
-      body: JSON.stringify({
-        message: request.message,
-        user_location: request.userLocation,
-      }),
-    },
-    endpoint,
-  );
+  return buildChatStreamResponse(normalized);
 };
 
 export const sendUnifiedChatMessageStreamFree = async (

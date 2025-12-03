@@ -9,7 +9,7 @@ import {
 import { authAPI, clearAuthToken, getAuthToken, setAuthToken } from "../api";
 
 export const API_BASE_URL =
-  import.meta.env.VITE_CONNECT_BASE_URL || "http://localhost:8080";
+  import.meta.env.VITE_CONNECT_BASE_URL || "http://localhost:8000";
 
 // Enhanced request wrapper with better error handling and rate limiting
 export async function apiRequest<T>(

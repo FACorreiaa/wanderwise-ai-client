@@ -1,6 +1,6 @@
 import { createContext, useContext, createSignal, createEffect, onMount, JSX } from 'solid-js';
 import { useNavigate } from '@solidjs/router';
-import { getAuthToken, setAuthToken, clearAuthToken } from '~/lib/auth/tokens';
+import { getAuthToken, getRefreshToken, setAuthToken, clearAuthToken, isPersistentSession } from '~/lib/auth/tokens';
 import { authAPI, profileAPI } from '~/lib/api';
 
 interface User {
@@ -75,24 +75,51 @@ export const AuthProvider = (props: AuthProviderProps) => {
   onMount(async () => {
     console.log('AuthProvider: Initializing authentication state...');
     const token = getAuthToken();
-    console.log('AuthProvider: Token found?', !!token);
+    const useLocalStorage = isPersistentSession();
+    console.log('AuthProvider: Token found?', !!token, 'Persistent?', useLocalStorage);
 
-    if (token) {
-      try {
-        console.log('AuthProvider: Restoring session by fetching user profile...');
-        const userProfile = await profileAPI.getDefaultProfile();
-        console.log('AuthProvider: User profile fetched:', userProfile);
-        setUser(userProfile);
-      } catch (error) {
-        console.error('AuthProvider: Session restoration failed:', error);
-        // The apiRequest handler in api.ts should handle token clearing on 401s.
-        // We just need to ensure the user state is null.
-        setUser(null);
-      }
-    } else {
+    if (!token) {
       console.log('AuthProvider: No token found');
       setUser(null);
+      setIsLoading(false);
+      console.log('AuthProvider: Initialization complete');
+      return;
     }
+
+    const loadUserProfile = async () => {
+      console.log('AuthProvider: Restoring session by fetching user profile...');
+      const userProfile = await profileAPI.getDefaultProfile();
+      console.log('AuthProvider: User profile fetched:', userProfile);
+      setUser(userProfile);
+    };
+
+    try {
+      await loadUserProfile();
+    } catch (error) {
+      console.error('AuthProvider: Session restoration failed:', error);
+
+      const refreshToken = getRefreshToken();
+      if (!refreshToken) {
+        clearAuthToken();
+        setUser(null);
+        setIsLoading(false);
+        console.log('AuthProvider: Initialization complete');
+        return;
+      }
+
+      try {
+        console.log('AuthProvider: Attempting token refresh for session restoration...');
+        const refreshed = await authAPI.refreshToken();
+        setAuthToken(refreshed.access_token, useLocalStorage, refreshed.refresh_token || refreshToken);
+        await loadUserProfile();
+        console.log('AuthProvider: Session restored after token refresh');
+      } catch (refreshError) {
+        console.error('AuthProvider: Token refresh failed during restore:', refreshError);
+        clearAuthToken();
+        setUser(null);
+      }
+    }
+
     setIsLoading(false);
     console.log('AuthProvider: Initialization complete');
   });

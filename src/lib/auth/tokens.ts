@@ -50,6 +50,18 @@ export const clearAuthToken = (): void => {
 };
 
 /**
+ * Determine whether the current stored session is persistent (localStorage) or
+ * temporary (sessionStorage).
+ */
+export const isPersistentSession = (): boolean => {
+  if (typeof window === "undefined") return false;
+  return (
+    !!localStorage.getItem("access_token") ||
+    !!localStorage.getItem("refresh_token")
+  );
+};
+
+/**
  * Simple authenticated flag.
  */
 export const isAuthenticated = (): boolean => {
