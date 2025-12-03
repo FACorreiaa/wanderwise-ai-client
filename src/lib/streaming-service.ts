@@ -487,15 +487,28 @@ export class StreamingChatService {
   }
 
   private handleCompleteEvent(): void {
-    if (!this.manager) return;
-    
+    console.log('🎉 Complete event received');
+    if (!this.manager) {
+      console.error('❌ No manager available');
+      return;
+    }
+
+    console.log('📦 Session data before complete:', {
+      sessionId: this.manager.session.sessionId,
+      domain: this.manager.session.domain,
+      city: this.manager.session.city,
+      hasData: !!this.manager.session.data
+    });
+
     this.manager.session.isComplete = true;
+    console.log('✅ Calling onComplete callback');
     this.manager.onComplete(this.manager.session);
-    
+
     // Trigger redirect based on domain
     if (this.manager.onRedirect && this.manager.session.data) {
+      console.log('🔄 Triggering redirect');
       this.manager.onRedirect(
-        this.manager.session.domain, 
+        this.manager.session.domain,
         this.manager.session.data as UnifiedChatResponse
       );
     }

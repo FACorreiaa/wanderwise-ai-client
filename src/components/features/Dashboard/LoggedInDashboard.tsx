@@ -169,7 +169,7 @@ export default function LoggedInDashboard() {
       }
 
       // Start streaming request
-      const stream = await sendUnifiedChatMessageStream({
+      const response = await sendUnifiedChatMessageStream({
         profileId: currentProfileId,
         message: currentMessage(),
         contextType: domainToContextType(domain),
@@ -180,7 +180,7 @@ export default function LoggedInDashboard() {
       });
 
       // Set up streaming manager
-      streamingService.startStreamFromReadable(stream, {
+      streamingService.startStream(response, {
         session,
         onProgress: (updatedSession) => {
           setStreamingSession(updatedSession);
@@ -199,6 +199,7 @@ export default function LoggedInDashboard() {
           sessionStorage.setItem('currentStreamingSession', JSON.stringify(updatedSession));
         },
         onComplete: (completedSession) => {
+          console.log('🎊 onComplete callback triggered in LoggedInDashboard', completedSession);
           setIsLoading(false);
           setStreamProgress('');
           setCurrentMessage('');
@@ -208,8 +209,17 @@ export default function LoggedInDashboard() {
 
           // Navigate to appropriate page
           const route = getDomainRoute(completedSession.domain, completedSession.sessionId, completedSession.city);
+          console.log('🧭 Navigation route:', route, {
+            domain: completedSession.domain,
+            sessionId: completedSession.sessionId,
+            city: completedSession.city
+          });
+
           if (route) {
+            console.log('✈️  Navigating to:', route);
             navigate(route);
+          } else {
+            console.error('❌ No route returned from getDomainRoute');
           }
         },
         onError: (error) => {
