@@ -29,6 +29,7 @@ const SignIn: Component<{ onSwitchMode?: (mode: AuthMode) => void }> = (props) =
         rememberMe: true // Default to true for better UX during testing
     });
     const [error, setError] = createSignal<string>('');
+    const [hasAuthError, setHasAuthError] = createSignal(false); // Track if there's an authentication error
 
     const [showPassword, setShowPassword] = createSignal(false);
     const [isLoading, setIsLoading] = createSignal(false);
@@ -38,12 +39,14 @@ const SignIn: Component<{ onSwitchMode?: (mode: AuthMode) => void }> = (props) =
         e.preventDefault();
         setIsLoading(true);
         setError('');
+        setHasAuthError(false);
 
         const data = formData();
 
         // Validate form
         if (!data.email || !data.password) {
             setError('Please fill in all required fields');
+            setHasAuthError(true);
             setIsLoading(false);
             return;
         }
@@ -56,7 +59,7 @@ const SignIn: Component<{ onSwitchMode?: (mode: AuthMode) => void }> = (props) =
 
             if (err && err.message) {
                 const lowerCaseMessage = err.message.toLowerCase();
-                
+
                 if (lowerCaseMessage.includes('failed to fetch')) {
                     errorMessage = 'Could not connect to the server. Please ensure it is running and accessible.';
                 } else if (lowerCaseMessage.includes('invalid credentials')) {
@@ -68,17 +71,33 @@ const SignIn: Component<{ onSwitchMode?: (mode: AuthMode) => void }> = (props) =
                     errorMessage = errorMessage.charAt(0).toUpperCase() + errorMessage.slice(1);
                 }
             }
-            
+
             setError(errorMessage);
+            setHasAuthError(true);
         } finally {
             setIsLoading(false);
         }
     };
 
     const labelClass = isDark() ? "text-white" : "text-slate-900";
-    const inputClass = isDark()
-        ? "w-full px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg border border-white/20 bg-white/10 text-white placeholder:text-slate-300/70 focus:ring-2 focus:ring-emerald-300 focus:border-transparent transition-all text-sm sm:text-base backdrop-blur"
-        : "w-full px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg border border-slate-200 bg-white text-slate-900 placeholder:text-slate-500 focus:ring-2 focus:ring-emerald-400 focus:border-transparent transition-all text-sm sm:text-base";
+
+    // Input class with error state - adds red borders when there's an auth error
+    const getInputClass = () => {
+        const baseClass = "w-full px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg transition-all text-sm sm:text-base";
+
+        if (hasAuthError()) {
+            // Error state with red borders
+            return isDark()
+                ? `${baseClass} border-2 border-red-400 bg-white/10 text-white placeholder:text-slate-300/70 focus:ring-2 focus:ring-red-400 backdrop-blur`
+                : `${baseClass} border-2 border-red-500 bg-white text-slate-900 placeholder:text-slate-500 focus:ring-2 focus:ring-red-400`;
+        }
+
+        // Normal state
+        return isDark()
+            ? `${baseClass} border border-white/20 bg-white/10 text-white placeholder:text-slate-300/70 focus:ring-2 focus:ring-emerald-300 focus:border-transparent backdrop-blur`
+            : `${baseClass} border border-slate-200 bg-white text-slate-900 placeholder:text-slate-500 focus:ring-2 focus:ring-emerald-400 focus:border-transparent`;
+    };
+
     const helperTextClass = isDark() ? "text-slate-200/85" : "text-slate-700";
     const linkClass = isDark() ? "text-emerald-200 hover:text-emerald-100" : "text-emerald-700 hover:text-emerald-600";
     const errorClass = isDark()
@@ -115,8 +134,15 @@ const SignIn: Component<{ onSwitchMode?: (mode: AuthMode) => void }> = (props) =
                             type="email"
                             placeholder="Enter your email"
                             value={formData().email || ''}
-                            onInput={(e) => setFormData(prev => ({ ...prev, email: e.currentTarget.value }))}
-                            class={inputClass}
+                            onInput={(e) => {
+                                setFormData(prev => ({ ...prev, email: e.currentTarget.value }));
+                                // Clear error state when user starts typing
+                                if (hasAuthError()) {
+                                    setHasAuthError(false);
+                                    setError('');
+                                }
+                            }}
+                            class={getInputClass()}
                             required
                         />
                     </TextFieldRoot>
@@ -132,8 +158,15 @@ const SignIn: Component<{ onSwitchMode?: (mode: AuthMode) => void }> = (props) =
                                 type={showPassword() ? "text" : "password"}
                                 placeholder="Enter your password"
                                 value={formData().password || ''}
-                                onInput={(e) => setFormData(prev => ({ ...prev, password: e.currentTarget.value }))}
-                                class={`${inputClass} pr-10 sm:pr-12`}
+                                onInput={(e) => {
+                                    setFormData(prev => ({ ...prev, password: e.currentTarget.value }));
+                                    // Clear error state when user starts typing
+                                    if (hasAuthError()) {
+                                        setHasAuthError(false);
+                                        setError('');
+                                    }
+                                }}
+                                class={`${getInputClass()} pr-10 sm:pr-12`}
                                 required
                             />
                         </TextFieldRoot>

@@ -74,9 +74,25 @@ const mergeUniqueById = (prev: any[] = [], next: any[] = []) => {
   const map = new Map<string, any>();
   const keyFor = (item: any) => {
     const placeholderId = item?.id === '00000000-0000-0000-0000-000000000000';
-    return (!placeholderId && item?.id) ? item.id : item?.name || item?.llm_interaction_id || Math.random().toString(36).slice(2);
+
+    // If it's not a placeholder ID and looks like a real UUID, use it
+    if (!placeholderId && item?.id) {
+      const isRealUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(item.id);
+      if (isRealUUID && item.id !== '00000000-0000-0000-0000-000000000000') {
+        return item.id;
+      }
+      // If it's a synthetic ID like "casa-guedes-porto", fall through to use name
+    }
+
+    // Use normalized name as the key for placeholder IDs and synthetic IDs
+    // Normalize: lowercase, remove special chars, trim whitespace
+    const name = item?.name || '';
+    const normalizedName = name.toLowerCase().replace(/[^a-z0-9]/g, '').trim();
+    return normalizedName || item?.llm_interaction_id || Math.random().toString(36).slice(2);
   };
+
   prev.forEach((item) => map.set(keyFor(item), item));
+  // Newer data overwrites older data with the same key
   next.forEach((item) => map.set(keyFor(item), item));
   return Array.from(map.values());
 };
@@ -591,74 +607,11 @@ export function useChatSession(options: UseChatSessionOptions = {}) {
                   case 'complete':
                     isComplete = true;
                     const completeMessage = eventData.Message || eventData.message;
-                    const completeData = eventData.Data || eventData.data;
-                    const updatedItinerary = eventData.updatedItinerary || completeData?.updatedItinerary;
 
-                    console.log('🏁 Complete event - checking for itinerary data...');
-                    console.log('🔍 Complete message:', completeMessage);
-                    console.log('🔍 Complete data:', completeData);
-                    console.log('🔍 Updated itinerary:', updatedItinerary);
+                    console.log('🏁 Complete event received');
 
-                    // Check if complete event contains itinerary updates (for continue chat)
-                    if (updatedItinerary || (completeData && completeData.itinerary_response)) {
-                      console.log('🎯 Found itinerary data in complete event! Processing...');
-                      const itineraryPayload = updatedItinerary || completeData;
-                      const derivedLists = deriveDomainLists(itineraryPayload);
-
-                      console.log('📦 Complete event itinerary data:', itineraryPayload);
-                      console.log('🔍 Derived lists from complete:', {
-                        hotels: derivedLists.hotels.length,
-                        restaurants: derivedLists.restaurants.length,
-                        activities: derivedLists.activities.length
-                      });
-                      console.log('🏨 Derived hotels from complete:', derivedLists.hotels);
-                      console.log('🍽️ Derived restaurants from complete:', derivedLists.restaurants);
-
-                      // Update streaming data with the itinerary from complete event
-                      if (options.setStreamingData) {
-                        options.setStreamingData((prev: any) => {
-                          const mergedHotels = mergeUniqueById(
-                            prev?.hotels,
-                            itineraryPayload.hotels || derivedLists.hotels,
-                          );
-                          const mergedRestaurants = mergeUniqueById(
-                            prev?.restaurants,
-                            itineraryPayload.restaurants || derivedLists.restaurants,
-                          );
-                          const mergedActivities = mergeUniqueById(
-                            prev?.activities,
-                            itineraryPayload.activities || derivedLists.activities,
-                          );
-
-                          const updatedData = {
-                            ...prev,
-                            ...(itineraryPayload.generalCityData && {
-                              general_city_data: itineraryPayload.generalCityData
-                            }),
-                            ...(itineraryPayload.itineraryResponse && {
-                              itinerary_response: itineraryPayload.itineraryResponse
-                            }),
-                            hotels: mergedHotels,
-                            restaurants: mergedRestaurants,
-                            activities: mergedActivities
-                          };
-
-                          console.log('🔧 Updated data from complete event:', {
-                            hotelsCount: mergedHotels.length,
-                            restaurantsCount: mergedRestaurants.length,
-                            activitiesCount: mergedActivities.length
-                          });
-
-                          // Persist for cross-page usage
-                          persistCompletedSession(
-                            sessionId() || workingSessionId || itineraryPayload.sessionId,
-                            updatedData
-                          );
-
-                          return updatedData;
-                        });
-                      }
-                    }
+                    // Domain-specific events (hotels, restaurants, activities) already handle data updates
+                    // So we don't need to process itinerary data here to avoid duplicates
 
                     if (completeMessage && completeMessage !== 'Turn completed.') {
                       assistantMessage += completeMessage;
