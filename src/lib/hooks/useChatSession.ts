@@ -226,7 +226,9 @@ export function useChatSession(options: UseChatSessionOptions = {}) {
             if (line.startsWith('data: ')) {
               try {
                 const eventData = JSON.parse(line.slice(6));
-                console.log('Received SSE event:', eventData);
+                console.log('🔔 Received SSE event:', eventData);
+                console.log('📋 Event type:', eventData.Type || eventData.type);
+                console.log('📦 Event keys:', Object.keys(eventData));
 
                 // Handle different event types
                 switch (eventData.Type || eventData.type) {
@@ -459,6 +461,13 @@ export function useChatSession(options: UseChatSessionOptions = {}) {
                     console.log('Itinerary message:', message);
                     console.log('Updated POIs count:', itineraryData?.itinerary_response?.points_of_interest?.length);
                     console.log('Updated POIs:', itineraryData?.itinerary_response?.points_of_interest);
+                    console.log('🔍 Derived lists:', {
+                      hotels: derivedLists.hotels.length,
+                      restaurants: derivedLists.restaurants.length,
+                      activities: derivedLists.activities.length
+                    });
+                    console.log('🏨 Derived hotels:', derivedLists.hotels);
+                    console.log('🍽️ Derived restaurants:', derivedLists.restaurants);
 
                     if (itineraryData) {
                       // Store partial data in streaming session for progressive loading
@@ -506,6 +515,10 @@ export function useChatSession(options: UseChatSessionOptions = {}) {
                               itineraryData.activities || derivedLists.activities,
                             );
 
+                            console.log('🔄 BEFORE update - prev itinerary POIs:', prev?.itinerary_response?.points_of_interest?.length);
+                            console.log('🔄 INCOMING itinerary POIs:', itineraryData?.itinerary_response?.points_of_interest?.length);
+                            console.log('🔄 INCOMING full itinerary data:', itineraryData?.itinerary_response);
+
                             const updatedData = {
                               ...prev,
                               // Update general city data if provided
@@ -521,28 +534,21 @@ export function useChatSession(options: UseChatSessionOptions = {}) {
                               ...(itineraryData.itinerary_response && {
                                 itinerary_response: itineraryData.itinerary_response
                               }),
-                              // Update activities if provided (for restaurants page)
-                              ...(itineraryData.activities && {
-                                activities: itineraryData.activities
-                              }),
-                              // Update restaurants if provided (for restaurants page)
-                              ...(itineraryData.restaurants && {
-                                restaurants: itineraryData.restaurants
-                              }),
-                              ...(derivedLists.restaurants?.length && {
-                                restaurants: mergedRestaurants
-                              }),
-                              // Update hotels if provided (for hotels page)
-                              ...(itineraryData.hotels && {
-                                hotels: mergedHotels
-                              }),
-                              ...(derivedLists.hotels?.length && {
-                                hotels: mergedHotels
-                              }),
-                              ...(mergedActivities.length && {
-                                activities: mergedActivities
-                              })
+                              // ALWAYS update domain-specific lists with merged data
+                              // This ensures hotels/restaurants pages get the accumulated POIs
+                              hotels: mergedHotels,
+                              restaurants: mergedRestaurants,
+                              activities: mergedActivities
                             };
+
+                            console.log('🔧 Updated data with merged lists:', {
+                              hotelsCount: mergedHotels.length,
+                              restaurantsCount: mergedRestaurants.length,
+                              activitiesCount: mergedActivities.length
+                            });
+
+                            console.log('✅ AFTER update - updatedData itinerary POIs:', updatedData?.itinerary_response?.points_of_interest?.length);
+                            console.log('✅ AFTER update - full updatedData:', updatedData);
 
                             // Persist for cross-page usage
                             persistCompletedSession(
@@ -585,6 +591,75 @@ export function useChatSession(options: UseChatSessionOptions = {}) {
                   case 'complete':
                     isComplete = true;
                     const completeMessage = eventData.Message || eventData.message;
+                    const completeData = eventData.Data || eventData.data;
+                    const updatedItinerary = eventData.updatedItinerary || completeData?.updatedItinerary;
+
+                    console.log('🏁 Complete event - checking for itinerary data...');
+                    console.log('🔍 Complete message:', completeMessage);
+                    console.log('🔍 Complete data:', completeData);
+                    console.log('🔍 Updated itinerary:', updatedItinerary);
+
+                    // Check if complete event contains itinerary updates (for continue chat)
+                    if (updatedItinerary || (completeData && completeData.itinerary_response)) {
+                      console.log('🎯 Found itinerary data in complete event! Processing...');
+                      const itineraryPayload = updatedItinerary || completeData;
+                      const derivedLists = deriveDomainLists(itineraryPayload);
+
+                      console.log('📦 Complete event itinerary data:', itineraryPayload);
+                      console.log('🔍 Derived lists from complete:', {
+                        hotels: derivedLists.hotels.length,
+                        restaurants: derivedLists.restaurants.length,
+                        activities: derivedLists.activities.length
+                      });
+                      console.log('🏨 Derived hotels from complete:', derivedLists.hotels);
+                      console.log('🍽️ Derived restaurants from complete:', derivedLists.restaurants);
+
+                      // Update streaming data with the itinerary from complete event
+                      if (options.setStreamingData) {
+                        options.setStreamingData((prev: any) => {
+                          const mergedHotels = mergeUniqueById(
+                            prev?.hotels,
+                            itineraryPayload.hotels || derivedLists.hotels,
+                          );
+                          const mergedRestaurants = mergeUniqueById(
+                            prev?.restaurants,
+                            itineraryPayload.restaurants || derivedLists.restaurants,
+                          );
+                          const mergedActivities = mergeUniqueById(
+                            prev?.activities,
+                            itineraryPayload.activities || derivedLists.activities,
+                          );
+
+                          const updatedData = {
+                            ...prev,
+                            ...(itineraryPayload.generalCityData && {
+                              general_city_data: itineraryPayload.generalCityData
+                            }),
+                            ...(itineraryPayload.itineraryResponse && {
+                              itinerary_response: itineraryPayload.itineraryResponse
+                            }),
+                            hotels: mergedHotels,
+                            restaurants: mergedRestaurants,
+                            activities: mergedActivities
+                          };
+
+                          console.log('🔧 Updated data from complete event:', {
+                            hotelsCount: mergedHotels.length,
+                            restaurantsCount: mergedRestaurants.length,
+                            activitiesCount: mergedActivities.length
+                          });
+
+                          // Persist for cross-page usage
+                          persistCompletedSession(
+                            sessionId() || workingSessionId || itineraryPayload.sessionId,
+                            updatedData
+                          );
+
+                          return updatedData;
+                        });
+                      }
+                    }
+
                     if (completeMessage && completeMessage !== 'Turn completed.') {
                       assistantMessage += completeMessage;
                     }

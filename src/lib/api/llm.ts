@@ -348,39 +348,52 @@ const buildChatStreamResponse = (
   });
 
   if (response.domain === "accommodation") {
+    // Check consolidated path first: itineraryResponse.pointsOfInterest
     const hotels =
       response.updatedItinerary?.hotels?.length
         ? response.updatedItinerary.hotels
+        : response.updatedItinerary?.itinerary_response?.points_of_interest?.length
+        ? response.updatedItinerary.itinerary_response.points_of_interest
         : response.updatedItinerary?.points_of_interest;
     if (hotels?.length) {
+      console.log('🏨 Building hotels event with', hotels.length, 'hotels');
       events.push({
         type: "hotels",
         data: hotels,
       });
+    } else {
+      console.warn('⚠️ No hotels found in response.updatedItinerary:', response.updatedItinerary);
     }
   } else if (response.domain === "dining") {
+    // Check consolidated path first: itineraryResponse.pointsOfInterest
     const restaurants =
       response.updatedItinerary?.restaurants?.length
         ? response.updatedItinerary.restaurants
-        : response.updatedItinerary?.itinerary_response?.restaurants;
+        : response.updatedItinerary?.itinerary_response?.points_of_interest?.length
+        ? response.updatedItinerary.itinerary_response.points_of_interest
+        : response.updatedItinerary?.itinerary_response?.restaurants?.length
+        ? response.updatedItinerary.itinerary_response.restaurants
+        : response.updatedItinerary?.points_of_interest;
 
     if (restaurants?.length) {
+      console.log('🍽️ Building restaurants event with', restaurants.length, 'restaurants');
       events.push({
         type: "restaurants",
         data: restaurants,
       });
-    } else if (response.updatedItinerary?.points_of_interest?.length) {
-      // Fallback to generic POIs when dedicated restaurants field is missing
-      events.push({
-        type: "restaurants",
-        data: response.updatedItinerary.points_of_interest,
-      });
+    } else {
+      console.warn('⚠️ No restaurants found in response.updatedItinerary:', response.updatedItinerary);
     }
   } else if (response.domain === "activities") {
-    if (response.updatedItinerary?.points_of_interest?.length) {
+    // Check consolidated path first: itineraryResponse.pointsOfInterest
+    const activities =
+      response.updatedItinerary?.itinerary_response?.points_of_interest?.length
+        ? response.updatedItinerary.itinerary_response.points_of_interest
+        : response.updatedItinerary?.points_of_interest;
+    if (activities?.length) {
       events.push({
         type: "activities",
-        data: response.updatedItinerary.points_of_interest,
+        data: activities,
       });
     }
   } else {
