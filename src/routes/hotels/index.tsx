@@ -70,13 +70,34 @@ export default function HotelsPage() {
         const urlCityName = urlSearchParams.cityName;
         const urlDomain = urlSearchParams.domain;
         
-        if (urlSessionId) {
-            console.log('Found session ID in URL parameters:', urlSessionId);
-            setSessionId(urlSessionId);
+        // Try to get session ID from URL params or session storage
+        let resolvedSessionId = urlSessionId;
 
-            // Try to retrieve session data from multiple possible storage locations
+        if (resolvedSessionId) {
+            console.log('Found session ID in URL parameters:', resolvedSessionId);
+            setSessionId(resolvedSessionId);
+        } else {
+            // Try to get session ID from storage if not in URL
+            console.log('No session ID in URL, checking session storage...');
+            const storedSession = sessionStorage.getItem('completedStreamingSession');
+            if (storedSession) {
+                try {
+                    const session = JSON.parse(storedSession);
+                    resolvedSessionId = session.sessionId || session.data?.session_id || session.data?.sessionId;
+                    if (resolvedSessionId) {
+                        console.log('✅ Found session ID in session storage:', resolvedSessionId);
+                        setSessionId(resolvedSessionId);
+                    }
+                } catch (error) {
+                    console.error('Error parsing session storage:', error);
+                }
+            }
+        }
+
+        // Try to retrieve session data from multiple possible storage locations
+        if (resolvedSessionId) {
             const possibleKeys = [
-                `session_${urlSessionId}`,
+                `session_${resolvedSessionId}`,
                 'completedStreamingSession',
                 'currentStreamingSession'
             ];
@@ -110,7 +131,7 @@ export default function HotelsPage() {
             }
 
             if (!foundData) {
-                console.warn('⚠️ No hotel data found in session storage for session:', urlSessionId);
+                console.warn('⚠️ No hotel data found in session storage for session:', resolvedSessionId);
             }
         }
         

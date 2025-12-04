@@ -73,24 +73,45 @@ export default function RestaurantsPage() {
         const urlSessionId = urlSearchParams.sessionId;
         const urlCityName = urlSearchParams.cityName;
         const urlDomain = urlSearchParams.domain;
-        
-        if (urlSessionId) {
-            console.log('Found session ID in URL parameters:', urlSessionId);
-            chatSession.setSessionId(urlSessionId);
-            
-            // Try to retrieve session data based on URL parameters
-            const sessionKey = `session_${urlSessionId}`;
+
+        // Try to get session ID from URL params or session storage
+        let resolvedSessionId = urlSessionId;
+
+        if (resolvedSessionId) {
+            console.log('Found session ID in URL parameters:', resolvedSessionId);
+            chatSession.setSessionId(resolvedSessionId);
+        } else {
+            // Try to get session ID from storage if not in URL
+            console.log('No session ID in URL, checking session storage...');
+            const storedSession = sessionStorage.getItem('completedStreamingSession');
+            if (storedSession) {
+                try {
+                    const session = JSON.parse(storedSession);
+                    resolvedSessionId = session.sessionId || session.data?.session_id || session.data?.sessionId;
+                    if (resolvedSessionId) {
+                        console.log('✅ Found session ID in session storage:', resolvedSessionId);
+                        chatSession.setSessionId(resolvedSessionId);
+                    }
+                } catch (error) {
+                    console.error('Error parsing session storage:', error);
+                }
+            }
+        }
+
+        // Try to retrieve session data based on session ID
+        if (resolvedSessionId) {
+            const sessionKey = `session_${resolvedSessionId}`;
             const storedSessionData = sessionStorage.getItem(sessionKey);
             if (storedSessionData) {
                 try {
                     const sessionData = JSON.parse(storedSessionData);
-                    console.log('Loading restaurants session data from URL parameters:', sessionData);
+                    console.log('Loading restaurants session data:', sessionData);
                     if (sessionData.restaurants) {
                         setStreamingData(sessionData);
                         setFromChat(true);
                     }
                 } catch (error) {
-                    console.error('Error parsing restaurants session data from URL:', error);
+                    console.error('Error parsing restaurants session data:', error);
                 }
             }
         }
