@@ -21,6 +21,7 @@ import type {
   FeaturedCollection,
   ChatSession,
   DiscoverResult,
+  PaginationMetadata,
 } from "./types";
 
 const discoverClient = createClient(DiscoverService, transport);
@@ -123,23 +124,29 @@ export function useFeaturedCollections(limit = 4) {
 }
 
 // Get recent discoveries
-export function useRecentDiscoveries(limit = 6) {
-  return createQuery(() => ({
-    queryKey: ["discover", "recent", limit],
-    queryFn: async (): Promise<ChatSession[]> => {
-      const response = await discoverClient.getRecentDiscoveries(
-        create(GetRecentDiscoveriesRequestSchema, {
-          pagination: create(PaginationRequestSchema, {
-            page: 1,
-            pageSize: limit,
-          }),
-        }),
-      );
-      return (response.sessions || []).map(toChatSession);
+export async function fetchRecentDiscoveries(page = 1, pageSize = 10): Promise<{
+  sessions: ChatSession[];
+  pagination?: PaginationMetadata;
+}> {
+  const response = await discoverClient.getRecentDiscoveries(
+    create(GetRecentDiscoveriesRequestSchema, {
+      pagination: create(PaginationRequestSchema, {
+        page,
+        pageSize,
+      }),
+    }),
+  );
+
+  return {
+    sessions: (response.sessions || []).map(toChatSession),
+    pagination: response.pagination && {
+      total_records: Number(response.pagination.totalRecords ?? 0),
+      page: Number(response.pagination.page ?? 1),
+      page_size: Number(response.pagination.pageSize ?? pageSize),
+      total_pages: Number(response.pagination.totalPages ?? 0),
+      has_more: Boolean(response.pagination.hasMore),
     },
-    staleTime: 15 * 1000,
-    refetchInterval: 45 * 1000,
-  }));
+  };
 }
 
 // Get category results

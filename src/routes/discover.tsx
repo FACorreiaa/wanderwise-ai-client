@@ -1,8 +1,8 @@
-import { createSignal, For, Show, onCleanup } from 'solid-js';
+import { createSignal, For, Show, onCleanup, createEffect } from 'solid-js';
 import { Title, Meta } from '@solidjs/meta';
 import { Search, TrendingUp, Star, Sparkles, ChevronRight, Calendar, Clock, MapPin, Smartphone } from 'lucide-solid';
-import { useDiscoverPageData } from '~/lib/api/discover';
-import type { TrendingDiscovery, FeaturedCollection, POI, DomainType } from '~/lib/api/types';
+import { useDiscoverPageData, fetchRecentDiscoveries } from '~/lib/api/discover';
+import type { TrendingDiscovery, FeaturedCollection, POI, DomainType, ChatSession } from '~/lib/api/types';
 import { useAuth } from '~/contexts/AuthContext';
 import RegisterBanner from '~/components/ui/RegisterBanner';
 import { sendUnifiedChatMessageStream } from '~/lib/api/llm';
@@ -16,6 +16,11 @@ export default function DiscoverPage() {
     const [searchError, setSearchError] = createSignal<string | null>(null);
     const [progressMessage, setProgressMessage] = createSignal<string | null>(null);
     const [streamDomain, setStreamDomain] = createSignal<DomainType>('general');
+    const [localTrending, setLocalTrending] = createSignal<TrendingDiscovery[]>([]);
+    const [recentSessions, setRecentSessions] = createSignal<ChatSession[]>([]);
+    const [recentPage, setRecentPage] = createSignal(1);
+    const [recentHasMore, setRecentHasMore] = createSignal(true);
+    const [recentLoadingMore, setRecentLoadingMore] = createSignal(false);
 
     let abortController: AbortController | null = null;
 
@@ -244,6 +249,34 @@ export default function DiscoverPage() {
                                 if (event.navigation?.routeType) {
                                     setStreamDomain(event.navigation.routeType as DomainType);
                                 }
+                                {
+                                    const sessionId = event.navigation?.queryParams?.sessionId || crypto.randomUUID();
+                                    const cityName = event.navigation?.queryParams?.cityName || searchLocation().trim() || searchQuery().trim() || 'Unknown City';
+                                    const newSession: ChatSession = {
+                                        id: sessionId,
+                                        profile_id: '',
+                                        created_at: new Date().toISOString(),
+                                        updated_at: new Date().toISOString(),
+                                        city_name: cityName,
+                                        conversation_history: [],
+                                    } as any;
+                                    setRecentSessions((prev) => {
+                                        const map = new Map(prev.map((s) => [s.id, s]));
+                                        map.set(newSession.id, newSession);
+                                        return Array.from(map.values()).sort((a, b) => (b.created_at || '').localeCompare(a.created_at || ''));
+                                    });
+                                    setRecentHasMore(true);
+                                    setLocalTrending((prev) => {
+                                        const base = prev.length > 0 ? [...prev] : [...(discoverData.data?.trending || [])];
+                                        const idx = base.findIndex((t) => t.city_name.toLowerCase() === cityName.toLowerCase());
+                                        if (idx >= 0) {
+                                            base[idx] = { ...base[idx], search_count: (base[idx].search_count || 0) + 1 };
+                                        } else {
+                                            base.unshift({ city_name: cityName, search_count: 1, emoji: '🗺️', category: '', first_message: '' } as TrendingDiscovery);
+                                        }
+                                        return base;
+                                    });
+                                }
                                 setIsSearching(false);
                                 setProgressMessage(null);
                                 break;
@@ -272,7 +305,11 @@ export default function DiscoverPage() {
         } catch (err: any) {
             console.error('Discover search failed', err);
             if (err?.name !== 'AbortError') {
-                setSearchError(err?.message || 'Failed to search');
+                const friendly =
+                    err?.code === 'aborted' || err?.name === 'AbortError'
+                        ? 'Search was canceled.'
+                        : 'We lost connection while searching. Please try again.';
+                setSearchError(friendly);
             }
             setSearchResults([]);
         } finally {
@@ -311,9 +348,46 @@ export default function DiscoverPage() {
         { city_name: 'Tokyo', search_count: 96, emoji: '🍜' },
     ];
 
-    const trendingList = () => discoverData.data?.trending || (discoverData.data as any)?.data?.trending || (discoverData.isError ? fallbackTrending : []);
+    const trendingList = () => {
+        const base = discoverData.data?.trending || (discoverData.data as any)?.data?.trending || (discoverData.isError ? fallbackTrending : []);
+        const local = localTrending();
+        return local.length > 0 ? local : base;
+    };
     const featuredList = () => discoverData.data?.featured || (discoverData.data as any)?.data?.featured || [];
     const recentList = () => discoverData.data?.recent_discoveries || (discoverData.data as any)?.data?.recent_discoveries || [];
+
+    createEffect(() => {
+        // Seed recents from initial page data
+        const recents = recentList() || [];
+        setRecentSessions(recents);
+        setRecentPage(1);
+        // Optimistic hasMore: if we filled a whole page, we can probably load more
+        setRecentHasMore(recents.length >= 10);
+        const trendingSeed = discoverData.data?.trending || (discoverData.data as any)?.data?.trending || [];
+        setLocalTrending(trendingSeed);
+    });
+
+    const loadMoreRecents = async () => {
+        if (recentLoadingMore() || !recentHasMore()) return;
+        setRecentLoadingMore(true);
+        const nextPage = recentPage() + 1;
+        try {
+            const { sessions, pagination } = await fetchRecentDiscoveries(nextPage, 10);
+            if (sessions.length > 0) {
+                const existing = new Map(recentSessions().map((s) => [s.id, s]));
+                sessions.forEach((s) => existing.set(s.id, s));
+                setRecentSessions(Array.from(existing.values()));
+                setRecentPage(nextPage);
+            }
+            const hasMore = pagination?.has_more ?? sessions.length >= 10;
+            setRecentHasMore(hasMore);
+        } catch (err) {
+            console.error('Failed to load more recent discoveries', err);
+            setRecentHasMore(false);
+        } finally {
+            setRecentLoadingMore(false);
+        }
+    };
 
     const formatDate = (dateString: string) => {
         if (!dateString) return 'Just now';
@@ -652,7 +726,7 @@ export default function DiscoverPage() {
                                         }
                                     >
                                         <Show
-                                            when={recentList().length > 0}
+                                            when={recentSessions().length > 0}
                                             fallback={
                                                 <div class="text-center py-8 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700">
                                                     <div class="text-4xl mb-3">🔍</div>
@@ -662,7 +736,7 @@ export default function DiscoverPage() {
                                             }
                                         >
                                             <div class="space-y-3">
-                                                <For each={recentList()}>
+                                                <For each={recentSessions()}>
                                                     {(session) => (
                                                         <div class="glass-panel rounded-xl p-4 hover:shadow-lg hover:scale-[1.02] transition-all duration-200 cursor-pointer">
                                                             <div class="flex items-start gap-3 mb-3">
@@ -688,6 +762,15 @@ export default function DiscoverPage() {
                                                         </div>
                                                     )}
                                                 </For>
+                                                <Show when={recentHasMore()}>
+                                                    <button
+                                                        class="w-full mt-2 text-sm font-semibold text-blue-700 dark:text-blue-200 px-3 py-2 rounded-lg border border-blue-200/60 dark:border-blue-800/60 bg-white dark:bg-slate-900 hover:bg-blue-50 dark:hover:bg-blue-900/30 transition disabled:opacity-60"
+                                                        onClick={loadMoreRecents}
+                                                        disabled={recentLoadingMore()}
+                                                    >
+                                                        {recentLoadingMore() ? 'Loading more...' : 'Load more'}
+                                                    </button>
+                                                </Show>
                                             </div>
                                         </Show>
                                     </Show>

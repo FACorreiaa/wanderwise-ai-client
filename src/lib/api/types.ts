@@ -138,6 +138,16 @@ export interface ChatSession {
   profile_id: string;
   created_at: string;
   updated_at: string;
+  city_name?: string;
+  conversation_history?: ChatMessage[];
+}
+
+export interface PaginationMetadata {
+  total_records?: number;
+  page?: number;
+  page_size?: number;
+  total_pages?: number;
+  has_more?: boolean;
 }
 
 export interface ChatSessionResponse {
