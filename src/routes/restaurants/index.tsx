@@ -11,6 +11,7 @@ import ChatInterface from '~/components/ui/ChatInterface';
 import { useAuth } from '~/contexts/AuthContext';
 import { useFavorites, useAddToFavoritesMutation, useRemoveFromFavoritesMutation } from '~/lib/api/pois';
 import RegisterBanner from '~/components/ui/RegisterBanner';
+import { SkeletonRestaurantGrid } from '~/components/ui/SkeletonRestaurantCard';
 
 export default function RestaurantsPage() {
     const location = useLocation();
@@ -223,6 +224,12 @@ export default function RestaurantsPage() {
         return colorMap[price] || 'text-gray-600';
     };
 
+    // Helper functions for streaming state
+    const isStreaming = () => urlSearchParams.streaming === 'true';
+    const hasData = () => streamingData()?.restaurants && streamingData().restaurants.length > 0;
+    const isLoading = () => isStreaming() && !chatSession.isComplete() && !hasData();
+    const isLoadingMore = () => isStreaming() && !chatSession.isComplete() && hasData();
+
     const filteredRestaurants = () => {
         return restaurants().filter(restaurant => {
             const filters = activeFilters();
@@ -231,7 +238,7 @@ export default function RestaurantsPage() {
             const restaurantFeatures = restaurant.features || [];
             const restaurantPriceRange = restaurant.priceRange || '';
             const restaurantRating = restaurant.rating || 0;
-            
+
             // Cuisine filter
             if (filters.cuisines.length > 0 && !filters.cuisines.some(cuisine => restaurantTags.includes(cuisine))) return false;
             // Price range filter
@@ -660,19 +667,13 @@ export default function RestaurantsPage() {
                                         Found {filteredRestaurants().length} restaurants
                                     </p>
                                 </div>
-                                <Show when={filteredRestaurants().length > 0} fallback={
-                                    <div class="text-center py-12">
-                                        <Utensils class="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
-                                        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">No restaurants found</h3>
-                                        <p class="text-gray-600 dark:text-gray-300 mb-4">Start a new search from the home page to find restaurants</p>
-                                        <button 
-                                            onClick={() => window.location.href = '/'}
-                                            class="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors"
-                                        >
-                                            Start New Search
-                                        </button>
-                                    </div>
-                                }>
+                                {/* Show skeleton while loading */}
+                                <Show when={isLoading()}>
+                                    <SkeletonRestaurantGrid count={6} />
+                                </Show>
+
+                                {/* Show real data when available */}
+                                <Show when={!isLoading() && filteredRestaurants().length > 0}>
                                     <RestaurantResults 
                                         restaurants={filteredRestaurants().map(restaurant => ({
                                             name: restaurant.name,
@@ -708,11 +709,45 @@ export default function RestaurantsPage() {
                                         isLoadingFavorites={addToFavoritesMutation.isPending || removeFromFavoritesMutation.isPending}
                                         showAuthMessage={!isAuthenticated()}
                                     />
+
+                                    {/* Progressive loading indicator */}
+                                    <Show when={isLoadingMore()}>
+                                        <div class="flex items-center justify-center gap-3 py-4 px-6 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                                            <Loader2 class="w-5 h-5 animate-spin text-blue-600" />
+                                            <span class="text-sm font-medium text-blue-900 dark:text-blue-100">
+                                                Loading more restaurants... ({filteredRestaurants().length} found so far)
+                                            </span>
+                                        </div>
+                                    </Show>
+                                </Show>
+
+                                {/* No data fallback */}
+                                <Show when={!isLoading() && !hasData()}>
+                                    <div class="text-center py-12">
+                                        <Utensils class="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
+                                        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">No restaurants found</h3>
+                                        <p class="text-gray-600 dark:text-gray-300 mb-4">Start a new search to find restaurants</p>
+                                        <button
+                                            onClick={() => chatSession.setShowChat(true)}
+                                            class="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors inline-flex items-center gap-2"
+                                        >
+                                            <MessageCircle class="w-4 h-4" />
+                                            Find Restaurants
+                                        </button>
+                                    </div>
                                 </Show>
                             </div>
                         </div>
                     </Show>
                 </div>
+
+                {/* Fixed loading indicator for mobile */}
+                <Show when={isLoadingMore()}>
+                    <div class="fixed bottom-4 right-4 bg-blue-500 text-white px-4 py-3 rounded-lg shadow-lg flex items-center gap-3 z-50 sm:hidden">
+                        <Loader2 class="w-4 h-4 animate-spin" />
+                        <span class="text-sm font-medium">{filteredRestaurants().length} restaurants</span>
+                    </div>
+                </Show>
             </div>
 
             {/* Chat Interface */}

@@ -39,3 +39,6 @@ export * from './cities';
 
 // Export statistics queries
 export * from './statistics';
+
+// Export discover queries
+export * from './discover';

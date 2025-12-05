@@ -10,10 +10,13 @@ import {
 } from "../rate-limiter";
 import {
   ChatService,
+  ChatRequest,
+  ChatRequestSchema,
   ChatResponse as ProtoChatResponse,
   ContinueChatRequestSchema as ContinueChatRequestSchema,
   DomainType as ChatDomainType,
   StartChatRequestSchema as StartChatRequestSchema,
+  StreamEventSchema,
 } from "@buf/loci_loci-proto.bufbuild_es/proto/chat_pb.js";
 import {
   AIItineraryResponse as ProtoAIItineraryResponse,
@@ -552,6 +555,43 @@ export const StartChat = async (
   return normalizeChatResponse(response, request.contextType);
 };
 
+/**
+ * REAL streaming using Server Streaming RPC
+ * This returns a ReadableStream that receives events as they happen on the server
+ */
+export const StartChatStreamReal = async (
+  request: StartChatRequest,
+): Promise<ReadableStream<StreamEvent>> => {
+  const endpoint = "loci.chat.ChatService/StreamChat";
+  await enforceRateLimit(endpoint);
+
+  // Use the real streamChat RPC method
+  const stream = chatClient.streamChat(
+    create(ChatRequestSchema, {
+      message: request.initialMessage || "",
+      cityName: request.cityName || "",
+      contextType: toProtoDomainType(request.contextType),
+    }),
+  );
+
+  // Convert AsyncIterable to ReadableStream for easier consumption
+  const readableStream = new ReadableStream({
+    async start(controller) {
+      try {
+        for await (const event of stream) {
+          controller.enqueue(event);
+        }
+        controller.close();
+      } catch (error) {
+        controller.error(error);
+      }
+    },
+  });
+
+  return readableStream;
+};
+
+// Keep the old fake streaming for backward compatibility
 export const StartChatStream = async (
   request: StartChatRequest,
 ): Promise<Response> => {
@@ -577,11 +617,53 @@ export const ContinueChat = async (
   return normalizeChatResponse(response, request.contextType);
 };
 
+/**
+ * REAL streaming for ContinueChat using Server Streaming RPC
+ */
+export const ContinueChatStreamReal = async (
+  request: ContinueChatRequest,
+): Promise<ReadableStream<StreamEvent>> => {
+  const endpoint = "loci.chat.ChatService/StreamChat";
+  await enforceRateLimit(endpoint);
+
+  // Use the real streamChat RPC method
+  const stream = chatClient.streamChat(
+    create(ChatRequestSchema, {
+      message: request.message,
+      cityName: request.cityName || "",
+      contextType: toProtoDomainType(request.contextType),
+      sessionId: request.sessionId,
+    }),
+  );
+
+  // Convert AsyncIterable to ReadableStream
+  const readableStream = new ReadableStream({
+    async start(controller) {
+      try {
+        for await (const event of stream) {
+          controller.enqueue(event);
+        }
+        controller.close();
+      } catch (error) {
+        controller.error(error);
+      }
+    },
+  });
+
+  return readableStream;
+};
+
+// Updated ContinueChatStream to use REAL streaming!
 export const ContinueChatStream = async (
   request: ContinueChatRequest,
 ): Promise<Response> => {
-  const normalized = await ContinueChat(request);
-  return buildChatStreamResponse(normalized);
+  console.log('🚀 Using REAL server streaming for ContinueChat (not fake!)');
+
+  // Use real streaming RPC
+  const protoStream = await ContinueChatStreamReal(request);
+
+  // Convert proto stream to SSE format
+  return convertProtoStreamToSSE(protoStream);
 };
 
 // ==================
@@ -643,19 +725,129 @@ export const sendUnifiedChatMessage = async (
   );
 };
 
-// Unified chat streaming service
+/**
+ * Convert Proto StreamEvent to SSE format
+ * This bridges the gap between real RPC streaming and SSE expected by useChatSession
+ */
+const sseTextDecoder = new TextDecoder();
+
+// Normalize payloads that might arrive as Uint8Array or numeric-key objects
+const normalizeStreamPayload = (payload: any): any => {
+  if (payload === null || payload === undefined) return payload;
+
+  // Respect proto helper if present
+  if (typeof payload === "object" && typeof (payload as any).toJson === "function") {
+    return (payload as any).toJson();
+  }
+
+  const tryParseString = (input: string) => {
+    const trimmed = input.trim();
+    try {
+      return JSON.parse(trimmed);
+    } catch {
+      return trimmed;
+    }
+  };
+
+  // Detect numeric-key object that represents bytes (e.g., {"0":123,...})
+  const maybeNumericByteObject = (input: any) => {
+    if (typeof input !== "object" || Array.isArray(input)) return null;
+    const keys = Object.keys(input);
+    if (keys.length === 0) return null;
+    if (!keys.every((k) => /^\d+$/.test(k))) return null;
+    const bytes = new Uint8Array(keys.sort((a, b) => Number(a) - Number(b)).map((k) => input[k]));
+    return bytes;
+  };
+
+  if (payload instanceof Uint8Array) {
+    const decoded = sseTextDecoder.decode(payload);
+    return tryParseString(decoded);
+  }
+
+  const byteObj = maybeNumericByteObject(payload);
+  if (byteObj) {
+    const decoded = sseTextDecoder.decode(byteObj);
+    return tryParseString(decoded);
+  }
+
+  if (typeof payload === "string") {
+    return tryParseString(payload);
+  }
+
+  return payload;
+};
+
+const convertProtoStreamToSSE = async (
+  protoStream: ReadableStream<any>,
+): Promise<Response> => {
+  const stream = new ReadableStream({
+    async start(controller) {
+      const reader = protoStream.getReader();
+      const encoder = new TextEncoder();
+
+      try {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          // Convert proto event to SSE format
+          const normalizedData = normalizeStreamPayload(value.data);
+          const normalizedMessage = normalizeStreamPayload(value.message);
+          const sseData = {
+            Type: value.type,
+            type: value.type,
+            Data: normalizedData,
+            data: normalizedData,
+            Message: normalizedMessage,
+            message: normalizedMessage,
+            Error: value.error,
+            error: value.error,
+            Navigation: value.navigation?.toJson ? value.navigation.toJson() : value.navigation,
+            navigation: value.navigation?.toJson ? value.navigation.toJson() : value.navigation,
+          };
+
+          // Send as SSE
+          const sseMessage = `data: ${JSON.stringify(sseData)}\n\n`;
+          controller.enqueue(encoder.encode(sseMessage));
+        }
+
+        controller.close();
+      } catch (error) {
+        console.error('Error in Proto to SSE conversion:', error);
+        controller.error(error);
+      } finally {
+        reader.releaseLock();
+      }
+    },
+  });
+
+  return new Response(stream, {
+    headers: {
+      "Content-Type": "text/event-stream",
+      "Cache-Control": "no-cache",
+      Connection: "keep-alive",
+    },
+  });
+};
+
+// Unified chat streaming service - NOW WITH REAL STREAMING!
 export const sendUnifiedChatMessageStream = async (
   request: UnifiedChatStreamRequest,
 ): Promise<Response> => {
   const contextType = request.contextType || "general";
-  const normalized = await StartChat({
+
+  console.log('🚀 Using REAL server streaming (not fake!)');
+
+  // Use real streaming RPC
+  const protoStream = await StartChatStreamReal({
     profileId: request.profileId,
     cityName: request.cityName,
     contextType,
     initialMessage: request.message,
   });
 
-  return buildChatStreamResponse(normalized);
+  // Convert proto stream to SSE format
+  return convertProtoStreamToSSE(protoStream);
 };
 
 export const sendUnifiedChatMessageStreamFree = async (

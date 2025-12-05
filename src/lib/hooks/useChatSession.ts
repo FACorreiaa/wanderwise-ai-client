@@ -97,6 +97,27 @@ const mergeUniqueById = (prev: any[] = [], next: any[] = []) => {
   return Array.from(map.values());
 };
 
+// Helper to decode base64 event data from protobuf bytes field
+const decodeEventData = (data: any): any => {
+  if (!data) return null;
+
+  // If it's already an object, return as-is
+  if (typeof data === 'object') return data;
+
+  // If it's a base64 string, decode it
+  if (typeof data === 'string') {
+    try {
+      const decoded = atob(data);
+      return JSON.parse(decoded);
+    } catch (e) {
+      console.warn('Failed to decode base64 event data:', e);
+      return null;
+    }
+  }
+
+  return null;
+};
+
 const persistCompletedSession = (sessionIdValue: string | null, data: any) => {
   if (!data) return;
 
@@ -129,6 +150,64 @@ export function useChatSession(options: UseChatSessionOptions = {}) {
   const [isLoading, setIsLoading] = createSignal(false);
   const [sessionId, setSessionId] = createSignal<string | null>(null);
   const [isUpdatingItinerary, setIsUpdatingItinerary] = createSignal(false);
+
+  // Chunk buffer for progressive JSON parsing (similar to StreamingChatService)
+  const chunkBuffer: {
+    general_pois: string;
+    itinerary: string;
+    city_data: string;
+    hotels: string;
+    restaurants: string;
+    activities: string;
+  } = {
+    general_pois: '',
+    itinerary: '',
+    city_data: '',
+    hotels: '',
+    restaurants: '',
+    activities: ''
+  };
+
+  // Helper function to parse buffered chunk data
+  const tryParseBufferedData = (part: string): any | null => {
+    let buffer = chunkBuffer[part as keyof typeof chunkBuffer];
+
+    // Remove markdown code blocks
+    buffer = buffer.replace(/```json\n?/g, '').replace(/```\n?/g, '');
+
+    // Try to find complete JSON objects
+    let braceCount = 0;
+    let jsonStart = -1;
+
+    for (let i = 0; i < buffer.length; i++) {
+      if (buffer[i] === '{') {
+        if (braceCount === 0) {
+          jsonStart = i;
+        }
+        braceCount++;
+      } else if (buffer[i] === '}') {
+        braceCount--;
+        if (braceCount === 0 && jsonStart !== -1) {
+          // Found complete JSON object
+          const jsonStr = buffer.substring(jsonStart, i + 1);
+          try {
+            const jsonData = JSON.parse(jsonStr);
+            console.log(`=== PARSED JSON FOR ${part.toUpperCase()} ===`);
+            console.log('JSON data:', jsonData);
+
+            // Remove processed data from buffer
+            chunkBuffer[part as keyof typeof chunkBuffer] = buffer.substring(i + 1);
+            return jsonData;
+          } catch (parseError) {
+            // JSON not complete yet, continue accumulating
+            console.log(`Partial JSON for ${part}, continuing...`);
+          }
+        }
+      }
+    }
+
+    return null;
+  };
 
   const sendChatMessage = async () => {
     if (!chatMessage().trim() || isLoading()) return;
@@ -250,10 +329,19 @@ export function useChatSession(options: UseChatSessionOptions = {}) {
                 switch (eventData.Type || eventData.type) {
                   case 'start':
                     // Extract session ID from start event when a new session is created
-                    const startData = eventData.Data || eventData.data;
+                    // Note: data field is base64 encoded from protobuf bytes
+                    const startData = decodeEventData(eventData.Data || eventData.data);
                     if (startData && startData.session_id) {
                       console.log('🚀 New session started with ID:', startData.session_id);
                       setSessionId(startData.session_id);
+
+                      // Reset chunk buffer for new session
+                      chunkBuffer.general_pois = '';
+                      chunkBuffer.itinerary = '';
+                      chunkBuffer.city_data = '';
+                      chunkBuffer.hotels = '';
+                      chunkBuffer.restaurants = '';
+                      chunkBuffer.activities = '';
 
                       // Initialize streaming session for progressive loading
                       const domain = startData.domain || 'general';
@@ -314,6 +402,105 @@ export function useChatSession(options: UseChatSessionOptions = {}) {
                     }
                     break;
 
+                  case 'chunk': {
+                    // Handle streaming chunks - buffer and parse JSON progressively
+                    // Note: data field is base64 encoded from protobuf bytes
+                    const chunkData = decodeEventData(eventData.Data || eventData.data);
+                    if (!chunkData) break;
+
+                    const { chunk, part } = chunkData;
+                    console.log(`📦 Received chunk for ${part}:`, chunk?.substring(0, 100) + '...');
+
+                    // Accumulate chunks in buffer
+                    if (part && (part === 'general_pois' || part === 'itinerary' || part === 'city_data' ||
+                                 part === 'hotels' || part === 'restaurants' || part === 'activities')) {
+                      chunkBuffer[part as keyof typeof chunkBuffer] += chunk;
+
+                      // Try to parse complete JSON from buffer
+                      const parsedData = tryParseBufferedData(part);
+                      if (parsedData) {
+                        console.log(`✅ Successfully parsed complete JSON for ${part}`);
+
+                        // Process the parsed data based on part type
+                        if (options.setStreamingData) {
+                          batch(() => {
+                            switch (part) {
+                              case 'city_data':
+                                options.setStreamingData((prev: any) => ({
+                                  ...prev,
+                                  general_city_data: parsedData,
+                                }));
+                                updateStreamingData({ general_city_data: parsedData });
+                                break;
+
+                              case 'general_pois':
+                                const pois = parsedData.points_of_interest || [];
+                                options.setStreamingData((prev: any) => ({
+                                  ...prev,
+                                  points_of_interest: pois,
+                                }));
+                                updateStreamingData({ points_of_interest: pois });
+                                break;
+
+                              case 'itinerary':
+                                options.setStreamingData((prev: any) => ({
+                                  ...prev,
+                                  itinerary_response: parsedData,
+                                }));
+                                updateStreamingData({ itinerary_response: parsedData });
+
+                                // Trigger POI update for the map
+                                if (options.setPoisUpdateTrigger) {
+                                  options.setPoisUpdateTrigger(prev => prev + 1);
+                                }
+                                break;
+
+                              case 'hotels':
+                                const hotels = parsedData.hotels || [];
+                                const mergedHotels = mergeUniqueById(
+                                  options.getStreamingData?.()?.hotels,
+                                  hotels
+                                );
+                                options.setStreamingData((prev: any) => ({
+                                  ...prev,
+                                  hotels: mergedHotels,
+                                }));
+                                updateStreamingData({ hotels: mergedHotels });
+                                break;
+
+                              case 'restaurants':
+                                const restaurants = parsedData.restaurants || [];
+                                const mergedRestaurants = mergeUniqueById(
+                                  options.getStreamingData?.()?.restaurants,
+                                  restaurants
+                                );
+                                options.setStreamingData((prev: any) => ({
+                                  ...prev,
+                                  restaurants: mergedRestaurants,
+                                }));
+                                updateStreamingData({ restaurants: mergedRestaurants });
+                                break;
+
+                              case 'activities':
+                                const activities = parsedData.activities || [];
+                                const mergedActivities = mergeUniqueById(
+                                  options.getStreamingData?.()?.activities,
+                                  activities
+                                );
+                                options.setStreamingData((prev: any) => ({
+                                  ...prev,
+                                  activities: mergedActivities,
+                                }));
+                                updateStreamingData({ activities: mergedActivities });
+                                break;
+                            }
+                          });
+                        }
+                      }
+                    }
+                    break;
+                  }
+
                   case 'session_validated':
                     console.log('Session validated:', eventData.Data || eventData.data);
                     break;
@@ -342,7 +529,7 @@ export function useChatSession(options: UseChatSessionOptions = {}) {
                     break;
 
                   case 'restaurants': {
-                    const restaurantsData = eventData.Data || eventData.data;
+                    const restaurantsData = decodeEventData(eventData.Data || eventData.data);
                     console.log('🍽️ Received restaurants data:', restaurantsData);
 
                     if (restaurantsData) {
@@ -382,7 +569,7 @@ export function useChatSession(options: UseChatSessionOptions = {}) {
                   }
 
                   case 'hotels': {
-                    const hotelsData = eventData.Data || eventData.data;
+                    const hotelsData = decodeEventData(eventData.Data || eventData.data);
                     console.log('🏨 Received hotels data:', hotelsData);
 
                     if (hotelsData) {
@@ -426,7 +613,7 @@ export function useChatSession(options: UseChatSessionOptions = {}) {
                   }
 
                   case 'activities': {
-                    const activitiesData = eventData.Data || eventData.data;
+                    const activitiesData = decodeEventData(eventData.Data || eventData.data);
                     console.log('🎯 Received activities data:', activitiesData);
 
                     if (activitiesData) {
@@ -469,7 +656,7 @@ export function useChatSession(options: UseChatSessionOptions = {}) {
 
                   case 'itinerary':
                     // This is the key event - update the itinerary data
-                    const itineraryData = eventData.Data || eventData.data;
+                    const itineraryData = decodeEventData(eventData.Data || eventData.data);
                     const message = eventData.Message || eventData.message;
                     const derivedLists = deriveDomainLists(itineraryData);
 
@@ -850,44 +1037,44 @@ export function useChatSession(options: UseChatSessionOptions = {}) {
                     break;
 
                   case 'itinerary':
-                    const itineraryData = eventData.Data || eventData.data;
-                    const message = eventData.Message || eventData.message;
-                    const derivedLists = deriveDomainLists(itineraryData);
+                    const itineraryData2 = decodeEventData(eventData.Data || eventData.data);
+                    const message2 = eventData.Message || eventData.message;
+                    const derivedLists2 = deriveDomainLists(itineraryData2);
 
-                    if (itineraryData) {
+                    if (itineraryData2) {
                       if (options.setStreamingData) {
                         options.setStreamingData((prev: any) => {
                           const mergedHotels = hasAuthoritativeList
-                            ? derivedLists.hotels
+                            ? derivedLists2.hotels
                             : mergeUniqueById(
                                 prev?.hotels,
-                                itineraryData.hotels || derivedLists.hotels,
+                                itineraryData2.hotels || derivedLists2.hotels,
                               );
 
                           const mergedRestaurants = hasAuthoritativeList
-                            ? derivedLists.restaurants
+                            ? derivedLists2.restaurants
                             : mergeUniqueById(
                                 prev?.restaurants,
-                                itineraryData.restaurants || derivedLists.restaurants,
+                                itineraryData2.restaurants || derivedLists2.restaurants,
                               );
 
                           const mergedActivities = hasAuthoritativeList
-                            ? derivedLists.activities
+                            ? derivedLists2.activities
                             : mergeUniqueById(
                                 prev?.activities,
-                                itineraryData.activities || derivedLists.activities,
+                                itineraryData2.activities || derivedLists2.activities,
                               );
 
                           return {
                             ...prev,
-                            ...(itineraryData.general_city_data && {
-                              general_city_data: itineraryData.general_city_data
+                            ...(itineraryData2.general_city_data && {
+                              general_city_data: itineraryData2.general_city_data
                             }),
-                            ...(itineraryData.points_of_interest && {
-                              points_of_interest: itineraryData.points_of_interest
+                            ...(itineraryData2.points_of_interest && {
+                              points_of_interest: itineraryData2.points_of_interest
                             }),
-                            ...(itineraryData.itinerary_response && {
-                              itinerary_response: itineraryData.itinerary_response
+                            ...(itineraryData2.itinerary_response && {
+                              itinerary_response: itineraryData2.itinerary_response
                             }),
                             ...(mergedActivities.length && {
                               activities: mergedActivities
@@ -904,35 +1091,35 @@ export function useChatSession(options: UseChatSessionOptions = {}) {
 
                       const mergedHotels = mergeUniqueById(
                         (options.getStreamingData?.() as any)?.hotels,
-                        itineraryData.hotels || derivedLists.hotels,
+                        itineraryData2.hotels || derivedLists2.hotels,
                       );
                       const mergedRestaurants = mergeUniqueById(
                         (options.getStreamingData?.() as any)?.restaurants,
-                        itineraryData.restaurants || derivedLists.restaurants,
+                        itineraryData2.restaurants || derivedLists2.restaurants,
                       );
                       const mergedActivities = mergeUniqueById(
                         (options.getStreamingData?.() as any)?.activities,
-                        itineraryData.activities || derivedLists.activities,
+                        itineraryData2.activities || derivedLists2.activities,
                       );
 
                       const mergedDataForPersistence = {
                         ...(options.getStreamingData?.() || {}),
-                        ...itineraryData,
+                        ...itineraryData2,
                         hotels: mergedHotels,
                         restaurants: mergedRestaurants,
                         activities: mergedActivities,
                       };
 
                       persistCompletedSession(
-                        sessionId() || itineraryData.session_id,
+                        sessionId() || itineraryData2.session_id,
                         mergedDataForPersistence
                       );
 
                       // Persist derived lists for navigation/storage consistency
                       updateStreamingData(mergedDataForPersistence);
 
-                      if (message) {
-                        newSessionMessage += message + ' ';
+                      if (message2) {
+                        newSessionMessage += message2 + ' ';
                       }
                     }
                     break;

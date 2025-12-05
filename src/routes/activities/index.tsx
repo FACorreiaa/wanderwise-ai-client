@@ -11,6 +11,8 @@ import { useChatSession } from '~/lib/hooks/useChatSession';
 import ChatInterface from '~/components/ui/ChatInterface';
 import { useAuth } from '~/contexts/AuthContext';
 import RegisterBanner from '~/components/ui/RegisterBanner';
+import { SkeletonActivityGrid } from '~/components/ui/SkeletonActivityCard';
+import { getStreamingSession } from '~/lib/streaming-state';
 
 export default function ActivitiesPage() {
     const location = useLocation();
@@ -51,6 +53,16 @@ export default function ActivitiesPage() {
         features: [],
         rating: 0
     });
+
+    // Helper functions for streaming state
+    const isStreaming = () => urlSearchParams.streaming === 'true';
+    const hasData = () => streamingData()?.activities && streamingData().activities.length > 0;
+    const isStreamComplete = () => {
+        const session = getStreamingSession();
+        return session?.isComplete ?? false;
+    };
+    const isLoadingState = () => isStreaming() && !isStreamComplete() && !hasData();
+    const isLoadingMore = () => isStreaming() && !isStreamComplete() && hasData();
 
     // Search parameters
     const [searchParams, setSearchParams] = createSignal({
@@ -563,24 +575,19 @@ export default function ActivitiesPage() {
                             <div class="space-y-4">
                                 <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                                     <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Available Activities</h2>
-                                    <p class="text-sm text-gray-600 self-start sm:self-auto">
+                                    <p class="text-sm text-gray-600 dark:text-gray-300 self-start sm:self-auto">
                                         Found {filteredActivities().length} activities
                                     </p>
                                 </div>
-                                <Show when={filteredActivities().length > 0} fallback={
-                                    <div class="text-center py-12">
-                                        <Compass class="w-12 h-12 text-gray-300 mx-auto mb-4" />
-                                        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">No activities found</h3>
-                                        <p class="text-gray-600 mb-4">Start a new search from the home page to find activities</p>
-                                        <button
-                                            onClick={() => window.location.href = '/'}
-                                            class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
-                                        >
-                                            Start New Search
-                                        </button>
-                                    </div>
-                                }>
-                                    <ActivityResults 
+
+                                {/* Show skeleton while loading */}
+                                <Show when={isLoadingState()}>
+                                    <SkeletonActivityGrid count={6} />
+                                </Show>
+
+                                {/* Show real data when available */}
+                                <Show when={!isLoadingState() && filteredActivities().length > 0}>
+                                    <ActivityResults
                                         activities={filteredActivities().map(activity => ({
                                             name: activity.name,
                                             latitude: activity.latitude,
@@ -598,6 +605,39 @@ export default function ActivitiesPage() {
                                         showToggle={filteredActivities().length > 5}
                                         initialLimit={5}
                                     />
+
+                                    {/* Progressive loading indicator */}
+                                    <Show when={isLoadingMore()}>
+                                        <div class="flex items-center justify-center gap-3 py-4 px-6 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-700">
+                                            <Loader2 class="w-5 h-5 animate-spin text-green-600 dark:text-green-400" />
+                                            <span class="text-sm font-medium text-green-900 dark:text-green-200">
+                                                Loading more activities... ({filteredActivities().length} found so far)
+                                            </span>
+                                        </div>
+                                    </Show>
+                                </Show>
+
+                                {/* No data fallback */}
+                                <Show when={!isLoadingState() && !hasData()}>
+                                    <div class="text-center py-12">
+                                        <Compass class="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
+                                        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">No activities found</h3>
+                                        <p class="text-gray-600 dark:text-gray-300 mb-4">Start a new search from the home page to find activities</p>
+                                        <button
+                                            onClick={() => window.location.href = '/'}
+                                            class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                                        >
+                                            Start New Search
+                                        </button>
+                                    </div>
+                                </Show>
+
+                                {/* Fixed loading indicator for mobile */}
+                                <Show when={isLoadingMore()}>
+                                    <div class="fixed bottom-4 right-4 bg-green-500 dark:bg-green-600 text-white px-4 py-3 rounded-lg shadow-lg z-50 sm:hidden flex items-center gap-2">
+                                        <Loader2 class="w-4 h-4 animate-spin" />
+                                        <span class="text-sm">{filteredActivities().length} activities</span>
+                                    </div>
                                 </Show>
                             </div>
                         </div>

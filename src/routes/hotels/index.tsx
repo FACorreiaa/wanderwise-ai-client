@@ -10,6 +10,8 @@ import { useChatSession } from '~/lib/hooks/useChatSession';
 import ChatInterface from '~/components/ui/ChatInterface';
 import { useAuth } from '~/contexts/AuthContext';
 import RegisterBanner from '~/components/ui/RegisterBanner';
+import { SkeletonHotelGrid } from '~/components/ui/SkeletonHotelCard';
+import { getStreamingSession } from '~/lib/streaming-state';
 
 export default function HotelsPage() {
     const location = useLocation();
@@ -58,6 +60,16 @@ export default function HotelsPage() {
         amenities: [],
         rating: 0
     });
+
+    // Helper functions for streaming state
+    const isStreaming = () => urlSearchParams.streaming === 'true';
+    const hasData = () => streamingData()?.hotels && streamingData().hotels.length > 0;
+    const isStreamComplete = () => {
+        const session = getStreamingSession();
+        return session?.isComplete ?? false;
+    };
+    const isLoadingState = () => isStreaming() && !isStreamComplete() && !hasData();
+    const isLoadingMore = () => isStreaming() && !isStreamComplete() && hasData();
 
     // Initialize with streaming data on mount
     onMount(() => {
@@ -723,25 +735,20 @@ export default function HotelsPage() {
                         <div class={viewMode() === 'list' ? 'col-span-full' : ''}>
                             <div class="space-y-4">
                                 <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                                    <h2 class="text-lg font-semibold text-gray-900">Available Hotels</h2>
-                                    <p class="text-sm text-gray-600 self-start sm:self-auto">
+                                    <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Available Hotels</h2>
+                                    <p class="text-sm text-gray-600 dark:text-gray-300 self-start sm:self-auto">
                                         {filteredHotels().length} of {hotels().length} hotels
                                     </p>
                                 </div>
-                                <Show when={filteredHotels().length > 0} fallback={
-                                    <div class="text-center py-12">
-                                        <Bed class="w-12 h-12 text-gray-300 mx-auto mb-4" />
-                                        <h3 class="text-lg font-semibold text-gray-900 mb-2">No hotels found</h3>
-                                        <p class="text-gray-600 mb-4">Start a new search from the home page to find hotels</p>
-                                        <button 
-                                            onClick={() => window.location.href = '/'}
-                                            class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                                        >
-                                            Start New Search
-                                        </button>
-                                    </div>
-                                }>
-                                    <HotelResults 
+
+                                {/* Show skeleton while loading */}
+                                <Show when={isLoadingState()}>
+                                    <SkeletonHotelGrid count={6} />
+                                </Show>
+
+                                {/* Show real data when available */}
+                                <Show when={!isLoadingState() && filteredHotels().length > 0}>
+                                    <HotelResults
                                         hotels={filteredHotels().map(hotel => ({
                                             name: hotel.name,
                                             latitude: hotel.latitude,
@@ -775,6 +782,39 @@ export default function HotelsPage() {
                                         }}
                                         favorites={myBookmarks().map(b => b.name)}
                                     />
+
+                                    {/* Progressive loading indicator */}
+                                    <Show when={isLoadingMore()}>
+                                        <div class="flex items-center justify-center gap-3 py-4 px-6 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-700">
+                                            <Loader2 class="w-5 h-5 animate-spin text-blue-600 dark:text-blue-400" />
+                                            <span class="text-sm font-medium text-blue-900 dark:text-blue-200">
+                                                Loading more hotels... ({filteredHotels().length} found so far)
+                                            </span>
+                                        </div>
+                                    </Show>
+                                </Show>
+
+                                {/* No data fallback */}
+                                <Show when={!isLoadingState() && !hasData()}>
+                                    <div class="text-center py-12">
+                                        <Bed class="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
+                                        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">No hotels found</h3>
+                                        <p class="text-gray-600 dark:text-gray-300 mb-4">Start a new search from the home page to find hotels</p>
+                                        <button
+                                            onClick={() => window.location.href = '/'}
+                                            class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                                        >
+                                            Start New Search
+                                        </button>
+                                    </div>
+                                </Show>
+
+                                {/* Fixed loading indicator for mobile */}
+                                <Show when={isLoadingMore()}>
+                                    <div class="fixed bottom-4 right-4 bg-blue-500 dark:bg-blue-600 text-white px-4 py-3 rounded-lg shadow-lg z-50 sm:hidden flex items-center gap-2">
+                                        <Loader2 class="w-4 h-4 animate-spin" />
+                                        <span class="text-sm">{filteredHotels().length} hotels</span>
+                                    </div>
                                 </Show>
                             </div>
                         </div>
