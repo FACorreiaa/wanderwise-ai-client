@@ -172,9 +172,11 @@ export default function Nav() {
                 class="flex items-center gap-2 p-2 text-gray-900 dark:text-white hover:text-blue-700 dark:hover:text-emerald-200"
               >
                 <div class="w-8 h-8 rounded-full bg-emerald-600 dark:bg-emerald-400 flex items-center justify-center text-white dark:text-slate-950 text-sm font-bold shadow-lg ring-2 ring-emerald-200 dark:ring-white/40">
-                  {user()?.username?.charAt(0).toUpperCase() || 'U'}
+                  {(user()?.username || user()?.email || 'U').charAt(0).toUpperCase()}
                 </div>
-                <span class="text-sm font-semibold text-gray-900 dark:text-white">{user()?.username || 'User'}</span>
+                <span class="text-sm font-semibold text-gray-900 dark:text-white">
+                  {user()?.username || user()?.email || 'Guest'}
+                </span>
               </Button>
 
               {/* User Dropdown Menu */}

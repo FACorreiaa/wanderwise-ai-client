@@ -9,6 +9,7 @@ import { sendUnifiedChatMessageStream } from '~/lib/api/llm';
 
 export default function DiscoverPage() {
     const { isAuthenticated } = useAuth();
+    const localResultCache = new Map<string, POI[]>();
     const [searchQuery, setSearchQuery] = createSignal('');
     const [searchLocation, setSearchLocation] = createSignal('');
     const [searchResults, setSearchResults] = createSignal<POI[]>([]);
@@ -158,6 +159,15 @@ export default function DiscoverPage() {
     const handleSearch = async (e: Event) => {
         e.preventDefault();
         if (!searchQuery().trim()) return;
+        const cacheKey = `${streamDomain()}:${searchQuery().trim().toLowerCase()}:${searchLocation().trim().toLowerCase()}`;
+
+        if (localResultCache.has(cacheKey)) {
+            setSearchResults(localResultCache.get(cacheKey) || []);
+            setSearchError(null);
+            setProgressMessage('Loaded from cache');
+            setIsSearching(false);
+            return;
+        }
 
         if (abortController) {
             abortController.abort();
@@ -217,9 +227,11 @@ export default function DiscoverPage() {
                             case 'chunk':
                                 setProgressMessage(typeof parsedData === 'string' ? parsedData : 'Thinking...');
                                 {
+                                    // Some streams send partial strings inside `chunk`; ignore until we have objects/arrays.
                                     const pois = extractPois(parsedData);
                                     if (pois.length > 0) {
                                         setSearchResults(pois);
+                                        localResultCache.set(cacheKey, pois);
                                         setProgressMessage('Found places you might like');
                                     }
                                 }
