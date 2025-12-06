@@ -138,11 +138,11 @@ const OnboardingCard: Component = () => {
                   {(() => {
                     const step = onboardingSteps()[currentStep()];
                     const IconComponent = step.icon;
-                    return step.completed ? (
+                    return <>{step.completed ? (
                       <FiCheck class="w-6 h-6 text-white" />
                     ) : (
                       <IconComponent class="w-6 h-6 text-white" />
-                    );
+                    )}</>;
                   })()}
                 </div>
                 <div class="flex-1">
@@ -235,19 +235,19 @@ const OnboardingCard: Component = () => {
             </h4>
             <ul class="space-y-2 text-sm text-gray-700 dark:text-gray-300">
               <li class="flex items-start gap-2">
-                <div class="w-1.5 h-1.5 bg-purple-600 dark:bg-purple-400 rounded-full mt-2 flex-shrink-0"></div>
+                <div class="w-1.5 h-1.5 bg-purple-600 dark:bg-purple-400 rounded-full mt-2 flex-shrink-0" />
                 <span>Start by creating a travel profile with your preferences</span>
               </li>
               <li class="flex items-start gap-2">
-                <div class="w-1.5 h-1.5 bg-purple-600 dark:bg-purple-400 rounded-full mt-2 flex-shrink-0"></div>
+                <div class="w-1.5 h-1.5 bg-purple-600 dark:bg-purple-400 rounded-full mt-2 flex-shrink-0" />
                 <span>Try asking the AI: "Plan a weekend in Porto for art lovers"</span>
               </li>
               <li class="flex items-start gap-2">
-                <div class="w-1.5 h-1.5 bg-purple-600 dark:bg-purple-400 rounded-full mt-2 flex-shrink-0"></div>
+                <div class="w-1.5 h-1.5 bg-purple-600 dark:bg-purple-400 rounded-full mt-2 flex-shrink-0" />
                 <span>Save places to your favorites for easy access later</span>
               </li>
               <li class="flex items-start gap-2">
-                <div class="w-1.5 h-1.5 bg-purple-600 dark:bg-purple-400 rounded-full mt-2 flex-shrink-0"></div>
+                <div class="w-1.5 h-1.5 bg-purple-600 dark:bg-purple-400 rounded-full mt-2 flex-shrink-0" />
                 <span>Create custom lists to organize your travel plans</span>
               </li>
             </ul>

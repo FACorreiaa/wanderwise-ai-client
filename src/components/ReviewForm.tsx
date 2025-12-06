@@ -317,7 +317,7 @@ export default function ReviewForm(props: ReviewFormProps) {
                         >
                             {isSubmitting() ? (
                                 <>
-                                    <div class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                                    <div class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
                                     Submitting...
                                 </>
                             ) : (

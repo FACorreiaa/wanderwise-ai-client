@@ -223,7 +223,7 @@ export default function HotelDetailPage() {
                                 </div>
                                 <div class="grid grid-cols-3 gap-2 mt-2">
                                     {Array.from({ length: 3 }).map((_, i) => (
-                                        <div class="aspect-video bg-white/70 dark:bg-slate-900/60 border border-white/60 dark:border-slate-800/70 rounded"></div>
+                                        <div class="aspect-video bg-white/70 dark:bg-slate-900/60 border border-white/60 dark:border-slate-800/70 rounded" />
                                     ))}
                                 </div>
                             </div>

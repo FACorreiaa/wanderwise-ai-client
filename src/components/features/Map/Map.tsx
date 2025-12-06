@@ -25,17 +25,9 @@ interface MapComponentProps {
   onMarkerClick?: (poi: POI, index: number) => void; // New prop for marker click handling
 }
 
-export default function MapComponent({
-  center,
-  zoom,
-  minZoom,
-  maxZoom,
-  pointsOfInterest,
-  style = "mapbox://styles/mapbox/standard",
-  showRoutes = true,
-  onMarkerClick,
-}: MapComponentProps) {
-  let mapContainer: HTMLDivElement | undefined;
+export default function MapComponent(_props: MapComponentProps) {
+    const props = mergeProps({ style: "mapbox://styles/mapbox/standard", showRoutes: true }, _props);
+let mapContainer: HTMLDivElement | undefined;
   let map: mapboxgl.Map | undefined;
   let currentMarkers: mapboxgl.Marker[] = [];
 
@@ -275,10 +267,10 @@ export default function MapComponent({
       });
 
       // Add click event to trigger callback
-      if (onMarkerClick) {
+      if (props.onMarkerClick) {
         markerElement.addEventListener("click", (e) => {
           e.stopPropagation();
-          onMarkerClick(poi, index);
+          props.onMarkerClick(poi, index);
         });
       }
 
@@ -320,7 +312,7 @@ export default function MapComponent({
     console.log(`Total markers created: ${currentMarkers.length}`);
 
     // Create optimized route line (only if showRoutes is true)
-    if (showRoutes && optimizedPOIs.length > 1) {
+    if (props.showRoutes && optimizedPOIs.length > 1) {
       try {
         const isMobile = mapContainer ? mapContainer.offsetWidth < 768 : true;
 
@@ -593,14 +585,14 @@ export default function MapComponent({
     mapboxgl.accessToken = import.meta.env.VITE_MAPBOX_API_KEY;
 
     // *** DEFENSIVE CENTER COORDINATE VALIDATION ***
-    let validCenter = center;
+    let validCenter = props.center;
 
     // Validate and sanitize center coordinates before map creation
-    if (!center || !Array.isArray(center) || center.length !== 2) {
-      console.warn("🚫 Invalid center prop provided to Map:", center);
+    if (!props.center || !Array.isArray(props.center) || props.center.length !== 2) {
+      console.warn("🚫 Invalid center prop provided to Map:", props.center);
       validCenter = [-8.6291, 41.1579]; // Default to Porto coordinates
     } else {
-      const [lng, lat] = center;
+      const [lng, lat] = props.center;
 
       // Check for null, undefined, or NaN values
       if (
@@ -630,7 +622,7 @@ export default function MapComponent({
       // Log valid coordinates
       else {
         console.log(`✅ Valid center coordinates: lng=${lng}, lat=${lat}`);
-        validCenter = center;
+        validCenter = props.center;
       }
     }
 
@@ -638,12 +630,12 @@ export default function MapComponent({
 
     map = new mapboxgl.Map({
       container: mapContainer!,
-      style: style,
+      style: props.style,
       center: validCenter,
-      zoom: zoom || 20,
+      zoom: props.zoom || 20,
       bearing: 30,
-      minZoom: minZoom || 10,
-      maxZoom: maxZoom || 22,
+      minZoom: props.minZoom || 10,
+      maxZoom: props.maxZoom || 22,
       config: {
         basemap: {
           colorPlaceLabelHighlight: "red",
@@ -657,7 +649,7 @@ export default function MapComponent({
     map.on("load", () => {
       console.log("Map loaded. Adding initial markers.");
       // Use the main addMarkers function instead of addFeaturesToMap
-      addMarkers(pointsOfInterest);
+      addMarkers(props.pointsOfInterest);
     });
 
     const resizeObserver = new ResizeObserver(() => map && map.resize());
@@ -670,7 +662,7 @@ export default function MapComponent({
 
   // React to POI changes with improved error handling and debouncing
   createEffect(() => {
-    const pois = pointsOfInterest; // Get the latest POIs
+    const pois = props.pointsOfInterest; // Get the latest POIs
     console.log("Map createEffect triggered with POIs:", pois?.length);
 
     if (!map || !map.isStyleLoaded()) {

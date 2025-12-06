@@ -1,4 +1,4 @@
-import { Component, createEffect, createSignal, Show } from 'solid-js';
+import { Component, createEffect, createSignal, Show, For } from 'solid-js';
 import { Badge } from "@/ui/badge";
 import { useMainPageStatistics, type MainPageStatistics } from '~/lib/api/statistics';
 import { TrendingUp, Users, MapPin, Calendar, WifiOff } from 'lucide-solid';
@@ -146,15 +146,15 @@ export default function RealTimeStats(props: RealTimeStatsProps) {
                         <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 sm:gap-8 max-w-4xl mx-auto">
                             {Array.from({ length: 3 }).map(() => (
                                 <div class="text-center" role="listitem">
-                                    <div class="h-12 sm:h-16 md:h-20 bg-gray-200 dark:bg-gray-700 rounded-lg animate-pulse mb-2"></div>
-                                    <div class="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+                                    <div class="h-12 sm:h-16 md:h-20 bg-gray-200 dark:bg-gray-700 rounded-lg animate-pulse mb-2" />
+                                    <div class="h-4 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
                                 </div>
                             ))}
                         </div>
                     }
                 >
                     <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 sm:gap-8 max-w-4xl mx-auto" role="list">
-                        {statsItems().map((stat) => (
+                        <For each={statsItems()}>{(stat) => (
                             <div class="text-center group glass-panel gradient-border rounded-2xl px-4 py-6 sm:px-6 sm:py-8 hover:shadow-xl transition-all duration-300" role="listitem">
                                 <div class="flex flex-col items-center">
                                     <Show when={stat.icon}>
@@ -181,7 +181,7 @@ export default function RealTimeStats(props: RealTimeStatsProps) {
                                     </Show>
                                 </div>
                             </div>
-                        ))}
+                        )}</For>
                     </div>
                 </Show>
 

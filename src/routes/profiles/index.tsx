@@ -340,11 +340,11 @@ export default function ProfilesPage() {
                 {/* Interests preview */}
                 <div class="mb-4">
                     <div class="flex flex-wrap gap-1 mb-2">
-                        {profile.interests.slice(0, 3).map(interest => (
+                        <For each={profile.interests.slice(0, 3)}>{interest => (
                             <span class="px-2 py-1 bg-purple-100 text-purple-800 rounded-full text-xs">
                                 {interest}
                             </span>
-                        ))}
+                        )}</For>
                         {profile.interests.length > 3 && (
                             <span class="px-2 py-1 bg-gray-100 text-gray-600 rounded-full text-xs">
                                 +{profile.interests.length - 3} more

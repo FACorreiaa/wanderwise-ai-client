@@ -205,7 +205,7 @@ const SignIn: Component<{ onSwitchMode?: (mode: AuthMode) => void }> = (props) =
 
                 <div class="relative my-6">
                     <div class="absolute inset-0 flex items-center">
-                        <div class="w-full border-t border-white/10"></div>
+                        <div class="w-full border-t border-white/10" />
                     </div>
                     <div class="relative flex justify-center text-sm">
                         <span class="px-2 bg-white/5 text-slate-200/80 rounded-full backdrop-blur">Or continue with</span>

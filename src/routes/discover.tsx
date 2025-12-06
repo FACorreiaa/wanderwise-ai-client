@@ -438,7 +438,7 @@ export default function DiscoverPage() {
                         <div class="loci-hero__content p-6 sm:p-8 space-y-6">
                             <div class="flex items-center gap-3">
                                 <div class="relative">
-                                    <div class="absolute -inset-1 bg-gradient-to-tr from-blue-500/60 via-cyan-500/60 to-purple-600/60 blur-md opacity-80"></div>
+                                    <div class="absolute -inset-1 bg-gradient-to-tr from-blue-500/60 via-cyan-500/60 to-purple-600/60 blur-md opacity-80" />
                                     <div class="relative w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center text-white shadow-lg ring-2 ring-white/60">
                                         <Sparkles class="w-6 h-6" />
                                     </div>
@@ -522,7 +522,7 @@ export default function DiscoverPage() {
                                 <Show when={!isSearching()} fallback={
                                     <div class="md:col-span-2 lg:col-span-3 space-y-3">
                                         <For each={[1, 2, 3]}>
-                                            {() => <div class="h-24 rounded-xl bg-gray-200 dark:bg-gray-700 animate-pulse"></div>}
+                                            {() => <div class="h-24 rounded-xl bg-gray-200 dark:bg-gray-700 animate-pulse" />}
                                         </For>
                                     </div>
                                 }>
@@ -608,9 +608,9 @@ export default function DiscoverPage() {
                                                 Join the waitlist to unlock offline brains, background updates twice daily, and taste profiles synced across devices.
                                             </p>
                                             <div class="flex flex-wrap gap-2 text-xs">
-                                                {["Offline maps", "Push nearby picks", "Premium taste graph", "Download itineraries"].map((chip) => (
+                                                <For each={["Offline maps", "Push nearby picks", "Premium taste graph", "Download itineraries"]}>{(chip) => (
                                                     <span class="px-2.5 py-1.5 rounded-full bg-white/90 dark:bg-white/10 border border-blue-200/60 dark:border-white/20 text-gray-800 dark:text-white font-medium shadow-sm">{chip}</span>
-                                                ))}
+                                                )}</For>
                                             </div>
                                         </div>
                                     </div>
@@ -633,7 +633,7 @@ export default function DiscoverPage() {
                                             <div class="space-y-3">
                                                 <For each={[1, 2, 3]}>
                                                     {() => (
-                                                        <div class="animate-pulse bg-gray-200 dark:bg-gray-700 rounded-xl h-20"></div>
+                                                        <div class="animate-pulse bg-gray-200 dark:bg-gray-700 rounded-xl h-20" />
                                                     )}
                                                 </For>
                                             </div>
@@ -683,7 +683,7 @@ export default function DiscoverPage() {
                                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                                 <For each={[1, 2, 3, 4]}>
                                                     {() => (
-                                                        <div class="animate-pulse bg-gray-200 dark:bg-gray-700 rounded-xl h-24"></div>
+                                                        <div class="animate-pulse bg-gray-200 dark:bg-gray-700 rounded-xl h-24" />
                                                     )}
                                                 </For>
                                             </div>
@@ -731,7 +731,7 @@ export default function DiscoverPage() {
                                             <div class="space-y-3">
                                                 <For each={[1, 2, 3]}>
                                                     {() => (
-                                                        <div class="animate-pulse bg-gray-200 dark:bg-gray-700 rounded-xl h-32"></div>
+                                                        <div class="animate-pulse bg-gray-200 dark:bg-gray-700 rounded-xl h-32" />
                                                     )}
                                                 </For>
                                             </div>

@@ -299,7 +299,7 @@ export default function ItineraryResults(props: ItineraryResultsProps) {
                       >
                         <Show
                           when={!props.isLoadingFavorites}
-                          fallback={<div class="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin"></div>}
+                          fallback={<div class="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />}
                         >
                           <Star class={`w-4 h-4 ${isFavorite(poi.name) ? "fill-current" : ""}`} />
                         </Show>

@@ -50,15 +50,15 @@ export default function MobileAppAnnouncement() {
                             {/* Features list */}
                             <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 mt-6 sm:mt-8 text-sm sm:text-base">
                                 <div class="flex items-center justify-center gap-2 text-slate-700 dark:text-slate-200">
-                                    <div class="w-2 h-2 bg-cyan-400 rounded-full"></div>
+                                    <div class="w-2 h-2 bg-cyan-400 rounded-full" />
                                     <span>Offline Maps</span>
                                 </div>
                                 <div class="flex items-center justify-center gap-2 text-slate-700 dark:text-slate-200">
-                                    <div class="w-2 h-2 bg-purple-400 rounded-full"></div>
+                                    <div class="w-2 h-2 bg-purple-400 rounded-full" />
                                     <span>Push Notifications</span>
                                 </div>
                                 <div class="flex items-center justify-center gap-2 text-slate-700 dark:text-slate-200">
-                                    <div class="w-2 h-2 bg-emerald-400 rounded-full"></div>
+                                    <div class="w-2 h-2 bg-emerald-400 rounded-full" />
                                     <span>Device Sync</span>
                                 </div>
                             </div>

@@ -1,7 +1,7 @@
 import { Button } from "@/ui/button";
 import { TextField, TextFieldRoot } from "@/ui/textfield";
 import { useNavigate } from "@solidjs/router";
-import { Component, createSignal, Show } from "solid-js";
+import { Component, createSignal, Show, For } from "solid-js";
 import AuthLayout from '../../layout/Auth'
 import { FiCheck } from "solid-icons/fi";
 import { VsEyeClosed, VsEye } from "solid-icons/vs";
@@ -201,7 +201,7 @@ const SignUp: Component<{ onSwitchMode?: (mode: AuthMode) => void }> = (props) =
 
                     <Show when={formData().password}>
                         <div class="mt-2 space-y-1">
-                            {passwordRequirements.map(req => (
+                            <For each={passwordRequirements}>{req => (
                                 <div class="flex items-center gap-2 text-xs">
                                     <div class={`w-3 h-3 rounded-full flex items-center justify-center ${req.met ? 'bg-green-100 dark:bg-green-900' : 'bg-gray-100 dark:bg-gray-700'
                                         }`}>
@@ -211,7 +211,7 @@ const SignUp: Component<{ onSwitchMode?: (mode: AuthMode) => void }> = (props) =
                                     </div>
                                     <span class={req.met ? 'text-green-600 dark:text-green-400' : 'text-gray-500 dark:text-gray-400'}>{req.text}</span>
                                 </div>
-                            ))}
+                            )}</For>
                         </div>
                     </Show>
                 </div>
@@ -233,7 +233,7 @@ const SignUp: Component<{ onSwitchMode?: (mode: AuthMode) => void }> = (props) =
 
                 <div class="relative my-6">
                     <div class="absolute inset-0 flex items-center">
-                        <div class="w-full border-t border-white/10"></div>
+                        <div class="w-full border-t border-white/10" />
                     </div>
                     <div class="relative flex justify-center text-sm">
                         <span class="px-2 bg-white/5 text-slate-200/80 rounded-full backdrop-blur">Or continue with</span>

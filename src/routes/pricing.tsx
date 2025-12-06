@@ -1,7 +1,7 @@
 import { A } from "@solidjs/router";
 import { Title, Meta } from "@solidjs/meta";
 import { Check, Star, Zap, Crown, Heart, MapPin, Brain, Clock } from "lucide-solid";
-import { createSignal, Show } from "solid-js";
+import { createSignal, Show, For } from "solid-js";
 import PromoCodeSection from "~/components/PromoCodeSection";
 
 export default function Pricing() {
@@ -251,7 +251,7 @@ export default function Pricing() {
         </header>
 
         {/* Promo Code Section */}
-        <PromoCodeSection onSuccess={handlePromoSuccess} className="mb-16" />
+        <PromoCodeSection onSuccess={handlePromoSuccess} class="mb-16" />
 
         {/* Promo Success Banner */}
         <Show when={appliedPromo()}>
@@ -381,7 +381,7 @@ export default function Pricing() {
                   <div class="space-y-3">
                     <h4 class={`font-semibold ${plan.disabled ? 'text-gray-500 dark:text-gray-400' : 'text-card-foreground'}`}>Includes:</h4>
                     <ul class="space-y-2" role="list">
-                      {plan.features.map((feature) => (
+                      <For each={plan.features}>{(feature) => (
                         <li class="flex items-start" role="listitem">
                           <Check class={`w-5 h-5 mr-3 mt-0.5 flex-shrink-0 ${
                             plan.disabled 
@@ -394,7 +394,7 @@ export default function Pricing() {
                               : 'text-muted-foreground'
                           }`}>{feature}</span>
                         </li>
-                      ))}
+                      )}</For>
                     </ul>
 
                     {plan.limitations.length > 0 && (
@@ -402,14 +402,14 @@ export default function Pricing() {
                         <hr class="my-4 border-border" />
                         <h4 class="font-semibold text-card-foreground text-sm">Limitations:</h4>
                         <ul class="space-y-2" role="list">
-                          {plan.limitations.map((limitation) => (
+                          <For each={plan.limitations}>{(limitation) => (
                             <li class="flex items-start" role="listitem">
                               <div class="w-5 h-5 mr-3 mt-0.5 flex-shrink-0" aria-hidden="true">
-                                <div class="w-1.5 h-1.5 bg-muted-foreground rounded-full mx-auto mt-2"></div>
+                                <div class="w-1.5 h-1.5 bg-muted-foreground rounded-full mx-auto mt-2" />
                               </div>
                               <span class="text-muted-foreground/80 text-sm">{limitation}</span>
                             </li>
-                          ))}
+                          )}</For>
                         </ul>
                       </>
                     )}
@@ -450,7 +450,7 @@ export default function Pricing() {
                               <Check class="w-5 h-5 text-green-500 dark:text-green-400 mx-auto" aria-label="Included" />
                             ) : (
                               <div class="w-5 h-5 mx-auto flex items-center justify-center" aria-label="Not included">
-                                <div class="w-4 h-0.5 bg-muted-foreground/50"></div>
+                                <div class="w-4 h-0.5 bg-muted-foreground/50" />
                               </div>
                             )
                           ) : (
@@ -463,7 +463,7 @@ export default function Pricing() {
                               <Check class="w-5 h-5 text-green-500 dark:text-green-400 mx-auto" aria-label="Included" />
                             ) : (
                               <div class="w-5 h-5 mx-auto flex items-center justify-center" aria-label="Not included">
-                                <div class="w-4 h-0.5 bg-muted-foreground/50"></div>
+                                <div class="w-4 h-0.5 bg-muted-foreground/50" />
                               </div>
                             )
                           ) : (
@@ -476,7 +476,7 @@ export default function Pricing() {
                               <Check class="w-5 h-5 text-green-500 dark:text-green-400 mx-auto" aria-label="Included" />
                             ) : (
                               <div class="w-5 h-5 mx-auto flex items-center justify-center" aria-label="Not included">
-                                <div class="w-4 h-0.5 bg-muted-foreground/50"></div>
+                                <div class="w-4 h-0.5 bg-muted-foreground/50" />
                               </div>
                             )
                           ) : (

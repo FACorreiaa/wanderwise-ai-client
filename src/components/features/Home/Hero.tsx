@@ -106,7 +106,7 @@ export default function Hero(props: HeroProps) {
                                     </div>
                                     {selectedContext() === option.id && (
                                         <div class="absolute inset-0 rounded-xl ring-2 ring-primary/20 ring-offset-2 ring-offset-background 
-                                                    [&[data-theme='vt-news']]:ring-yellow-500/20 [&[data-theme='valuetainment']]:ring-red-500/20"></div>
+                                                    [&[data-theme='vt-news']]:ring-yellow-500/20 [&[data-theme='valuetainment']]:ring-red-500/20" />
                                     )}
                                 </button>
                             )}

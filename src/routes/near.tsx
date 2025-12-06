@@ -370,7 +370,7 @@ export default function DiscoverPage() {
                         >
                             <Show
                                 when={!(addToFavoritesMutation.isPending || removeFromFavoritesMutation.isPending)}
-                                fallback={<div class="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin"></div>}
+                                fallback={<div class="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />}
                             >
                                 <Star class={`w-4 h-4 ${isFavorite(poi.id) ? 'fill-current' : ''}`} />
                             </Show>
@@ -406,12 +406,10 @@ export default function DiscoverPage() {
                             <Show when={poi.priority && getPopularityInfo(poi.priority)}>
                                 {(() => {
                                     const popularityInfo = getPopularityInfo(poi.priority);
-                                    return popularityInfo ? (
-                                        <span class={`px-2 py-0.5 rounded-full text-xs font-medium ${popularityInfo.color}`}>
+                                    return <Show when={popularityInfo}><span class={`px-2 py-0.5 rounded-full text-xs font-medium ${popularityInfo.color}`}>
                                             <span class="mr-1">{popularityInfo.icon}</span>
                                             {popularityInfo.label}
-                                        </span>
-                                    ) : null;
+                                        </span></Show>;
                                 })()}
                             </Show>
                             <Show when={poi.timeToSpend || poi.time_to_spend}>
@@ -445,11 +443,11 @@ export default function DiscoverPage() {
 
                 {/* Tags */}
                 <div class="flex flex-wrap gap-1 mb-3">
-                    {(poi.tags || []).slice(0, 3).map(tag => (
+                    <For each={(poi.tags || []).slice(0, 3)}>{tag => (
                         <span class="px-2 py-0.5 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded-full text-xs">
                             {tag}
                         </span>
-                    ))}
+                    )}</For>
                     {(poi.tags || []).length > 3 && (
                         <span class="px-2 py-0.5 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 rounded-full text-xs">
                             +{(poi.tags || []).length - 3}
@@ -502,12 +500,10 @@ export default function DiscoverPage() {
                                 <Show when={poi.priority && getPopularityInfo(poi.priority)}>
                                     {(() => {
                                         const popularityInfo = getPopularityInfo(poi.priority);
-                                        return popularityInfo ? (
-                                            <span class={`px-2 py-0.5 rounded-full text-xs font-medium ${popularityInfo.color}`}>
+                                        return <Show when={popularityInfo}><span class={`px-2 py-0.5 rounded-full text-xs font-medium ${popularityInfo.color}`}>
                                                 <span class="mr-1">{popularityInfo.icon}</span>
                                                 {popularityInfo.label}
-                                            </span>
-                                        ) : null;
+                                            </span></Show>;
                                     })()}
                                 </Show>
                                 <Show when={poi.timeToSpend || poi.time_to_spend}>
@@ -534,11 +530,11 @@ export default function DiscoverPage() {
 
                     <div class="flex items-center justify-between">
                         <div class="flex flex-wrap gap-1">
-                            {(poi.tags || []).slice(0, 4).map(tag => (
+                            <For each={(poi.tags || []).slice(0, 4)}>{tag => (
                                 <span class="px-2 py-0.5 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded-full text-xs">
                                     {tag}
                                 </span>
-                            ))}
+                            )}</For>
                         </div>
 
                         <div class="flex items-center gap-2">
@@ -551,7 +547,7 @@ export default function DiscoverPage() {
                             >
                                 <Show
                                     when={!(addToFavoritesMutation.isPending || removeFromFavoritesMutation.isPending)}
-                                    fallback={<div class="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin"></div>}
+                                    fallback={<div class="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />}
                                 >
                                     <Star class={`w-4 h-4 ${isFavorite(poi.id) ? 'fill-current' : ''}`} />
                                 </Show>

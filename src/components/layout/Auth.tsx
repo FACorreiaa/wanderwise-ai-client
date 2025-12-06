@@ -1,4 +1,4 @@
-import { Component, Show } from 'solid-js';
+import { Component, Show, For } from 'solid-js';
 import { useNavigate } from '@solidjs/router';
 import { Button } from "@/ui/button";
 import { Badge } from "@/ui/badge";
@@ -67,17 +67,17 @@ const AuthLayout: Component<{ children: any; showBackButton?: boolean; onBack?: 
                                 Every suggestion is annotated and ready for offline.
                             </p>
                             <div class="grid grid-cols-2 gap-3">
-                                {[
+                                <For each={[
                                     "Two-click rebooks and live tweaks",
                                     "Accessibility and budget cues surfaced",
                                     "Save once, sync across devices",
                                     "Native iOS + Android coming soon",
-                                ].map((item) => (
+                                ]}>{(item) => (
                                     <div class={`flex items-start gap-2 rounded-2xl p-3 ${isDark() ? 'bg-white/5 border border-white/10' : 'bg-slate-50 border border-slate-200'}`}>
                                         <FiCheck class={`w-4 h-4 ${isDark() ? 'text-emerald-300' : 'text-emerald-600'} mt-0.5`} />
                                         <span class={`text-sm ${isDark() ? 'text-slate-100' : 'text-slate-800'}`}>{item}</span>
                                     </div>
-                                ))}
+                                )}</For>
                             </div>
                             <div class={`text-sm ${isDark() ? 'text-slate-300/90' : 'text-slate-600'}`}>
                                 No spam. Your data stays yours. Delete anytime in settings.

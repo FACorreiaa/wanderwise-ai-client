@@ -1,3 +1,4 @@
+import { For } from "solid-js";
 import { Badge } from "@/ui/badge";
 
 interface StatItem {
@@ -19,7 +20,7 @@ export default function Stats(props: StatsProps) {
                 </Badge>
                 <h2 id="stats-heading" class="sr-only">Platform Statistics</h2>
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 sm:gap-8 max-w-4xl mx-auto" role="list">
-                    {props.items.map((stat) => (
+                    <For each={props.items}>{(stat) => (
                         <div class="text-center" role="listitem">
                             <p class="text-3xl sm:text-4xl md:text-5xl font-bold text-foreground mb-1 sm:mb-2">
                                 {stat.value}
@@ -28,7 +29,7 @@ export default function Stats(props: StatsProps) {
                                 {stat.label}
                             </p>
                         </div>
-                    ))}
+                    )}</For>
                 </div>
             </div>
         </section>

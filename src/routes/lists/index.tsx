@@ -203,7 +203,7 @@ export default function ListsPage() {
                     <div class="absolute inset-0 flex items-center justify-center">
                         <div class="grid grid-cols-3 gap-1 opacity-30">
                             {Array.from({ length: 9 }).map((_, i) => (
-                                <div class="w-4 h-4 bg-white rounded-sm"></div>
+                                <div class="w-4 h-4 bg-white rounded-sm" />
                             ))}
                         </div>
                     </div>
@@ -297,22 +297,22 @@ export default function ListsPage() {
                         <div class="mb-3">
                             <div class="text-xs font-medium text-gray-700 mb-1">Recent additions:</div>
                             <div class="space-y-1">
-                                {list.recentItems.slice(0, 2).map(item => (
+                                <For each={list.recentItems.slice(0, 2)}>{item => (
                                     <div class="text-xs text-gray-600 truncate">
                                         • {item.name} {item.city && `(${item.city})`}
                                     </div>
-                                ))}
+                                )}</For>
                             </div>
                         </div>
                     </Show>
 
                     {/* Tags */}
                     <div class="flex flex-wrap gap-1 mb-3">
-                        {list.tags.slice(0, 2).map(tag => (
+                        <For each={list.tags.slice(0, 2)}>{tag => (
                             <span class="px-2 py-0.5 bg-blue-100 text-blue-800 rounded-full text-xs">
                                 {tag}
                             </span>
-                        ))}
+                        )}</For>
                         {list.tags.length > 2 && (
                             <span class="px-2 py-0.5 bg-gray-100 text-gray-600 rounded-full text-xs">
                                 +{list.tags.length - 2}

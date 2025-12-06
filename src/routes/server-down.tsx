@@ -117,19 +117,19 @@ const ServerDownPage: Component = () => {
           </h3>
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
             <div class="flex items-center gap-2 text-slate-700 dark:text-slate-200">
-              <span class="w-2 h-2 bg-blue-500 rounded-full"></span>
+              <span class="w-2 h-2 bg-blue-500 rounded-full" />
               Browse cached content
             </div>
             <div class="flex items-center gap-2 text-slate-700 dark:text-slate-200">
-              <span class="w-2 h-2 bg-blue-500 rounded-full"></span>
+              <span class="w-2 h-2 bg-blue-500 rounded-full" />
               View saved favorites
             </div>
             <div class="flex items-center gap-2 text-slate-700 dark:text-slate-200">
-              <span class="w-2 h-2 bg-blue-500 rounded-full"></span>
+              <span class="w-2 h-2 bg-blue-500 rounded-full" />
               Read downloaded itineraries
             </div>
             <div class="flex items-center gap-2 text-slate-700 dark:text-slate-200">
-              <span class="w-2 h-2 bg-blue-500 rounded-full"></span>
+              <span class="w-2 h-2 bg-blue-500 rounded-full" />
               Plan future trips
             </div>
           </div>

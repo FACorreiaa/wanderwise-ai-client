@@ -417,7 +417,7 @@ export default function RecentsPage() {
         <Show when={recentsQuery.isLoading}>
           <div class="flex items-center justify-center py-12">
             <div class="flex items-center gap-3">
-              <div class="w-6 h-6 border-3 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+              <div class="w-6 h-6 border-3 border-blue-600 border-t-transparent rounded-full animate-spin" />
               <span class="text-gray-600 dark:text-gray-400">Loading your recent activity...</span>
             </div>
           </div>

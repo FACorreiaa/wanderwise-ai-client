@@ -199,7 +199,7 @@ function ProfilePageContent() {
                         <For each={profile.badges}>
                             {(badge) => (
                                 <div class="flex items-center gap-2 px-3 py-2 bg-white/70 dark:bg-slate-900/60 rounded-lg border border-white/60 dark:border-slate-800/70">
-                                    <div class="w-6 h-6 bg-amber-400 rounded-full"></div>
+                                    <div class="w-6 h-6 bg-amber-400 rounded-full" />
                                     <span class="text-sm font-medium text-slate-900 dark:text-white">{badge}</span>
                                 </div>
                             )}
@@ -303,7 +303,7 @@ function ProfilePageContent() {
     if (profileQuery.isLoading && !user()) {
         return (
             <div class="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors flex items-center justify-center">
-                <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+                <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600" />
             </div>
         );
     }

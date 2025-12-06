@@ -1,3 +1,4 @@
+import { For } from "solid-js";
 import { A } from "@solidjs/router";
 import { Title, Meta } from "@solidjs/meta";
 import { Brain, MapPin, Filter, Heart, List, Clock, Smartphone, Zap, Globe, Users, Search, Database } from "lucide-solid";
@@ -126,12 +127,12 @@ export default function Features() {
                     {feature.description}
                   </p>
                   <ul class="space-y-2" role="list">
-                    {feature.details.map((detail) => (
+                    <For each={feature.details}>{(detail) => (
                       <li class="flex items-center text-sm text-muted-foreground" role="listitem">
-                        <div class="w-1.5 h-1.5 bg-blue-500 dark:bg-blue-400 rounded-full mr-2" aria-hidden="true"></div>
+                        <div class="w-1.5 h-1.5 bg-blue-500 dark:bg-blue-400 rounded-full mr-2" aria-hidden="true" />
                         {detail}
                       </li>
-                    ))}
+                    )}</For>
                   </ul>
                 </article>
               );
@@ -223,15 +224,15 @@ export default function Features() {
               </p>
               <ul class="space-y-2" role="list">
                 <li class="flex items-center text-sm text-muted-foreground">
-                  <div class="w-1.5 h-1.5 bg-purple-500 rounded-full mr-2" aria-hidden="true"></div>
+                  <div class="w-1.5 h-1.5 bg-purple-500 rounded-full mr-2" aria-hidden="true" />
                   Remembers your preferences from past conversations
                 </li>
                 <li class="flex items-center text-sm text-muted-foreground">
-                  <div class="w-1.5 h-1.5 bg-purple-500 rounded-full mr-2" aria-hidden="true"></div>
+                  <div class="w-1.5 h-1.5 bg-purple-500 rounded-full mr-2" aria-hidden="true" />
                   Understands context from previous interactions
                 </li>
                 <li class="flex items-center text-sm text-muted-foreground">
-                  <div class="w-1.5 h-1.5 bg-purple-500 rounded-full mr-2" aria-hidden="true"></div>
+                  <div class="w-1.5 h-1.5 bg-purple-500 rounded-full mr-2" aria-hidden="true" />
                   Builds a personalized knowledge base over time
                 </li>
               </ul>
@@ -249,15 +250,15 @@ export default function Features() {
               </p>
               <ul class="space-y-2" role="list">
                 <li class="flex items-center text-sm text-muted-foreground">
-                  <div class="w-1.5 h-1.5 bg-emerald-500 rounded-full mr-2" aria-hidden="true"></div>
+                  <div class="w-1.5 h-1.5 bg-emerald-500 rounded-full mr-2" aria-hidden="true" />
                   Finds relevant information from your past interactions
                 </li>
                 <li class="flex items-center text-sm text-muted-foreground">
-                  <div class="w-1.5 h-1.5 bg-emerald-500 rounded-full mr-2" aria-hidden="true"></div>
+                  <div class="w-1.5 h-1.5 bg-emerald-500 rounded-full mr-2" aria-hidden="true" />
                   Combines your preferences with real-time data
                 </li>
                 <li class="flex items-center text-sm text-muted-foreground">
-                  <div class="w-1.5 h-1.5 bg-emerald-500 rounded-full mr-2" aria-hidden="true"></div>
+                  <div class="w-1.5 h-1.5 bg-emerald-500 rounded-full mr-2" aria-hidden="true" />
                   Provides contextual recommendations that improve over time
                 </li>
               </ul>

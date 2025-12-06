@@ -1,4 +1,4 @@
-import { createSignal, Show } from "solid-js";
+import { createSignal, Show, For } from "solid-js";
 import { A, useNavigate } from "@solidjs/router";
 import {
   Send,
@@ -380,7 +380,7 @@ export default function PublicLandingPage() {
 
         {/* Domain previews */}
         <section class="mt-12 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {previewCards.map((card) => (
+          <For each={previewCards}>{(card) => (
             <A
               href={card.href}
               class="group relative overflow-hidden rounded-2xl border border-gray-200 dark:border-white/10 bg-white/90 dark:bg-white/5 backdrop-blur-xl p-5 shadow-xl dark:shadow-[0_20px_80px_rgba(3,7,18,0.45)] hover:-translate-y-1 transition-all"
@@ -403,7 +403,7 @@ export default function PublicLandingPage() {
                 Search works. Chat and saves unlock once you register.
               </div>
             </A>
-          ))}
+          )}</For>
         </section>
 
         {/* Value stack + social proof */}
@@ -411,14 +411,14 @@ export default function PublicLandingPage() {
           <div class="lg:col-span-2 space-y-4">
             <h2 class="text-2xl font-bold text-gray-900 dark:text-white">Why travelers stay</h2>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {valueStack.map((item) => (
+              <For each={valueStack}>{(item) => (
                 <div class="glass-panel gradient-border rounded-2xl p-4 bg-white/90 dark:bg-white/5">
                   <p class="text-xs uppercase tracking-[0.16em] text-emerald-700 dark:text-emerald-200 mb-2">
                     {item.label}
                   </p>
                   <p class="text-sm text-gray-700 dark:text-slate-100/85">{item.copy}</p>
                 </div>
-              ))}
+              )}</For>
             </div>
           </div>
           <div class="space-y-4">
@@ -427,12 +427,12 @@ export default function PublicLandingPage() {
               Social proof
             </h3>
             <div class="space-y-3">
-              {socialProof.map((proof) => (
+              <For each={socialProof}>{(proof) => (
                 <div class="glass-panel rounded-2xl p-4 bg-white/90 dark:bg-white/5">
                   <p class="text-sm text-gray-900 dark:text-white/90">{proof.quote}</p>
                   <p class="text-xs text-gray-600 dark:text-slate-200/70 mt-2">{proof.name}</p>
                 </div>
-              ))}
+              )}</For>
             </div>
           </div>
         </section>

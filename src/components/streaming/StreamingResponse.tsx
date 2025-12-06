@@ -315,7 +315,7 @@ export function StreamingResponse(props: StreamingResponseProps) {
     <div class={`streaming-response ${props.className || ''}`}>
       <Show when={isLoading()}>
         <div class="flex items-center gap-2 p-4">
-          <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+          <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600" />
           <p class="text-sm text-gray-600">{props.loadingText || 'Connecting...'}</p>
         </div>
       </Show>
@@ -331,7 +331,7 @@ export function StreamingResponse(props: StreamingResponseProps) {
         <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
           <div class="flex items-center justify-between">
             <div class="flex items-center gap-2">
-              <div class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+              <div class="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
               <span class="text-sm font-medium text-green-700">Live</span>
             </div>
             <button 
@@ -347,7 +347,7 @@ export function StreamingResponse(props: StreamingResponseProps) {
               <div 
                 class="bg-blue-600 h-2 rounded-full transition-all duration-300"
                 style={{ width: `${content.progress}%` }}
-              ></div>
+               />
             </div>
           </div>
         </div>
@@ -362,7 +362,7 @@ export function StreamingResponse(props: StreamingResponseProps) {
               <pre class="whitespace-pre-wrap text-sm leading-relaxed">
                 {content.text}
                 <Show when={!content.isComplete}>
-                  <span class="inline-block w-2 h-4 bg-gray-400 animate-pulse ml-1"></span>
+                  <span class="inline-block w-2 h-4 bg-gray-400 animate-pulse ml-1" />
                 </Show>
               </pre>
             </div>

@@ -152,7 +152,7 @@ export function StreamingChatMessage(props: StreamingChatMessageProps) {
               <span>{currentState.currentStep}</span>
               <Show when={currentState.isConnected}>
                 <div class="flex items-center gap-1">
-                  <div class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                  <div class="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
                   <span class="text-xs text-green-600">Live</span>
                 </div>
               </Show>
@@ -166,7 +166,7 @@ export function StreamingChatMessage(props: StreamingChatMessageProps) {
                 <div 
                   class="bg-blue-600 h-2 rounded-full transition-all duration-300"
                   style={{ width: `${currentState.progress}%` }}
-                ></div>
+                 />
               </div>
               <div class="text-xs text-gray-500 mt-1">
                 {Math.round(currentState.progress)}% complete

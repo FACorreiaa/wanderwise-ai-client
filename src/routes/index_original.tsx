@@ -261,7 +261,7 @@ const LandingPage: Component = () => {
                                 <Show when={streamingSession()}>
                                     <div class="mt-3 text-xs text-gray-500 dark:text-gray-400 space-y-1">
                                         <div class="flex items-center gap-2">
-                                            <span class="inline-block w-2 h-2 bg-blue-500 rounded-full"></span>
+                                            <span class="inline-block w-2 h-2 bg-blue-500 rounded-full" />
                                             <span>Domain: {streamingSession()?.domain}</span>
                                         </div>
                                         <Show when={streamingSession()?.city}>

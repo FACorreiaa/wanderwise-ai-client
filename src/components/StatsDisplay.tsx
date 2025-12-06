@@ -1,3 +1,4 @@
+import { For } from "solid-js";
 export default function StatsDisplay() {
     const stats = [
         { value: "12,109,471", label: "new predictions" },
@@ -7,12 +8,12 @@ export default function StatsDisplay() {
 
     return (
         <div class="flex flex-col sm:flex-row justify-center items-center gap-8 sm:gap-12 md:gap-16 py-8">
-            {stats.map((stat) => (
+            <For each={stats}>{(stat) => (
                 <div class="text-center">
                     <p class="text-4xl md:text-5xl font-bold text-primary">{stat.value}</p>
                     <p class="text-sm text-muted-foreground">{stat.label}</p>
                 </div>
-            ))}
+            )}</For>
         </div>
     );
 }

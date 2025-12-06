@@ -1,3 +1,4 @@
+import { For } from "solid-js";
 import { A } from "@solidjs/router";
 import { Title, Meta } from "@solidjs/meta";
 
@@ -55,16 +56,16 @@ export default function About() {
         </header>
 
         <section class="grid md:grid-cols-3 gap-4">
-          {[
+          <For each={[
             { title: "Human-grade curation", body: "Annotated picks with source notes, not generic lists.", tone: "from-[#dc8a78]/25 to-[#dd7878]/20" },
             { title: "Glass accessibility", body: "High-contrast cards that stay legible in Latte or dark.", tone: "from-[#04a5e5]/25 to-[#1e66f5]/20" },
             { title: "Native-first future", body: "iOS + Android launching with offline brains for paid users.", tone: "from-[#40a02b]/25 to-[#df8e1d]/20" },
-          ].map((item) => (
+          ]}>{(item) => (
             <div class={`rounded-2xl p-5 border border-[hsl(223,16%,83%)]/80 dark:border-white/10 bg-gradient-to-br ${item.tone} backdrop-blur`}>
               <h3 class="text-lg font-semibold text-foreground dark:text-white mb-2">{item.title}</h3>
               <p class="text-[hsl(233,10%,47%)] dark:text-slate-200/85 text-sm leading-relaxed">{item.body}</p>
             </div>
-          ))}
+          )}</For>
         </section>
 
         {/* Main Content */}

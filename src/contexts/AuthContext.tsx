@@ -250,7 +250,7 @@ export const ProtectedRoute = (props: ProtectedRouteProps) => {
   if (isLoading()) {
     return (
       <div class="min-h-screen flex items-center justify-center">
-        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600" />
       </div>
     );
   }
@@ -288,7 +288,7 @@ export const PublicRoute = (props: PublicRouteProps) => {
   if (isLoading()) {
     return (
       <div class="min-h-screen flex items-center justify-center">
-        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600" />
       </div>
     );
   }

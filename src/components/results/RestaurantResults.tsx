@@ -219,7 +219,7 @@ export default function RestaurantResults(props: RestaurantResultsProps) {
                     >
                       <Show
                         when={!props.isLoadingFavorites}
-                        fallback={<div class="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin"></div>}
+                        fallback={<div class="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />}
                       >
                         <Heart class={`w-4 h-4 ${isFavorite(restaurant.name) ? 'fill-current' : ''}`} />
                       </Show>

@@ -98,7 +98,7 @@ export default function InterestsComponent(props: InterestsUIProps) {
     return (
       <div class="space-y-8">
         <div class="flex items-center justify-center py-12">
-          <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
+          <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600" />
         </div>
       </div>
     );

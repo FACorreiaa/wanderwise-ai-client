@@ -1566,15 +1566,15 @@ export default function ChatPage() {
                     </p>
                     <div class="space-y-2">
                       <div class="flex items-center gap-2 text-xs text-gray-400 dark:text-gray-500">
-                        <div class="w-2 h-2 bg-green-500 rounded-full"></div>
+                        <div class="w-2 h-2 bg-green-500 rounded-full" />
                         <span>Ask about any destination</span>
                       </div>
                       <div class="flex items-center gap-2 text-xs text-gray-400 dark:text-gray-500">
-                        <div class="w-2 h-2 bg-blue-500 rounded-full"></div>
+                        <div class="w-2 h-2 bg-blue-500 rounded-full" />
                         <span>Get personalized recommendations</span>
                       </div>
                       <div class="flex items-center gap-2 text-xs text-gray-400 dark:text-gray-500">
-                        <div class="w-2 h-2 bg-purple-500 rounded-full"></div>
+                        <div class="w-2 h-2 bg-purple-500 rounded-full" />
                         <span>Create custom itineraries</span>
                       </div>
                     </div>
@@ -1662,7 +1662,7 @@ export default function ChatPage() {
                                     : "bg-gray-400"
                               }`}
                               title={`${session.engagementMetrics!.engagement_level} engagement`}
-                            ></div>
+                             />
                           </Show>
                           {/* Complexity score indicator */}
                           <Show
@@ -1674,7 +1674,7 @@ export default function ChatPage() {
                             <div
                               class="w-1.5 h-1.5 bg-blue-500 rounded-full"
                               title="Complex session"
-                            ></div>
+                             />
                           </Show>
                         </div>
                       </div>
@@ -1757,7 +1757,7 @@ export default function ChatPage() {
               {/* Session indicator and controls */}
               <Show when={sessionId()}>
                 <div class="flex items-center gap-1 text-xs">
-                  <div class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                  <div class="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
                   <span class="text-green-600 dark:text-green-400 font-medium hidden sm:inline">
                     Connected
                   </span>
@@ -1796,7 +1796,7 @@ export default function ChatPage() {
                 <Show when={streamingSession()}>
                   <div class="text-xs text-gray-500 dark:text-gray-400 space-y-1">
                     <div class="flex items-center gap-1 sm:gap-2">
-                      <span class="inline-block w-2 h-2 bg-blue-500 rounded-full flex-shrink-0"></span>
+                      <span class="inline-block w-2 h-2 bg-blue-500 rounded-full flex-shrink-0" />
                       <span class="truncate">
                         Domain: {streamingSession()?.domain}
                       </span>
@@ -1811,7 +1811,7 @@ export default function ChatPage() {
                     </Show>
                     <Show when={streamingSession()?.sessionId}>
                       <div class="flex items-center gap-1 sm:gap-2">
-                        <span class="inline-block w-2 h-2 bg-green-500 rounded-full flex-shrink-0"></span>
+                        <span class="inline-block w-2 h-2 bg-green-500 rounded-full flex-shrink-0" />
                         <span class="truncate">Session: Active</span>
                       </div>
                     </Show>

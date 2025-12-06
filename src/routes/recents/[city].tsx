@@ -153,11 +153,11 @@ export default function CityDetailsPage() {
           {/* Tags */}
           <Show when={place.tags && place.tags.length > 0}>
             <div class="flex flex-wrap gap-1 mt-2">
-              {place.tags.slice(0, 3).map(tag => (
+              <For each={place.tags.slice(0, 3)}>{tag => (
                 <span class="px-2 py-0.5 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded-full text-xs">
                   {tag}
                 </span>
-              ))}
+              )}</For>
               {place.tags.length > 3 && (
                 <span class="px-2 py-0.5 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 rounded-full text-xs">
                   +{place.tags.length - 3}
@@ -339,7 +339,7 @@ export default function CityDetailsPage() {
         <Show when={cityDetailsQuery.isLoading}>
           <div class="flex items-center justify-center py-12">
             <div class="flex items-center gap-3">
-              <div class="w-6 h-6 border-3 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+              <div class="w-6 h-6 border-3 border-blue-600 border-t-transparent rounded-full animate-spin" />
               <span class="text-gray-600 dark:text-gray-400">Loading city details...</span>
             </div>
           </div>
@@ -447,7 +447,7 @@ export default function CityDetailsPage() {
                   <For each={cityDetailsQuery.data?.interactions?.slice(0, 3) || []}>
                     {(interaction) => (
                       <div class="flex items-start gap-3">
-                        <div class="w-2 h-2 bg-blue-600 rounded-full mt-2 flex-shrink-0"></div>
+                        <div class="w-2 h-2 bg-blue-600 rounded-full mt-2 flex-shrink-0" />
                         <div class="flex-1 min-w-0">
                           <p class="text-sm text-gray-900 dark:text-white font-medium">
                             {interaction.prompt.slice(0, 80)}{interaction.prompt.length > 80 ? '...' : ''}

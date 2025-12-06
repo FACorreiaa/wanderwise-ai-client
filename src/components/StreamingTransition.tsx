@@ -159,7 +159,7 @@ export default function StreamingTransition(props: StreamingTransitionProps) {
   const renderNavigating = () => (
     <div class="h-full flex flex-col items-center justify-center p-8 bg-gradient-to-br from-blue-600 to-purple-600">
       <div class="text-center text-white">
-        <div class="w-16 h-16 mx-auto mb-6 border-4 border-white/30 border-t-white rounded-full animate-spin"></div>
+        <div class="w-16 h-16 mx-auto mb-6 border-4 border-white/30 border-t-white rounded-full animate-spin" />
         <h2 class="text-xl font-semibold mb-2">Almost there...</h2>
         <p class="text-blue-100">Preparing your personalized experience</p>
       </div>
@@ -174,7 +174,7 @@ export default function StreamingTransition(props: StreamingTransitionProps) {
             <StreamingChatDisplay 
               session={props.session}
               onComplete={handleChatComplete}
-              className="h-full"
+              class="h-full"
             />
           </Show>
 

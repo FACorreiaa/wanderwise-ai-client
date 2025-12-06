@@ -7,6 +7,7 @@
 import { createClient } from '@connectrpc/connect';
 import { create } from '@bufbuild/protobuf';
 import { AuthService } from '@buf/loci_loci-proto.bufbuild_es/proto/auth_pb.js';
+import { ChatService } from '@buf/loci_loci-proto.bufbuild_es/proto/chat_pb.js';
 import {
   LoginRequestSchema,
   RegisterRequestSchema,
@@ -20,6 +21,7 @@ const API_BASE_URL = import.meta.env.VITE_CONNECT_BASE_URL || 'http://localhost:
 
 // Create auth client once
 const authClient = createClient(AuthService, transport);
+export const chatService = createClient(ChatService, transport);
 
 // Token management functions - moved to top to avoid circular dependency
 export const getAuthToken = (): string | null => {

@@ -6,7 +6,7 @@ export default function Footer() {
             <div
                 class="absolute inset-0 opacity-70"
                 style={{
-                    backgroundImage:
+                    "background-image":
                         'radial-gradient(circle at 12% 18%, rgba(14,165,233,0.28), transparent 28%), radial-gradient(circle at 85% 12%, rgba(168,85,247,0.24), transparent 26%), radial-gradient(circle at 50% 120%, rgba(52,211,153,0.18), transparent 34%)',
                 }}
                 aria-hidden="true"
