@@ -622,48 +622,18 @@ export const ContinueChat = async (
  */
 export const ContinueChatStreamReal = async (
   request: ContinueChatRequest,
-): Promise<ReadableStream<StreamEvent>> => {
-  const endpoint = "loci.chat.ChatService/StreamChat";
-  await enforceRateLimit(endpoint);
-
-  // Use the real streamChat RPC method
-  const stream = chatClient.streamChat(
-    create(ChatRequestSchema, {
-      message: request.message,
-      cityName: request.cityName || "",
-      contextType: toProtoDomainType(request.contextType),
-      sessionId: request.sessionId,
-    }),
-  );
-
-  // Convert AsyncIterable to ReadableStream
-  const readableStream = new ReadableStream({
-    async start(controller) {
-      try {
-        for await (const event of stream) {
-          controller.enqueue(event);
-        }
-        controller.close();
-      } catch (error) {
-        controller.error(error);
-      }
-    },
-  });
-
-  return readableStream;
+): Promise<Response> => {
+  // Use unary ContinueChat and adapt to SSE so existing consumers keep working
+  const normalized = await ContinueChat(request);
+  return buildChatStreamResponse(normalized);
 };
 
-// Updated ContinueChatStream to use REAL streaming!
+// Updated ContinueChatStream to use REAL ContinueChat RPC (no fake streaming)
 export const ContinueChatStream = async (
   request: ContinueChatRequest,
 ): Promise<Response> => {
-  console.log('🚀 Using REAL server streaming for ContinueChat (not fake!)');
-
-  // Use real streaming RPC
-  const protoStream = await ContinueChatStreamReal(request);
-
-  // Convert proto stream to SSE format
-  return convertProtoStreamToSSE(protoStream);
+  console.log("🚀 Using ContinueChat (unary) wrapped as SSE");
+  return ContinueChatStreamReal(request);
 };
 
 // ==================

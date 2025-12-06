@@ -606,7 +606,38 @@ export default function ChatPage() {
     setStreamProgress("");
 
     // Add final assistant response to chat history with merged data
-    const finalStreamingData = updatedData || streamingSession()?.data;
+    const finalStreamingData = (() => {
+      const base = updatedData || streamingSession()?.data;
+      if (!base) return null;
+
+      const mergedPOIs =
+        base.points_of_interest?.length
+          ? base.points_of_interest
+          : base.itinerary_response?.points_of_interest || [];
+      const mergedRestaurants =
+        base.restaurants?.length
+          ? base.restaurants
+          : base.itinerary_response?.restaurants || [];
+      const mergedHotels =
+        base.hotels?.length
+          ? base.hotels
+          : base.itinerary_response?.points_of_interest?.filter((poi: any) =>
+              (poi.category || "").toLowerCase().includes("hotel"),
+            ) || [];
+      const mergedActivities =
+        base.activities?.length
+          ? base.activities
+          : base.itinerary_response?.points_of_interest || [];
+
+      return {
+        ...base,
+        points_of_interest: mergedPOIs,
+        restaurants: mergedRestaurants,
+        hotels: mergedHotels,
+        activities: mergedActivities,
+      };
+    })();
+
     const hasResults = !!(
       finalStreamingData &&
       (finalStreamingData.points_of_interest?.length > 0 ||
@@ -768,14 +799,35 @@ export default function ChatPage() {
             onItemClick={(activity) => handleItemClick(activity, "activity")}
           />
         </Show>
+        {(() => {
+          const itineraryPOIs =
+            streamingData.points_of_interest?.length
+              ? streamingData.points_of_interest
+              : streamingData.itinerary_response?.points_of_interest || [];
+          return (
+            <Show when={itineraryPOIs.length > 0}>
+              <ItineraryResults
+                pois={itineraryPOIs}
+                itinerary={streamingData.itinerary_response}
+                compact={actualCompact}
+                showToggle={false}
+                initialLimit={5}
+                limit={actualCompact ? 5 : undefined}
+                onItemClick={(poi) => handleItemClick(poi, "poi")}
+              />
+            </Show>
+          );
+        })()}
         <Show
           when={
-            streamingData.points_of_interest &&
-            streamingData.points_of_interest.length > 0
+            streamingData.itinerary_response &&
+            !(
+              streamingData.points_of_interest?.length ||
+              streamingData.itinerary_response?.points_of_interest?.length
+            )
           }
         >
           <ItineraryResults
-            pois={streamingData.points_of_interest}
             itinerary={streamingData.itinerary_response}
             compact={actualCompact}
             showToggle={false}

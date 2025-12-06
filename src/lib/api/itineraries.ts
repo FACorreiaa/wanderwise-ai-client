@@ -7,15 +7,6 @@ import type { UserSavedItinerary, PaginatedItinerariesResponse, BookmarkRequest 
 // ITINERARY QUERIES
 // ====================
 
-export const useItineraries = (page: number = 1, limit: number = 10, options: { enabled?: boolean } = {}) => {
-  return useQuery(() => ({
-    queryKey: queryKeys.itineraries(page, limit),
-    queryFn: () => apiRequest<PaginatedItinerariesResponse>(`/pois/itineraries?page=${page}&limit=${limit}`),
-    staleTime: 5 * 60 * 1000,
-    enabled: options.enabled ?? true,
-  }));
-};
-
 // Query to get all user's saved itineraries (for bookmark checking)
 export const useAllUserItineraries = (options: { enabled?: boolean } = {}) => {
   return useQuery(() => ({

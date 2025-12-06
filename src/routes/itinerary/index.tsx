@@ -40,12 +40,9 @@ import {
 import MapComponent from "~/components/features/Map/Map";
 // @ts-ignore - API hooks type
 import {
-  useItineraries,
   useItinerary,
   useUpdateItineraryMutation,
   useSaveItineraryMutation,
-  useRemoveItineraryMutation,
-  useAllUserItineraries,
 } from "~/lib/api/itineraries";
 // @ts-ignore - POI favorites API hooks type
 import {
@@ -165,19 +162,13 @@ export default function ItineraryResultsPage() {
   // Conditionally load authentication-dependent API hooks
   const isAuthenticated = () => auth.isAuthenticated();
 
-  // API hooks - only enabled for authenticated users
-  const itinerariesQuery = useItineraries(1, 10, {
-    enabled: isAuthenticated(),
-  });
+
+  // Disable REST itinerary fetches while server exposes itinerary data only via chat responses
   const itineraryQuery = useItinerary(currentItineraryId() || "", {
-    enabled: isAuthenticated() && !!currentItineraryId(),
-  });
-  const allItinerariesQuery = useAllUserItineraries({
-    enabled: isAuthenticated(),
+    enabled: false,
   });
   const updateItineraryMutation = useUpdateItineraryMutation();
   const saveItineraryMutation = useSaveItineraryMutation();
-  const removeItineraryMutation = useRemoveItineraryMutation();
 
   // Favorites hooks
   const favoritesQuery = useFavorites();
@@ -354,6 +345,7 @@ export default function ItineraryResultsPage() {
     }
 
     // Debug current streaming data state and session ID
+    //
     setTimeout(() => {
       console.log("=== STREAMING DATA STATE AFTER MOUNT ===");
       console.log("Current streamingData():", streamingData());
@@ -369,57 +361,6 @@ export default function ItineraryResultsPage() {
       }
     }, 100);
   });
-
-  // Fallback function to create a new session when session ID is missing
-  const createFallbackSession = async () => {
-    const streaming = streamingData();
-    if (!streaming || !streaming.general_city_data?.city) {
-      console.warn("Cannot create fallback session - missing city data");
-      return;
-    }
-
-    try {
-      console.log(
-        "Creating fallback session for city:",
-        streaming.general_city_data.city,
-      );
-
-      // Create a fallback session ID (UUID v4)
-      const fallbackSessionId = crypto.randomUUID();
-      chatSession.setSessionId(fallbackSessionId);
-
-      console.log("Generated fallback session ID:", fallbackSessionId);
-
-      // Update session storage with the new session ID
-      const storedSession = sessionStorage.getItem("completedStreamingSession");
-      if (storedSession) {
-        try {
-          const session = JSON.parse(storedSession);
-          session.sessionId = fallbackSessionId;
-          sessionStorage.setItem(
-            "completedStreamingSession",
-            JSON.stringify(session),
-          );
-          console.log("Updated session storage with fallback session ID");
-        } catch (error) {
-          console.error("Error updating session storage:", error);
-        }
-      }
-    } catch (error) {
-      console.error("Error creating fallback session:", error);
-      // Fallback to a simple UUID if crypto.randomUUID is not available
-      const simpleUuid = "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(
-        /[xy]/g,
-        function (c) {
-          const r = (Math.random() * 16) | 0;
-          const v = c == "x" ? r : (r & 0x3) | 0x8;
-          return v.toString(16);
-        },
-      );
-      chatSession.setSessionId(simpleUuid);
-      console.log("Created simple fallback session ID:", simpleUuid);
-    }
-  };
 
   // Get current itinerary data from streaming data, API, or fallback
   const itinerary = () => {
@@ -944,15 +885,14 @@ export default function ItineraryResultsPage() {
 
                   {/* Budget/Price Range with Enhanced Styling */}
                   <span
-                    class={`px-3 py-1 rounded-full text-xs font-bold border ${
-                      getBudgetColor(poi.budget).includes("green")
-                        ? "bg-green-50 text-green-700 border-green-200"
-                        : getBudgetColor(poi.budget).includes("blue")
-                          ? "bg-blue-50 text-blue-700 border-blue-200"
-                          : getBudgetColor(poi.budget).includes("orange")
-                            ? "bg-orange-50 text-orange-700 border-orange-200"
-                            : "bg-red-50 text-red-700 border-red-200"
-                    }`}
+                    class={`px-3 py-1 rounded-full text-xs font-bold border ${getBudgetColor(poi.budget).includes("green")
+                      ? "bg-green-50 text-green-700 border-green-200"
+                      : getBudgetColor(poi.budget).includes("blue")
+                        ? "bg-blue-50 text-blue-700 border-blue-200"
+                        : getBudgetColor(poi.budget).includes("orange")
+                          ? "bg-orange-50 text-orange-700 border-orange-200"
+                          : "bg-red-50 text-red-700 border-red-200"
+                      }`}
                   >
                     {poi.budget}{" "}
                     {poi.budget === "Free"
@@ -1152,80 +1092,41 @@ export default function ItineraryResultsPage() {
 
   // Check if current itinerary is bookmarked
   const isCurrentItineraryBookmarked = () => {
-    if (!isAuthenticated() || !allItinerariesQuery.data) return false;
+    // if (!isAuthenticated() || !allItinerariesQuery.data) return false;
 
-    const sessionId = chatSession.sessionId();
-    if (!sessionId) return false;
+    // const sessionId = chatSession.sessionId();
+    // if (!sessionId) return false;
 
-    const savedItineraries = allItinerariesQuery.data.itineraries;
-    // Add null safety check
-    if (!savedItineraries || !Array.isArray(savedItineraries)) return false;
+    // const savedItineraries = allItinerariesQuery.data.itineraries;
+    // // Add null safety check
+    // if (!savedItineraries || !Array.isArray(savedItineraries)) return false;
 
-    // Use the same logic as getBookmarkedItineraryId to ensure consistency
-    const currentItinerary = itinerary();
-    const streaming = streamingData();
-    const primaryCityName =
-      streaming?.general_city_data?.city || currentItinerary.city || "unknown";
-    const expectedTitle =
-      currentItinerary.name || `${primaryCityName} Adventure`;
+    // // Use the same logic as getBookmarkedItineraryId to ensure consistency
+    // const currentItinerary = itinerary();
+    // const streaming = streamingData();
+    // const primaryCityName =
+    //   streaming?.general_city_data?.city || currentItinerary.city || "unknown";
+    // const expectedTitle =
+    //   currentItinerary.name || `${primaryCityName} Adventure`;
 
-    return savedItineraries.some(
-      (saved) => {
-        const titleMatch = saved.title === expectedTitle;
-        const sessionMatch = (saved.source_llm_interaction_id && saved.source_llm_interaction_id === sessionId) ||
-                           (saved.session_id && saved.session_id === sessionId);
-        return titleMatch || sessionMatch;
-      }
-    );
+    // return savedItineraries.some(
+    //   (saved) => {
+    //     const titleMatch = saved.title === expectedTitle;
+    //     const sessionMatch = (saved.source_llm_interaction_id && saved.source_llm_interaction_id === sessionId) ||
+    //       (saved.session_id && saved.session_id === sessionId);
+    //     return titleMatch || sessionMatch;
+    //   }
+    // );
   };
 
   // Get the bookmarked itinerary ID if it exists
   const getBookmarkedItineraryId = () => {
-    if (!isAuthenticated() || !allItinerariesQuery.data) return null;
 
-    const sessionId = chatSession.sessionId();
-    if (!sessionId) return null;
-
-    const savedItineraries = allItinerariesQuery.data.itineraries;
-    // Add null safety check
-    if (!savedItineraries || !Array.isArray(savedItineraries)) return null;
-
-    const currentItinerary = itinerary();
-    const streaming = streamingData();
-    const primaryCityName =
-      streaming?.general_city_data?.city || currentItinerary.city || "unknown";
-    const expectedTitle =
-      currentItinerary.name || `${primaryCityName} Adventure`;
-
-    const foundItinerary = savedItineraries.find(
-      (saved) => {
-        const titleMatch = saved.title === expectedTitle;
-        const sessionMatch = (saved.source_llm_interaction_id && saved.source_llm_interaction_id === sessionId) ||
-                           (saved.session_id && saved.session_id === sessionId);
-        return titleMatch || sessionMatch;
-      }
-    );
-
-    return foundItinerary?.id || null;
   };
 
   const toggleBookmark = () => {
     // Prevent multiple rapid calls while mutation is pending
-    if (removeItineraryMutation.isPending || saveItineraryMutation.isPending) {
-      console.log("Bookmark operation already in progress, ignoring duplicate call");
-      return;
-    }
 
-    if (isCurrentItineraryBookmarked()) {
-      // Remove bookmark
-      const itineraryId = getBookmarkedItineraryId();
-      if (itineraryId) {
-        removeItineraryMutation.mutate(itineraryId);
-      }
-    } else {
-      // Add bookmark
-      saveItinerary();
-    }
   };
 
   const saveItinerary = () => {
@@ -1508,14 +1409,12 @@ export default function ItineraryResultsPage() {
                     <button
                       onClick={toggleBookmark}
                       disabled={
-                        saveItineraryMutation.isPending ||
-                        removeItineraryMutation.isPending
+                        saveItineraryMutation.isPending
                       }
-                      class={`flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg transition-colors text-sm sm:flex-initial disabled:opacity-50 ${
-                        isCurrentItineraryBookmarked()
-                          ? "text-red-600 bg-red-50 hover:bg-red-100"
-                          : "text-gray-700 hover:bg-gray-100"
-                      }`}
+                      class={`flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg transition-colors text-sm sm:flex-initial disabled:opacity-50 ${isCurrentItineraryBookmarked()
+                        ? "text-red-600 bg-red-50 hover:bg-red-100"
+                        : "text-gray-700 hover:bg-gray-100"
+                        }`}
                       title={
                         isCurrentItineraryBookmarked()
                           ? "Remove from bookmarks"
@@ -1525,16 +1424,17 @@ export default function ItineraryResultsPage() {
                       <Heart
                         class={`w-4 h-4 ${isCurrentItineraryBookmarked() ? "fill-current" : ""}`}
                       />
-                      <span class="hidden sm:inline">
+                      {/* <span class="hidden sm:inline">
                         {saveItineraryMutation.isPending ||
-                        removeItineraryMutation.isPending
+                          removeItineraryMutation.isPending
                           ? isCurrentItineraryBookmarked()
                             ? "Removing..."
                             : "Saving..."
                           : isCurrentItineraryBookmarked()
                             ? "Saved"
                             : "Save"}
-                      </span>
+                      </span> */}
+                      <span>deez</span>
                     </button>
                   </Show>
 
@@ -1969,18 +1869,18 @@ export default function ItineraryResultsPage() {
                   onShareClick={
                     isAuthenticated()
                       ? (poi) => {
-                          if (navigator.share) {
-                            navigator.share({
-                              title: poi.name,
-                              text: `Check out ${poi.name} - ${poi.description_poi}`,
-                              url: window.location.href,
-                            });
-                          } else {
-                            navigator.clipboard.writeText(
-                              `Check out ${poi.name}: ${poi.description_poi}`,
-                            );
-                          }
+                        if (navigator.share) {
+                          navigator.share({
+                            title: poi.name,
+                            text: `Check out ${poi.name} - ${poi.description_poi}`,
+                            url: window.location.href,
+                          });
+                        } else {
+                          navigator.clipboard.writeText(
+                            `Check out ${poi.name}: ${poi.description_poi}`,
+                          );
                         }
+                      }
                       : undefined
                   }
                   favorites={

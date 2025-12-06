@@ -3,10 +3,10 @@ import { useLocation, useSearchParams } from '@solidjs/router';
 import { MapPin, Clock, Star, Filter, Heart, Share2, Download, Edit3, Plus, X, Navigation, Calendar, Users, DollarSign, Camera, Coffee, Utensils, Wifi, CreditCard, Loader2, MessageCircle, Send, ChefHat, Wine, UtensilsCrossed, Smartphone } from 'lucide-solid';
 import MapComponent from '~/components/features/Map/Map';
 // Removed old API imports - now using unified streaming endpoint only
-import type { DiningResponse, RestaurantDetailedInfo } from '~/lib/api/types';
+import type { AiCityResponse, DiningResponse, POIDetailedInfo, RestaurantDetailedInfo } from '~/lib/api/types';
 import { RestaurantResults } from '~/components/results';
 import { TypingAnimation } from '~/components/TypingAnimation';
-import { useChatSession } from '~/lib/hooks/useChatSession';
+import { deriveDomainLists, useChatSession } from '~/lib/hooks/useChatSession';
 import ChatInterface from '~/components/ui/ChatInterface';
 import { useAuth } from '~/contexts/AuthContext';
 import { useFavorites, useAddToFavoritesMutation, useRemoveFromFavoritesMutation } from '~/lib/api/pois';
@@ -19,7 +19,7 @@ export default function RestaurantsPage() {
     const [selectedRestaurant, setSelectedRestaurant] = createSignal(null);
     const [showFilters, setShowFilters] = createSignal(false);
     const [viewMode, setViewMode] = createSignal('split'); // 'map', 'list', 'split'
-    const [streamingData, setStreamingData] = createSignal<DiningResponse | null>(null);
+    const [streamingData, setStreamingData] = createSignal<DiningResponse | AiCityResponse | null>(null);
     const [fromChat, setFromChat] = createSignal(false);
 
     // Chat functionality using the reusable hook
@@ -63,6 +63,15 @@ export default function RestaurantsPage() {
     });
 
     // Removed old API hooks - now using unified streaming endpoint only
+
+    const getRestaurantsFromData = (data: any) => {
+        if (!data) return [] as Array<RestaurantDetailedInfo | POIDetailedInfo>;
+        if (Array.isArray((data as any).restaurants) && (data as any).restaurants.length > 0) {
+            return (data as any).restaurants;
+        }
+        const derived = deriveDomainLists(data);
+        return derived.restaurants || [];
+    };
 
     // Initialize with streaming data on mount
     onMount(() => {
@@ -152,29 +161,30 @@ export default function RestaurantsPage() {
     });
 
     const restaurants = () => {
-        // Prioritize streaming data if available
         const streaming = streamingData();
-        if (streaming && streaming.restaurants && streaming.restaurants.length > 0) {
-            console.log('Using streaming restaurants data:', streaming.restaurants);
-            return streaming.restaurants.map(convertRestaurantToDisplayFormat);
+        const restaurantList = getRestaurantsFromData(streaming);
+        if (restaurantList.length > 0) {
+            console.log('Using streaming restaurants data:', restaurantList);
+            return restaurantList.map(convertRestaurantToDisplayFormat);
         }
-        
-        // No fallback API data - only streaming data is used
         return [];
     };
 
     // Convert streaming restaurant data to display format
-    const convertRestaurantToDisplayFormat = (restaurant: RestaurantDetailedInfo) => {
+    const convertRestaurantToDisplayFormat = (restaurant: RestaurantDetailedInfo | POIDetailedInfo) => {
         return {
             id: restaurant.id || `restaurant-${Math.random().toString(36).substr(2, 9)}`,
             name: restaurant.name || 'Unknown Restaurant',
-            cuisine: restaurant.cuisine_type || restaurant.category || 'Restaurant',
-            description: restaurant.description || 'No description available',
-            latitude: restaurant.latitude || 0,
-            longitude: restaurant.longitude || 0,
-            address: restaurant.address || 'Address not available',
-            priceRange: restaurant.price_level || '€€',
-            rating: restaurant.rating || 4.0,
+            cuisine: (restaurant as any).cuisine_type || restaurant.category || 'Restaurant',
+            description:
+                (restaurant as any).description ||
+                (restaurant as any).description_poi ||
+                'No description available',
+            latitude: (restaurant as any).latitude || 0,
+            longitude: (restaurant as any).longitude || 0,
+            address: (restaurant as any).address || 'Address not available',
+            priceRange: (restaurant as any).price_level || (restaurant as any).price_range || '€€',
+            rating: (restaurant as any).rating || 4.0,
             reviewCount: 0, // Not available in streaming data
             features: Array.isArray(restaurant.tags) ? restaurant.tags : [],
             specialties: Array.isArray(restaurant.tags) ? restaurant.tags : [],
@@ -226,7 +236,7 @@ export default function RestaurantsPage() {
 
     // Helper functions for streaming state
     const isStreaming = () => urlSearchParams.streaming === 'true';
-    const hasData = () => streamingData()?.restaurants && streamingData().restaurants.length > 0;
+    const hasData = () => getRestaurantsFromData(streamingData()).length > 0;
     const isLoading = () => isStreaming() && !chatSession.isComplete() && !hasData();
     const isLoadingMore = () => isStreaming() && !chatSession.isComplete() && hasData();
 

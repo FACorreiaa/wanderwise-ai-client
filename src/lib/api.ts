@@ -469,10 +469,6 @@ export const poiAPI = {
     return apiRequest<any[]>(`/pois/search?${params}`);
   },
 
-  async getItineraries(page: number = 1, limit: number = 10) {
-    return apiRequest<any>(`/pois/itineraries?page=${page}&limit=${limit}`);
-  },
-
   async getItinerary(itineraryId: string) {
     return apiRequest<any>(`/pois/itineraries/itinerary/${itineraryId}`);
   },

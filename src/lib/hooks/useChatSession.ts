@@ -33,7 +33,7 @@ export interface UseChatSessionOptions {
 }
 
 // Derive domain-specific lists from mixed POI payloads so Hotels/Restaurants/Activities pages can render them
-const deriveDomainLists = (data: any) => {
+export const deriveDomainLists = (data: any) => {
   const points: POIDetailedInfo[] = [
     ...(data?.points_of_interest || data?.pointsOfInterest || []),
     ...(data?.itinerary_response?.points_of_interest || data?.itineraryResponse?.pointsOfInterest || []),

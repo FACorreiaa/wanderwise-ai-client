@@ -3,11 +3,11 @@ import { useLocation, useSearchParams } from '@solidjs/router';
 import { MapPin, Clock, Star, Filter, Heart, Share2, Download, Edit3, Plus, X, Navigation, Calendar, Users, DollarSign, Camera, Coffee, Utensils, Wifi, CreditCard, Loader2, MessageCircle, Send, Compass, Map, Zap, Mountain, Palette, Music } from 'lucide-solid';
 import MapComponent from '~/components/features/Map/Map';
 // Removed old API imports - now using unified streaming endpoint only
-import type { ActivitiesResponse, POIDetailedInfo } from '~/lib/api/types';
+import type { ActivitiesResponse, AiCityResponse, POIDetailedInfo } from '~/lib/api/types';
 import { useUserLocation } from '@/contexts/LocationContext';
 import { ActivityResults } from '~/components/results';
 import { TypingAnimation } from '~/components/TypingAnimation';
-import { useChatSession } from '~/lib/hooks/useChatSession';
+import { deriveDomainLists, useChatSession } from '~/lib/hooks/useChatSession';
 import ChatInterface from '~/components/ui/ChatInterface';
 import { useAuth } from '~/contexts/AuthContext';
 import RegisterBanner from '~/components/ui/RegisterBanner';
@@ -22,7 +22,7 @@ export default function ActivitiesPage() {
     const [showFilters, setShowFilters] = createSignal(false);
     const [viewMode, setViewMode] = createSignal('split'); // 'map', 'list', 'split'
     const [myFavorites, setMyFavorites] = createSignal([]); // Track favorite activities
-    const [streamingData, setStreamingData] = createSignal<ActivitiesResponse | null>(null);
+    const [streamingData, setStreamingData] = createSignal<ActivitiesResponse | AiCityResponse | null>(null);
     const [fromChat, setFromChat] = createSignal(false);
 
     // Chat functionality using the reusable hook
@@ -56,7 +56,7 @@ export default function ActivitiesPage() {
 
     // Helper functions for streaming state
     const isStreaming = () => urlSearchParams.streaming === 'true';
-    const hasData = () => streamingData()?.activities && streamingData().activities.length > 0;
+    const hasData = () => getActivitiesFromData(streamingData()).length > 0;
     const isStreamComplete = () => {
         const session = getStreamingSession();
         return session?.isComplete ?? false;
@@ -72,6 +72,14 @@ export default function ActivitiesPage() {
     });
 
     // Removed old API hooks - now using unified streaming endpoint only
+    const getActivitiesFromData = (data: any) => {
+        if (!data) return [] as Array<POIDetailedInfo>;
+        if (Array.isArray((data as any).activities) && (data as any).activities.length > 0) {
+            return (data as any).activities;
+        }
+        const derived = deriveDomainLists(data);
+        return derived.activities || [];
+    };
 
     // Initialize with streaming data on mount
     onMount(() => {
@@ -140,11 +148,11 @@ export default function ActivitiesPage() {
     });
 
     const activities = () => {
-        // Prioritize streaming data if available
         const streaming = streamingData();
-        if (streaming && streaming.activities && streaming.activities.length > 0) {
-            console.log('Using streaming activities data:', streaming.activities);
-            return streaming.activities.map(convertActivityToDisplayFormat);
+        const list = getActivitiesFromData(streaming);
+        if (list.length > 0) {
+            console.log('Using streaming activities data:', list);
+            return list.map(convertActivityToDisplayFormat);
         }
 
         // No fallback API data - only streaming data is used
@@ -153,15 +161,20 @@ export default function ActivitiesPage() {
 
     // Convert streaming activity data to display format
     const convertActivityToDisplayFormat = (activity: POIDetailedInfo) => {
+        const description =
+            (activity as any).description ||
+            (activity as any).description_poi ||
+            'No description available';
+        const price = (activity as any).price_level || (activity as any).price_range || 'Free';
         return {
             id: activity.id,
             name: activity.name,
             category: activity.category,
-            description: activity.description,
+            description,
             latitude: activity.latitude,
             longitude: activity.longitude,
             address: activity.address || 'Address not available',
-            price: activity.price_level || 'Free',
+            price,
             rating: activity.rating || 4.0,
             reviewCount: 0, // Not available in streaming data
             tags: activity.tags || [],

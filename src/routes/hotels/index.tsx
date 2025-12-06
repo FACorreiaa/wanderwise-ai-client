@@ -3,10 +3,10 @@ import { useLocation, useSearchParams } from '@solidjs/router';
 import { MapPin, Clock, Star, Filter, Heart, Share2, Download, Edit3, Plus, X, Navigation, Calendar, Users, DollarSign, Camera, Coffee, Utensils, Wifi, CreditCard, Loader2, MessageCircle, Send, Bed, Building2, Car, Waves, Dumbbell, UtensilsCrossed, Shield, Phone } from 'lucide-solid';
 import MapComponent from '~/components/features/Map/Map';
 // Removed old API imports - now using unified streaming endpoint only
-import type { AccommodationResponse, HotelDetailedInfo } from '~/lib/api/types';
+import type { AccommodationResponse, AiCityResponse, HotelDetailedInfo, POIDetailedInfo } from '~/lib/api/types';
 import { HotelResults } from '~/components/results';
 import { TypingAnimation } from '~/components/TypingAnimation';
-import { useChatSession } from '~/lib/hooks/useChatSession';
+import { deriveDomainLists, useChatSession } from '~/lib/hooks/useChatSession';
 import ChatInterface from '~/components/ui/ChatInterface';
 import { useAuth } from '~/contexts/AuthContext';
 import RegisterBanner from '~/components/ui/RegisterBanner';
@@ -21,7 +21,7 @@ export default function HotelsPage() {
     const [showFilters, setShowFilters] = createSignal(false);
     const [viewMode, setViewMode] = createSignal('split'); // 'map', 'list', 'split'
     const [myBookmarks, setMyBookmarks] = createSignal([]); // Track bookmarked hotels
-    const [streamingData, setStreamingData] = createSignal<AccommodationResponse | null>(null);
+    const [streamingData, setStreamingData] = createSignal<AccommodationResponse | AiCityResponse | null>(null);
     const [fromChat, setFromChat] = createSignal(false);
 
     // Chat functionality using the reusable hook
@@ -63,7 +63,16 @@ export default function HotelsPage() {
 
     // Helper functions for streaming state
     const isStreaming = () => urlSearchParams.streaming === 'true';
-    const hasData = () => streamingData()?.hotels && streamingData().hotels.length > 0;
+    const getHotelsFromData = (data: any) => {
+        if (!data) return [] as Array<HotelDetailedInfo | POIDetailedInfo>;
+        if (Array.isArray((data as any).hotels) && (data as any).hotels.length > 0) {
+            return (data as any).hotels;
+        }
+        const derived = deriveDomainLists(data);
+        return derived.hotels || [];
+    };
+
+    const hasData = () => getHotelsFromData(streamingData()).length > 0;
     const isStreamComplete = () => {
         const session = getStreamingSession();
         return session?.isComplete ?? false;
@@ -122,16 +131,22 @@ export default function HotelsPage() {
                         const sessionData = JSON.parse(storedSessionData);
                         console.log(`Checking ${sessionKey}:`, sessionData);
 
-                        // Check if this session has hotels data
-                        if (sessionData.hotels) {
-                            console.log('✅ Found hotels in session data directly');
-                            setStreamingData(sessionData);
-                            setFromChat(true);
-                            foundData = true;
-                            break;
-                        } else if (sessionData.data?.hotels) {
-                            console.log('✅ Found hotels in session.data');
-                            setStreamingData(sessionData.data);
+                        // Check if this session has hotels data or POIs we can derive from
+                        const candidate =
+                            sessionData.hotels
+                                ? sessionData
+                                : sessionData.data?.hotels
+                                ? sessionData.data
+                                : sessionData.data || sessionData;
+
+                        const derived = deriveDomainLists(candidate);
+
+                        if (candidate.hotels || derived.hotels.length > 0) {
+                            console.log('✅ Found hotels or derivable POIs in session data');
+                            setStreamingData({
+                                ...candidate,
+                                hotels: candidate.hotels || derived.hotels,
+                            } as any);
                             setFromChat(true);
                             foundData = true;
                             break;
@@ -150,7 +165,13 @@ export default function HotelsPage() {
         // Check for streaming data from route state  
         if (location.state?.streamingData) {
             console.log('Found accommodation streaming data in route state');
-            setStreamingData(location.state.streamingData as AccommodationResponse);
+            const derived = deriveDomainLists(location.state.streamingData);
+            setStreamingData({
+                ...(location.state.streamingData as any),
+                hotels:
+                    (location.state.streamingData as any).hotels ||
+                    derived.hotels,
+            } as AccommodationResponse);
             setFromChat(true);
             console.log('Received accommodation data:', location.state.streamingData);
         } else {
@@ -164,11 +185,16 @@ export default function HotelsPage() {
                     const session = JSON.parse(storedSession);
                     console.log('Parsed session:', session);
                     
-                    if (session.data && session.data.hotels) {
+                    const candidate = session.data || session;
+                    const derived = deriveDomainLists(candidate);
+                    if (candidate.hotels || derived.hotels.length > 0) {
                         console.log('Setting accommodation data from session storage');
-                        setStreamingData(session.data as AccommodationResponse);
+                        setStreamingData({
+                            ...candidate,
+                            hotels: candidate.hotels || derived.hotels,
+                        } as any);
                         setFromChat(true);
-                        console.log('Loaded accommodation data from session storage:', session.data);
+                        console.log('Loaded accommodation data from session storage:', candidate);
                     } else {
                         console.log('No accommodation data found in session');
                     }
@@ -195,37 +221,42 @@ export default function HotelsPage() {
     // Removed old API hooks - now using unified streaming endpoint only
 
     const hotels = () => {
-        // Prioritize streaming data if available
         const streaming = streamingData();
-        if (streaming && streaming.hotels && streaming.hotels.length > 0) {
-            console.log('Using streaming hotels data:', streaming.hotels);
-            return streaming.hotels.map(convertHotelToDisplayFormat);
+        const hotelList = getHotelsFromData(streaming);
+        if (hotelList.length > 0) {
+            console.log('Using hotel data:', hotelList);
+            return hotelList.map(convertHotelToDisplayFormat);
         }
-        
-        // No fallback API data - only streaming data is used
         return [];
     };
 
-    // Convert streaming hotel data to display format
-    const convertHotelToDisplayFormat = (hotel: HotelDetailedInfo) => {
-        const price = hotel.price_level || hotel.price_range || '€€';
+    // Convert streaming hotel or POI data to display format
+    const convertHotelToDisplayFormat = (hotel: HotelDetailedInfo | POIDetailedInfo) => {
+        const price = (hotel as any).price_level || (hotel as any).price_range || '€€';
+        const description =
+            (hotel as any).description ||
+            (hotel as any).description_poi ||
+            'No description available';
+        const tags = (hotel as any).tags || [];
+        const amenities = (hotel as any).amenities || tags || [];
+
         return {
             id: hotel.id || `hotel-${Math.random().toString(36).substr(2, 9)}`,
             name: hotel.name || 'Unknown Hotel',
             type: hotel.category || 'Hotel',
-            description: hotel.description || 'No description available',
-            latitude: hotel.latitude || 0,
-            longitude: hotel.longitude || 0,
-            address: hotel.address || 'Address not available',
+            description,
+            latitude: (hotel as any).latitude || 0,
+            longitude: (hotel as any).longitude || 0,
+            address: (hotel as any).address || 'Address not available',
             priceRange: price,
             pricePerNight: price,
-            rating: hotel.rating || 4.0,
+            rating: (hotel as any).rating || 4.0,
             reviewCount: 0, // Not available in streaming data
-            amenities: Array.isArray(hotel.amenities) ? hotel.amenities : [],
-            tags: Array.isArray(hotel.tags) ? hotel.tags : [],
-            features: Array.isArray(hotel.tags) ? hotel.tags : [],
-            phone: hotel.phone_number || 'Not available',
-            website: hotel.website || '',
+            amenities: Array.isArray(amenities) ? amenities : [],
+            tags: Array.isArray(tags) ? tags : [],
+            features: Array.isArray(tags) ? tags : [],
+            phone: (hotel as any).phone_number || 'Not available',
+            website: (hotel as any).website || '',
             checkInTime: '15:00',
             checkOutTime: '11:00',
             cancellationPolicy: 'Free cancellation up to 24 hours',
