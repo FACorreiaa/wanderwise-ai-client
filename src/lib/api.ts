@@ -123,6 +123,15 @@ async function makeRequest<T>(
   return response.json();
 }
 
+// Helper to parse JWT
+const parseJwt = (token: string) => {
+  try {
+    return JSON.parse(atob(token.split('.')[1]));
+  } catch (e) {
+    return null;
+  }
+};
+
 // Authentication API
 export const authAPI = {
   async login(email: string, password: string) {
@@ -144,6 +153,10 @@ export const authAPI = {
       access_token: response.accessToken,
       refresh_token: response.refreshToken,
       message: response.message,
+      // Pass through user details to avoid needing an immediate getCurrentUser call
+      user_id: (response as any).userId,
+      username: (response as any).username,
+      email: (response as any).email,
     };
   },
 
@@ -193,7 +206,14 @@ export const authAPI = {
 
     console.log('validateSession: Making Connect RPC call to validate JWT...');
     try {
-      const request = create(ValidateSessionRequestSchema, { sessionId: token });
+      // Extract JTI (JWT ID) to use as session ID
+      // This satisfies length constraints (UUID) and gives the backend the correct ID to check
+      const payload = parseJwt(token);
+      const sessionId = payload?.jti || "current";
+
+      console.log('validateSession: Using sessionId from JWT:', sessionId);
+
+      const request = create(ValidateSessionRequestSchema, { sessionId });
       const response = await authClient.validateSession(request);
 
       console.log('validateSession: API response:', response);

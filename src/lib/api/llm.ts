@@ -67,7 +67,7 @@ const EMPTY_ITINERARY: AIItineraryResponse = {
   bars: [],
 };
 
-const toProtoDomainType = (
+export const toProtoDomainType = (
   contextType?: ChatContextType,
 ): ChatDomainType => {
   switch (contextType) {
@@ -150,29 +150,29 @@ const mapPoi = (poi: ProtoPOIDetailedInfo): POIDetailedInfo => {
     name: poi.name,
     latitude: poi.latitude ?? 0,
     longitude: poi.longitude ?? 0,
-  category: poi.category,
-  description: poi.description || poi.descriptionPoi || "",
-  address: poi.address || "",
-  website: poi.website || "",
-  phone_number: poi.phoneNumber || "",
-  opening_hours:
-    typeof poi.openingHours === "object"
-      ? JSON.stringify(poi.openingHours)
-      : (poi.openingHours as unknown as string) || "",
-  price_level: poi.priceLevel || "",
-  price_range: poi.priceRange || "",
-  rating: poi.rating,
-  tags: poi.tags || [],
-  images: poi.images || [],
-  llm_interaction_id: poi.llmInteractionId || "",
-  cuisine_type: poi.cuisineType,
-  star_rating: poi.starRating,
-  distance: poi.distance,
-  description_poi: poi.descriptionPoi || "",
-  created_at:
-    poi.createdAt && typeof poi.createdAt.toDate === "function"
-      ? poi.createdAt.toDate().toISOString()
-      : undefined,
+    category: poi.category,
+    description: poi.description || poi.descriptionPoi || "",
+    address: poi.address || "",
+    website: poi.website || "",
+    phone_number: poi.phoneNumber || "",
+    opening_hours:
+      typeof poi.openingHours === "object"
+        ? JSON.stringify(poi.openingHours)
+        : (poi.openingHours as unknown as string) || "",
+    price_level: poi.priceLevel || "",
+    price_range: poi.priceRange || "",
+    rating: poi.rating,
+    tags: poi.tags || [],
+    images: poi.images || [],
+    llm_interaction_id: poi.llmInteractionId || "",
+    cuisine_type: poi.cuisineType,
+    star_rating: poi.starRating,
+    distance: poi.distance,
+    description_poi: poi.descriptionPoi || "",
+    created_at:
+      poi.createdAt && typeof poi.createdAt.toDate === "function"
+        ? poi.createdAt.toDate().toISOString()
+        : undefined,
   };
 };
 
@@ -199,11 +199,11 @@ const mapRestaurant = (
   opening_hours:
     typeof (restaurant as ProtoRestaurantDetailedInfo).openingHours === "object"
       ? JSON.stringify(
-          (restaurant as ProtoRestaurantDetailedInfo).openingHours,
-        )
+        (restaurant as ProtoRestaurantDetailedInfo).openingHours,
+      )
       : (restaurant as ProtoRestaurantDetailedInfo).openingHours ||
-        (restaurant as ProtoPOIDetailedInfo).opening_hours ||
-        "",
+      (restaurant as ProtoPOIDetailedInfo).opening_hours ||
+      "",
   price_level:
     (restaurant as ProtoRestaurantDetailedInfo).priceLevel ||
     (restaurant as ProtoPOIDetailedInfo).price_level ||
@@ -356,8 +356,8 @@ const buildChatStreamResponse = (
       response.updatedItinerary?.hotels?.length
         ? response.updatedItinerary.hotels
         : response.updatedItinerary?.itinerary_response?.points_of_interest?.length
-        ? response.updatedItinerary.itinerary_response.points_of_interest
-        : response.updatedItinerary?.points_of_interest;
+          ? response.updatedItinerary.itinerary_response.points_of_interest
+          : response.updatedItinerary?.points_of_interest;
     if (hotels?.length) {
       console.log('🏨 Building hotels event with', hotels.length, 'hotels');
       events.push({
@@ -373,10 +373,10 @@ const buildChatStreamResponse = (
       response.updatedItinerary?.restaurants?.length
         ? response.updatedItinerary.restaurants
         : response.updatedItinerary?.itinerary_response?.points_of_interest?.length
-        ? response.updatedItinerary.itinerary_response.points_of_interest
-        : response.updatedItinerary?.itinerary_response?.restaurants?.length
-        ? response.updatedItinerary.itinerary_response.restaurants
-        : response.updatedItinerary?.points_of_interest;
+          ? response.updatedItinerary.itinerary_response.points_of_interest
+          : response.updatedItinerary?.itinerary_response?.restaurants?.length
+            ? response.updatedItinerary.itinerary_response.restaurants
+            : response.updatedItinerary?.points_of_interest;
 
     if (restaurants?.length) {
       console.log('🍽️ Building restaurants event with', restaurants.length, 'restaurants');
@@ -667,7 +667,7 @@ export interface UnifiedChatRequest {
   };
 }
 
-export interface UnifiedChatStreamRequest extends UnifiedChatRequest {}
+export interface UnifiedChatStreamRequest extends UnifiedChatRequest { }
 
 // Unified chat service - sends message and gets streaming response
 export const sendUnifiedChatMessage = async (

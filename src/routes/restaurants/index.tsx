@@ -1,15 +1,15 @@
-import { createSignal, createMemo, Show } from "solid-js";
+import { createSignal, createMemo, Show, onMount } from "solid-js";
 import { useSearchParams } from "@solidjs/router";
-import { useStreamedRpc } from "@/lib/hooks/useStreamedRpc";
-import { POIDetailedInfo } from "@/types/chat";
-import RestaurantResults from "@/components/results/RestaurantResults";
-import MapComponent from "@/components/features/Map/Map";
-import SplitView from "@/components/layout/SplitView";
-import { CityInfoHeader } from "@/components/ui/CityInfoHeader";
-import { ActionToolbar } from "@/components/ui/ActionToolbar";
-import { ChatFab } from "@/components/ui/ChatFab";
-import { Skeleton } from "@/ui/skeleton";
-import { Card, CardContent, CardHeader } from "@/ui/card";
+import { useChatRPC } from "~/lib/hooks/useChatRPC";
+import { POIDetailedInfo } from "~/lib/api/types";
+import RestaurantResults from "~/components/results/RestaurantResults";
+import MapComponent from "~/components/features/Map/Map";
+import { SplitView } from "~/components/shared/SplitView";
+import { CityInfoHeader } from "~/components/shared/CityInfoHeader";
+import { ActionToolbar } from "~/components/shared/ActionToolbar";
+import { ChatFab } from "~/components/shared/ChatFab";
+import { Skeleton } from "~/ui/skeleton";
+import { Share, Heart, Download } from "lucide-solid";
 
 export default function RestaurantsPage() {
   const [searchParams] = useSearchParams();
@@ -17,19 +17,22 @@ export default function RestaurantsPage() {
     (searchParams.message as string) || "Show me restaurants"
   );
   const [cityName] = createSignal((searchParams.cityName as string) || "London");
-  const [profileId] = createSignal((searchParams.profileId as string) || "");
 
-  const { store, connect } = useStreamedRpc(message, cityName, profileId);
+  const { state, startStream } = useChatRPC();
 
-  connect();
+  onMount(() => {
+    if (!state.isConnected) {
+      startStream(message(), cityName(), "restaurants");
+    }
+  });
 
-  const cityData = createMemo(() => store.data?.general_city_data);
+  const cityData = createMemo(() => state.streamedData?.general_city_data);
 
   const restaurants = createMemo(() => {
-    if (!store.data) return [];
-    // Handle different response structures
-    const diningResp = store.data.accommodation_response || store.data.dining_response || (store.data as any).restaurants_response;
-    const list = diningResp?.restaurants || store.data.points_of_interest || [];
+    if (!state.streamedData) return [];
+    const data = state.streamedData;
+    // Try explicit list first, then nested response, then generic POIs
+    const list = data.restaurants || data.dining_response?.restaurants || data.points_of_interest || [];
     return Array.isArray(list) ? list : [];
   });
 
@@ -37,14 +40,13 @@ export default function RestaurantsPage() {
     return restaurants().map(r => ({
       ...r,
       id: r.name,
-      // Ensure coordinates are numbers
       latitude: typeof r.latitude === 'string' ? parseFloat(r.latitude) : r.latitude,
       longitude: typeof r.longitude === 'string' ? parseFloat(r.longitude) : r.longitude,
-    })) as POIDetailedInfo[];
+    })) as unknown as POIDetailedInfo[];
   });
 
   const handleDownload = () => {
-    const data = JSON.stringify(store.data, null, 2);
+    const data = JSON.stringify(state.streamedData, null, 2);
     const blob = new Blob([data], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -67,12 +69,18 @@ export default function RestaurantsPage() {
     console.log("Favorite restaurants");
   };
 
+  const toolbarActions = [
+    { icon: Download, label: "Save", onClick: handleDownload },
+    { icon: Share, label: "Share", onClick: handleShare },
+    { icon: Heart, label: "Favorite", onClick: handleFavorite },
+  ];
+
   // Map Content
   const MapContent = (
     <div class="h-full w-full bg-slate-100 dark:bg-slate-900 relative">
       <Show when={allPois().length > 0} fallback={
         <div class="h-full w-full flex items-center justify-center text-muted-foreground p-4 text-center">
-          {store.isLoading ? "Loading map data..." : "No items to display on map"}
+          {state.isStreaming ? "Loading map data..." : "No items to display on map"}
         </div>
       }>
         <MapComponent
@@ -85,33 +93,32 @@ export default function RestaurantsPage() {
         />
       </Show>
       <div class="absolute top-4 left-4 z-10">
-        <ActionToolbar
-          onDownload={handleDownload}
-          onShare={handleShare}
-          onFavorite={handleFavorite}
-        />
+        <ActionToolbar actions={toolbarActions} />
       </div>
     </div>
   );
 
   // List Content
   const ListContent = (
-    <div class="h-full overflow-y-auto p-4 md:p-6 bg-slate-50/50 dark:bg-slate-950/50 backdrop-blur-sm">
+    <div class="h-full min-h-screen p-4 md:p-6 bg-slate-50/50 dark:bg-slate-950/50 backdrop-blur-sm">
       <div class="max-w-3xl mx-auto pb-20">
-        <Show when={cityData()}>
-          <CityInfoHeader cityData={cityData()} isLoading={store.isLoading} />
-        </Show>
+        <CityInfoHeader
+          city={cityData()?.city}
+          description={cityData()?.description}
+          weather={cityData()?.weather}
+          loading={state.isStreaming && !cityData()}
+        />
 
-        <Show when={store.error}>
+        <Show when={state.error}>
           <div class="mb-6 p-4 rounded-xl bg-red-50 border border-red-200 text-red-600 dark:bg-red-900/20 dark:border-red-900/50 dark:text-red-400">
             <p class="font-bold">Error loading restaurants</p>
-            <p class="text-sm opacity-90">{store.error?.message}</p>
+            <p class="text-sm opacity-90">{state.error}</p>
           </div>
         </Show>
 
         <h2 class="text-2xl font-bold mb-6 text-gray-800 dark:text-gray-100">Restaurants in {cityName()}</h2>
 
-        <Show when={store.isLoading && !store.data}>
+        <Show when={state.isStreaming && !restaurants().length}>
           <div class="grid gap-6 md:grid-cols-2">
             <Skeleton class="h-64 w-full rounded-xl" />
             <Skeleton class="h-64 w-full rounded-xl" />
@@ -132,11 +139,10 @@ export default function RestaurantsPage() {
   return (
     <>
       <SplitView
-        listContent={ListContent}
-        mapContent={MapContent}
-        initialMode="split"
+        children={ListContent}
+        map={MapContent}
+        fab={<ChatFab onClick={() => console.log("Open chat")} />}
       />
-      <ChatFab onClick={() => console.log("Open chat")} />
     </>
   );
 }

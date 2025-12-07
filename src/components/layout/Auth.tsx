@@ -49,7 +49,7 @@ const AuthLayout: Component<{ children: any; showBackButton?: boolean; onBack?: 
             </Show>
 
             <div class="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14">
-                <div class="grid grid-cols-1 lg:grid-cols-[1.1fr_0.9fr] gap-8 lg:gap-10 items-center">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-10 items-center">
                     {/* Story column */}
                     <div class="hidden lg:block">
                         <div class={`rounded-3xl p-8 space-y-6 ${isDark() ? 'glass-panel gradient-border shadow-[0_35px_120px_rgba(3,7,18,0.55)]' : 'bg-white border border-slate-200 shadow-[0_25px_80px_rgba(15,23,42,0.12)]'}`}>

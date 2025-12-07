@@ -54,12 +54,12 @@ export const AuthProvider = (props: AuthProviderProps) => {
   const navigate = useNavigate();
   const [user, setUser] = createSignal<User | null>(null);
   const [isLoading, setIsLoading] = createSignal(true);
-  
+
   // Add a retry function for auth restoration
   const retryAuth = async () => {
     const token = getAuthToken();
     if (!token || user()) return;
-    
+
     try {
       const sessionResult = await authAPI.validateSession();
       if (sessionResult.valid) {
@@ -88,7 +88,7 @@ export const AuthProvider = (props: AuthProviderProps) => {
 
     const loadUserProfile = async () => {
       console.log('AuthProvider: Restoring session by fetching user profile...');
-      const userProfile = await profileAPI.getDefaultProfile();
+      const userProfile = await authAPI.getCurrentUser();
       console.log('AuthProvider: User profile fetched:', userProfile);
       setUser(userProfile);
     };
@@ -136,7 +136,7 @@ export const AuthProvider = (props: AuthProviderProps) => {
         } else if (token && !user()) {
           // Token was set in another tab, fetch profile
           try {
-            const userProfile = await profileAPI.getDefaultProfile();
+            const userProfile = await authAPI.getCurrentUser();
             setUser(userProfile);
           } catch (error) {
             console.error('Cross-tab session validation failed:', error);
@@ -156,15 +156,25 @@ export const AuthProvider = (props: AuthProviderProps) => {
       // Authenticate with server and get access token
       const response = await authAPI.login(email, password);
       console.log('AuthProvider: Login successful, got token');
-      const refreshToken = (response as any).refresh_token ?? (response as any).refreshToken;
-      setAuthToken(response.access_token, rememberMe, refreshToken);
-      console.log('AuthProvider: Token stored, fetching profile...');
 
-      // Fetch complete user profile after successful login
-      const userProfile = await profileAPI.getDefaultProfile();
-      console.log('AuthProvider: User profile fetched:', userProfile);
-      setUser(userProfile);
-      
+      const { access_token, refresh_token, ...userData } = response;
+      setAuthToken(access_token, rememberMe, refresh_token);
+
+      console.log('AuthProvider: Token stored, setting user...');
+      setUser({
+        id: userData.user_id,
+        email: userData.email,
+        username: userData.username,
+        is_active: true,
+        created_at: new Date().toISOString(), // Fallback
+        updated_at: new Date().toISOString(),
+        role: 'user', // Default or from response if available
+        firstname: '',
+        lastname: '',
+        display_name: userData.username,
+      });
+
+      console.log('AuthProvider: User set, navigating...');
       setIsLoading(false);
       navigate('/');
     } catch (error) {

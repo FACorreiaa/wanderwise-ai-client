@@ -1,15 +1,16 @@
-import { createSignal, createMemo, Show } from "solid-js";
+import { createSignal, createMemo, Show, onMount, For } from "solid-js";
 import { useSearchParams } from "@solidjs/router";
-import { useStreamedRpc } from "@/lib/hooks/useStreamedRpc";
-import { POIDetailedInfo } from "@/types/chat";
-import MapComponent from "@/components/features/Map/Map";
-import SplitView from "@/components/layout/SplitView";
-import { CityInfoHeader } from "@/components/ui/CityInfoHeader";
-import { ActionToolbar } from "@/components/ui/ActionToolbar";
-import { ChatFab } from "@/components/ui/ChatFab";
-import { Skeleton } from "@/ui/skeleton";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/ui/card";
-import { Badge } from "@/ui/badge";
+import { useChatRPC } from "~/lib/hooks/useChatRPC";
+import { POIDetailedInfo } from "~/lib/api/types";
+import MapComponent from "~/components/features/Map/Map";
+import { SplitView } from "~/components/shared/SplitView";
+import { CityInfoHeader } from "~/components/shared/CityInfoHeader";
+import { ActionToolbar } from "~/components/shared/ActionToolbar";
+import { ChatFab } from "~/components/shared/ChatFab";
+import { Skeleton } from "~/ui/skeleton";
+import { Card, CardContent, CardHeader, CardTitle } from "~/ui/card";
+import { Badge } from "~/ui/badge";
+import { Share, Heart, Download } from "lucide-solid";
 
 export default function ActivitiesPage() {
   const [searchParams] = useSearchParams();
@@ -17,22 +18,21 @@ export default function ActivitiesPage() {
     (searchParams.message as string) || "Show me activities"
   );
   const [cityName] = createSignal((searchParams.cityName as string) || "London");
-  const [profileId] = createSignal((searchParams.profileId as string) || "");
 
-  const { store, connect } = useStreamedRpc(message, cityName, profileId);
+  const { state, startStream } = useChatRPC();
 
-  connect();
+  onMount(() => {
+    if (!state.isConnected) {
+      startStream(message(), cityName(), "activities");
+    }
+  });
 
-  const cityData = createMemo(() => store.data?.general_city_data);
+  const cityData = createMemo(() => state.streamedData?.general_city_data);
 
   const activities = createMemo(() => {
-    // Activities often come in points_of_interest directly or nested
-    if (!store.data) return [];
-    const list = store.data.points_of_interest || [];
-    // If it's an object with points_of_interest property
-    if (!Array.isArray(list) && (list as any).points_of_interest) {
-      return (list as any).points_of_interest as POIDetailedInfo[];
-    }
+    if (!state.streamedData) return [];
+    const data = state.streamedData;
+    const list = data.activities || data.points_of_interest || [];
     return Array.isArray(list) ? list : [];
   });
 
@@ -46,7 +46,7 @@ export default function ActivitiesPage() {
   });
 
   const handleDownload = () => {
-    const data = JSON.stringify(store.data, null, 2);
+    const data = JSON.stringify(state.streamedData, null, 2);
     const blob = new Blob([data], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -69,11 +69,17 @@ export default function ActivitiesPage() {
     console.log("Favorite activities");
   };
 
+  const toolbarActions = [
+    { icon: Download, label: "Save", onClick: handleDownload },
+    { icon: Share, label: "Share", onClick: handleShare },
+    { icon: Heart, label: "Favorite", onClick: handleFavorite },
+  ];
+
   const MapContent = (
     <div class="h-full w-full bg-slate-100 dark:bg-slate-900 relative">
       <Show when={allPois().length > 0} fallback={
         <div class="h-full w-full flex items-center justify-center text-muted-foreground p-4 text-center">
-          {store.isLoading ? "Loading map data..." : "No items to display on map"}
+          {state.isStreaming ? "Loading map data..." : "No items to display on map"}
         </div>
       }>
         <MapComponent
@@ -86,32 +92,31 @@ export default function ActivitiesPage() {
         />
       </Show>
       <div class="absolute top-4 left-4 z-10">
-        <ActionToolbar
-          onDownload={handleDownload}
-          onShare={handleShare}
-          onFavorite={handleFavorite}
-        />
+        <ActionToolbar actions={toolbarActions} />
       </div>
     </div>
   );
 
   const ListContent = (
-    <div class="h-full overflow-y-auto p-4 md:p-6 bg-slate-50/50 dark:bg-slate-950/50 backdrop-blur-sm">
+    <div class="h-full min-h-screen p-4 md:p-6 bg-slate-50/50 dark:bg-slate-950/50 backdrop-blur-sm">
       <div class="max-w-3xl mx-auto pb-20">
-        <Show when={cityData()}>
-          <CityInfoHeader cityData={cityData()} isLoading={store.isLoading} />
-        </Show>
+        <CityInfoHeader
+          city={cityData()?.city}
+          description={cityData()?.description}
+          weather={cityData()?.weather}
+          loading={state.isStreaming && !cityData()}
+        />
 
-        <Show when={store.error}>
+        <Show when={state.error}>
           <div class="mb-6 p-4 rounded-xl bg-red-50 border border-red-200 text-red-600 dark:bg-red-900/20 dark:border-red-900/50 dark:text-red-400">
             <p class="font-bold">Error loading activities</p>
-            <p class="text-sm opacity-90">{store.error?.message}</p>
+            <p class="text-sm opacity-90">{state.error}</p>
           </div>
         </Show>
 
         <h2 class="text-2xl font-bold mb-6 text-gray-800 dark:text-gray-100">Activities in {cityName()}</h2>
 
-        <Show when={store.isLoading && !store.data}>
+        <Show when={state.isStreaming && !activities().length}>
           <div class="grid gap-6 md:grid-cols-2">
             <Skeleton class="h-64 w-full rounded-xl" />
             <Skeleton class="h-64 w-full rounded-xl" />
@@ -149,11 +154,10 @@ export default function ActivitiesPage() {
   return (
     <>
       <SplitView
-        listContent={ListContent}
-        mapContent={MapContent}
-        initialMode="split"
+        children={ListContent}
+        map={MapContent}
+        fab={<ChatFab onClick={() => console.log("Open chat")} />}
       />
-      <ChatFab onClick={() => console.log("Open chat")} />
     </>
   );
 }

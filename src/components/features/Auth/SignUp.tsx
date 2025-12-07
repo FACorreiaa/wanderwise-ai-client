@@ -1,6 +1,6 @@
 import { Button } from "@/ui/button";
 import { TextField, TextFieldRoot } from "@/ui/textfield";
-import { useNavigate } from "@solidjs/router";
+import { A, useNavigate } from "@solidjs/router";
 import { Component, createSignal, Show, For } from "solid-js";
 import AuthLayout from '../../layout/Auth'
 import { FiCheck } from "solid-icons/fi";
@@ -156,9 +156,9 @@ const SignUp: Component<{ onSwitchMode?: (mode: AuthMode) => void }> = (props) =
                         <TextFieldRoot>
                             <TextField
                                 type={showPassword() ? "text" : "password"}
-                            placeholder="Create a strong password"
-                            value={formData().password || ''}
-                            onInput={(e) => setFormData(prev => ({ ...prev, password: e.currentTarget.value }))}
+                                placeholder="Create a strong password"
+                                value={formData().password || ''}
+                                onInput={(e) => setFormData(prev => ({ ...prev, password: e.currentTarget.value }))}
                                 class={`${inputClass} pr-10 sm:pr-12`}
                                 required
                             />
@@ -261,12 +261,12 @@ const SignUp: Component<{ onSwitchMode?: (mode: AuthMode) => void }> = (props) =
 
             <div class="text-center mt-4 sm:mt-6">
                 <span class={`${helperTextClass} text-sm sm:text-base`}>Already have an account? </span>
-                <button
-                    onClick={handleSwitchToSignIn}
+                <A
+                    href="/auth/signin"
                     class={`${linkClass} underline-offset-4 font-semibold text-sm sm:text-base`}
                 >
                     Sign in
-                </button>
+                </A>
             </div>
         </AuthLayout>
     );

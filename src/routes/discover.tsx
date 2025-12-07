@@ -293,7 +293,15 @@ export default function DiscoverPage() {
                                 setProgressMessage(null);
                                 break;
                             case 'error':
-                                setSearchError(event.error || 'Something went wrong');
+                                const rawError = event.error || 'Something went wrong';
+                                let friendlyError = rawError;
+
+                                // Check for common backend errors (Quota, Rate Limit, etc.)
+                                if (rawError.includes('Quota exceeded') || rawError.includes('RESOURCE_EXHAUSTED') || rawError.includes('429')) {
+                                    friendlyError = 'Our AI travel guide is currently experiencing high verification traffic. Please try again in a few moments.';
+                                }
+
+                                setSearchError(friendlyError);
                                 setIsSearching(false);
                                 setProgressMessage(null);
                                 break;

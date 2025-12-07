@@ -108,30 +108,30 @@ export default function Nav() {
                 </div>
               }
             >
-            <div class="hidden md:flex items-center space-x-1">
-              <For each={authNavigationItems}>
-                {(item) => {
-                  const IconComponent = item.icon;
-                  return (
-                    <A
-                      href={item.href}
-                      class={`flex items-center gap-2 px-3 py-2 rounded-xl font-medium transition-all text-sm border ${location.pathname === item.href
-                        ? 'bg-blue-100 dark:bg-white/10 text-gray-900 dark:text-white border-blue-300 dark:border-white/20 shadow-lg'
-                        : 'text-gray-700 dark:text-slate-200 hover:text-blue-700 dark:hover:text-emerald-200 hover:bg-gray-100 dark:hover:bg-white/5 border-transparent hover:border-blue-300 dark:hover:border-emerald-200/40'
-                        }`}
-                    >
-                      <IconComponent class="w-4 h-4" />
-                      {item.name}
-                      <Show when={item.experimental}>
-                        <Badge variant="secondary" class="ml-1 bg-orange-100 dark:bg-orange-900 text-orange-800 dark:text-orange-300 border border-orange-300 dark:border-orange-700 text-xs px-1.5 py-0.5">
-                          Experimental
-                        </Badge>
-                      </Show>
-                    </A>
-                  );
-                }}
-              </For>
-            </div>
+              <div class="hidden md:flex items-center space-x-1">
+                <For each={authNavigationItems}>
+                  {(item) => {
+                    const IconComponent = item.icon;
+                    return (
+                      <A
+                        href={item.href}
+                        class={`flex items-center gap-2 px-3 py-2 rounded-xl font-medium transition-all text-sm border ${location.pathname === item.href
+                          ? 'bg-blue-100 dark:bg-white/10 text-gray-900 dark:text-white border-blue-300 dark:border-white/20 shadow-lg'
+                          : 'text-gray-700 dark:text-slate-200 hover:text-blue-700 dark:hover:text-emerald-200 hover:bg-gray-100 dark:hover:bg-white/5 border-transparent hover:border-blue-300 dark:hover:border-emerald-200/40'
+                          }`}
+                      >
+                        <IconComponent class="w-4 h-4" />
+                        {item.name}
+                        <Show when={item.experimental}>
+                          <Badge variant="secondary" class="ml-1 bg-orange-100 dark:bg-orange-900 text-orange-800 dark:text-orange-300 border border-orange-300 dark:border-orange-700 text-xs px-1.5 py-0.5">
+                            Experimental
+                          </Badge>
+                        </Show>
+                      </A>
+                    );
+                  }}
+                </For>
+              </div>
             </Show>
           </Show>
 
@@ -158,51 +158,51 @@ export default function Nav() {
                 </div>
               }
             >
-            <div class="hidden md:flex items-center space-x-3 relative user-menu-container">
-              {/* PWA Install Button */}
-              <PWAInstall />
+              <div class="hidden md:flex items-center space-x-3 relative user-menu-container">
+                {/* PWA Install Button */}
+                <PWAInstall />
 
-              {/* Theme Selector */}
-              <ThemeSelector />
+                {/* Theme Selector */}
+                <ThemeSelector />
 
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setShowUserMenu(!showUserMenu())}
-                class="flex items-center gap-2 p-2 text-gray-900 dark:text-white hover:text-blue-700 dark:hover:text-emerald-200"
-              >
-                <div class="w-8 h-8 rounded-full bg-emerald-600 dark:bg-emerald-400 flex items-center justify-center text-white dark:text-slate-950 text-sm font-bold shadow-lg ring-2 ring-emerald-200 dark:ring-white/40">
-                  {(user()?.username || user()?.email || 'U').charAt(0).toUpperCase()}
-                </div>
-                <span class="text-sm font-semibold text-gray-900 dark:text-white">
-                  {user()?.username || user()?.email || 'Guest'}
-                </span>
-              </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowUserMenu(!showUserMenu())}
+                  class="flex items-center gap-2 p-2 text-gray-900 dark:text-white hover:text-blue-700 dark:hover:text-emerald-200"
+                >
+                  <div class="w-8 h-8 rounded-full bg-emerald-600 dark:bg-emerald-400 flex items-center justify-center text-white dark:text-slate-950 text-sm font-bold shadow-lg ring-2 ring-emerald-200 dark:ring-white/40">
+                    {(user()?.display_name || user()?.username || user()?.email || 'U').charAt(0).toUpperCase()}
+                  </div>
+                  <span class="text-sm font-semibold text-gray-900 dark:text-white">
+                    {user()?.display_name || user()?.username || user()?.email || 'Guest'}
+                  </span>
+                </Button>
 
-              {/* User Dropdown Menu */}
-              <Show when={showUserMenu()}>
-                <div class="absolute top-full right-0 mt-2 w-48 bg-white dark:bg-[#0b1c36]/95 backdrop-blur-xl rounded-2xl shadow-[0_24px_70px_rgba(3,7,18,0.55)] border border-gray-300 dark:border-white/10 py-1 z-50 transition-colors">
-                  <A
-                    href="/settings"
-                    class="flex items-center gap-3 px-4 py-2 text-sm font-medium text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-white/5 transition-colors rounded-md mx-1"
-                    onClick={() => setShowUserMenu(false)}
-                  >
-                    <Settings class="w-4 h-4" />
-                    Settings
-                  </A>
-                  <button
-                    onClick={() => {
-                      setShowUserMenu(false);
-                      handleLogout();
-                    }}
-                    class="w-full flex items-center gap-3 px-4 py-2 text-sm font-medium text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-white/5 transition-colors rounded-md mx-1"
-                  >
-                    <LogOut class="w-4 h-4" />
-                    Sign Out
-                  </button>
-                </div>
-              </Show>
-            </div>
+                {/* User Dropdown Menu */}
+                <Show when={showUserMenu()}>
+                  <div class="absolute top-full right-0 mt-2 w-48 bg-white dark:bg-[#0b1c36]/95 backdrop-blur-xl rounded-2xl shadow-[0_24px_70px_rgba(3,7,18,0.55)] border border-gray-300 dark:border-white/10 py-1 z-50 transition-colors">
+                    <A
+                      href="/settings"
+                      class="flex items-center gap-3 px-4 py-2 text-sm font-medium text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-white/5 transition-colors rounded-md mx-1"
+                      onClick={() => setShowUserMenu(false)}
+                    >
+                      <Settings class="w-4 h-4" />
+                      Settings
+                    </A>
+                    <button
+                      onClick={() => {
+                        setShowUserMenu(false);
+                        handleLogout();
+                      }}
+                      class="w-full flex items-center gap-3 px-4 py-2 text-sm font-medium text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-white/5 transition-colors rounded-md mx-1"
+                    >
+                      <LogOut class="w-4 h-4" />
+                      Sign Out
+                    </button>
+                  </div>
+                </Show>
+              </div>
             </Show>
           </Show>
         </div>
@@ -246,7 +246,7 @@ export default function Nav() {
                       {(item) => (
                         <A
                           href={item.href}
-                        class="block px-4 py-3 text-lg font-semibold text-gray-900 dark:text-white bg-gray-100 dark:bg-white/5 rounded-xl transition-all border border-gray-300 dark:border-white/15 shadow-sm hover:shadow-md hover:translate-y-[-1px]"
+                          class="block px-4 py-3 text-lg font-semibold text-gray-900 dark:text-white bg-gray-100 dark:bg-white/5 rounded-xl transition-all border border-gray-300 dark:border-white/15 shadow-sm hover:shadow-md hover:translate-y-[-1px]"
                           onClick={() => setIsMenuOpen(false)}
                         >
                           {item.name}
@@ -255,28 +255,28 @@ export default function Nav() {
                     </For>
                   }
                 >
-                <For each={authNavigationItems}>
-                  {(item) => {
-                    const IconComponent = item.icon;
-                  return (
-                    <A
-                      href={item.href}
-                      class="flex items-center gap-3 px-4 py-3 text-lg font-medium text-white bg-white/5 rounded-xl transition-all border border-white/15 shadow-[0_10px_30px_rgba(3,7,18,0.35)] hover:translate-y-[-1px]"
-                      onClick={() => setIsMenuOpen(false)}
-                    >
-                      <IconComponent class="w-5 h-5" />
-                      <div class="flex items-center gap-2">
-                        {item.name}
-                          <Show when={item.experimental}>
-                            <Badge variant="secondary" class="bg-orange-100/20 text-orange-200 text-xs px-1.5 py-0.5">
-                              Experimental
-                            </Badge>
-                          </Show>
-                        </div>
-                      </A>
-                    );
-                  }}
-                </For>
+                  <For each={authNavigationItems}>
+                    {(item) => {
+                      const IconComponent = item.icon;
+                      return (
+                        <A
+                          href={item.href}
+                          class="flex items-center gap-3 px-4 py-3 text-lg font-medium text-white bg-white/5 rounded-xl transition-all border border-white/15 shadow-[0_10px_30px_rgba(3,7,18,0.35)] hover:translate-y-[-1px]"
+                          onClick={() => setIsMenuOpen(false)}
+                        >
+                          <IconComponent class="w-5 h-5" />
+                          <div class="flex items-center gap-2">
+                            {item.name}
+                            <Show when={item.experimental}>
+                              <Badge variant="secondary" class="bg-orange-100/20 text-orange-200 text-xs px-1.5 py-0.5">
+                                Experimental
+                              </Badge>
+                            </Show>
+                          </div>
+                        </A>
+                      );
+                    }}
+                  </For>
                 </Show>
               </Show>
             </div>
@@ -286,50 +286,50 @@ export default function Nav() {
               <Show
                 when={!isAuthenticated()}
                 fallback={
+                  <div class="px-4 py-6 space-y-3 border-t border-white/40 dark:border-slate-800/60">
+                    <div class="flex items-center gap-3 px-4 py-3">
+                      <div class="w-10 h-10 rounded-full bg-emerald-400 flex items-center justify-center text-slate-950 text-lg font-bold shadow-lg ring-2 ring-white/30">
+                        {user()?.username?.charAt(0).toUpperCase() || 'U'}
+                      </div>
+                      <div class="flex-1">
+                        <div class="font-medium text-white">{user()?.username || 'User'}</div>
+                        <div class="text-sm text-slate-300/80">{user()?.email || 'user@example.com'}</div>
+                      </div>
+                      <ThemeSelector />
+                    </div>
+                    <A href="/settings" class="block" onClick={() => setIsMenuOpen(false)}>
+                      <Button variant="outline" class="w-full justify-center py-3 text-base border-white/15 bg-white/5 text-white hover:border-emerald-200 hover:text-emerald-200">
+                        Settings
+                      </Button>
+                    </A>
+                    <Button
+                      onClick={() => {
+                        setIsMenuOpen(false);
+                        handleLogout();
+                      }}
+                      variant="outline"
+                      class="w-full justify-center py-3 text-base text-red-200 border-red-500/40 hover:bg-red-500/10"
+                    >
+                      Sign Out
+                    </Button>
+                  </div>
+                }
+              >
                 <div class="px-4 py-6 space-y-3 border-t border-white/40 dark:border-slate-800/60">
-                  <div class="flex items-center gap-3 px-4 py-3">
-                    <div class="w-10 h-10 rounded-full bg-emerald-400 flex items-center justify-center text-slate-950 text-lg font-bold shadow-lg ring-2 ring-white/30">
-                      {user()?.username?.charAt(0).toUpperCase() || 'U'}
-                    </div>
-                    <div class="flex-1">
-                      <div class="font-medium text-white">{user()?.username || 'User'}</div>
-                      <div class="text-sm text-slate-300/80">{user()?.email || 'user@example.com'}</div>
-                    </div>
+                  <div class="flex justify-center mb-3">
                     <ThemeSelector />
                   </div>
-                  <A href="/settings" class="block" onClick={() => setIsMenuOpen(false)}>
-                    <Button variant="outline" class="w-full justify-center py-3 text-base border-white/15 bg-white/5 text-white hover:border-emerald-200 hover:text-emerald-200">
-                      Settings
+                  <A href="/auth/signin" class="block" onClick={() => setIsMenuOpen(false)}>
+                    <Button variant="outline" class="w-full justify-center py-3 text-base border-white/20 bg-white/10 text-white hover:border-emerald-200 hover:text-emerald-200">
+                      Log In
                     </Button>
                   </A>
-                  <Button
-                    onClick={() => {
-                      setIsMenuOpen(false);
-                      handleLogout();
-                    }}
-                    variant="outline"
-                    class="w-full justify-center py-3 text-base text-red-200 border-red-500/40 hover:bg-red-500/10"
-                  >
-                    Sign Out
-                  </Button>
+                  <A href="/auth/signup" class="block" onClick={() => setIsMenuOpen(false)}>
+                    <Button class="w-full justify-center py-3 text-base bg-emerald-400 hover:bg-emerald-300 text-slate-950 shadow-[0_14px_40px_rgba(52,211,153,0.35)]">
+                      Get Started
+                    </Button>
+                  </A>
                 </div>
-              }
-            >
-              <div class="px-4 py-6 space-y-3 border-t border-white/40 dark:border-slate-800/60">
-                <div class="flex justify-center mb-3">
-                  <ThemeSelector />
-                </div>
-                <A href="/auth/signin" class="block" onClick={() => setIsMenuOpen(false)}>
-                  <Button variant="outline" class="w-full justify-center py-3 text-base border-white/20 bg-white/10 text-white hover:border-emerald-200 hover:text-emerald-200">
-                    Log In
-                  </Button>
-                </A>
-                <A href="/auth/signup" class="block" onClick={() => setIsMenuOpen(false)}>
-                  <Button class="w-full justify-center py-3 text-base bg-emerald-400 hover:bg-emerald-300 text-slate-950 shadow-[0_14px_40px_rgba(52,211,153,0.35)]">
-                    Get Started
-                  </Button>
-                </A>
-              </div>
               </Show>
             </Show>
           </div>

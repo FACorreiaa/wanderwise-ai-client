@@ -182,9 +182,9 @@ const SignIn: Component<{ onSwitchMode?: (mode: AuthMode) => void }> = (props) =
 
                 <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-0 text-xs sm:text-sm">
                     <label class="flex items-center gap-2 cursor-pointer">
-                        <input 
-                            type="checkbox" 
-                            class={`rounded ${isDark() ? 'border-slate-300 bg-white/20' : 'border-slate-300 bg-white'}`} 
+                        <input
+                            type="checkbox"
+                            class={`rounded ${isDark() ? 'border-slate-300 bg-white/20' : 'border-slate-300 bg-white'}`}
                             checked={formData().rememberMe ?? true}
                             onInput={(e) => setFormData(prev => ({ ...prev, rememberMe: e.currentTarget.checked }))}
                         />
@@ -233,7 +233,7 @@ const SignIn: Component<{ onSwitchMode?: (mode: AuthMode) => void }> = (props) =
 
             <div class="text-center mt-4 sm:mt-6">
                 <span class={`${helperTextClass} text-sm sm:text-base`}>Don't have an account? </span>
-                <A href="/auth/signup" class={`${linkClass} underline-offset-4 font-medium text-sm sm:text-base`}>
+                <A href="/auth/signup" class={`${linkClass} underline-offset-4 font-semibold text-sm sm:text-base`}>
                     Sign up
                 </A>
             </div>

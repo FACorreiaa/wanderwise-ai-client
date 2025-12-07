@@ -3,12 +3,13 @@
   "type": "module",
   "scripts": {
     "dev": "vinxi dev",
-    "build": "vinxi build",
+    "build": "tsc && vinxi build",
     "start": "vinxi start",
     "version": "vinxi version",
     "preview": "pnpm run build && npx wrangler dev",
     "deploy": "pnpm run build && wrangler deploy",
-    "cf-typegen": "wrangler types"
+    "cf-typegen": "wrangler types",
+    "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0"
   },
   "dependencies": {
     "@buf/loci_loci-proto.bufbuild_es": "2.10.1-20251127204032-0d70752c8202.1",
@@ -47,6 +48,7 @@
     "prettier": "^3.6.2",
     "tailwindcss": "^4.1.8",
     "typescript": "^5.9.3",
+    "vitest": "^4.0.15",
     "wrangler": "^4.20.0"
   },
   "engines": {
