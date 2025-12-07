@@ -1,172 +1,184 @@
-import { createSignal, For, Show, createMemo } from "solid-js";
+import { createSignal, createMemo, Show } from "solid-js";
 import { useSearchParams } from "@solidjs/router";
 import { useStreamedRpc } from "@/lib/hooks/useStreamedRpc";
-import { Badge } from "@/ui/badge";
-import { Skeleton } from "@/ui/skeleton";
 import { POIDetailedInfo } from "@/types/chat";
-import { MapPin, Clock } from "lucide-solid";
+import ItineraryResults from "@/components/results/ItineraryResults";
+import MapComponent from "@/components/features/Map/Map";
+import SplitView from "@/components/layout/SplitView";
+import { CityInfoHeader } from "@/components/ui/CityInfoHeader";
+import { ActionToolbar } from "@/components/ui/ActionToolbar";
+import { ChatFab } from "@/components/ui/ChatFab";
+import { Skeleton } from "@/ui/skeleton";
+import { Card, CardContent, CardHeader } from "@/ui/card";
 
 export default function ItineraryPage() {
   const [searchParams] = useSearchParams();
   const [message] = createSignal(
-    searchParams.message || "Show me an itinerary",
+    (searchParams.message as string) || "Show me an itinerary"
   );
-  const [cityName] = createSignal(searchParams.cityName || "London");
-  const [profileId] = createSignal(searchParams.profileId || "");
+  const [cityName] = createSignal((searchParams.cityName as string) || "London");
+  const [profileId] = createSignal((searchParams.profileId as string) || "");
 
   const { store, connect } = useStreamedRpc(message, cityName, profileId);
 
+  // Connect on mount
   connect();
 
   const itineraryData = createMemo(() => store.data?.itinerary_response);
   const cityData = createMemo(() => store.data?.general_city_data);
 
+  // Aggregate all POIs for the map
   const allPois = createMemo(() => {
     const itineraryPois = itineraryData()?.points_of_interest || [];
-    const generalPois =
-      store.data?.points_of_interest?.points_of_interest || [];
-    const poiMap = new Map<string, POIDetailedInfo>();
+    // Cast to any to avoid type checking issues with potentially nested structure if types are slightly off
+    const rawGeneralPois = store.data?.points_of_interest as any;
+    const generalPois = (rawGeneralPois?.points_of_interest || rawGeneralPois || []) as POIDetailedInfo[];
+
+    const poiMap = new Map<string, any>();
 
     [...itineraryPois, ...generalPois].forEach((poi) => {
       if (poi && poi.name) {
-        poiMap.set(poi.name, poi);
+        // Normalize coordinates and ensure ID exists
+        const lat = typeof poi.latitude === 'string' ? parseFloat(poi.latitude) : poi.latitude;
+        const lng = typeof poi.longitude === 'string' ? parseFloat(poi.longitude) : poi.longitude;
+
+        poiMap.set(poi.name, {
+          ...poi,
+          id: poi.name, // Use name as ID since it's unique enough for display
+          latitude: lat || 0,
+          longitude: lng || 0
+        });
       }
     });
 
     return Array.from(poiMap.values());
   });
 
-  return (
-    <div class="min-h-screen relative transition-colors">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+  const handleDownload = () => {
+    const data = JSON.stringify(store.data, null, 2);
+    const blob = new Blob([data], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `itinerary-${cityName()}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleShare = () => {
+    if (navigator.share) {
+      navigator.share({
+        title: `Itinerary for ${cityName()}`,
+        text: `Check out this itinerary for ${cityName()}!`,
+        url: window.location.href,
+      }).catch(console.error);
+    } else {
+      console.log("Share API not supported");
+    }
+  };
+
+  const handleFavorite = () => {
+    // Implement favorite logic here (interaction with backend/local storage)
+    console.log("Favorited current itinerary");
+  };
+
+  // Map Content
+  const MapContent = (
+    <div class="h-full w-full bg-slate-100 dark:bg-slate-900 relative">
+      <Show when={allPois().length > 0} fallback={
+        <div class="h-full w-full flex items-center justify-center text-muted-foreground p-4 text-center">
+          {store.isLoading ? "Loading map data..." : "No items to display on map"}
+        </div>
+      }>
+        <MapComponent
+          center={[
+            (allPois()[0]?.longitude as number) || 0,
+            (allPois()[0]?.latitude as number) || 0
+          ]}
+          pointsOfInterest={allPois()}
+          zoom={12}
+        />
+      </Show>
+
+      {/* Floating Action Toolbar on Map (Desktop only maybe? No, let's put it on top of map) */}
+      <div class="absolute top-4 left-4 z-10">
+        <ActionToolbar
+          onDownload={handleDownload}
+          onShare={handleShare}
+          onFavorite={handleFavorite}
+        />
+      </div>
+    </div>
+  );
+
+  // List Content
+  const ListContent = (
+    <div class="h-full overflow-y-auto p-4 md:p-6 bg-slate-50/50 dark:bg-slate-950/50 backdrop-blur-sm">
+      <div class="max-w-3xl mx-auto pb-20"> {/* pb-20 for FAB space */}
+        <CityInfoHeader cityData={cityData()} isLoading={store.isLoading && !cityData()} />
+
+        <Show when={store.error}>
+          <div class="mb-6 p-4 rounded-xl bg-red-50 border border-red-200 text-red-600 dark:bg-red-900/20 dark:border-red-900/50 dark:text-red-400">
+            <p class="font-bold">Unable to load itinerary</p>
+            <p class="text-sm opacity-90">{store.error?.message}</p>
+          </div>
+        </Show>
+
         <Show when={store.isLoading && !store.data}>
           <ItinerarySkeleton />
         </Show>
 
-        <Show when={store.error}>
-          <div class="text-red-500 p-4 border border-red-500 rounded-md">
-            <p class="font-bold">An error occurred:</p>
-            <pre>{store.error?.message}</pre>
-            <p class="mt-2">Please try again.</p>
-          </div>
-        </Show>
-
-        <Show when={store.data} keyed>
-          <div class="space-y-8">
-            <Show when={cityData()} keyed>
-              {(city) => (
-                <div class="glass-panel rounded-2xl p-6 shadow-lg border">
-                  <h1 class="text-3xl sm:text-4xl font-bold tracking-tight">
-                    {city.city}, {city.country}
-                  </h1>
-                  <p class="text-white/80 text-sm mt-1">{city.description}</p>
-                  <div class="mt-4 grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                    <div>
-                      <p class="font-semibold">Population</p>
-                      <p>{city.population}</p>
-                    </div>
-                    <div>
-                      <p class="font-semibold">Area</p>
-                      <p>{city.area}</p>
-                    </div>
-                    <div>
-                      <p class="font-semibold">Language</p>
-                      <p>{city.language}</p>
-                    </div>
-                    <div>
-                      <p class="font-semibold">Weather</p>
-                      <p>{city.weather}</p>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </Show>
-
-            <Show when={itineraryData()} keyed>
-              {(itinerary) => (
-                <div class="glass-panel rounded-2xl p-6 shadow-lg border">
-                  <h2 class="text-2xl font-bold mb-2">
-                    {itinerary.itinerary_name || "Custom Itinerary"}
-                  </h2>
-                  <p class="text-lg text-muted-foreground mb-4">
-                    {itinerary.overall_description}
-                  </p>
-                </div>
-              )}
-            </Show>
-
-            <Show when={allPois().length > 0}>
-              <div>
-                <h2 class="text-2xl font-bold mb-4">Points of Interest</h2>
-                <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                  <For each={allPois()}>{(poi) => <PoiCard poi={poi} />}</For>
-                </div>
-              </div>
-            </Show>
-          </div>
+        <Show when={itineraryData()} keyed>
+          {(itinerary) => (
+            <ItineraryResults
+              itinerary={itinerary}
+              showToggle={false} // Show all by default in the main view
+            />
+          )}
         </Show>
       </div>
     </div>
   );
-}
 
-function PoiCard(props: { poi: POIDetailedInfo }) {
   return (
-    <div class="glass-panel rounded-2xl p-4 hover:shadow-xl hover:scale-[1.02] transition-all duration-200 cursor-pointer">
-      <div class="flex items-start justify-between gap-3 mb-2">
-        <div>
-          <h3 class="text-base font-semibold text-gray-900 dark:text-white">
-            {props.poi.name}
-          </h3>
-          <p class="text-xs font-medium text-gray-600 dark:text-gray-400">
-            {props.poi.category}
-          </p>
-        </div>
-        <Badge variant="secondary" class="w-fit">
-          {props.poi.distance?.toFixed(1)} km
-        </Badge>
-      </div>
-      <p class="text-sm text-gray-700 dark:text-gray-400 line-clamp-2 mb-3 leading-relaxed">
-        {props.poi.description_poi}
-      </p>
-      <div class="flex items-center gap-3 text-xs text-gray-600 dark:text-gray-500">
-        <div class="flex items-center gap-1">
-          <MapPin class="w-4 h-4 text-blue-600 dark:text-blue-400" />
-          <span class="font-medium">{props.poi.address}</span>
-        </div>
-        <div class="flex items-center gap-1">
-          <Clock class="w-4 h-4 text-gray-500" />
-          <span class="font-medium">{props.poi.opening_hours}</span>
-        </div>
-      </div>
-    </div>
+    <>
+      <SplitView
+        listContent={ListContent}
+        mapContent={MapContent}
+        initialMode="split"
+      />
+      <ChatFab onClick={() => console.log("Open chat")} />
+    </>
   );
 }
 
 function ItinerarySkeleton() {
   return (
-    <div class="space-y-8">
-      <div class="glass-panel rounded-2xl p-6 shadow-lg border">
-        <Skeleton class="h-8 w-3/4 mb-2" />
-        <Skeleton class="h-4 w-full" />
-        <Skeleton class="h-4 w-full mt-2" />
-        <Skeleton class="h-4 w-2/3 mt-2" />
-      </div>
-      <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        <For each={Array(6)}>{() => <PoiCardSkeleton />}</For>
-      </div>
-    </div>
-  );
-}
+    <div class="space-y-6">
+      {/* City Header Skeleton */}
+      <div class="rounded-2xl bg-gray-200 dark:bg-gray-800 h-64 animate-pulse" />
 
-function PoiCardSkeleton() {
-  return (
-    <div class="glass-panel rounded-2xl p-4">
-      <Skeleton class="h-6 w-3/4 mb-2" />
-      <Skeleton class="h-5 w-1/4 mb-4" />
-      <Skeleton class="h-4 w-full" />
-      <Skeleton class="h-4 w-full mt-2" />
-      <Skeleton class="h-4 w-2/3 mt-2" />
+      {/* List Items Skeleton */}
+      <div class="space-y-4">
+        <Card class="bg-white/50 dark:bg-slate-900/50">
+          <CardHeader>
+            <Skeleton class="h-6 w-1/3 mb-2" />
+            <Skeleton class="h-4 w-1/4" />
+          </CardHeader>
+          <CardContent>
+            <Skeleton class="h-16 w-full" />
+          </CardContent>
+        </Card>
+        <Card class="bg-white/50 dark:bg-slate-900/50">
+          <CardHeader>
+            <Skeleton class="h-6 w-1/3 mb-2" />
+            <Skeleton class="h-4 w-1/4" />
+          </CardHeader>
+          <CardContent>
+            <Skeleton class="h-16 w-full" />
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }

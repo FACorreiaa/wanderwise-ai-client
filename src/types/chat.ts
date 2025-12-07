@@ -35,25 +35,29 @@ export interface ItineraryResponse {
 }
 
 export interface Hotel {
-    address: string;
-    category: string;
-    city: string;
-    description: string;
-    distance: number;
-    images: null | string[];
-    latitude: number;
-    longitude: number;
-    name: string;
-    opening_hours: null | string;
-    phone_number: string;
-    price_range: string;
-    rating: number;
-    tags: string[];
-    website: string;
+  address: string;
+  category: string;
+  city: string;
+  description: string;
+  distance: number;
+  images: null | string[];
+  latitude: number;
+  longitude: number;
+  name: string;
+  opening_hours: null | string;
+  phone_number: string;
+  price_range: string;
+  rating: number;
+  tags: string[];
+  website: string;
 }
 
 export interface AccommodationResponse {
-    hotels: Hotel[];
+  hotels: Hotel[];
+}
+
+export interface DiningResponse {
+  restaurants: any[]; // Using any for now or define Restaurant interface if available
 }
 
 export interface AiCityResponse {
@@ -61,5 +65,8 @@ export interface AiCityResponse {
   itinerary_response?: ItineraryResponse;
   points_of_interest?: POIDetailedInfo[];
   accommodation_response?: AccommodationResponse;
+  dining_response?: DiningResponse;
   session_id?: string;
+  // Dynamic properties might exist
+  [key: string]: any;
 }
