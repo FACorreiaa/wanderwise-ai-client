@@ -70,8 +70,7 @@ export default function AddToListButton(props: AddToListButtonProps) {
       const newList = await createListMutation.mutateAsync({
         name: newListName(),
         description: `List created for ${props.itemName}`,
-        is_public: false,
-        is_itinerary: false,
+        isPublic: false,
       });
 
       // Add the item to the newly created list

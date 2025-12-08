@@ -176,7 +176,6 @@ export default function StreamingTransition(props: StreamingTransitionProps) {
             <StreamingChatDisplay
               session={props.session}
               onComplete={handleChatComplete}
-              class="h-full"
             />
           </Show>
 
