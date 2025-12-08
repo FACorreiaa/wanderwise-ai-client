@@ -1,10 +1,10 @@
-import { Component, Show } from 'solid-js';
+import { Show } from 'solid-js';
 import { Title, Meta } from '@solidjs/meta';
 import { useAuth } from '~/contexts/AuthContext';
 import LoggedInDashboard from '~/components/features/Dashboard/LoggedInDashboard';
 import PublicLandingPage from '~/components/features/Home/PublicLandingPage';
 
-export default function Index(): JSX.Element {
+export default function Index() {
   const { isAuthenticated, isLoading } = useAuth();
 
   return (

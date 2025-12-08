@@ -1,0 +1,124 @@
+
+> facorreiaa-wanderwise-ai-client@ lint /Users/fernando_idwell/Projects/Loci/go-ai-poi-client
+> eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0
+
+
+/Users/fernando_idwell/Projects/Loci/go-ai-poi-client/src/components/LocationPermissionPrompt.tsx
+  24:14  error  'err' is defined but never used. Allowed unused caught errors must match /^_/u  @typescript-eslint/no-unused-vars
+
+/Users/fernando_idwell/Projects/Loci/go-ai-poi-client/src/components/Onboarding.tsx
+    6:77  error    'FiList' is defined but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+  123:26  warning  Use an object for the style prop instead of a string                      solid/style-prop
+
+/Users/fernando_idwell/Projects/Loci/go-ai-poi-client/src/components/ReviewCard.tsx
+    2:67  error  'User' is defined but never used. Allowed unused vars must match /^_/u                                                       @typescript-eslint/no-unused-vars
+   31:12  error  'showPhotos' is assigned a value but never used. Allowed unused vars must match /^_/u                                        @typescript-eslint/no-unused-vars
+  179:30  error  Use Solid's `<For />` component or `<Index />` component for rendering lists. Array#map causes DOM elements to be recreated  solid/prefer-for
+
+/Users/fernando_idwell/Projects/Loci/go-ai-poi-client/src/components/ReviewForm.tsx
+    3:33  error    'UploadedPhoto' is defined but never used. Allowed unused vars must match /^_/u                                                           @typescript-eslint/no-unused-vars
+  132:24  warning  Solid components run once, so an early return breaks reactivity. Move the condition inside a JSX element, such as a fragment or <Show />  solid/components-return-once
+
+/Users/fernando_idwell/Projects/Loci/go-ai-poi-client/src/components/StreamingTransition.tsx
+  179:15  warning  Prefer the `class` prop over the deprecated `className` prop  solid/no-react-specific-props
+
+/Users/fernando_idwell/Projects/Loci/go-ai-poi-client/src/components/ThemeSelector.tsx
+  2:19  error  'Monitor' is defined but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+
+/Users/fernando_idwell/Projects/Loci/go-ai-poi-client/src/components/features/Dashboard/LoggedInDashboard.tsx
+  42:10  error  'streamingSession' is assigned a value but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+
+/Users/fernando_idwell/Projects/Loci/go-ai-poi-client/src/components/features/Dashboard/ProfileQuickSelect.tsx
+  1:10  error  'Component' is defined but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+
+/Users/fernando_idwell/Projects/Loci/go-ai-poi-client/src/components/features/Home/Hero.tsx
+  7:10  error  'Route' is defined but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+
+/Users/fernando_idwell/Projects/Loci/go-ai-poi-client/src/components/features/Home/RealTimeStats.tsx
+   92:15  error  'data' is assigned a value but never used. Allowed unused vars must match /^_/u                                              @typescript-eslint/no-unused-vars
+  148:30  error  Use Solid's `<For />` component or `<Index />` component for rendering lists. Array#map causes DOM elements to be recreated  solid/prefer-for
+
+/Users/fernando_idwell/Projects/Loci/go-ai-poi-client/src/components/features/Map/Map.tsx
+  137:16  error  Do not access Object.prototype method 'hasOwnProperty' from target object                    no-prototype-builtins
+  137:51  error  Do not access Object.prototype method 'hasOwnProperty' from target object                    no-prototype-builtins
+  422:9   error  'addFeaturesToMap' is assigned a value but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+
+/Users/fernando_idwell/Projects/Loci/go-ai-poi-client/src/components/features/Settings/Interests.tsx
+    2:19  error    'Edit3' is defined but never used. Allowed unused vars must match /^_/u                                                                   @typescript-eslint/no-unused-vars
+    2:32  error    'Trash2' is defined but never used. Allowed unused vars must match /^_/u                                                                  @typescript-eslint/no-unused-vars
+    2:47  error    'Power' is defined but never used. Allowed unused vars must match /^_/u                                                                   @typescript-eslint/no-unused-vars
+   98:5   warning  Solid components run once, so an early return breaks reactivity. Move the condition inside a JSX element, such as a fragment or <Show />  solid/components-return-once
+  109:5   warning  Solid components run once, so an early return breaks reactivity. Move the condition inside a JSX element, such as a fragment or <Show />  solid/components-return-once
+
+/Users/fernando_idwell/Projects/Loci/go-ai-poi-client/src/components/features/Settings/Tags.tsx
+    2:19  error    'Edit3' is defined but never used. Allowed unused vars must match /^_/u                                                                   @typescript-eslint/no-unused-vars
+    2:32  error    'Trash2' is defined but never used. Allowed unused vars must match /^_/u                                                                  @typescript-eslint/no-unused-vars
+  101:5   warning  Solid components run once, so an early return breaks reactivity. Move the condition inside a JSX element, such as a fragment or <Show />  solid/components-return-once
+  112:5   warning  Solid components run once, so an early return breaks reactivity. Move the condition inside a JSX element, such as a fragment or <Show />  solid/components-return-once
+
+/Users/fernando_idwell/Projects/Loci/go-ai-poi-client/src/components/features/Settings/TravelProfiles.tsx
+    1:24   error  'createEffect' is defined but never used. Allowed unused vars must match /^_/u              @typescript-eslint/no-unused-vars
+    2:40   error  'Check' is defined but never used. Allowed unused vars must match /^_/u                     @typescript-eslint/no-unused-vars
+    2:89   error  'Users' is defined but never used. Allowed unused vars must match /^_/u                     @typescript-eslint/no-unused-vars
+   12:53   error  'AccommodationPreferences' is defined but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+   12:79   error  'DiningPreferences' is defined but never used. Allowed unused vars must match /^_/u         @typescript-eslint/no-unused-vars
+   12:98   error  'ActivityPreferences' is defined but never used. Allowed unused vars must match /^_/u       @typescript-eslint/no-unused-vars
+   12:119  error  'ItineraryPreferences' is defined but never used. Allowed unused vars must match /^_/u      @typescript-eslint/no-unused-vars
+  256:15   error  'newProfile' is assigned a value but never used. Allowed unused vars must match /^_/u       @typescript-eslint/no-unused-vars
+
+/Users/fernando_idwell/Projects/Loci/go-ai-poi-client/src/components/lists/AddToListButton.tsx
+  2:28  error  'Check' is defined but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+
+/Users/fernando_idwell/Projects/Loci/go-ai-poi-client/src/components/modals/QuickSettingsModal.tsx
+  26:9  error  Unexpected empty object pattern  no-empty-pattern
+
+/Users/fernando_idwell/Projects/Loci/go-ai-poi-client/src/components/results/ItineraryResults.tsx
+  98:9  error  'getRatingColor' is assigned a value but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+
+/Users/fernando_idwell/Projects/Loci/go-ai-poi-client/src/components/shared/SplitView.tsx
+  2:10  error  'useLocation' is defined but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+
+/Users/fernando_idwell/Projects/Loci/go-ai-poi-client/src/components/streaming/StreamingResponse.tsx
+    1:44  error  'createEffect' is defined but never used. Allowed unused vars must match /^_/u         @typescript-eslint/no-unused-vars
+    3:40  error  'StreamingSession' is defined but never used. Allowed unused vars must match /^_/u     @typescript-eslint/no-unused-vars
+   99:22  error  'parseError' is defined but never used. Allowed unused caught errors must match /^_/u  @typescript-eslint/no-unused-vars
+  163:29  error  'event' is defined but never used. Allowed unused args must match /^_/u                @typescript-eslint/no-unused-vars
+  284:14  error  'e' is defined but never used. Allowed unused caught errors must match /^_/u           @typescript-eslint/no-unused-vars
+
+/Users/fernando_idwell/Projects/Loci/go-ai-poi-client/src/components/ui/CityInfoHeader.tsx
+  21:46  warning  Solid components run once, so an early return breaks reactivity. Move the condition inside a JSX element, such as a fragment or <Show />  solid/components-return-once
+
+/Users/fernando_idwell/Projects/Loci/go-ai-poi-client/src/contexts/AuthContext.tsx
+  217:5  error    Unnecessary try/catch wrapper                                                                                                             no-useless-catch
+  261:5  warning  Solid components run once, so an early return breaks reactivity. Move the condition inside a JSX element, such as a fragment or <Show />  solid/components-return-once
+  269:5  warning  Solid components run once, so an early return breaks reactivity. Move the condition inside a JSX element, such as a fragment or <Show />  solid/components-return-once
+  299:5  warning  Solid components run once, so an early return breaks reactivity. Move the condition inside a JSX element, such as a fragment or <Show />  solid/components-return-once
+
+/Users/fernando_idwell/Projects/Loci/go-ai-poi-client/src/contexts/LocationContext.tsx
+  2:51  error  'createEffect' is defined but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+
+/Users/fernando_idwell/Projects/Loci/go-ai-poi-client/src/entry-server.tsx
+  60:19  error  The string passed to innerHTML does not appear to be valid HTML  solid/no-innerhtml
+
+/Users/fernando_idwell/Projects/Loci/go-ai-poi-client/src/lib/api.test.ts
+   1:48  error  'afterEach' is defined but never used. Allowed unused vars must match /^_/u                     @typescript-eslint/no-unused-vars
+   3:10  error  'create' is defined but never used. Allowed unused vars must match /^_/u                        @typescript-eslint/no-unused-vars
+   4:10  error  'LoginRequestSchema' is defined but never used. Allowed unused vars must match /^_/u            @typescript-eslint/no-unused-vars
+   4:30  error  'ValidateSessionRequestSchema' is defined but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+  38:23  error  'global' is not defined                                                                         no-undef
+  39:23  error  'global' is not defined                                                                         no-undef
+  40:23  error  'global' is not defined                                                                         no-undef
+
+/Users/fernando_idwell/Projects/Loci/go-ai-poi-client/src/lib/api.ts
+  130:12  error  'e' is defined but never used. Allowed unused caught errors must match /^_/u  @typescript-eslint/no-unused-vars
+  480:24  error  'poiId' is defined but never used. Allowed unused args must match /^_/u       @typescript-eslint/no-unused-vars
+  489:29  error  'poiId' is defined but never used. Allowed unused args must match /^_/u       @typescript-eslint/no-unused-vars
+
+/Users/fernando_idwell/Projects/Loci/go-ai-poi-client/src/types/global.d.ts
+   1:1   error  Unused eslint-disable directive (no problems were reported from 'no-unused-vars')
+  24:19  error  'JSX' is defined but never used. Allowed unused vars must match /^_/u              @typescript-eslint/no-unused-vars
+
+✖ 63 problems (52 errors, 11 warnings)
+  1 error and 1 warning potentially fixable with the `--fix` option.
+
+ ELIFECYCLE  Command failed with exit code 1.

@@ -1,5 +1,5 @@
 // SkeletonActivityCard.tsx
-import { Component } from 'solid-js';
+import { Component, For } from 'solid-js';
 
 export const SkeletonActivityCard: Component = () => {
   return (
@@ -35,10 +35,8 @@ export const SkeletonActivityCard: Component = () => {
 export const SkeletonActivityGrid: Component<{ count?: number }> = (props) => {
   const count = props.count || 6;
   return (
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-      {Array.from({ length: count }, (_, i) => (
-        <SkeletonActivityCard key={i} />
-      ))}
-    </div>
+    <For each={Array.from({ length: count })}>
+      {() => <SkeletonActivityCard />}
+    </For>
   );
 };

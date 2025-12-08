@@ -1,4 +1,4 @@
-import { onMount, onCleanup, createEffect } from "solid-js";
+import { onMount, onCleanup, createEffect, mergeProps } from "solid-js";
 import mapboxgl from "mapbox-gl";
 
 interface POI {
@@ -25,9 +25,9 @@ interface MapComponentProps {
   onMarkerClick?: (poi: POI, index: number) => void; // New prop for marker click handling
 }
 
-export default function MapComponent(_props: MapComponentProps) {
-    const props = mergeProps({ style: "mapbox://styles/mapbox/standard", showRoutes: true }, _props);
-let mapContainer: HTMLDivElement | undefined;
+const MapComponent = (_props: MapComponentProps) => {
+  const props = mergeProps({ style: "mapbox://styles/mapbox/standard", showRoutes: true }, _props);
+  let mapContainer: HTMLDivElement | undefined;
   let map: mapboxgl.Map | undefined;
   let currentMarkers: mapboxgl.Marker[] = [];
 
@@ -40,13 +40,19 @@ let mapContainer: HTMLDivElement | undefined;
 
     while (remaining.length > 0) {
       const current = optimized[optimized.length - 1];
+      const currentLat = typeof current.latitude === 'string' ? parseFloat(current.latitude) : current.latitude;
+      const currentLng = typeof current.longitude === 'string' ? parseFloat(current.longitude) : current.longitude;
+
       let nearestIndex = 0;
       let nearestDistance = Infinity;
 
       remaining.forEach((poi, index) => {
+        const poiLat = typeof poi.latitude === 'string' ? parseFloat(poi.latitude) : poi.latitude;
+        const poiLng = typeof poi.longitude === 'string' ? parseFloat(poi.longitude) : poi.longitude;
+
         const distance = Math.sqrt(
-          Math.pow(poi.latitude - current.latitude, 2) +
-            Math.pow(poi.longitude - current.longitude, 2),
+          Math.pow(poiLat - currentLat, 2) +
+          Math.pow(poiLng - currentLng, 2),
         );
         if (distance < nearestDistance) {
           nearestDistance = distance;
@@ -128,7 +134,7 @@ let mapContainer: HTMLDivElement | undefined;
       );
 
       // Handle missing coordinate properties
-      if (!poi.hasOwnProperty("latitude") || !poi.hasOwnProperty("longitude")) {
+      if (!Object.hasOwn(poi, "latitude") || !Object.hasOwn(poi, "longitude")) {
         console.warn(
           `🚫 POI ${poi.name} missing latitude or longitude properties`,
         );
@@ -267,10 +273,11 @@ let mapContainer: HTMLDivElement | undefined;
       });
 
       // Add click event to trigger callback
-      if (props.onMarkerClick) {
+      const onMarkerClick = props.onMarkerClick;
+      if (onMarkerClick) {
         markerElement.addEventListener("click", (e) => {
           e.stopPropagation();
-          props.onMarkerClick(poi, index);
+          onMarkerClick(poi, index);
         });
       }
 
@@ -412,7 +419,7 @@ let mapContainer: HTMLDivElement | undefined;
     }
   };
 
-  const addFeaturesToMap = (pois: POI[]) => {
+  const _addFeaturesToMap = (pois: POI[]) => {
     if (!map || !map.isStyleLoaded() || !pois || pois.length === 0) {
       console.log("Map not ready or no POIs provided to addFeaturesToMap");
       return;
@@ -582,7 +589,7 @@ let mapContainer: HTMLDivElement | undefined;
 
   // Initialize map on mount
   onMount(() => {
-    mapboxgl.accessToken = import.meta.env.VITE_MAPBOX_API_KEY;
+    mapboxgl.accessToken = (import.meta as any).env.VITE_MAPBOX_API_KEY;
 
     // *** DEFENSIVE CENTER COORDINATE VALIDATION ***
     let validCenter = props.center;
@@ -697,8 +704,6 @@ let mapContainer: HTMLDivElement | undefined;
         lat === undefined ||
         lng === null ||
         lng === undefined ||
-        lat === "" ||
-        lng === "" ||
         isNaN(lat) ||
         isNaN(lng)
       ) {
@@ -770,3 +775,4 @@ let mapContainer: HTMLDivElement | undefined;
     />
   );
 }
+export default MapComponent;

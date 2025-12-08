@@ -6,7 +6,6 @@ import {
   setStreamingSession,
   updateStreamingData,
   markStreamingComplete,
-  clearStreamingSession,
 } from '~/lib/streaming-state';
 import type { POIDetailedInfo } from '../api/types';
 
@@ -198,7 +197,7 @@ export function useChatSession(options: UseChatSessionOptions = {}) {
             // Remove processed data from buffer
             chunkBuffer[part as keyof typeof chunkBuffer] = buffer.substring(i + 1);
             return jsonData;
-          } catch (parseError) {
+          } catch (_parseError) {
             // JSON not complete yet, continue accumulating
             console.log(`Partial JSON for ${part}, continuing...`);
           }
@@ -207,6 +206,259 @@ export function useChatSession(options: UseChatSessionOptions = {}) {
     }
 
     return null;
+  };
+
+  // Function to start a new session when the old one is not found
+  const startNewSession = async (userMessage: string) => {
+    try {
+      console.log('Starting new chat session...');
+
+      const streaming = options.getStreamingData?.();
+      const cityName = streaming?.general_city_data?.city ||
+        streaming?.activities?.[0]?.city ||
+        streaming?.restaurants?.[0]?.city ||
+        'Unknown';
+
+      // Get user ID from auth context
+      const userId = auth.user()?.id;
+      if (!userId) {
+        throw new Error('User not authenticated - cannot start new session');
+      }
+
+      const newSessionPayload = {
+        message: `Continue planning for ${cityName}. ${userMessage}`,
+        user_location: null
+      };
+
+      const response = await sendUnifiedChatMessageStream({
+        profileId: userId,
+        message: newSessionPayload.message,
+        cityName,
+        contextType: domainToContextType(detectDomain(userMessage)),
+      });
+
+      if (!response.ok) {
+        throw new Error(`New session failed with status: ${response.status}`);
+      }
+
+      console.log('New session started successfully');
+
+      // Process the new session's streaming response
+      const reader = response.body?.getReader();
+      if (!reader) {
+        throw new Error('Response body is not readable for new session');
+      }
+
+      const decoder = new TextDecoder();
+      let newSessionMessage = '';
+      let isComplete = false;
+
+      try {
+        while (!isComplete) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          const chunk = decoder.decode(value, { stream: true });
+          const lines = chunk.split('\n');
+
+          for (const line of lines) {
+            if (line.startsWith('data: ')) {
+              try {
+                const eventData = JSON.parse(line.slice(6));
+                console.log('New session event:', eventData);
+
+                // Handle events similar to the main function, but focused on key events
+                switch (eventData.Type || eventData.type) {
+                  case 'start': {
+                    const startData = eventData.Data || eventData.data;
+                    if (startData && startData.session_id) {
+                      console.log('New session ID:', startData.session_id);
+                      setSessionId(startData.session_id);
+
+                      // Update session storage with consistent data structure
+                      const storedSession = sessionStorage.getItem('completedStreamingSession');
+                      if (storedSession) {
+                        try {
+                          const session = JSON.parse(storedSession);
+                          session.sessionId = startData.session_id;
+                          // Also store in data.session_id for consistency
+                          if (session.data) {
+                            session.data.session_id = startData.session_id;
+                            session.data.sessionId = startData.session_id;
+                          }
+                          sessionStorage.setItem('completedStreamingSession', JSON.stringify(session));
+                          console.log('✅ Updated session storage in new session with ID:', startData.session_id);
+                        } catch (error) {
+                          console.error('Error updating session storage in new session:', error);
+                        }
+                      } else {
+                        // Create a new session storage entry if none exists
+                        const newSession = {
+                          sessionId: startData.session_id,
+                          data: {
+                            session_id: startData.session_id,
+                            sessionId: startData.session_id
+                          }
+                        };
+                        sessionStorage.setItem('completedStreamingSession', JSON.stringify(newSession));
+                        console.log('✅ Created new session storage in new session with ID:', startData.session_id);
+                      }
+                    }
+                    break;
+                  }
+
+                  case 'itinerary': {
+                    const itineraryData2 = decodeEventData(eventData.Data || eventData.data);
+                    const message2 = eventData.Message || eventData.message;
+                    const derivedLists2 = deriveDomainLists(itineraryData2);
+
+                    if (itineraryData2) {
+                      if (options.setStreamingData) {
+                        options.setStreamingData((prev: any) => {
+                          const hasAuthoritativeList = true;
+                          const mergedHotels = hasAuthoritativeList
+                            ? derivedLists2.hotels
+                            : mergeUniqueById(
+                              prev?.hotels,
+                              itineraryData2.hotels || derivedLists2.hotels,
+                            );
+
+                          const mergedRestaurants = hasAuthoritativeList
+                            ? derivedLists2.restaurants
+                            : mergeUniqueById(
+                              prev?.restaurants,
+                              itineraryData2.restaurants || derivedLists2.restaurants,
+                            );
+
+                          const mergedActivities = hasAuthoritativeList
+                            ? derivedLists2.activities
+                            : mergeUniqueById(
+                              prev?.activities,
+                              itineraryData2.activities || derivedLists2.activities,
+                            );
+
+                          return {
+                            ...prev,
+                            ...(itineraryData2.general_city_data && {
+                              general_city_data: itineraryData2.general_city_data
+                            }),
+                            ...(itineraryData2.points_of_interest && {
+                              points_of_interest: itineraryData2.points_of_interest
+                            }),
+                            ...(itineraryData2.itinerary_response && {
+                              itinerary_response: itineraryData2.itinerary_response
+                            }),
+                            ...(mergedActivities.length && {
+                              activities: mergedActivities
+                            }),
+                            ...(mergedRestaurants.length && {
+                              restaurants: mergedRestaurants
+                            }),
+                            ...(mergedHotels.length && {
+                              hotels: mergedHotels
+                            })
+                          };
+                        });
+                      }
+
+                      const mergedHotels = mergeUniqueById(
+                        (options.getStreamingData?.() as any)?.hotels,
+                        itineraryData2.hotels || derivedLists2.hotels,
+                      );
+                      const mergedRestaurants = mergeUniqueById(
+                        (options.getStreamingData?.() as any)?.restaurants,
+                        itineraryData2.restaurants || derivedLists2.restaurants,
+                      );
+                      const mergedActivities = mergeUniqueById(
+                        (options.getStreamingData?.() as any)?.activities,
+                        itineraryData2.activities || derivedLists2.activities,
+                      );
+
+                      const mergedDataForPersistence = {
+                        ...(options.getStreamingData?.() || {}),
+                        ...itineraryData2,
+                        hotels: mergedHotels,
+                        restaurants: mergedRestaurants,
+                        activities: mergedActivities,
+                      };
+
+                      persistCompletedSession(
+                        sessionId() || itineraryData2.session_id,
+                        mergedDataForPersistence
+                      );
+
+                      // Persist derived lists for navigation/storage consistency
+                      updateStreamingData(mergedDataForPersistence);
+
+                      if (message2) {
+                        newSessionMessage += message2 + ' ';
+                      }
+                    }
+                    break;
+                  }
+
+                  case 'complete': {
+                    isComplete = true;
+                    const completeMessage = eventData.Message || eventData.message;
+                    if (completeMessage && completeMessage !== 'Turn completed.') {
+                      newSessionMessage += completeMessage;
+                    }
+
+                    // Handle navigation data if present for new session
+                    const navigationData = eventData.Navigation || eventData.navigation;
+                    if (navigationData && options.enableNavigation) {
+                      console.log('Received navigation data in new session:', navigationData);
+
+                      if (options.onNavigationData) {
+                        options.onNavigationData(navigationData);
+                      }
+
+                      // Navigate to the specified URL if present
+                      if (navigationData.url || navigationData.URL) {
+                        const targetUrl = navigationData.url || navigationData.URL;
+                        console.log('Navigating to (new session):', targetUrl);
+                        navigate(targetUrl);
+                      }
+                    }
+                    break;
+                  }
+
+                  case 'error':
+                    throw new Error(eventData.Error || eventData.error || 'New session error');
+                }
+              } catch (parseError) {
+                console.warn('Failed to parse new session SSE data:', line, parseError);
+              }
+            }
+          }
+        }
+      } finally {
+        reader.releaseLock();
+      }
+
+      // Add response from new session to chat
+      if (newSessionMessage.trim()) {
+        setChatHistory(prev => [...prev, {
+          type: 'assistant',
+          content: `New session started. ${newSessionMessage.trim()}`,
+          timestamp: new Date()
+        }]);
+      } else {
+        setChatHistory(prev => [...prev, {
+          type: 'assistant',
+          content: 'New session started successfully.',
+          timestamp: new Date()
+        }]);
+      }
+
+    } catch (error: any) {
+      console.error('Error starting new session:', error);
+      setChatHistory(prev => [...prev, {
+        type: 'error',
+        content: `Failed to start new session: ${error.message || 'Unknown error'}`,
+        timestamp: new Date()
+      }]);
+    }
   };
 
   const sendChatMessage = async () => {
@@ -280,10 +532,10 @@ export function useChatSession(options: UseChatSessionOptions = {}) {
 
       // Extract city name from various possible sources in the streaming data
       const cityName = streamingData?.general_city_data?.city ||
-                       streamingData?.activities?.[0]?.city ||
-                       streamingData?.restaurants?.[0]?.city ||
-                       streamingData?.hotels?.[0]?.city ||
-                       streamingData?.points_of_interest?.[0]?.city;
+        streamingData?.activities?.[0]?.city ||
+        streamingData?.restaurants?.[0]?.city ||
+        streamingData?.hotels?.[0]?.city ||
+        streamingData?.points_of_interest?.[0]?.city;
 
       console.log('🏙️ Extracted city name for continue chat:', cityName);
 
@@ -327,7 +579,7 @@ export function useChatSession(options: UseChatSessionOptions = {}) {
 
                 // Handle different event types
                 switch (eventData.Type || eventData.type) {
-                  case 'start':
+                  case 'start': {
                     // Extract session ID from start event when a new session is created
                     // Note: data field is base64 encoded from protobuf bytes
                     const startData = decodeEventData(eventData.Data || eventData.data);
@@ -401,6 +653,7 @@ export function useChatSession(options: UseChatSessionOptions = {}) {
                       }
                     }
                     break;
+                  }
 
                   case 'chunk': {
                     // Handle streaming chunks - buffer and parse JSON progressively
@@ -413,7 +666,7 @@ export function useChatSession(options: UseChatSessionOptions = {}) {
 
                     // Accumulate chunks in buffer
                     if (part && (part === 'general_pois' || part === 'itinerary' || part === 'city_data' ||
-                                 part === 'hotels' || part === 'restaurants' || part === 'activities')) {
+                      part === 'hotels' || part === 'restaurants' || part === 'activities')) {
                       chunkBuffer[part as keyof typeof chunkBuffer] += chunk;
 
                       // Try to parse complete JSON from buffer
@@ -426,24 +679,25 @@ export function useChatSession(options: UseChatSessionOptions = {}) {
                           batch(() => {
                             switch (part) {
                               case 'city_data':
-                                options.setStreamingData((prev: any) => ({
+                                options.setStreamingData?.((prev: any) => ({
                                   ...prev,
                                   general_city_data: parsedData,
                                 }));
                                 updateStreamingData({ general_city_data: parsedData });
                                 break;
 
-                              case 'general_pois':
+                              case 'general_pois': {
                                 const pois = parsedData.points_of_interest || [];
-                                options.setStreamingData((prev: any) => ({
+                                options.setStreamingData?.((prev: any) => ({
                                   ...prev,
                                   points_of_interest: pois,
                                 }));
                                 updateStreamingData({ points_of_interest: pois });
                                 break;
+                              }
 
                               case 'itinerary':
-                                options.setStreamingData((prev: any) => ({
+                                options.setStreamingData?.((prev: any) => ({
                                   ...prev,
                                   itinerary_response: parsedData,
                                 }));
@@ -455,44 +709,47 @@ export function useChatSession(options: UseChatSessionOptions = {}) {
                                 }
                                 break;
 
-                              case 'hotels':
+                              case 'hotels': {
                                 const hotels = parsedData.hotels || [];
                                 const mergedHotels = mergeUniqueById(
                                   options.getStreamingData?.()?.hotels,
                                   hotels
                                 );
-                                options.setStreamingData((prev: any) => ({
+                                options.setStreamingData?.((prev: any) => ({
                                   ...prev,
                                   hotels: mergedHotels,
                                 }));
                                 updateStreamingData({ hotels: mergedHotels });
                                 break;
+                              }
 
-                              case 'restaurants':
+                              case 'restaurants': {
                                 const restaurants = parsedData.restaurants || [];
                                 const mergedRestaurants = mergeUniqueById(
                                   options.getStreamingData?.()?.restaurants,
                                   restaurants
                                 );
-                                options.setStreamingData((prev: any) => ({
+                                options.setStreamingData?.((prev: any) => ({
                                   ...prev,
                                   restaurants: mergedRestaurants,
                                 }));
                                 updateStreamingData({ restaurants: mergedRestaurants });
                                 break;
+                              }
 
-                              case 'activities':
+                              case 'activities': {
                                 const activities = parsedData.activities || [];
                                 const mergedActivities = mergeUniqueById(
                                   options.getStreamingData?.()?.activities,
                                   activities
                                 );
-                                options.setStreamingData((prev: any) => ({
+                                options.setStreamingData?.((prev: any) => ({
                                   ...prev,
                                   activities: mergedActivities,
                                 }));
                                 updateStreamingData({ activities: mergedActivities });
                                 break;
+                              }
                             }
                           });
                         }
@@ -505,7 +762,7 @@ export function useChatSession(options: UseChatSessionOptions = {}) {
                     console.log('Session validated:', eventData.Data || eventData.data);
                     break;
 
-                  case 'progress':
+                  case 'progress': {
                     // Show progress updates
                     const progressData = eventData.Data || eventData.data;
                     console.log('Progress:', progressData);
@@ -519,6 +776,7 @@ export function useChatSession(options: UseChatSessionOptions = {}) {
                       options.onUpdateStart?.();
                     }
                     break;
+                  }
 
                   case 'intent_classified':
                     console.log('Intent classified:', eventData.Data || eventData.data);
@@ -654,7 +912,7 @@ export function useChatSession(options: UseChatSessionOptions = {}) {
                     break;
                   }
 
-                  case 'itinerary':
+                  case 'itinerary': {
                     // This is the key event - update the itinerary data
                     const itineraryData = decodeEventData(eventData.Data || eventData.data);
                     const message = eventData.Message || eventData.message;
@@ -789,9 +1047,10 @@ export function useChatSession(options: UseChatSessionOptions = {}) {
 
                       console.log('✅ Content updated successfully');
                     }
+                  }
                     break;
 
-                  case 'complete':
+                  case 'complete': {
                     isComplete = true;
                     const completeMessage = eventData.Message || eventData.message;
 
@@ -833,8 +1092,9 @@ export function useChatSession(options: UseChatSessionOptions = {}) {
                       }
                     }
                     break;
+                  }
 
-                  case 'error':
+                  case 'error': {
                     const errorMessage = eventData.Error || eventData.error || 'Unknown error occurred';
                     console.error('🚨 Received error event:', errorMessage);
                     console.log('🔍 Full error event data:', eventData);
@@ -859,17 +1119,19 @@ export function useChatSession(options: UseChatSessionOptions = {}) {
                     console.log('⚠️  Non-session error, continuing processing:', errorMessage);
                     assistantMessage += `Note: ${errorMessage} `;
                     break;
+                  }
 
-                  default:
+                  default: {
                     // Handle other event types or partial responses
                     if (eventData.Message || eventData.message) {
                       assistantMessage += eventData.Message || eventData.message;
                     }
                     console.log('Unhandled event type:', eventData.Type || eventData.type, eventData);
                     break;
+                  }
                 }
-              } catch (parseError) {
-                console.warn('Failed to parse SSE data:', line, parseError);
+              } catch (_parseError) {
+                console.warn('Failed to parse SSE data:', line, _parseError);
               }
             }
           }
@@ -912,8 +1174,8 @@ export function useChatSession(options: UseChatSessionOptions = {}) {
       // Handle token expiration errors specifically
       const errorMessage = error instanceof Error ? error.message : String(error);
       const isTokenExpired = errorMessage.includes('token is expired') ||
-                            errorMessage.includes('invalid token') ||
-                            errorMessage.includes('unauthenticated');
+        errorMessage.includes('invalid token') ||
+        errorMessage.includes('unauthenticated');
 
       if (isTokenExpired) {
         setChatHistory(prev => [...prev, {
@@ -938,254 +1200,6 @@ export function useChatSession(options: UseChatSessionOptions = {}) {
     }
   };
 
-  // Function to start a new session when the old one is not found
-  const startNewSession = async (userMessage: string) => {
-    try {
-      console.log('Starting new chat session...');
-
-      const streaming = options.getStreamingData?.();
-      const cityName = streaming?.general_city_data?.city || 
-                       streaming?.activities?.[0]?.city || 
-                       streaming?.restaurants?.[0]?.city || 
-                       'Unknown';
-
-      // Get user ID from auth context
-      const userId = auth.user()?.id;
-      if (!userId) {
-        throw new Error('User not authenticated - cannot start new session');
-      }
-
-      const newSessionPayload = {
-        message: `Continue planning for ${cityName}. ${userMessage}`,
-        user_location: null
-      };
-
-      const response = await sendUnifiedChatMessageStream({
-        profileId: userId,
-        message: newSessionPayload.message,
-        cityName,
-        contextType: domainToContextType(detectDomain(userMessage)),
-      });
-
-      if (!response.ok) {
-        throw new Error(`New session failed with status: ${response.status}`);
-      }
-
-      console.log('New session started successfully');
-
-      // Process the new session's streaming response
-      const reader = response.body?.getReader();
-      if (!reader) {
-        throw new Error('Response body is not readable for new session');
-      }
-
-      const decoder = new TextDecoder();
-      let newSessionMessage = '';
-      let isComplete = false;
-
-      try {
-        while (!isComplete) {
-          const { done, value } = await reader.read();
-          if (done) break;
-
-          const chunk = decoder.decode(value, { stream: true });
-          const lines = chunk.split('\n');
-
-          for (const line of lines) {
-            if (line.startsWith('data: ')) {
-              try {
-                const eventData = JSON.parse(line.slice(6));
-                console.log('New session event:', eventData);
-
-                // Handle events similar to the main function, but focused on key events
-                switch (eventData.Type || eventData.type) {
-                  case 'start':
-                    const startData = eventData.Data || eventData.data;
-                    if (startData && startData.session_id) {
-                      console.log('New session ID:', startData.session_id);
-                      setSessionId(startData.session_id);
-
-                      // Update session storage with consistent data structure
-                      const storedSession = sessionStorage.getItem('completedStreamingSession');
-                      if (storedSession) {
-                        try {
-                          const session = JSON.parse(storedSession);
-                          session.sessionId = startData.session_id;
-                          // Also store in data.session_id for consistency
-                          if (session.data) {
-                            session.data.session_id = startData.session_id;
-                            session.data.sessionId = startData.session_id;
-                          }
-                          sessionStorage.setItem('completedStreamingSession', JSON.stringify(session));
-                          console.log('✅ Updated session storage in new session with ID:', startData.session_id);
-                        } catch (error) {
-                          console.error('Error updating session storage in new session:', error);
-                        }
-                      } else {
-                        // Create a new session storage entry if none exists
-                        const newSession = {
-                          sessionId: startData.session_id,
-                          data: {
-                            session_id: startData.session_id,
-                            sessionId: startData.session_id
-                          }
-                        };
-                        sessionStorage.setItem('completedStreamingSession', JSON.stringify(newSession));
-                        console.log('✅ Created new session storage in new session with ID:', startData.session_id);
-                      }
-                    }
-                    break;
-
-                  case 'itinerary':
-                    const itineraryData2 = decodeEventData(eventData.Data || eventData.data);
-                    const message2 = eventData.Message || eventData.message;
-                    const derivedLists2 = deriveDomainLists(itineraryData2);
-
-                    if (itineraryData2) {
-                      if (options.setStreamingData) {
-                        options.setStreamingData((prev: any) => {
-                          const mergedHotels = hasAuthoritativeList
-                            ? derivedLists2.hotels
-                            : mergeUniqueById(
-                                prev?.hotels,
-                                itineraryData2.hotels || derivedLists2.hotels,
-                              );
-
-                          const mergedRestaurants = hasAuthoritativeList
-                            ? derivedLists2.restaurants
-                            : mergeUniqueById(
-                                prev?.restaurants,
-                                itineraryData2.restaurants || derivedLists2.restaurants,
-                              );
-
-                          const mergedActivities = hasAuthoritativeList
-                            ? derivedLists2.activities
-                            : mergeUniqueById(
-                                prev?.activities,
-                                itineraryData2.activities || derivedLists2.activities,
-                              );
-
-                          return {
-                            ...prev,
-                            ...(itineraryData2.general_city_data && {
-                              general_city_data: itineraryData2.general_city_data
-                            }),
-                            ...(itineraryData2.points_of_interest && {
-                              points_of_interest: itineraryData2.points_of_interest
-                            }),
-                            ...(itineraryData2.itinerary_response && {
-                              itinerary_response: itineraryData2.itinerary_response
-                            }),
-                            ...(mergedActivities.length && {
-                              activities: mergedActivities
-                            }),
-                            ...(mergedRestaurants.length && {
-                              restaurants: mergedRestaurants
-                            }),
-                            ...(mergedHotels.length && {
-                              hotels: mergedHotels
-                            })
-                          };
-                        });
-                      }
-
-                      const mergedHotels = mergeUniqueById(
-                        (options.getStreamingData?.() as any)?.hotels,
-                        itineraryData2.hotels || derivedLists2.hotels,
-                      );
-                      const mergedRestaurants = mergeUniqueById(
-                        (options.getStreamingData?.() as any)?.restaurants,
-                        itineraryData2.restaurants || derivedLists2.restaurants,
-                      );
-                      const mergedActivities = mergeUniqueById(
-                        (options.getStreamingData?.() as any)?.activities,
-                        itineraryData2.activities || derivedLists2.activities,
-                      );
-
-                      const mergedDataForPersistence = {
-                        ...(options.getStreamingData?.() || {}),
-                        ...itineraryData2,
-                        hotels: mergedHotels,
-                        restaurants: mergedRestaurants,
-                        activities: mergedActivities,
-                      };
-
-                      persistCompletedSession(
-                        sessionId() || itineraryData2.session_id,
-                        mergedDataForPersistence
-                      );
-
-                      // Persist derived lists for navigation/storage consistency
-                      updateStreamingData(mergedDataForPersistence);
-
-                      if (message2) {
-                        newSessionMessage += message2 + ' ';
-                      }
-                    }
-                    break;
-
-                  case 'complete':
-                    isComplete = true;
-                    const completeMessage = eventData.Message || eventData.message;
-                    if (completeMessage && completeMessage !== 'Turn completed.') {
-                      newSessionMessage += completeMessage;
-                    }
-                    
-                    // Handle navigation data if present for new session
-                    const navigationData = eventData.Navigation || eventData.navigation;
-                    if (navigationData && options.enableNavigation) {
-                      console.log('Received navigation data in new session:', navigationData);
-                      
-                      if (options.onNavigationData) {
-                        options.onNavigationData(navigationData);
-                      }
-                      
-                      // Navigate to the specified URL if present
-                      if (navigationData.url || navigationData.URL) {
-                        const targetUrl = navigationData.url || navigationData.URL;
-                        console.log('Navigating to (new session):', targetUrl);
-                        navigate(targetUrl);
-                      }
-                    }
-                    break;
-
-                  case 'error':
-                    throw new Error(eventData.Error || eventData.error || 'New session error');
-                }
-              } catch (parseError) {
-                console.warn('Failed to parse new session SSE data:', line, parseError);
-              }
-            }
-          }
-        }
-      } finally {
-        reader.releaseLock();
-      }
-
-      // Add response from new session to chat
-      if (newSessionMessage.trim()) {
-        setChatHistory(prev => [...prev, {
-          type: 'assistant',
-          content: `New session started. ${newSessionMessage.trim()}`,
-          timestamp: new Date()
-        }]);
-      } else {
-        setChatHistory(prev => [...prev, {
-          type: 'assistant',
-          content: 'New session started successfully.',
-          timestamp: new Date()
-        }]);
-      }
-
-    } catch (error) {
-      console.error('Error starting new session:', error);
-      setChatHistory(prev => [...prev, {
-        type: 'error',
-        content: `Failed to start new session: ${error.message}`,
-        timestamp: new Date()
-      }]);
-    }
-  };
 
   const handleKeyPress = (e: KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -1218,7 +1232,7 @@ export function useChatSession(options: UseChatSessionOptions = {}) {
     isLoading,
     sessionId,
     isUpdatingItinerary,
-    
+
     // Actions
     setShowChat,
     setChatMessage,
@@ -1227,7 +1241,7 @@ export function useChatSession(options: UseChatSessionOptions = {}) {
     toggleChat,
     handleKeyPress,
     setSessionId,
-    
+
     // Derived state
     hasMessages: () => chatHistory().length > 0,
   };

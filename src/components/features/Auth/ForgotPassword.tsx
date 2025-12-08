@@ -6,10 +6,7 @@ import { Component, createSignal, Show } from "solid-js";
 import AuthLayout from '../../layout/Auth'
 import { useTheme } from "~/contexts/ThemeContext";
 
-type AuthMode = 'signin' | 'signup' | 'forgot';
-
-
-const ForgotPassword: Component<{ onSwitchMode?: (mode: AuthMode) => void }> = (props) => {
+const ForgotPassword: Component = () => {
     const navigate = useNavigate();
     const { isDark } = useTheme();
     const [email, setEmail] = createSignal('');

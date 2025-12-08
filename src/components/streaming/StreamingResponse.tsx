@@ -1,6 +1,6 @@
-import { createSignal, onMount, onCleanup, createEffect, Show } from 'solid-js';
+import { createSignal, onMount, onCleanup, Show } from 'solid-js';
 import { getAuthToken } from '~/lib/api';
-import type { StreamEvent, DomainType, StreamingSession } from '~/lib/api/types';
+import type { StreamEvent, DomainType } from '~/lib/api/types';
 
 export interface StreamingResponseProps {
   url: string;
@@ -78,13 +78,13 @@ export function StreamingResponse(props: StreamingResponseProps) {
 
       while (true) {
         const { done, value } = await reader.read();
-        
+
         if (done) {
           setStreamedContent(prev => ({ ...prev, isComplete: true, currentStep: 'Complete!' }));
           setIsConnected(false);
           break;
         }
-        
+
         const chunk = decoder.decode(value, { stream: true });
         const lines = chunk.split('\n');
 
@@ -92,11 +92,11 @@ export function StreamingResponse(props: StreamingResponseProps) {
           if (line.startsWith('data: ')) {
             const data = line.slice(6).trim();
             if (data === '') continue;
-            
+
             try {
               const event: StreamEvent = JSON.parse(data);
               processStreamEvent(event);
-            } catch (parseError) {
+            } catch (_parseError) {
               // Handle non-JSON streaming text
               if (data.trim()) {
                 updateStreamedText(data);
@@ -110,7 +110,7 @@ export function StreamingResponse(props: StreamingResponseProps) {
         console.log('Stream was aborted');
         return;
       }
-      
+
       console.error('Streaming failed:', err);
       const errorMessage = err.message || 'Failed to load the response';
       setError(errorMessage);
@@ -160,7 +160,7 @@ export function StreamingResponse(props: StreamingResponseProps) {
     }
   };
 
-  const handleStartEvent = (event: StreamEvent) => {
+  const handleStartEvent = (_event: StreamEvent) => {
     setStreamedContent(prev => ({
       ...prev,
       currentStep: 'Starting generation...',
@@ -169,19 +169,21 @@ export function StreamingResponse(props: StreamingResponseProps) {
   };
 
   const handleProgressEvent = (event: StreamEvent) => {
-    if (event.data?.progress) {
+    const data = event.data as any;
+    if (data?.progress) {
       setStreamedContent(prev => ({
         ...prev,
-        progress: event.data.progress,
-        currentStep: event.data.message || prev.currentStep
+        progress: data.progress,
+        currentStep: data.message || prev.currentStep
       }));
     }
   };
 
   const handleChunkEvent = (event: StreamEvent) => {
-    if (event.data?.chunk) {
-      const { chunk, part } = event.data;
-      
+    const data = event.data as any;
+    if (data?.chunk) {
+      const { chunk, part } = data;
+
       if (part && Object.keys(chunkBuffer).includes(part)) {
         chunkBuffer[part as keyof typeof chunkBuffer] += chunk;
         tryParseBufferedData(part);
@@ -258,7 +260,7 @@ export function StreamingResponse(props: StreamingResponseProps) {
   };
 
   const handleErrorEvent = (event: StreamEvent) => {
-    const errorMessage = event.data?.message || 'An error occurred during streaming';
+    const errorMessage = (event.data as any)?.message || 'An error occurred during streaming';
     setError(errorMessage);
     setIsConnected(false);
     props.onError?.(errorMessage);
@@ -266,20 +268,20 @@ export function StreamingResponse(props: StreamingResponseProps) {
 
   const tryParseBufferedData = (part: string) => {
     const buffer = chunkBuffer[part as keyof typeof chunkBuffer];
-    
+
     // Try to find complete JSON objects in the buffer
     let lastBraceIndex = buffer.lastIndexOf('}');
     if (lastBraceIndex === -1) return;
-    
+
     const potentialJson = buffer.substring(0, lastBraceIndex + 1);
-    
+
     try {
       const parsed = JSON.parse(potentialJson);
       updateStreamedText(`${part}: ${JSON.stringify(parsed, null, 2)}\n`);
-      
+
       // Remove parsed content from buffer
       chunkBuffer[part as keyof typeof chunkBuffer] = buffer.substring(lastBraceIndex + 1);
-    } catch (e) {
+    } catch (_e) {
       // Not yet a complete JSON object, wait for more chunks
     }
   };
@@ -334,7 +336,7 @@ export function StreamingResponse(props: StreamingResponseProps) {
               <div class="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
               <span class="text-sm font-medium text-green-700">Live</span>
             </div>
-            <button 
+            <button
               onClick={stopStream}
               class="text-xs text-gray-500 hover:text-gray-700 px-2 py-1 rounded"
             >
@@ -344,10 +346,10 @@ export function StreamingResponse(props: StreamingResponseProps) {
           <div class="mt-2">
             <p class="text-sm text-blue-700">{content.currentStep}</p>
             <div class="w-full bg-blue-200 rounded-full h-2 mt-1">
-              <div 
+              <div
                 class="bg-blue-600 h-2 rounded-full transition-all duration-300"
                 style={{ width: `${content.progress}%` }}
-               />
+              />
             </div>
           </div>
         </div>

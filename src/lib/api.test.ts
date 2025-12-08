@@ -1,7 +1,7 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { authAPI } from './api';
-import { create } from '@bufbuild/protobuf';
-import { LoginRequestSchema, ValidateSessionRequestSchema } from '@buf/loci_loci-proto.bufbuild_es/proto/auth_pb.js';
+// import { create } from '@bufbuild/protobuf';
+// import { LoginRequestSchema, ValidateSessionRequestSchema } from '@buf/loci_loci-proto.bufbuild_es/proto/auth_pb.js';
 
 const { mockLogin, mockValidateSession } = vi.hoisted(() => {
     return {
@@ -34,10 +34,10 @@ const localStorageMock = (() => {
     };
 })();
 
-// Assign to global for Node environment
-Object.defineProperty(global, 'localStorage', { value: localStorageMock });
-Object.defineProperty(global, 'sessionStorage', { value: localStorageMock });
-Object.defineProperty(global, 'window', {
+// Assign to globalThis for Node environment
+Object.defineProperty(globalThis, 'localStorage', { value: localStorageMock });
+Object.defineProperty(globalThis, 'sessionStorage', { value: localStorageMock });
+Object.defineProperty(globalThis, 'window', {
     value: {
         location: { href: '' },
         localStorage: localStorageMock,

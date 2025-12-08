@@ -1,18 +1,15 @@
-import { createSignal, For, Show, createEffect } from 'solid-js';
-import { User, Mail, MapPin, Calendar, Camera, Edit3, Save, X, Plus, Tag, Heart } from 'lucide-solid';
+import { createSignal, For, Show, Switch, Match } from 'solid-js';
+import { User, Mail, MapPin, Calendar, Camera, Edit3, Save, X, Tag, Heart } from 'lucide-solid';
 import { useAuth } from '~/contexts/AuthContext';
-import { useUpdateProfileMutation, useUserProfileQuery } from '~/lib/api/user';
-import { useQuery } from '@tanstack/solid-query';
-import { apiRequest } from '~/lib/api/shared';
+import { useUpdateProfileMutation, useUserProfileQuery, useUploadAvatarMutation } from '~/lib/api/user';
 import { ProcessedProfileData, UserProfileResponse } from '~/lib/api/types';
-import { useNavigate } from '@solidjs/router';
 import { ProtectedRoute } from '~/contexts/AuthContext';
 
 function ProfilePageContent() {
     const { user } = useAuth();
     const [isEditing, setIsEditing] = createSignal(false);
     const [activeTab, setActiveTab] = createSignal('overview');
-    const [notification, setNotification] = createSignal<{message: string, type: 'success' | 'error'} | null>(null);
+    const [notification, setNotification] = createSignal<{ message: string, type: 'success' | 'error' } | null>(null);
 
     // API hooks - get actual user profile data
     const profileQuery = useUserProfileQuery();
@@ -60,6 +57,33 @@ function ProfilePageContent() {
         location: ''
     });
 
+    // Avatar upload
+    const uploadAvatarMutation = useUploadAvatarMutation();
+    let fileInputRef: HTMLInputElement | undefined;
+
+    const handleAvatarClick = () => {
+        fileInputRef?.click();
+    };
+
+    const handleFileChange = async (event: Event) => {
+        const target = event.target as HTMLInputElement;
+        const file = target.files?.[0];
+        if (file) {
+            try {
+                await uploadAvatarMutation.mutateAsync(file);
+                await profileQuery.refetch(); // Refresh profile to show new avatar
+                setNotification({ message: 'Avatar updated!', type: 'success' });
+                setTimeout(() => setNotification(null), 3000);
+            } catch (error) {
+                console.error('Avatar upload failed:', error);
+                setNotification({ message: 'Failed to upload avatar.', type: 'error' });
+                setTimeout(() => setNotification(null), 3000);
+            }
+        }
+        // Reset input
+        if (target) target.value = '';
+    };
+
     const startEditing = () => {
         const profile = profileData();
         setEditForm({
@@ -82,18 +106,25 @@ function ProfilePageContent() {
 
             await updateProfileMutation.mutateAsync(profileUpdateData);
             // Manually refetch the profile data to get updated values
+            // const { authAPI } = await import('~/lib/api');
+
+            // Force refresh auth context too to update navbar
+            // We can't access refreshAuth from here easily without exposing it from context more directly
+            // But verify session might trigger it if we navigate or etc.
+            // Actually, updateProfileMutation optimistically updates queries.
+
             await profileQuery.refetch();
             setIsEditing(false);
-            
+
             // Show success notification
             setNotification({ message: 'Profile updated successfully!', type: 'success' });
             setTimeout(() => setNotification(null), 3000);
         } catch (error) {
             console.error('Failed to update profile:', error);
             // Show error notification
-            setNotification({ 
-                message: error?.message || 'Failed to update profile. Please try again.', 
-                type: 'error' 
+            setNotification({
+                message: (error as Error)?.message || 'Failed to update profile. Please try again.',
+                type: 'error'
             });
             setTimeout(() => setNotification(null), 5000);
         }
@@ -232,7 +263,7 @@ function ProfilePageContent() {
                                             <span class="text-xs text-gray-500 dark:text-gray-500">{activity.date}</span>
                                             <Show when={activity.rating}>
                                                 <div class="flex items-center gap-1">
-                                                    <For each={Array.from({ length: activity.rating }, (_, i) => i)}>
+                                                    <For each={Array.from({ length: activity.rating || 0 }, (_, i) => i)}>
                                                         {() => <span class="text-yellow-500 text-xs">★</span>}
                                                     </For>
                                                 </div>
@@ -299,223 +330,226 @@ function ProfilePageContent() {
         </div>
     );
 
-    // Show loading state while fetching profile data, but only if we don't have user data from auth
-    if (profileQuery.isLoading && !user()) {
-        return (
-            <div class="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors flex items-center justify-center">
-                <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600" />
-            </div>
-        );
-    }
-
-    // Show error state if profile fetch failed AND we don't have user data
-    if (profileQuery.isError && !user()) {
-        const error = profileQuery.error as any;
-        console.log('Profile query error:', error);
-        console.log('Profile query error message:', error?.message);
-        console.log('Profile query error status:', error?.status);
-        
-        return (
-            <div class="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors flex items-center justify-center">
-                <div class="text-center max-w-md mx-auto p-6">
-                    <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-2">Error Loading Profile</h2>
-                    <p class="text-gray-600 dark:text-gray-400 mb-4">
-                        {error?.message || 'Unable to load profile data. Please try again.'}
-                    </p>
-                    <div class="text-sm text-gray-500 dark:text-gray-400 mb-4">
-                        Status: {error?.status || 'Unknown'}
-                    </div>
-                    <button
-                        onClick={() => profileQuery.refetch()}
-                        class="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-                    >
-                        Retry
-                    </button>
-                </div>
-            </div>
-        );
-    }
-
     return (
-        <div class="min-h-screen relative transition-colors">
-            {/* API Error notification - show if profile query failed but continue with auth data */}
-            <Show when={profileQuery.isError && user()}>
-                <div class="fixed top-4 left-4 right-4 sm:left-auto sm:right-4 sm:w-96 z-50 p-4 rounded-lg shadow-lg border bg-yellow-50 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200 border-yellow-200 dark:border-yellow-700 animate-in slide-in-from-top-2 duration-300">
-                    <div class="flex items-center justify-between">
-                        <span class="text-sm font-medium">Profile API unavailable - showing basic info</span>
+        <Switch>
+            <Match when={profileQuery.isLoading && !user()}>
+                <div class="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors flex items-center justify-center">
+                    <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600" />
+                </div>
+            </Match>
+            <Match when={profileQuery.isError && !user()}>
+                <div class="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors flex items-center justify-center">
+                    <div class="text-center max-w-md mx-auto p-6">
+                        <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-2">Error Loading Profile</h2>
+                        <p class="text-gray-600 dark:text-gray-400 mb-4">
+                            {(profileQuery.error as any)?.message || 'Unable to load profile data. Please try again.'}
+                        </p>
+                        <div class="text-sm text-gray-500 dark:text-gray-400 mb-4">
+                            Status: {(profileQuery.error as any)?.status || 'Unknown'}
+                        </div>
                         <button
                             onClick={() => profileQuery.refetch()}
-                            class="ml-2 text-yellow-600 hover:text-yellow-700 dark:hover:text-yellow-300 text-sm underline"
+                            class="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
                         >
                             Retry
                         </button>
                     </div>
                 </div>
-            </Show>
-
-            {/* Mobile-friendly notification */}
-            <Show when={notification()}>
-                <div class={`fixed top-16 left-4 right-4 sm:left-auto sm:right-4 sm:w-96 z-50 p-4 rounded-lg shadow-lg border ${
-                    notification()?.type === 'success' 
-                        ? 'bg-green-50 dark:bg-green-900 text-green-800 dark:text-green-200 border-green-200 dark:border-green-700' 
-                        : 'bg-red-50 dark:bg-red-900 text-red-800 dark:text-red-200 border-red-200 dark:border-red-700'
-                } animate-in slide-in-from-top-2 duration-300`}>
-                    <div class="flex items-center justify-between">
-                        <span class="text-sm font-medium">{notification()?.message}</span>
-                        <button
-                            onClick={() => setNotification(null)}
-                            class="ml-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-                        >
-                            <X class="w-4 h-4" />
-                        </button>
-                    </div>
-                </div>
-            </Show>
-            
-            <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-                {/* Profile Header */}
-                <div class="glass-panel gradient-border rounded-lg p-6 mb-6 border-0">
-                    <div class="flex flex-col md:flex-row gap-6">
-                        {/* Avatar Section */}
-                        <div class="flex flex-col items-center md:items-start">
-                            <div class="relative">
-                                <div class="w-24 h-24 rounded-full bg-[#0c7df2] flex items-center justify-center text-white text-2xl font-bold shadow-lg ring-2 ring-white/60 dark:ring-slate-800">
-                                    {profileData()?.username?.charAt(0)?.toUpperCase() || 'T'}
-                                </div>
-                                <button class="absolute -bottom-1 -right-1 bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-600 rounded-full p-2 hover:bg-gray-50 dark:hover:bg-gray-700">
-                                    <Camera class="w-4 h-4 text-gray-600 dark:text-gray-400" />
+            </Match>
+            <Match when={true}>
+                <div class="min-h-screen relative transition-colors">
+                    {/* API Error notification - show if profile query failed but continue with auth data */}
+                    <Show when={profileQuery.isError && user()}>
+                        <div class="fixed top-4 left-4 right-4 sm:left-auto sm:right-4 sm:w-96 z-50 p-4 rounded-lg shadow-lg border bg-yellow-50 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200 border-yellow-200 dark:border-yellow-700 animate-in slide-in-from-top-2 duration-300">
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm font-medium">Profile API unavailable - showing basic info</span>
+                                <button
+                                    onClick={() => profileQuery.refetch()}
+                                    class="ml-2 text-yellow-600 hover:text-yellow-700 dark:hover:text-yellow-300 text-sm underline"
+                                >
+                                    Retry
                                 </button>
                             </div>
                         </div>
+                    </Show>
 
-                        {/* Profile Info */}
-                        <div class="flex-1">
-                            <Show
-                                when={!isEditing()}
-                                fallback={
-                                    <div class="space-y-4">
-                                        <div>
-                                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Username</label>
-                                            <input
-                                                type="text"
-                                                value={editForm().username}
-                                                onInput={(e) => setEditForm(prev => ({ ...prev, username: e.target.value }))}
-                                                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                                            />
+                    {/* Mobile-friendly notification */}
+                    <Show when={notification()}>
+                        <div class={`fixed top-16 left-4 right-4 sm:left-auto sm:right-4 sm:w-96 z-50 p-4 rounded-lg shadow-lg border ${notification()?.type === 'success'
+                            ? 'bg-green-50 dark:bg-green-900 text-green-800 dark:text-green-200 border-green-200 dark:border-green-700'
+                            : 'bg-red-50 dark:bg-red-900 text-red-800 dark:text-red-200 border-red-200 dark:border-red-700'
+                            } animate-in slide-in-from-top-2 duration-300`}>
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm font-medium">{notification()?.message}</span>
+                                <button
+                                    onClick={() => setNotification(null)}
+                                    class="ml-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                                >
+                                    <X class="w-4 h-4" />
+                                </button>
+                            </div>
+                        </div>
+                    </Show>
+
+                    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                        {/* Profile Header */}
+                        <div class="glass-panel gradient-border rounded-lg p-6 mb-6 border-0">
+                            <div class="flex flex-col md:flex-row gap-6">
+                                {/* Avatar Section */}
+                                <div class="flex flex-col items-center md:items-start">
+                                    <div class="relative">
+                                        <div class="w-24 h-24 rounded-full bg-[#0c7df2] flex items-center justify-center text-white text-2xl font-bold shadow-lg ring-2 ring-white/60 dark:ring-slate-800">
+                                            {profileData()?.username?.charAt(0)?.toUpperCase() || 'T'}
                                         </div>
-                                        <div>
-                                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Bio</label>
-                                            <textarea
-                                                value={editForm().bio}
-                                                onInput={(e) => setEditForm(prev => ({ ...prev, bio: e.target.value }))}
-                                                rows={3}
-                                                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                                            />
-                                        </div>
-                                        <div>
-                                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Location</label>
-                                            <input
-                                                type="text"
-                                                value={editForm().location}
-                                                onInput={(e) => setEditForm(prev => ({ ...prev, location: e.target.value }))}
-                                                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                                            />
-                                        </div>
-                                        <div class="flex gap-2">
-                                            <button
-                                                onClick={saveProfile}
-                                                disabled={updateProfileMutation.isPending}
-                                                class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2 disabled:opacity-50"
-                                            >
-                                                <Save class="w-4 h-4" />
-                                                {updateProfileMutation.isPending ? 'Saving...' : 'Save'}
-                                            </button>
-                                            <button
-                                                onClick={cancelEditing}
-                                                class="px-4 py-2 bg-gray-200 dark:bg-gray-600 text-gray-800 dark:text-gray-200 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-500 flex items-center gap-2"
-                                            >
-                                                <X class="w-4 h-4" />
-                                                Cancel
-                                            </button>
-                                        </div>
+                                        <button
+                                            onClick={handleAvatarClick}
+                                            disabled={uploadAvatarMutation.isPending}
+                                            class="absolute -bottom-1 -right-1 bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-600 rounded-full p-2 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50"
+                                        >
+                                            <Show when={!uploadAvatarMutation.isPending} fallback={<div class="w-4 h-4 rounded-full border-2 border-blue-600 border-t-transparent animate-spin" />}>
+                                                <Camera class="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                                            </Show>
+                                        </button>
+                                        <input
+                                            type="file"
+                                            ref={fileInputRef}
+                                            class="hidden"
+                                            accept="image/*"
+                                            onChange={handleFileChange}
+                                        />
                                     </div>
-                                }
-                            >
-                                <div class="flex items-start justify-between">
-                                    <div class="flex-1">
-                                        <h1 class="text-2xl font-bold text-gray-900 dark:text-white">{profileData()?.username || 'User'}</h1>
-                                        <div class="flex items-center gap-4 mt-2 text-gray-600 dark:text-gray-400">
-                                            <Show when={profileData()?.email}>
-                                                <div class="flex items-center gap-1">
-                                                    <Mail class="w-4 h-4" />
-                                                    <span class="text-sm">{profileData()?.email}</span>
-                                                </div>
-                                            </Show>
-                                            <Show when={profileData()?.location}>
-                                                <div class="flex items-center gap-1">
-                                                    <MapPin class="w-4 h-4" />
-                                                    <span class="text-sm">{profileData()?.location}</span>
-                                                </div>
-                                            </Show>
-                                            <Show when={profileData()?.joinedDate}>
-                                                {(joinedDate) => (
-                                                    <div class="flex items-center gap-1">
-                                                        <Calendar class="w-4 h-4" />
-                                                        <span class="text-sm">Joined {new Date(joinedDate).toLocaleDateString()}</span>
-                                                    </div>
-                                                )}
-                                            </Show>
-                                        </div>
-                                        <Show when={profileData()?.bio}>
-                                            <p class="text-gray-700 dark:text-gray-300 mt-3">{profileData()?.bio}</p>
-                                        </Show>
-                                    </div>
-                                    <button
-                                        onClick={startEditing}
-                                        class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2"
-                                    >
-                                        <Edit3 class="w-4 h-4" />
-                                        Edit Profile
-                                    </button>
                                 </div>
-                            </Show>
-                        </div>
-                    </div>
-                </div>
 
-                {/* Tabs */}
-                <div class="bg-white dark:bg-gray-800 rounded-lg mb-6 border border-gray-200 dark:border-gray-700">
-                    <div class="border-b border-gray-200 dark:border-gray-700">
-                        <div class="flex space-x-8 px-6">
-                            <For each={tabs}>
-                                {(tab) => (
-                                    <button
-                                        onClick={() => setActiveTab(tab.id)}
-                                        class={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${activeTab() === tab.id
-                                            ? 'border-blue-500 text-blue-600 dark:text-blue-400'
-                                            : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
-                                            }`}
+                                {/* Profile Info */}
+                                <div class="flex-1">
+                                    <Show
+                                        when={!isEditing()}
+                                        fallback={
+                                            <div class="space-y-4">
+                                                <div>
+                                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Username</label>
+                                                    <input
+                                                        type="text"
+                                                        value={editForm().username}
+                                                        onInput={(e) => setEditForm(prev => ({ ...prev, username: e.target.value }))}
+                                                        class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Bio</label>
+                                                    <textarea
+                                                        value={editForm().bio}
+                                                        onInput={(e) => setEditForm(prev => ({ ...prev, bio: e.target.value }))}
+                                                        rows={3}
+                                                        class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Location</label>
+                                                    <input
+                                                        type="text"
+                                                        value={editForm().location}
+                                                        onInput={(e) => setEditForm(prev => ({ ...prev, location: e.target.value }))}
+                                                        class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                                                    />
+                                                </div>
+                                                <div class="flex gap-2">
+                                                    <button
+                                                        onClick={saveProfile}
+                                                        disabled={updateProfileMutation.isPending}
+                                                        class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2 disabled:opacity-50"
+                                                    >
+                                                        <Save class="w-4 h-4" />
+                                                        {updateProfileMutation.isPending ? 'Saving...' : 'Save'}
+                                                    </button>
+                                                    <button
+                                                        onClick={cancelEditing}
+                                                        class="px-4 py-2 bg-gray-200 dark:bg-gray-600 text-gray-800 dark:text-gray-200 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-500 flex items-center gap-2"
+                                                    >
+                                                        <X class="w-4 h-4" />
+                                                        Cancel
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        }
                                     >
-                                        {tab.label}
-                                    </button>
-                                )}
-                            </For>
+                                        <div class="flex items-start justify-between">
+                                            <div class="flex-1">
+                                                <h1 class="text-2xl font-bold text-gray-900 dark:text-white">{profileData()?.username || 'User'}</h1>
+                                                <div class="flex items-center gap-4 mt-2 text-gray-600 dark:text-gray-400">
+                                                    <Show when={profileData()?.email}>
+                                                        <div class="flex items-center gap-1">
+                                                            <Mail class="w-4 h-4" />
+                                                            <span class="text-sm">{profileData()?.email}</span>
+                                                        </div>
+                                                    </Show>
+                                                    <Show when={profileData()?.location}>
+                                                        <div class="flex items-center gap-1">
+                                                            <MapPin class="w-4 h-4" />
+                                                            <span class="text-sm">{profileData()?.location}</span>
+                                                        </div>
+                                                    </Show>
+                                                    <Show when={profileData()?.joinedDate}>
+                                                        {(joinedDate) => (
+                                                            <div class="flex items-center gap-1">
+                                                                <Calendar class="w-4 h-4" />
+                                                                <span class="text-sm">Joined {new Date(joinedDate()).toLocaleDateString()}</span>
+                                                            </div>
+                                                        )}
+                                                    </Show>
+                                                </div>
+                                                <Show when={profileData()?.bio}>
+                                                    <p class="text-gray-700 dark:text-gray-300 mt-3">{profileData()?.bio}</p>
+                                                </Show>
+                                            </div>
+                                            <button
+                                                onClick={startEditing}
+                                                class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2"
+                                            >
+                                                <Edit3 class="w-4 h-4" />
+                                                Edit Profile
+                                            </button>
+                                        </div>
+                                    </Show>
+                                </div>
+                            </div>
                         </div>
+
+                        {/* Tabs */}
+                        <div class="bg-white dark:bg-gray-800 rounded-lg mb-6 border border-gray-200 dark:border-gray-700">
+                            <div class="border-b border-gray-200 dark:border-gray-700">
+                                <div class="flex space-x-8 px-6">
+                                    <For each={tabs}>
+                                        {(tab) => (
+                                            <button
+                                                onClick={() => setActiveTab(tab.id)}
+                                                class={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${activeTab() === tab.id
+                                                    ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                                                    : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+                                                    }`}
+                                            >
+                                                {tab.label}
+                                            </button>
+                                        )}
+                                    </For>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Tab Content */}
+                        <Show when={activeTab() === 'overview'}>{renderOverview()}</Show>
+                        <Show when={activeTab() === 'activity'}>{renderActivity()}</Show>
+                        <Show when={activeTab() === 'lists'}>{renderLists()}</Show>
+                        <Show when={activeTab() === 'reviews'}>
+                            <div class="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
+                                <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">My Reviews</h3>
+                                <p class="text-gray-600 dark:text-gray-400">Your reviews will appear here.</p>
+                            </div>
+                        </Show>
                     </div>
                 </div>
-
-                {/* Tab Content */}
-                <Show when={activeTab() === 'overview'}>{renderOverview()}</Show>
-                <Show when={activeTab() === 'activity'}>{renderActivity()}</Show>
-                <Show when={activeTab() === 'lists'}>{renderLists()}</Show>
-                <Show when={activeTab() === 'reviews'}>
-                    <div class="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
-                        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">My Reviews</h3>
-                        <p class="text-gray-600 dark:text-gray-400">Your reviews will appear here.</p>
-                    </div>
-                </Show>
-            </div>
-        </div>
+            </Match>
+        </Switch>
     );
 }
 

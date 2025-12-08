@@ -1,4 +1,4 @@
-import { createSignal, Show } from 'solid-js';
+import { createSignal, createEffect, Show } from 'solid-js';
 import { MapPin, X, Navigation, AlertCircle } from 'lucide-solid';
 import { useUserLocation } from '~/contexts/LocationContext';
 
@@ -21,7 +21,7 @@ export default function LocationPermissionPrompt(props: LocationPermissionPrompt
         props.onPermissionGranted();
       }
       setTimeout(() => setIsVisible(false), 2000); // Hide after success
-    } catch (err) {
+    } catch (_err) {
       if (props.onPermissionDenied) {
         props.onPermissionDenied();
       }
@@ -36,10 +36,11 @@ export default function LocationPermissionPrompt(props: LocationPermissionPrompt
   };
 
   // Auto-hide if permission is already granted
-  if (permissionStatus() === 'granted') {
-    if (isVisible()) setIsVisible(false);
-    return null;
-  }
+  createEffect(() => {
+    if (permissionStatus() === 'granted') {
+      setIsVisible(false);
+    }
+  });
 
   return (
     <Show when={isVisible() && permissionStatus() !== 'granted'}>
@@ -81,7 +82,7 @@ export default function LocationPermissionPrompt(props: LocationPermissionPrompt
                 </Show>
                 <span>{isLoadingLocation() ? 'Requesting...' : 'Allow Location'}</span>
               </button>
-              
+
               <button
                 onClick={handleDismiss}
                 class="px-3 py-2 text-sm text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-gray-200 transition-colors"

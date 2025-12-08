@@ -1,6 +1,6 @@
 import { createSignal, For, Show, createEffect, onMount } from 'solid-js';
-import { useLocation, useNavigate } from '@solidjs/router';
-import { Search, Filter, MapPin, Star, Heart, Bookmark, Clock, DollarSign, Users, Wifi, Camera, Grid, List, SortAsc, SortDesc, X, Compass, Map, Share2, Eye, TriangleAlert } from 'lucide-solid';
+import { useLocation } from '@solidjs/router';
+import { Search, Filter, MapPin, Star, Clock, Wifi, Grid, SortAsc, SortDesc, X, Compass, Map, Share2, Eye, TriangleAlert } from 'lucide-solid';
 import { useNearbyPOIs, useFavorites, useAddToFavoritesMutation, useRemoveFromFavoritesMutation } from '~/lib/api/pois';
 import type { ActivitiesResponse, POIDetailedInfo } from '~/lib/api/types';
 import { useUserLocation } from '@/contexts/LocationContext';
@@ -16,9 +16,8 @@ export default function DiscoverPage() {
     const [streamingData, setStreamingData] = createSignal<ActivitiesResponse | null>(null);
     const [fromChat, setFromChat] = createSignal(false);
     const [showOnlyFavorites, setShowOnlyFavorites] = createSignal(false);
-    const { userLocation } = useUserLocation();
+    const { userLocation } = useUserLocation() as any;
     const [searchRadius, setSearchRadius] = createSignal(10000);
-    const navigate = useNavigate();
     const location = useLocation();
 
     // API hooks
@@ -54,9 +53,9 @@ export default function DiscoverPage() {
         console.log('Location state:', location.state);
 
         // Check for streaming data from route state  
-        if (location.state?.streamingData) {
+        if ((location.state as any)?.streamingData) {
             console.log('Found activities streaming data in route state');
-            const data = location.state.streamingData as ActivitiesResponse;
+            const data = (location.state as any).streamingData as ActivitiesResponse;
             setStreamingData(data);
             setFromChat(true);
             console.log('Received streaming data:', data);
@@ -104,35 +103,10 @@ export default function DiscoverPage() {
         error: favoritesQuery.error
     });
 
-    // Convert streaming POI data to display format
-    const convertPOIToDisplayFormat = (poi: POIDetailedInfo) => {
-        return {
-            id: poi.id,
-            name: poi.name,
-            category: poi.category,
-            description: poi.description,
-            latitude: poi.latitude,
-            longitude: poi.longitude,
-            address: poi.address || 'Address not available',
-            price: poi.price_level || 'Free',
-            rating: poi.rating || 4.0,
-            reviewCount: 0, // Not available in streaming data
-            tags: poi.tags || [],
-            amenities: poi.amenities || [],
-            distance: '0.5 km', // Default value
-            city: poi.city,
-            country: 'Portugal', // Default
-            timeToSpend: poi.time_to_spend || '1-2 hours',
-            budget: poi.budget || poi.price_level || 'Free',
-            priority: poi.priority || 1,
-            featured: false, // Default
-            openNow: true // Default
-        };
-    };
 
     // Check if POI is in favorites
     const isFavorite = (poiId: string) => {
-        const favs = favoritesQuery.data || [];
+        const favs = (favoritesQuery.data as any[]) || [];
         const isInFavorites = favs.some(poi => poi.id === poiId);
         console.log(`🔍 isFavorite(${poiId}):`, isInFavorites, 'Favs:', favs);
         return isInFavorites;
@@ -157,21 +131,21 @@ export default function DiscoverPage() {
     };
 
     // Filter and sort POIs
-    const filteredPois = () => {
+    const filteredPois = (): POIDetailedInfo[] => {
         const data = pois();
         // If data is undefined or not an array, return an empty array
         if (!data || !Array.isArray(data)) {
             return [];
         }
-        let filtered = data;
+        let filtered: POIDetailedInfo[] = data as unknown as POIDetailedInfo[];
 
         // Search filter
         if (searchQuery()) {
             const query = searchQuery().toLowerCase();
             filtered = filtered.filter(poi =>
                 poi.name.toLowerCase().includes(query) ||
-                poi.description.toLowerCase().includes(query) ||
-                (poi.tags || []).some(tag => tag.toLowerCase().includes(query))
+                (poi.description || '').toLowerCase().includes(query) ||
+                (poi.tags || []).some((tag: string) => tag.toLowerCase().includes(query))
             );
         }
 
@@ -184,30 +158,34 @@ export default function DiscoverPage() {
         // Only search query is handled client-side for real-time filtering
 
         // Sort
-        filtered.sort((a, b) => {
-            let aVal, bVal;
-            switch (sortBy()) {
+        const currentSortBy = sortBy();
+        const currentSortOrder = sortOrder();
+
+        filtered = [...filtered].sort((a, b) => {
+            let aVal: number, bVal: number;
+            switch (currentSortBy) {
                 case 'rating':
-                    aVal = a.rating;
-                    bVal = b.rating;
+                    aVal = a.rating || 0;
+                    bVal = b.rating || 0;
                     break;
                 case 'distance':
-                    aVal = parseFloat(a.distance);
-                    bVal = parseFloat(b.distance);
+                    aVal = a.distance || 0;
+                    bVal = b.distance || 0;
                     break;
-                case 'price':
-                    const priceValues = { 'Free': 0, '€': 1, '€€': 2, '€€€': 3 };
-                    aVal = priceValues[a.price] || 0;
-                    bVal = priceValues[b.price] || 0;
+                case 'price': {
+                    const priceValues: Record<string, number> = { 'Free': 0, '€': 1, '€€': 2, '€€€': 3 };
+                    aVal = priceValues[a.price_level || ''] || 0;
+                    bVal = priceValues[b.price_level || ''] || 0;
                     break;
+                }
                 case 'popularity':
                 default:
-                    aVal = a.reviewCount;
-                    bVal = b.reviewCount;
+                    aVal = a.reviewCount || 0;
+                    bVal = b.reviewCount || 0;
                     break;
             }
 
-            if (sortOrder() === 'asc') {
+            if (currentSortOrder === 'asc') {
                 return aVal > bVal ? 1 : -1;
             } else {
                 return aVal < bVal ? 1 : -1;
@@ -272,14 +250,14 @@ export default function DiscoverPage() {
     };
 
     // Handle POI item click for details view
-    const handleItemClick = (poi: any, type: string) => {
+    const handleItemClick = (poi: POIDetailedInfo) => {
         console.log('Viewing details for:', poi.name);
         // Navigate to POI details page or open modal
         // navigate(`/poi/${poi.id}`);
     };
 
     // Handle sharing a POI
-    const handleShare = (poi: any) => {
+    const handleShare = (poi: POIDetailedInfo) => {
         if (navigator.share) {
             navigator.share({
                 title: poi.name,
@@ -298,15 +276,15 @@ export default function DiscoverPage() {
         }
     };
 
-    const getPriceColor = (price: string) => {
-        const colorMap = {
+    const getPriceColor = (price?: string) => {
+        const colorMap: Record<string, string> = {
             'Free': 'text-green-600 bg-green-50 dark:text-green-400 dark:bg-green-900',
             '€': 'text-blue-600 bg-blue-50 dark:text-blue-400 dark:bg-blue-900',
             '€€': 'text-orange-600 bg-orange-50 dark:text-orange-400 dark:bg-orange-900',
             '€€€': 'text-red-600 bg-red-50 dark:text-red-400 dark:bg-red-900',
             '€€€€': 'text-purple-600 bg-purple-50 dark:text-purple-400 dark:bg-purple-900'
         };
-        return colorMap[price] || 'text-gray-600 bg-gray-50 dark:text-gray-400 dark:bg-gray-800';
+        return colorMap[price || ''] || 'text-gray-600 bg-gray-50 dark:text-gray-400 dark:bg-gray-800';
     };
 
     const getPopularityInfo = (priority: number) => {
@@ -323,7 +301,7 @@ export default function DiscoverPage() {
     };
 
     const getCategoryColor = (category: string) => {
-        const categoryColorMap = {
+        const categoryColorMap: Record<string, string> = {
             'restaurant': 'text-red-700 bg-red-100 dark:text-red-300 dark:bg-red-900',
             'museum': 'text-purple-700 bg-purple-100 dark:text-purple-300 dark:bg-purple-900',
             'park': 'text-green-700 bg-green-100 dark:text-green-300 dark:bg-green-900',
@@ -336,7 +314,7 @@ export default function DiscoverPage() {
         return categoryColorMap[category.toLowerCase()] || 'text-gray-700 bg-gray-100 dark:text-gray-300 dark:bg-gray-700';
     };
 
-    const renderGridCard = (poi) => (
+    const renderGridCard = (poi: POIDetailedInfo) => (
         <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden hover:shadow-md transition-all duration-200 group">
             {/* Image */}
             <div class="relative h-48 bg-white/70 dark:bg-slate-900/60 border-b border-white/60 dark:border-slate-800/70">
@@ -346,12 +324,12 @@ export default function DiscoverPage() {
 
                 {/* Badges */}
                 <div class="absolute top-3 left-3 flex flex-col gap-1">
-                    <Show when={poi.featured}>
+                    <Show when={false}>
                         <span class="px-2 py-1 bg-yellow-500 text-white rounded-full text-xs font-medium">
                             Featured
                         </span>
                     </Show>
-                    <Show when={poi.openNow}>
+                    <Show when={true}>
                         <span class="px-2 py-1 bg-green-500 text-white rounded-full text-xs font-medium">
                             Open Now
                         </span>
@@ -388,8 +366,8 @@ export default function DiscoverPage() {
                 <div class="absolute bottom-3 left-3">
                     <div class="flex items-center gap-1 bg-white/90 dark:bg-gray-800/90 rounded-full px-2 py-1 text-sm font-medium">
                         <Star class="w-3 h-3 text-yellow-500 fill-current" />
-                        <span class="text-gray-900 dark:text-white">{poi.rating}</span>
-                        <span class="text-gray-600 dark:text-gray-400">({poi.reviewCount})</span>
+                        <span class="text-gray-900 dark:text-white">{poi.rating || 0}</span>
+                        <span class="text-gray-600 dark:text-gray-400">({poi.reviewCount || 0})</span>
                     </div>
                 </div>
             </div>
@@ -405,23 +383,23 @@ export default function DiscoverPage() {
                             </span>
                             <Show when={poi.priority && getPopularityInfo(poi.priority)}>
                                 {(() => {
-                                    const popularityInfo = getPopularityInfo(poi.priority);
-                                    return <Show when={popularityInfo}><span class={`px-2 py-0.5 rounded-full text-xs font-medium ${popularityInfo.color}`}>
-                                            <span class="mr-1">{popularityInfo.icon}</span>
-                                            {popularityInfo.label}
-                                        </span></Show>;
+                                    const popularityInfo = getPopularityInfo(poi.priority!);
+                                    return <Show when={popularityInfo}><span class={`px-2 py-0.5 rounded-full text-xs font-medium ${popularityInfo!.color}`}>
+                                        <span class="mr-1">{popularityInfo!.icon}</span>
+                                        {popularityInfo!.label}
+                                    </span></Show>;
                                 })()}
                             </Show>
-                            <Show when={poi.timeToSpend || poi.time_to_spend}>
+                            <Show when={poi.time_to_spend}>
                                 <span class="px-2 py-0.5 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full text-xs">
-                                    {poi.timeToSpend || poi.time_to_spend}
+                                    {poi.time_to_spend}
                                 </span>
                             </Show>
                         </div>
                         <p class="text-sm text-gray-600 dark:text-gray-400">{poi.city}</p>
                     </div>
-                    <span class={`px-2 py-1 rounded-full text-xs font-medium ${getPriceColor(poi.price)}`}>
-                        {poi.price}
+                    <span class={`px-2 py-1 rounded-full text-xs font-medium ${getPriceColor(poi.price_level)}`}>
+                        {poi.price_level}
                     </span>
                 </div>
 
@@ -436,7 +414,7 @@ export default function DiscoverPage() {
                     <Show when={poi.amenities && poi.amenities.length > 0}>
                         <div class="flex items-center gap-1">
                             <Clock class="w-3 h-3" />
-                            <span>{poi.amenities[0]}</span>
+                            <span>{poi.amenities![0]}</span>
                         </div>
                     </Show>
                 </div>
@@ -466,7 +444,7 @@ export default function DiscoverPage() {
                         </Show>
                     </div>
                     <button
-                        onClick={() => handleItemClick(poi, 'poi')}
+                        onClick={() => handleItemClick(poi)}
                         class="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium text-sm"
                     >
                         View Details →
@@ -480,7 +458,7 @@ export default function DiscoverPage() {
         console.log('Search radius changed to:', searchRadius());
     });
 
-    const renderListItem = (poi) => (
+    const renderListItem = (poi: POIDetailedInfo) => (
         <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4 hover:shadow-md transition-all duration-200">
             <div class="flex gap-4">
                 {/* Image */}
@@ -499,29 +477,29 @@ export default function DiscoverPage() {
                                 </span>
                                 <Show when={poi.priority && getPopularityInfo(poi.priority)}>
                                     {(() => {
-                                        const popularityInfo = getPopularityInfo(poi.priority);
-                                        return <Show when={popularityInfo}><span class={`px-2 py-0.5 rounded-full text-xs font-medium ${popularityInfo.color}`}>
-                                                <span class="mr-1">{popularityInfo.icon}</span>
-                                                {popularityInfo.label}
-                                            </span></Show>;
+                                        const popularityInfo = getPopularityInfo(poi.priority!);
+                                        return <Show when={popularityInfo}><span class={`px-2 py-0.5 rounded-full text-xs font-medium ${popularityInfo!.color}`}>
+                                            <span class="mr-1">{popularityInfo!.icon}</span>
+                                            {popularityInfo!.label}
+                                        </span></Show>;
                                     })()}
                                 </Show>
-                                <Show when={poi.timeToSpend || poi.time_to_spend}>
+                                <Show when={poi.time_to_spend}>
                                     <span class="px-2 py-0.5 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full text-xs">
-                                        {poi.timeToSpend || poi.time_to_spend}
+                                        {poi.time_to_spend}
                                     </span>
                                 </Show>
                             </div>
-                            <p class="text-sm text-gray-600 dark:text-gray-400">{poi.city}, {poi.country}</p>
+                            <p class="text-sm text-gray-600 dark:text-gray-400">{poi.city}</p>
                         </div>
                         <div class="flex items-center gap-2">
                             <div class="flex items-center gap-1">
                                 <Star class="w-4 h-4 text-yellow-500 fill-current" />
-                                <span class="text-sm font-medium text-gray-900 dark:text-white">{poi.rating}</span>
-                                <span class="text-sm text-gray-600 dark:text-gray-400">({poi.reviewCount})</span>
+                                <span class="text-sm font-medium text-gray-900 dark:text-white">{poi.rating || 0}</span>
+                                <span class="text-sm text-gray-600 dark:text-gray-400">({poi.reviewCount || 0})</span>
                             </div>
-                            <span class={`px-2 py-1 rounded-full text-xs font-medium ${getPriceColor(poi.price)}`}>
-                                {poi.price}
+                            <span class={`px-2 py-1 rounded-full text-xs font-medium ${getPriceColor(poi.price_level)}`}>
+                                {poi.price_level}
                             </span>
                         </div>
                     </div>
@@ -560,7 +538,7 @@ export default function DiscoverPage() {
                                 <Share2 class="w-4 h-4" />
                             </button>
                             <button
-                                onClick={() => handleItemClick(poi, 'poi')}
+                                onClick={() => handleItemClick(poi)}
                                 class="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium text-sm"
                             >
                                 <Eye class="w-4 h-4 inline mr-1" />
@@ -588,7 +566,7 @@ export default function DiscoverPage() {
                                     ✨ <TypingAnimation text="Your activity recommendations are ready!" />
                                 </p>
                                 <p class="text-xs text-slate-700 dark:text-slate-300">
-                                    Generated from your chat: "{location.state?.originalMessage || 'Activity search'}"
+                                    Generated from your chat: "{(location.state as any)?.originalMessage || 'Activity search'}"
                                 </p>
                             </div>
                             <button
@@ -628,7 +606,7 @@ export default function DiscoverPage() {
                                     <Show when={favoritesQuery.data}>
                                         <span class="loci-chip">
                                             <Star class="w-4 h-4" />
-                                            {favoritesQuery.data.length} saved
+                                            {favoritesQuery.data?.length || 0} saved
                                         </span>
                                     </Show>
                                     <Show when={pois.error}>

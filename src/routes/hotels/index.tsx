@@ -22,7 +22,7 @@ export default function HotelsPage() {
 
   onMount(() => {
     if (!state.isConnected) {
-      startStream(message(), cityName(), "hotels");
+      startStream(message(), cityName());
     }
   });
 

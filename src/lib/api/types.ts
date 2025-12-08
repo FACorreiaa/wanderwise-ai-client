@@ -240,8 +240,14 @@ export interface Hotel {
   rating: number;
   reviewCount: number;
   address: string;
-  amenities: string[];
+  amenities: (string | { name: string; icon: any; available: boolean })[];
   features: string[];
+  checkIn?: string;
+  checkOut?: string;
+  nearbyAttractions?: { name: string; type: string; distance: string }[];
+  rooms?: { type: string; description: string; price: string; size: string; capacity: string; amenities: string[] }[];
+  contact?: { phone?: string; email?: string; website?: string };
+  pricePerNight?: string;
 }
 
 export interface Restaurant {
@@ -255,13 +261,30 @@ export interface Restaurant {
   rating?: number;
   reviewCount?: number;
   address?: string;
-  features?: string[];
+  features?: { name: string; icon: any; available: boolean }[] | string[];
   specialties?: string[];
   llm_interaction_id?: string;
   website?: string;
   phone_number?: string;
   opening_hours?: string;
   category?: string;
+  // Extended properties for detailed view
+  averagePrice?: string;
+  isOpen?: boolean;
+  reservationRequired?: boolean;
+  menu?: {
+    starters: { name: string; description: string; price: string }[];
+    mains: { name: string; description: string; price: string }[];
+    desserts: { name: string; description: string; price: string }[];
+  };
+  hours?: Record<string, string>;
+  contact?: {
+    phone?: string;
+    email?: string;
+    website?: string;
+  };
+  acceptsCards?: boolean;
+  languages?: string[];
 }
 
 // Search Profile Types
@@ -366,7 +389,7 @@ export interface TravelProfileFormData {
 
 export type DomainType = 'general' | 'itinerary' | 'accommodation' | 'dining' | 'activities';
 
-export type StreamEventType = 'start' | 'chunk' | 'complete' | 'error' | 'city_data' | 'general_pois' | 'itinerary' | 'hotels' | 'restaurants' | 'activities';
+export type StreamEventType = 'start' | 'chunk' | 'complete' | 'error' | 'city_data' | 'general_pois' | 'itinerary' | 'hotels' | 'restaurants' | 'activities' | 'progress';
 
 // Streaming chunk data interfaces
 export interface StreamChunkData {
@@ -380,9 +403,14 @@ export interface StreamCompleteData {
   session_id?: string;
 }
 
+export interface ProgressData {
+  progress: number;
+  message?: string;
+}
+
 export interface StreamEvent {
   type: StreamEventType;
-  data?: UnifiedChatResponse | GeneralCityData | POIDetailedInfo[] | HotelDetailedInfo[] | RestaurantDetailedInfo[] | AIItineraryResponse | StreamChunkData | StreamCompleteData | string;
+  data?: UnifiedChatResponse | GeneralCityData | POIDetailedInfo[] | HotelDetailedInfo[] | RestaurantDetailedInfo[] | AIItineraryResponse | StreamChunkData | StreamCompleteData | string | ProgressData;
   error?: string;
   event_id?: string;
   timestamp?: string;
@@ -481,7 +509,7 @@ export interface RestaurantDetailedInfo {
 
 export interface POIDetailedInfo {
   id: string;
-  city?: string;
+  city: string;
   city_id?: string;
   name: string;
   latitude: number;
@@ -492,19 +520,22 @@ export interface POIDetailedInfo {
   address?: string;
   website?: string;
   phone_number?: string;
-  opening_hours?: string | null;
+  opening_hours?: string;
   price_level?: string;
   price_range?: string;
   amenities?: string[];
   tags?: string[];
   images?: string[];
-  rating?: number;
+  rating: number;
   time_to_spend?: string;
   budget?: string;
   priority?: number; // Popularity score 1-10
   distance?: number;
   llm_interaction_id?: string;
   created_at?: string;
+  reviewCount?: number;
+  cuisine_type?: string;
+  star_rating?: number;
 }
 
 // Domain-specific response types
@@ -625,53 +656,41 @@ export interface HotelPreferences extends SearchParams {
 }
 
 export interface RecentInteraction {
-    id: string;
-    user_id: string;
-    city_name: string;
-    city_id: string | null;
-    prompt: string;
-    response_text: string;
-    model_used: string;
-    latency_ms: number;
-    created_at: string;
-    pois: POIDetailedInfo[];
-    hotels: HotelDetailedInfo[];
-    restaurants: RestaurantDetailedInfo[];
+  id: string;
+  user_id: string;
+  city_name: string;
+  city_id: string | null;
+  prompt: string;
+  response_text: string;
+  model_used: string;
+  latency_ms: number;
+  created_at: string;
+  pois: POIDetailedInfo[];
+  hotels: HotelDetailedInfo[];
+  restaurants: RestaurantDetailedInfo[];
 }
 
 export interface CityInteractions {
-    city_name: string;
-    interactions: RecentInteraction[];
-    poi_count: number;
-    last_activity: string;
-    saved_itineraries?: UserSavedItinerary[];
-    favorite_pois?: POIDetailedInfo[];
-    total_interactions: number;
-    total_favorites: number;
-    total_itineraries: number;
-}
-
-export interface UserSavedItinerary {
-    id: string;
-    user_id: string;
-    source_llm_interaction_id?: string;
-    session_id?: string;
-    primary_city_id?: string;
-    title: string;
-    description?: string;
-    markdown_content: string;
-    tags: string[];
-    estimated_duration_days?: number;
-    estimated_cost_level?: number;
-    is_public: boolean;
-    created_at: string;
-    updated_at: string;
+  city_name: string;
+  interactions: RecentInteraction[];
+  poi_count: number;
+  last_activity: string;
+  saved_itineraries?: UserSavedItinerary[];
+  favorite_pois?: POIDetailedInfo[];
+  total_interactions: number;
+  total_favorites: number;
+  total_itineraries: number;
 }
 
 export interface RecentInteractionsResponse {
-    cities: CityInteractions[];
-    total: number;
+  cities: CityInteractions[];
+  total: number;
+  offset: number;
+  limit: number;
 }
+
+
+
 
 // Bookmark/Save Itinerary Request
 export interface BookmarkRequest {

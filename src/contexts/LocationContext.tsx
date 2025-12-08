@@ -1,5 +1,5 @@
 // LocationContext.tsx
-import { createContext, useContext, createSignal, createEffect, onMount } from 'solid-js';
+import { createContext, useContext, createSignal, onMount } from 'solid-js';
 import type { JSX } from 'solid-js';
 
 export interface UserLocation {

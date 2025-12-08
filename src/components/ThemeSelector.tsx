@@ -1,5 +1,5 @@
 import { Button } from "@/ui/button";
-import { Palette, Monitor, Sun, Moon } from "lucide-solid";
+import { Palette, Sun, Moon } from "lucide-solid";
 import { createSignal, Show, For, onMount, onCleanup } from "solid-js";
 import { useTheme } from "~/contexts/ThemeContext";
 
@@ -52,9 +52,8 @@ export default function ThemeSelector() {
                 onClick={() => {
                   if (isDark()) toggleTheme();
                 }}
-                class={`flex-1 flex items-center gap-2 justify-center py-1.5 text-xs ${
-                  !isDark() ? 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300' : ''
-                }`}
+                class={`flex - 1 flex items - center gap - 2 justify - center py - 1.5 text - xs ${!isDark() ? 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300' : ''
+                  } `}
               >
                 <Sun class="w-3 h-3" />
                 Light
@@ -65,9 +64,8 @@ export default function ThemeSelector() {
                 onClick={() => {
                   if (!isDark()) toggleTheme();
                 }}
-                class={`flex-1 flex items-center gap-2 justify-center py-1.5 text-xs ${
-                  isDark() ? 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300' : ''
-                }`}
+                class={`flex - 1 flex items - center gap - 2 justify - center py - 1.5 text - xs ${isDark() ? 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300' : ''
+                  } `}
               >
                 <Moon class="w-3 h-3" />
                 Dark
@@ -86,11 +84,10 @@ export default function ThemeSelector() {
                     setDesignTheme(option.id);
                     setShowSelector(false);
                   }}
-                  class={`w-full text-left px-3 py-2 rounded-md text-sm transition-colors ${
-                    designTheme() === option.id
+                  class={`w - full text - left px - 3 py - 2 rounded - md text - sm transition - colors ${designTheme() === option.id
                       ? 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300'
                       : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
-                  }`}
+                    } `}
                 >
                   <div class="font-medium">{option.name}</div>
                   <div class="text-xs text-gray-500 dark:text-gray-400">{option.description}</div>

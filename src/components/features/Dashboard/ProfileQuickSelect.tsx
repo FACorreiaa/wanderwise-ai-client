@@ -1,4 +1,4 @@
-import { Component, Show, For, createSignal } from 'solid-js';
+import { Show, For, createSignal } from 'solid-js';
 import { User, Check, ChevronDown, Plus } from 'lucide-solid';
 import { useSearchProfiles, useDefaultSearchProfile, useSetDefaultProfileMutation } from '~/lib/api/profiles';
 import { useNavigate } from '@solidjs/router';
@@ -134,17 +134,15 @@ export default function ProfileQuickSelect() {
                     <button
                       onClick={() => handleSelectProfile(profile.id)}
                       disabled={isChangingProfile()}
-                      class={`w-full flex items-center gap-3 px-4 py-3 text-left transition-colors disabled:opacity-50 ${
-                        isSelected()
+                      class={`w-full flex items-center gap-3 px-4 py-3 text-left transition-colors disabled:opacity-50 ${isSelected()
                           ? 'bg-emerald-50 dark:bg-emerald-900/20'
                           : 'hover:bg-gray-50 dark:hover:bg-white/5'
-                      }`}
+                        }`}
                     >
-                      <div class={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
-                        isSelected()
+                      <div class={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${isSelected()
                           ? 'bg-gradient-to-br from-emerald-500 to-teal-600 shadow-lg'
                           : 'bg-gray-200 dark:bg-white/10'
-                      }`}>
+                        }`}>
                         <Show
                           when={isSelected()}
                           fallback={<User class="w-4 h-4 text-gray-600 dark:text-slate-400" />}
@@ -154,11 +152,10 @@ export default function ProfileQuickSelect() {
                       </div>
                       <div class="flex-1 min-w-0">
                         <div class="flex items-center gap-2">
-                          <p class={`text-sm font-medium truncate ${
-                            isSelected()
+                          <p class={`text-sm font-medium truncate ${isSelected()
                               ? 'text-emerald-700 dark:text-emerald-300'
                               : 'text-gray-900 dark:text-white'
-                          }`}>
+                            }`}>
                             {profile.profile_name}
                           </p>
                           <Show when={profile.is_default}>

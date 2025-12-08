@@ -44,8 +44,8 @@ const toChatSession = (
 ): ChatSession & { city_name?: string; conversation_history?: any[] } => ({
   id: s.id || "",
   profile_id: s.profileId || "",
-  created_at: s.createdAt?.toDate?.().toISOString() || "",
-  updated_at: s.updatedAt?.toDate?.().toISOString() || "",
+  created_at: s.createdAt ? new Date(Number(s.createdAt.seconds) * 1000).toISOString() : "",
+  updated_at: s.updatedAt ? new Date(Number(s.updatedAt.seconds) * 1000).toISOString() : "",
   city_name: (s as any).cityName || "",
   conversation_history: (s as any).conversationHistory || [],
 });

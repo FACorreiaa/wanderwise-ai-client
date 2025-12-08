@@ -1,5 +1,5 @@
 import { createSignal, For, Show } from 'solid-js';
-import { Plus, X, Edit3, Save, Trash2 } from 'lucide-solid';
+import { Plus, X, Save } from 'lucide-solid';
 import type { PersonalTag } from '~/lib/api/types';
 
 interface TagsUIProps {
@@ -98,6 +98,7 @@ export default function TagsComponent(props: TagsUIProps) {
 
   // Show loading state
   if (props.isLoading) {
+    // eslint-disable-next-line solid/components-return-once
     return (
       <div class="space-y-8">
         <div class="flex items-center justify-center py-12">
@@ -109,6 +110,7 @@ export default function TagsComponent(props: TagsUIProps) {
 
   // Show error state
   if (props.isError) {
+    // eslint-disable-next-line solid/components-return-once
     return (
       <div class="space-y-8">
         <div class="text-center py-12">

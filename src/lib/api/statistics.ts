@@ -120,7 +120,7 @@ export class StatisticsSSE {
     onError?: (error: Event) => void,
   ) {
     this.onUpdate = onUpdate;
-    this.onError = onError;
+    this.onError = onError as any;
   }
 
   connect() {

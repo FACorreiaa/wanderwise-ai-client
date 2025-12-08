@@ -1,5 +1,5 @@
-import { createSignal, Show } from 'solid-js';
-import { Star, ThumbsUp, ThumbsDown, Flag, Reply, MoreHorizontal, User, MapPin, Calendar, Camera } from 'lucide-solid';
+import { createSignal, Show, For } from 'solid-js';
+import { Star, ThumbsUp, ThumbsDown, Flag, Reply, MoreHorizontal, MapPin, Calendar, Camera } from 'lucide-solid';
 
 interface ReviewProps {
     review: {
@@ -28,15 +28,15 @@ interface ReviewProps {
 
 export default function ReviewCard(props: ReviewProps) {
     const [showFullContent, setShowFullContent] = createSignal(false);
-    const [showPhotos, setShowPhotos] = createSignal(false);
+    const [_showPhotos, setShowPhotos] = createSignal(false);
 
     const review = () => props.review;
     const isCompact = () => props.isCompact || false;
 
     const renderStars = (rating: number) => {
         return Array.from({ length: 5 }, (_, i) => (
-            <Star 
-                class={`w-4 h-4 ${i < rating ? 'text-yellow-500 fill-current' : 'text-gray-300'}`} 
+            <Star
+                class={`w-4 h-4 ${i < rating ? 'text-yellow-500 fill-current' : 'text-gray-300'}`}
             />
         ));
     };
@@ -59,10 +59,10 @@ export default function ReviewCard(props: ReviewProps) {
     };
 
     const formatDate = (dateString: string) => {
-        return new Date(dateString).toLocaleDateString([], { 
-            year: 'numeric', 
-            month: 'short', 
-            day: 'numeric' 
+        return new Date(dateString).toLocaleDateString([], {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric'
         });
     };
 
@@ -156,7 +156,7 @@ export default function ReviewCard(props: ReviewProps) {
                             : truncateContent(review().content)
                         }
                     </p>
-                    
+
                     <Show when={review().content.length > 200 && !showFullContent()}>
                         <button
                             onClick={() => setShowFullContent(true)}
@@ -168,29 +168,31 @@ export default function ReviewCard(props: ReviewProps) {
                 </div>
 
                 {/* Photos */}
-                <Show when={review().photos && review().photos.length > 0}>
+                <Show when={review()?.photos && (review()?.photos?.length ?? 0) > 0}>
                     <div class="mb-4">
                         <div class="flex items-center gap-2 mb-2">
                             <Camera class="w-4 h-4 text-gray-500" />
-                            <span class="text-sm text-gray-600 dark:text-gray-300">{review().photos.length} photo{review().photos.length > 1 ? 's' : ''}</span>
+                            <span class="text-sm text-gray-600 dark:text-gray-300">{review()?.photos?.length} photo{(review()?.photos?.length ?? 0) > 1 ? 's' : ''}</span>
                         </div>
-                        
+
                         <div class="grid grid-cols-3 gap-2">
-                            {review().photos.slice(0, 3).map((photo, index) => (
-                                <button
-                                    onClick={() => setShowPhotos(true)}
-                                    class="relative aspect-square bg-white/70 dark:bg-slate-900/60 border border-white/60 dark:border-slate-800/70 rounded-lg overflow-hidden hover:opacity-90 transition-opacity"
-                                >
-                                    <div class="absolute inset-0 flex items-center justify-center">
-                                        <Camera class="w-6 h-6 text-gray-400 dark:text-gray-500" />
-                                    </div>
-                                    {index === 2 && review().photos.length > 3 && (
-                                        <div class="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-                                            <span class="text-white font-medium text-sm">+{review().photos.length - 3}</span>
+                            <For each={review()?.photos?.slice(0, 3)}>
+                                {(_photo: string, index) => (
+                                    <button
+                                        onClick={() => setShowPhotos(true)}
+                                        class="relative aspect-square bg-white/70 dark:bg-slate-900/60 border border-white/60 dark:border-slate-800/70 rounded-lg overflow-hidden hover:opacity-90 transition-opacity"
+                                    >
+                                        <div class="absolute inset-0 flex items-center justify-center">
+                                            <Camera class="w-6 h-6 text-gray-400 dark:text-gray-500" />
                                         </div>
-                                    )}
-                                </button>
-                            ))}
+                                        {index() === 2 && (review()?.photos?.length ?? 0) > 3 && (
+                                            <div class="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+                                                <span class="text-white font-medium text-sm">+{(review()?.photos?.length ?? 0) - 3}</span>
+                                            </div>
+                                        )}
+                                    </button>
+                                )}
+                            </For>
                         </div>
                     </div>
                 </Show>
@@ -202,11 +204,10 @@ export default function ReviewCard(props: ReviewProps) {
                         <div class="flex items-center gap-2">
                             <button
                                 onClick={() => handleReaction('helpful')}
-                                class={`flex items-center gap-1 px-3 py-1 rounded-lg text-sm transition-colors ${
-                                    review().userReaction === 'helpful'
-                                        ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300'
-                                        : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
-                                }`}
+                                class={`flex items-center gap-1 px-3 py-1 rounded-lg text-sm transition-colors ${review().userReaction === 'helpful'
+                                    ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300'
+                                    : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+                                    }`}
                             >
                                 <ThumbsUp class="w-4 h-4" />
                                 <span>Helpful</span>
@@ -214,14 +215,13 @@ export default function ReviewCard(props: ReviewProps) {
                                     <span class="text-xs">({review().helpful})</span>
                                 </Show>
                             </button>
-                            
+
                             <button
                                 onClick={() => handleReaction('not-helpful')}
-                                class={`flex items-center gap-1 px-3 py-1 rounded-lg text-sm transition-colors ${
-                                    review().userReaction === 'not-helpful'
-                                        ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300'
-                                        : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
-                                }`}
+                                class={`flex items-center gap-1 px-3 py-1 rounded-lg text-sm transition-colors ${review().userReaction === 'not-helpful'
+                                    ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300'
+                                    : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+                                    }`}
                             >
                                 <ThumbsDown class="w-4 h-4" />
                                 <Show when={review().notHelpful > 0}>

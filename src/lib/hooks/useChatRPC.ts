@@ -3,8 +3,8 @@ import { createClient } from "@connectrpc/connect";
 import { create } from "@bufbuild/protobuf";
 import { ChatService, ChatRequestSchema } from "@buf/loci_loci-proto.bufbuild_es/proto/chat_pb.js";
 import { transport } from "../connect-transport";
-import { toProtoDomainType, type ChatContextType } from "../api/llm";
-import { StreamEvent, DomainType } from "../api/types";
+// import { type ChatContextType } from "../api/llm";
+import { DomainType } from "../api/types";
 
 // Initialize client outside hook to avoid recreation
 const chatClient = createClient(ChatService, transport);
@@ -44,7 +44,7 @@ export function useChatRPC(options: UseChatRPCOptions = {}) {
     const startStream = async (
         message: string,
         cityName?: string,
-        contextType?: ChatContextType
+        // contextType?: ChatContextType
     ) => {
         // Reset state for new chat
         setState({
@@ -63,7 +63,7 @@ export function useChatRPC(options: UseChatRPCOptions = {}) {
             const request = create(ChatRequestSchema, {
                 message: message,
                 cityName: cityName || "",
-                contextType: toProtoDomainType(contextType),
+                // contextType: toProtoDomainType(contextType),
             });
 
             const stream = chatClient.streamChat(request);
@@ -80,14 +80,15 @@ export function useChatRPC(options: UseChatRPCOptions = {}) {
                 }
 
                 const eventType = response.type;
-                const msgData = response.message; // usually chunk text
-                const eventData = response.data; // structured data (hotels, city_data, etc)
+                const _msgData = response.message; // usually chunk text
+                const data = response.data as any; // Cast to any to access properties
 
                 // Update progress based on event type
-                handleProgress(eventType, eventData);
+                handleProgress(eventType, data);
 
                 // Handle text chunks
-                if (eventType === "chunk" && response.data?.chunk) {
+                if (eventType === "chunk" && data?.chunk) {
+                    const _chunk = data.chunk;
                     // Append to partial message logic if needed, usually handled by caller or state
                     // Here we might just expose the last chunk or accumulated text?
                     // The Store is good for granular updates.
@@ -106,7 +107,7 @@ export function useChatRPC(options: UseChatRPCOptions = {}) {
 
                     // Check for redirect info
                     if (response.navigation) {
-                        const nav = response.navigation;
+                        const _nav = response.navigation;
                         // Assuming navigation struct matches what we need or we parse relevant fields
                         // options.onRedirect?.(...) 
                     }

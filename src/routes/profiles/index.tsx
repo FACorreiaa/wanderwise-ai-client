@@ -1,14 +1,37 @@
-import { createSignal, For, Show, createEffect } from 'solid-js';
-import { User, Plus, Edit3, Trash2, Copy, Star, MapPin, Clock, Heart, Tag, Settings, Globe, Users, Camera, Save, X, Check } from 'lucide-solid';
+import { createSignal, For, Show } from 'solid-js';
+import { User, Plus, Edit3, Trash2, Copy, X } from 'lucide-solid';
+
+interface ProfileStats {
+    placesVisited: number;
+    itinerariesCreated: number;
+    avgRating: number;
+}
+
+interface Profile {
+    id: string;
+    name: string;
+    description: string;
+    interests: string[];
+    tags: string[];
+    budget: string;
+    travelStyle: string;
+    groupSize: string;
+    accessibility: string[];
+    isDefault: boolean;
+    isPublic: boolean;
+    createdAt: string;
+    usageCount: number;
+    lastUsed: string | null;
+    stats: ProfileStats;
+}
 
 export default function ProfilesPage() {
-    const [activeTab, setActiveTab] = createSignal('overview');
-    const [selectedProfile, setSelectedProfile] = createSignal(null);
+    const [selectedProfile, setSelectedProfile] = createSignal<Profile | null>(null);
     const [showCreateModal, setShowCreateModal] = createSignal(false);
     const [showEditModal, setShowEditModal] = createSignal(false);
-    
+
     // Profile form state
-    const [profileForm, setProfileForm] = createSignal({
+    const [profileForm, setProfileForm] = createSignal<Omit<Profile, 'id' | 'createdAt' | 'usageCount' | 'lastUsed' | 'stats'>>({
         name: '',
         description: '',
         interests: [],
@@ -22,7 +45,7 @@ export default function ProfilesPage() {
     });
 
     // Sample profiles data
-    const [profiles, setProfiles] = createSignal([
+    const [profiles, setProfiles] = createSignal<Profile[]>([
         {
             id: "prof-1",
             name: "Solo Explorer",
@@ -126,7 +149,7 @@ export default function ProfilesPage() {
     ];
 
     const accessibilityOptions = [
-        "Wheelchair Accessible", "Family Friendly", "Dog Friendly", 
+        "Wheelchair Accessible", "Family Friendly", "Dog Friendly",
         "Public Transport", "Senior Friendly", "Language Support"
     ];
 
@@ -149,35 +172,42 @@ export default function ProfilesPage() {
     };
 
     const updateProfile = () => {
-        setProfiles(prev => prev.map(p => 
-            p.id === selectedProfile().id 
-                ? { ...selectedProfile(), ...profileForm() }
+        const current = selectedProfile();
+        if (!current) return;
+
+        setProfiles(prev => prev.map(p =>
+            p.id === current.id
+                ? { ...current, ...profileForm() } as Profile
                 : p
         ));
         setShowEditModal(false);
         resetForm();
     };
 
-    const deleteProfile = (profileId) => {
+    const deleteProfile = (profileId: string) => {
         if (confirm('Are you sure you want to delete this profile?')) {
             setProfiles(prev => prev.filter(p => p.id !== profileId));
         }
     };
 
-    const duplicateProfile = (profile) => {
+    const duplicateProfile = (profile: Profile) => {
+
+        const { id: _id, stats: _stats, ...startProps } = profile;
+        void _id;
         const newProfile = {
-            ...profile,
+            ...startProps,
             id: `prof-${Date.now()}`,
             name: `${profile.name} (Copy)`,
             isDefault: false,
             createdAt: new Date().toISOString().split('T')[0],
             usageCount: 0,
-            lastUsed: null
+            lastUsed: null,
+            stats: { ..._stats }
         };
-        setProfiles(prev => [...prev, newProfile]);
+        setProfiles(prev => [...prev, newProfile as any]);
     };
 
-    const setAsDefault = (profileId) => {
+    const setAsDefault = (profileId: string) => {
         setProfiles(prev => prev.map(p => ({
             ...p,
             isDefault: p.id === profileId
@@ -199,7 +229,7 @@ export default function ProfilesPage() {
         });
     };
 
-    const openEditModal = (profile) => {
+    const openEditModal = (profile: Profile) => {
         setSelectedProfile(profile);
         setProfileForm({
             name: profile.name,
@@ -216,7 +246,7 @@ export default function ProfilesPage() {
         setShowEditModal(true);
     };
 
-    const toggleArrayItem = (array, item, setter) => {
+    const toggleArrayItem = (array: string[], item: string, setter: (newValue: string[]) => void) => {
         if (array.includes(item)) {
             setter(array.filter(i => i !== item));
         } else {
@@ -224,8 +254,8 @@ export default function ProfilesPage() {
         }
     };
 
-    const getBudgetIcon = (budget) => {
-        const icons = {
+    const getBudgetIcon = (budget: string) => {
+        const icons: Record<string, string> = {
             'low': '💰',
             'medium': '💰💰',
             'high': '💰💰💰'
@@ -233,8 +263,8 @@ export default function ProfilesPage() {
         return icons[budget] || '💰';
     };
 
-    const getTravelStyleIcon = (style) => {
-        const icons = {
+    const getTravelStyleIcon = (style: string) => {
+        const icons: Record<string, string> = {
             'cultural': '🎨',
             'culinary': '🍽️',
             'adventure': '🏔️',
@@ -245,7 +275,7 @@ export default function ProfilesPage() {
         return icons[style] || '⚖️';
     };
 
-    const renderProfileCard = (profile) => (
+    const renderProfileCard = (profile: Profile) => (
         <div class={`cb-card hover:shadow-lg transition-all duration-300 ${profile.isDefault ? 'ring-2 ring-blue-500' : ''}`}>
             <div class="p-6">
                 {/* Header */}
@@ -266,7 +296,7 @@ export default function ProfilesPage() {
                         </div>
                         <p class="text-sm text-gray-600">{profile.description}</p>
                     </div>
-                    
+
                     {/* Actions dropdown */}
                     <div class="flex items-center gap-1 ml-4">
                         <button
@@ -419,7 +449,7 @@ export default function ProfilesPage() {
                                 <div class={`p-3 rounded-lg border-2 transition-all ${profileForm().travelStyle === style.id
                                     ? 'border-blue-500 bg-blue-50'
                                     : 'border-gray-200 hover:border-gray-300'
-                                }`}>
+                                    }`}>
                                     <div class="text-center">
                                         <div class="text-2xl mb-1">{getTravelStyleIcon(style.id)}</div>
                                         <div class="text-sm font-medium text-gray-900">{style.label}</div>
@@ -478,7 +508,7 @@ export default function ProfilesPage() {
                                 <div class={`p-3 rounded-lg border-2 transition-all text-center ${profileForm().groupSize === group.id
                                     ? 'border-blue-500 bg-blue-50'
                                     : 'border-gray-200 hover:border-gray-300'
-                                }`}>
+                                    }`}>
                                     <div class="text-2xl mb-1">{group.icon}</div>
                                     <div class="text-sm font-medium text-gray-900">{group.label}</div>
                                 </div>
@@ -528,7 +558,7 @@ export default function ProfilesPage() {
                                 class={`px-3 py-1 rounded-full border transition-all text-sm ${profileForm().tags.includes(tag)
                                     ? 'bg-blue-100 text-blue-800 border-blue-200'
                                     : 'bg-white text-gray-700 border-gray-200 hover:border-gray-300'
-                                }`}
+                                    }`}
                             >
                                 {tag}
                             </button>
@@ -572,7 +602,7 @@ export default function ProfilesPage() {
                     />
                     <span class="ml-2 text-sm text-gray-700">Set as default profile</span>
                 </label>
-                
+
                 <label class="flex items-center">
                     <input
                         type="checkbox"

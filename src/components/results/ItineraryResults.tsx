@@ -7,45 +7,24 @@ import {
   ChevronRight,
   ChevronDown,
   ChevronUp,
-  Heart,
   Share2,
 } from "lucide-solid";
 
-interface POI {
-  name: string;
-  latitude?: number;
-  longitude?: number;
-  category?: string;
-  description_poi?: string;
-  address?: string;
-  website?: string;
-  opening_hours?: string;
-  rating?: number;
-  priority?: number;
-  distance?: number;
-  timeToSpend?: string;
-  budget?: string;
-}
-
-interface ItineraryData {
-  itinerary_name?: string;
-  overall_description?: string;
-  points_of_interest?: POI[];
-}
+import { POIDetailedInfo, AIItineraryResponse } from '~/lib/api/types';
 
 interface ItineraryResultsProps {
-  pois?: POI[];
-  itinerary?: ItineraryData;
+  pois?: POIDetailedInfo[];
+  itinerary?: AIItineraryResponse | null;
   compact?: boolean;
   limit?: number;
   showToggle?: boolean; // Whether to show the "Show More/Less" button
   initialLimit?: number; // Initial number to show before "Show More"
-  onItemClick?: (poi: POI) => void; // Callback for item clicks
-  onFavoriteClick?: (poi: POI) => void; // Callback for favorite button
-  onShareClick?: (poi: POI) => void; // Callback for share button
+  onItemClick?: (poi: POIDetailedInfo) => void; // Callback for item clicks
+  onFavoriteClick?: (poi: POIDetailedInfo) => void; // Callback for favorite button
+  onShareClick?: (poi: POIDetailedInfo) => void; // Callback for share button
   favorites?: string[]; // Array of favorite POI IDs
   showAuthMessage?: boolean; // Whether to show auth message for non-authenticated users
-  onToggleFavorite?: (poiId: string, poi: POI) => void; // New callback for toggling favorites
+  onToggleFavorite?: (poiId: string, poi: POIDetailedInfo) => void; // New callback for toggling favorites
   isLoadingFavorites?: boolean; // Loading state for favorites
 }
 
@@ -110,15 +89,13 @@ export default function ItineraryResults(props: ItineraryResultsProps) {
         console.warn("Failed to parse itinerary name JSON:", e);
         return "Custom Itinerary";
       }
-    } else if (typeof rawName === "object" && rawName?.itinerary_name) {
-      return rawName.itinerary_name;
     }
 
     return rawName || "Custom Itinerary";
   };
   const description = () => props.itinerary?.overall_description;
 
-  const getRatingColor = (rating: number) => {
+  const _getRatingColor = (rating: number) => {
     if (rating >= 4.5) return "text-green-600 dark:text-green-400";
     if (rating >= 4.0) return "text-blue-600 dark:text-blue-400";
     if (rating >= 3.5) return "text-yellow-600 dark:text-yellow-400";
@@ -178,11 +155,10 @@ export default function ItineraryResults(props: ItineraryResultsProps) {
         <For each={displayPOIs()}>
           {(poi, index) => (
             <div
-              class={`rounded-lg border border-gray-200 dark:border-gray-700 ${
-                props.compact
-                  ? "p-3 bg-gray-50 dark:bg-gray-800"
-                  : "p-4 bg-white dark:bg-gray-800 shadow-sm hover:shadow-md transition-shadow"
-              } ${props.onItemClick ? "cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700" : ""}`}
+              class={`rounded-lg border border-gray-200 dark:border-gray-700 ${props.compact
+                ? "p-3 bg-gray-50 dark:bg-gray-800"
+                : "p-4 bg-white dark:bg-gray-800 shadow-sm hover:shadow-md transition-shadow"
+                } ${props.onItemClick ? "cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700" : ""}`}
               onClick={() => props.onItemClick?.(poi)}
             >
               <div class="flex items-start gap-3">
@@ -209,9 +185,8 @@ export default function ItineraryResults(props: ItineraryResultsProps) {
                     <div class="flex-1 min-w-0">
                       <div class="flex items-center gap-2">
                         <h4
-                          class={`font-medium text-gray-900 dark:text-white truncate ${
-                            props.compact ? "text-sm" : "text-base"
-                          }`}
+                          class={`font-medium text-gray-900 dark:text-white truncate ${props.compact ? "text-sm" : "text-base"
+                            }`}
                         >
                           {poi.name}
                         </h4>
@@ -252,10 +227,10 @@ export default function ItineraryResults(props: ItineraryResultsProps) {
                       </div>
                     </Show>
 
-                    <Show when={poi.timeToSpend}>
+                    <Show when={poi.time_to_spend}>
                       <div class="flex items-center gap-1">
                         <Clock class="w-3 h-3" />
-                        <span>{poi.timeToSpend}</span>
+                        <span>{poi.time_to_spend}</span>
                       </div>
                     </Show>
 
@@ -288,13 +263,12 @@ export default function ItineraryResults(props: ItineraryResultsProps) {
                         }}
                         disabled={props.isLoadingFavorites || (!props.onToggleFavorite && !props.onFavoriteClick)}
                         data-poi-id={poi.name}
-                        class={`p-2 rounded-lg transition-colors ${
-                          (!props.onToggleFavorite && !props.onFavoriteClick)
-                            ? "text-gray-300 dark:text-gray-600 cursor-not-allowed bg-gray-50 dark:bg-gray-800"
-                            : isFavorite(poi.name)
-                              ? "text-yellow-600 dark:text-yellow-400 bg-yellow-50 dark:bg-yellow-900/20 hover:bg-yellow-100 dark:hover:bg-yellow-900/30"
-                              : "text-gray-400 hover:text-yellow-600 dark:hover:text-yellow-400 hover:bg-yellow-50 dark:hover:bg-yellow-900/20"
-                        } disabled:opacity-50 disabled:cursor-not-allowed`}
+                        class={`p-2 rounded-lg transition-colors ${(!props.onToggleFavorite && !props.onFavoriteClick)
+                          ? "text-gray-300 dark:text-gray-600 cursor-not-allowed bg-gray-50 dark:bg-gray-800"
+                          : isFavorite(poi.name)
+                            ? "text-yellow-600 dark:text-yellow-400 bg-yellow-50 dark:bg-yellow-900/20 hover:bg-yellow-100 dark:hover:bg-yellow-900/30"
+                            : "text-gray-400 hover:text-yellow-600 dark:hover:text-yellow-400 hover:bg-yellow-50 dark:hover:bg-yellow-900/20"
+                          } disabled:opacity-50 disabled:cursor-not-allowed`}
                         title={isFavorite(poi.name) ? "Remove from favorites" : "Add to favorites"}
                       >
                         <Show
@@ -304,7 +278,7 @@ export default function ItineraryResults(props: ItineraryResultsProps) {
                           <Star class={`w-4 h-4 ${isFavorite(poi.name) ? "fill-current" : ""}`} />
                         </Show>
                       </button>
-                      
+
                       {/* Share Button - show always but disable if no callback */}
                       <button
                         onClick={(e) => {
@@ -314,11 +288,10 @@ export default function ItineraryResults(props: ItineraryResultsProps) {
                           }
                         }}
                         disabled={!props.onShareClick}
-                        class={`p-2 rounded-lg transition-colors ${
-                          !props.onShareClick
-                            ? "text-gray-300 dark:text-gray-600 cursor-not-allowed bg-gray-50 dark:bg-gray-800"
-                            : "text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20"
-                        }`}
+                        class={`p-2 rounded-lg transition-colors ${!props.onShareClick
+                          ? "text-gray-300 dark:text-gray-600 cursor-not-allowed bg-gray-50 dark:bg-gray-800"
+                          : "text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20"
+                          }`}
                         title={props.onShareClick ? "Share this place" : props.showAuthMessage ? "Sign in to share this place" : "Share this place"}
                       >
                         <Share2 class="w-4 h-4" />

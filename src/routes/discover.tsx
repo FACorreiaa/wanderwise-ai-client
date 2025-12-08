@@ -2,7 +2,7 @@ import { createSignal, For, Show, onCleanup, createEffect } from 'solid-js';
 import { Title, Meta } from '@solidjs/meta';
 import { Search, TrendingUp, Star, Sparkles, ChevronRight, Calendar, Clock, MapPin, Smartphone } from 'lucide-solid';
 import { useDiscoverPageData, fetchRecentDiscoveries } from '~/lib/api/discover';
-import type { TrendingDiscovery, FeaturedCollection, POI, DomainType, ChatSession } from '~/lib/api/types';
+import type { TrendingDiscovery, POI, DomainType, ChatSession } from '~/lib/api/types';
 import { useAuth } from '~/contexts/AuthContext';
 import RegisterBanner from '~/components/ui/RegisterBanner';
 import { sendUnifiedChatMessageStream } from '~/lib/api/llm';
@@ -204,6 +204,7 @@ export default function DiscoverPage() {
                 buffer = lines.pop() || '';
 
                 for (const rawLine of lines) {
+                    // eslint-disable-next-line no-control-regex
                     const cleanedLine = rawLine.replace(/\u0000/g, '').trim();
                     console.info('[discover stream][line]', cleanedLine);
                     if (!cleanedLine.startsWith('data:')) continue;
@@ -292,7 +293,7 @@ export default function DiscoverPage() {
                                 setIsSearching(false);
                                 setProgressMessage(null);
                                 break;
-                            case 'error':
+                            case 'error': {
                                 const rawError = event.error || 'Something went wrong';
                                 let friendlyError = rawError;
 
@@ -305,6 +306,7 @@ export default function DiscoverPage() {
                                 setIsSearching(false);
                                 setProgressMessage(null);
                                 break;
+                            }
                             default:
                                 break;
                         }

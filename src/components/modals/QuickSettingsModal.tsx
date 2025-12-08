@@ -1,16 +1,13 @@
 import { createSignal, Show, For, createEffect } from 'solid-js';
 import { useNavigate } from '@solidjs/router';
-import { 
-  X, 
-  User, 
-  MapPin, 
-  Bell, 
-  Palette, 
-  Settings, 
-  Camera,
-  Save,
+import {
+  X,
+  User,
+  MapPin,
+  Bell,
+  Palette,
+  Settings,
   Loader2,
-  Check,
   Moon,
   Sun
 } from 'lucide-solid';
@@ -18,7 +15,6 @@ import { useAuth } from '~/contexts/AuthContext';
 import { useTheme } from '~/contexts/ThemeContext';
 import { useUserLocation } from '~/contexts/LocationContext';
 import { useDefaultSearchProfile, useSearchProfiles, useSetDefaultProfileMutation } from '~/lib/api/profiles';
-import { useUpdateProfileMutation, useUserProfileQuery } from '~/lib/api/user';
 
 interface QuickSettingsModalProps {
   isOpen: boolean;
@@ -27,22 +23,20 @@ interface QuickSettingsModalProps {
 
 export default function QuickSettingsModal(props: QuickSettingsModalProps) {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const _auth = useAuth(); // User unused but keeping hook for future use
   const { isDark, setTheme } = useTheme();
   const { userLocation, requestLocation } = useUserLocation();
-  
+
   // API hooks
-  // const userProfileQuery = useUserProfileQuery(); // Disabled /user/profile endpoint call
-  const updateProfileMutation = useUpdateProfileMutation();
   const profilesQuery = useSearchProfiles();
   const defaultProfileQuery = useDefaultSearchProfile();
   const setDefaultProfileMutation = useSetDefaultProfileMutation();
-  
+
   // Local state
   const [isUpdatingLocation, setIsUpdatingLocation] = createSignal(false);
   const [locationStatus, setLocationStatus] = createSignal<'idle' | 'requesting' | 'success' | 'error'>('idle');
   const [selectedProfile, setSelectedProfile] = createSignal<string>('');
-  
+
   // Initialize selected profile
   createEffect(() => {
     if (defaultProfileQuery.data?.id) {
@@ -58,12 +52,12 @@ export default function QuickSettingsModal(props: QuickSettingsModalProps) {
   const handleLocationUpdate = async () => {
     setIsUpdatingLocation(true);
     setLocationStatus('requesting');
-    
+
     try {
       await requestLocation();
       setLocationStatus('success');
       setTimeout(() => setLocationStatus('idle'), 2000);
-    } catch (error) {
+    } catch (_error) {
       setLocationStatus('error');
       setTimeout(() => setLocationStatus('idle'), 3000);
     } finally {
@@ -93,12 +87,12 @@ export default function QuickSettingsModal(props: QuickSettingsModalProps) {
   return (
     <Show when={props.isOpen}>
       {/* Backdrop */}
-      <div 
+      <div
         class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 transition-opacity"
         onClick={props.onClose}
       >
         {/* Modal */}
-        <div 
+        <div
           class="fixed inset-x-4 top-1/2 -translate-y-1/2 sm:inset-x-auto sm:left-1/2 sm:-translate-x-1/2 sm:w-full sm:max-w-md bg-white dark:bg-gray-800 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 max-h-[90vh] overflow-hidden"
           onClick={(e) => e.stopPropagation()}
         >
@@ -120,7 +114,7 @@ export default function QuickSettingsModal(props: QuickSettingsModalProps) {
 
           {/* Content */}
           <div class="p-4 sm:p-6 space-y-6 overflow-y-auto max-h-[calc(90vh-8rem)]">
-            
+
             {/* Active Travel Profile */}
             <div class="space-y-3">
               <div class="flex items-center gap-2">
@@ -129,7 +123,7 @@ export default function QuickSettingsModal(props: QuickSettingsModalProps) {
                   Active Travel Profile
                 </label>
               </div>
-              <Show 
+              <Show
                 when={!profilesQuery.isLoading && profiles.length > 0}
                 fallback={
                   <div class="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
@@ -168,7 +162,7 @@ export default function QuickSettingsModal(props: QuickSettingsModalProps) {
                 </label>
               </div>
               <div class="p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-                <Show 
+                <Show
                   when={currentLocation}
                   fallback={
                     <p class="text-sm text-gray-500 dark:text-gray-400 mb-3">
@@ -188,16 +182,16 @@ export default function QuickSettingsModal(props: QuickSettingsModalProps) {
                   disabled={isUpdatingLocation()}
                   class="w-full flex items-center justify-center gap-2 p-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white rounded-lg text-sm font-medium transition-colors disabled:cursor-not-allowed"
                 >
-                  <Show 
+                  <Show
                     when={!isUpdatingLocation()}
                     fallback={<Loader2 class="w-4 h-4 animate-spin" />}
                   >
                     <MapPin class="w-4 h-4" />
                   </Show>
                   {locationStatus() === 'requesting' ? 'Requesting...' :
-                   locationStatus() === 'success' ? 'Updated!' :
-                   locationStatus() === 'error' ? 'Failed' :
-                   currentLocation ? 'Update Location' : 'Enable Location'}
+                    locationStatus() === 'success' ? 'Updated!' :
+                      locationStatus() === 'error' ? 'Failed' :
+                        currentLocation ? 'Update Location' : 'Enable Location'}
                 </button>
               </div>
             </div>
@@ -218,11 +212,10 @@ export default function QuickSettingsModal(props: QuickSettingsModalProps) {
                     return (
                       <button
                         onClick={() => setTheme(option.value as 'light' | 'dark')}
-                        class={`p-3 rounded-lg border transition-all ${
-                          isActive
-                            ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400'
-                            : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 text-gray-600 dark:text-gray-400'
-                        }`}
+                        class={`p-3 rounded-lg border transition-all ${isActive
+                          ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400'
+                          : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 text-gray-600 dark:text-gray-400'
+                          }`}
                       >
                         <Icon class="w-4 h-4 mx-auto mb-1" />
                         <div class="text-xs font-medium">{option.label}</div>
@@ -244,18 +237,18 @@ export default function QuickSettingsModal(props: QuickSettingsModalProps) {
               <div class="space-y-2">
                 <label class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg cursor-pointer">
                   <span class="text-sm text-gray-700 dark:text-gray-300">New recommendations</span>
-                  <input 
-                    type="checkbox" 
+                  <input
+                    type="checkbox"
                     class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 dark:bg-gray-700 dark:border-gray-600"
-                    checked 
+                    checked
                   />
                 </label>
                 <label class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg cursor-pointer">
                   <span class="text-sm text-gray-700 dark:text-gray-300">Trip reminders</span>
-                  <input 
-                    type="checkbox" 
+                  <input
+                    type="checkbox"
                     class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 dark:bg-gray-700 dark:border-gray-600"
-                    checked 
+                    checked
                   />
                 </label>
               </div>

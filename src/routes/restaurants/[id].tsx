@@ -1,6 +1,6 @@
-import { createSignal, For, Show, createEffect } from 'solid-js';
+import { createSignal, For, Show } from 'solid-js';
 import { useParams } from '@solidjs/router';
-import { Star, MapPin, Clock, Phone, Mail, Globe, Heart, Share2, DollarSign, Users, Utensils, Wine, Car, ArrowLeft } from 'lucide-solid';
+import { Star, MapPin, Clock, Phone, Mail, Globe, Heart, Share2, DollarSign, Users, Utensils, ArrowLeft } from 'lucide-solid';
 import { A } from '@solidjs/router';
 import { useRestaurantDetails } from '~/lib/api/restaurants';
 
@@ -8,10 +8,9 @@ export default function RestaurantDetailPage() {
     const params = useParams();
     const [selectedTab, setSelectedTab] = createSignal('overview');
     const [isFavorite, setIsFavorite] = createSignal(false);
-
     // Use API hook to fetch restaurant details
-    const restaurantQuery = useRestaurantDetails(params.id);
-    
+    const restaurantQuery = useRestaurantDetails(params.id || '');
+
     const restaurant = () => restaurantQuery.data;
 
     const tabs = [
@@ -32,8 +31,10 @@ export default function RestaurantDetailPage() {
             '€€': 'text-orange-600 bg-orange-50 dark:text-orange-400 dark:bg-orange-900',
             '€€€': 'text-red-600 bg-red-50 dark:text-red-400 dark:bg-red-900'
         };
-        return colorMap[price] || 'text-gray-600 bg-gray-50 dark:text-gray-400 dark:bg-gray-800';
+        return colorMap[price as keyof typeof colorMap] || 'text-gray-600 bg-gray-50 dark:text-gray-400 dark:bg-gray-800';
     };
+
+
 
     const renderOverview = () => (
         <div class="space-y-6">
@@ -102,16 +103,21 @@ export default function RestaurantDetailPage() {
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     <For each={restaurant()?.features}>
                         {(feature) => {
-                            const IconComponent = feature.icon;
+                            const isObject = typeof feature !== 'string';
+                            const featureName = isObject ? (feature as any).name : feature;
+                            const featureAvailable = isObject ? (feature as any).available : true;
+                            const IconComponent = isObject ? (feature as any).icon : null;
+
                             return (
-                                <div class={`flex items-center gap-3 p-3 rounded-lg ${
-                                    feature.available 
-                                        ? 'bg-green-50 dark:bg-green-900/20 text-green-800 dark:text-green-200' 
-                                        : 'bg-gray-50 dark:bg-gray-700 text-gray-500 dark:text-gray-400'
-                                }`}>
-                                    <IconComponent class="w-5 h-5" />
-                                    <span class="font-medium">{feature.name}</span>
-                                    <Show when={!feature.available}>
+                                <div class={`flex items-center gap-3 p-3 rounded-lg ${featureAvailable
+                                    ? 'bg-green-50 dark:bg-green-900/20 text-green-800 dark:text-green-200'
+                                    : 'bg-gray-50 dark:bg-gray-700 text-gray-500 dark:text-gray-400'
+                                    }`}>
+                                    <Show when={IconComponent}>
+                                        <IconComponent class="w-5 h-5" />
+                                    </Show>
+                                    <span class="font-medium">{featureName}</span>
+                                    <Show when={!featureAvailable}>
                                         <span class="text-xs">(Not Available)</span>
                                     </Show>
                                 </div>
@@ -281,9 +287,11 @@ export default function RestaurantDetailPage() {
                                     🍽️
                                 </div>
                                 <div class="grid grid-cols-3 gap-2 mt-2">
-                                    {Array.from({ length: 3 }).map((_, i) => (
-                                        <div class="aspect-video bg-white/70 dark:bg-slate-900/60 border border-white/60 dark:border-slate-800/70 rounded" />
-                                    ))}
+                                    <For each={Array.from({ length: 3 })}>
+                                        {() => (
+                                            <div class="aspect-video bg-white/70 dark:bg-slate-900/60 border border-white/60 dark:border-slate-800/70 rounded" />
+                                        )}
+                                    </For>
                                 </div>
                             </div>
 
@@ -297,11 +305,10 @@ export default function RestaurantDetailPage() {
                                     <div class="flex items-center gap-2">
                                         <button
                                             onClick={toggleFavorite}
-                                            class={`p-2 rounded-lg ${
-                                                isFavorite() 
-                                                    ? 'bg-red-100 dark:bg-red-900 text-red-600 dark:text-red-400' 
-                                                    : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400'
-                                            } hover:scale-110 transition-transform`}
+                                            class={`p-2 rounded-lg ${isFavorite()
+                                                ? 'bg-red-100 dark:bg-red-900 text-red-600 dark:text-red-400'
+                                                : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400'
+                                                } hover:scale-110 transition-transform`}
                                         >
                                             <Heart class={`w-5 h-5 ${isFavorite() ? 'fill-current' : ''}`} />
                                         </button>
@@ -320,7 +327,7 @@ export default function RestaurantDetailPage() {
                                         </div>
                                         <span class="text-gray-600 dark:text-gray-400">({restaurant()?.reviewCount} reviews)</span>
                                     </div>
-                                    <span class={`px-3 py-1 rounded-full text-sm font-medium ${getPriceColor(restaurant()?.priceRange)}`}>
+                                    <span class={`px-3 py-1 rounded-full text-sm font-medium ${getPriceColor(restaurant()?.priceRange || '')}`}>
                                         {restaurant()?.priceRange}
                                     </span>
                                     <Show when={restaurant()?.isOpen}>
@@ -361,11 +368,10 @@ export default function RestaurantDetailPage() {
                                 {(tab) => (
                                     <button
                                         onClick={() => setSelectedTab(tab.id)}
-                                        class={`py-4 px-1 border-b-2 font-medium text-sm whitespace-nowrap transition-colors ${
-                                            selectedTab() === tab.id
-                                                ? 'border-blue-500 text-blue-600 dark:text-blue-400'
-                                                : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
-                                        }`}
+                                        class={`py-4 px-1 border-b-2 font-medium text-sm whitespace-nowrap transition-colors ${selectedTab() === tab.id
+                                            ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                                            : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+                                            }`}
                                     >
                                         {tab.label}
                                     </button>

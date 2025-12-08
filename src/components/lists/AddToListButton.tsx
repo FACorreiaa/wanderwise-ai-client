@@ -1,5 +1,5 @@
 import { createSignal, Show, For } from 'solid-js';
-import { Plus, FolderPlus, Check, X } from 'lucide-solid';
+import { Plus, FolderPlus, X } from 'lucide-solid';
 import { useLists, useCreateListMutation } from '~/lib/api/lists';
 import { useAddToListMutation } from '~/lib/api/lists';
 
@@ -26,7 +26,7 @@ export default function AddToListButton(props: AddToListButtonProps) {
   const addToListMutation = useAddToListMutation();
 
   const lists = () => listsQuery.data || [];
-  
+
   const buttonSizeClasses = () => {
     switch (props.size) {
       case 'sm': return 'w-8 h-8 text-xs';
@@ -64,7 +64,7 @@ export default function AddToListButton(props: AddToListButtonProps) {
 
   const createNewList = async () => {
     if (!newListName().trim()) return;
-    
+
     setIsCreating(true);
     try {
       const newList = await createListMutation.mutateAsync({
@@ -73,7 +73,7 @@ export default function AddToListButton(props: AddToListButtonProps) {
         is_public: false,
         is_itinerary: false,
       });
-      
+
       // Add the item to the newly created list
       await addToList(newList.id);
       setNewListName('');

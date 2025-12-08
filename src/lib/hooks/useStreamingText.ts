@@ -1,8 +1,8 @@
 import { createSignal, onCleanup } from "solid-js";
 
-export function useStreamingText(initialText = "", speed = 50) {
+export const useStreamingText = (_initialText: string = '', speed: number = 20) => {
   const [text, setText] = createSignal("");
-  let intervalId;
+  let intervalId: any;
   let currentIndex = 0;
 
   function startStreaming(newText: string) {
@@ -25,5 +25,5 @@ export function useStreamingText(initialText = "", speed = 50) {
     clearInterval(intervalId);
   });
 
-  return [text, startStreaming];
+  return [text, startStreaming] as const;
 }

@@ -1,6 +1,6 @@
 // Shared utilities and types for API queries
 import { useQueryClient } from "@tanstack/solid-query";
-import type { UserProfile, Interest, POI } from "./types";
+import type { UserProfile, Interest } from "./types";
 import {
   defaultLLMRateLimiter,
   RateLimitError,
@@ -120,9 +120,12 @@ export async function apiRequest<T>(
         throw new Error("Unauthorized");
       }
 
-      const errorData = await response
-        .json()
-        .catch(() => ({ message: "Request failed" }));
+      let errorData: any;
+      try {
+        errorData = await response.json();
+      } catch {
+        errorData = { message: response.statusText || "Request failed" };
+      }
 
       // Debug logging for favorites endpoints
       if (endpoint.includes("favourites")) {
@@ -150,7 +153,7 @@ export async function apiRequest<T>(
       });
     }
 
-    return data;
+    return data as T;
   } catch (error) {
     // Handle network/connection errors
     if (

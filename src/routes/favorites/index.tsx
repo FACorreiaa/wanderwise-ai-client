@@ -1,24 +1,20 @@
-import { createSignal, createEffect, For, Show, onMount } from "solid-js";
+import { createSignal, For, Show } from "solid-js";
 import {
   Heart,
   MapPin,
   Clock,
-  Star,
-  Filter,
   Search,
   Grid,
   List,
   Share2,
   Download,
-  Edit3,
   Trash2,
   Plus,
   SortAsc,
   SortDesc,
-  Tag,
-  Eye,
 } from "lucide-solid";
 import { useFavorites, useRemoveFromFavoritesMutation } from "~/lib/api/pois";
+import type { POIDetailedInfo } from "~/lib/api/types";
 
 export default function FavoritesPage() {
   const [viewMode, setViewMode] = createSignal("grid"); // 'grid', 'list'
@@ -26,14 +22,14 @@ export default function FavoritesPage() {
   const [selectedCategory, setSelectedCategory] = createSignal("all");
   const [sortBy, setSortBy] = createSignal("name"); // 'name', 'category', 'distance'
   const [sortOrder, setSortOrder] = createSignal("asc"); // 'asc', 'desc'
-  const [selectedPOIs, setSelectedPOIs] = createSignal([]);
+  const [selectedPOIs, setSelectedPOIs] = createSignal<string[]>([]);
 
   // API hooks
   const favoritesQuery = useFavorites();
   const removeFavoriteMutation = useRemoveFromFavoritesMutation();
 
   // Get favorites from API or fallback to empty array
-  const favorites = () => favoritesQuery.data || [];
+  const favorites = () => favoritesQuery.data || ([] as POIDetailedInfo[]);
 
   // Dynamic categories based on actual data
   const categories = () => {
@@ -44,7 +40,7 @@ export default function FavoritesPage() {
       label: cat,
       count: favorites().filter(fav => fav.category === cat).length
     }));
-    
+
     return [
       { id: "all", label: "All Categories", count: favorites().length },
       ...categoryCounts
@@ -82,7 +78,7 @@ export default function FavoritesPage() {
 
     // Sort
     filtered.sort((a, b) => {
-      let aVal, bVal;
+      let aVal: string | number, bVal: string | number;
       switch (sortBy()) {
         case "name":
           aVal = a.name?.toLowerCase() || "";
@@ -112,7 +108,7 @@ export default function FavoritesPage() {
     return filtered;
   };
 
-  const togglePOISelection = (poiId) => {
+  const togglePOISelection = (poiId: string) => {
     setSelectedPOIs((prev) =>
       prev.includes(poiId)
         ? prev.filter((id) => id !== poiId)
@@ -120,16 +116,13 @@ export default function FavoritesPage() {
     );
   };
 
-  const selectAllPOIs = () => {
-    setSelectedPOIs(filteredFavorites().map((fav) => fav.id));
-  };
 
   const clearSelection = () => {
     setSelectedPOIs([]);
   };
 
-  const getCategoryColor = (category) => {
-    const colorMap = {
+  const getCategoryColor = (category: string) => {
+    const colorMap: Record<string, string> = {
       "Restaurant": "text-orange-600 bg-orange-50",
       "Park": "text-green-600 bg-green-50",
       "Beach": "text-blue-600 bg-blue-50",
@@ -141,7 +134,7 @@ export default function FavoritesPage() {
     return colorMap[category] || "text-gray-600 bg-gray-50";
   };
 
-  const getCategoryIcon = (category) => {
+  const getCategoryIcon = (category: string) => {
     switch (category) {
       case "Restaurant": return "🍽️";
       case "Park": return "🌳";
@@ -154,18 +147,17 @@ export default function FavoritesPage() {
     }
   };
 
-  const removeFavorite = async (favoriteId) => {
+  const removeFavorite = async (favoriteId: string) => {
     try {
       await removeFavoriteMutation.mutateAsync({
-        poiId: favoriteId,
-        isLlmPoi: true // Based on your data structure, these appear to be LLM POIs
+        poiId: favoriteId
       });
     } catch (error) {
       console.error("Failed to remove favorite:", error);
     }
   };
 
-  const formatDistance = (distance) => {
+  const formatDistance = (distance?: number) => {
     if (!distance || distance === 0) return "";
     if (distance < 1000) return `${Math.round(distance)}m`;
     return `${(distance / 1000).toFixed(1)}km`;
@@ -173,7 +165,7 @@ export default function FavoritesPage() {
 
   console.log("favorites", favorites);
 
-  const renderGridCard = (favorite) => (
+  const renderGridCard = (favorite: POIDetailedInfo) => (
     <div class="cb-card group hover:shadow-lg transition-all duration-300 overflow-hidden">
       {/* Image */}
       <div class="relative h-40 bg-white/70 dark:bg-slate-900/60 border-b border-white/50 dark:border-slate-800/60 overflow-hidden">
@@ -246,9 +238,9 @@ export default function FavoritesPage() {
           <Show when={favorite.website}>
             <div class="flex items-center gap-2">
               <span class="w-4 h-4 text-center">🌐</span>
-              <a 
-                href={favorite.website} 
-                target="_blank" 
+              <a
+                href={favorite.website}
+                target="_blank"
                 rel="noopener noreferrer"
                 class="text-blue-600 hover:text-blue-800 truncate"
               >
@@ -266,7 +258,7 @@ export default function FavoritesPage() {
     </div>
   );
 
-  const renderListItem = (favorite) => (
+  const renderListItem = (favorite: POIDetailedInfo) => (
     <div class="cb-card hover:shadow-md transition-all duration-200">
       <div class="p-4 sm:p-6">
         <div class="flex items-start gap-4">
@@ -279,7 +271,7 @@ export default function FavoritesPage() {
           />
 
           {/* Category icon */}
-        <div class="w-16 h-16 bg-white/70 dark:bg-slate-900/60 border border-white/60 dark:border-slate-800/70 rounded-lg flex items-center justify-center text-3xl flex-shrink-0">
+          <div class="w-16 h-16 bg-white/70 dark:bg-slate-900/60 border border-white/60 dark:border-slate-800/70 rounded-lg flex items-center justify-center text-3xl flex-shrink-0">
             {getCategoryIcon(favorite.category)}
           </div>
 
@@ -326,7 +318,7 @@ export default function FavoritesPage() {
                   <span class="line-clamp-2">{favorite.address}</span>
                 </div>
               </Show>
-              
+
               <Show when={favorite.phone_number}>
                 <div class="flex items-center gap-2">
                   <span class="w-4 h-4 text-center">📞</span>
@@ -335,13 +327,13 @@ export default function FavoritesPage() {
                   </a>
                 </div>
               </Show>
-              
+
               <Show when={favorite.website}>
                 <div class="flex items-center gap-2">
                   <span class="w-4 h-4 text-center">🌐</span>
-                  <a 
-                    href={favorite.website} 
-                    target="_blank" 
+                  <a
+                    href={favorite.website}
+                    target="_blank"
                     rel="noopener noreferrer"
                     class="text-blue-600 hover:text-blue-800 truncate"
                   >
@@ -349,7 +341,7 @@ export default function FavoritesPage() {
                   </a>
                 </div>
               </Show>
-              
+
               <div class="flex items-center gap-2">
                 <span class="w-4 h-4 text-center">📍</span>
                 <span class="text-xs text-gray-400">

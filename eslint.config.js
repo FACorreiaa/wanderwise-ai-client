@@ -1,20 +1,28 @@
 import js from "@eslint/js";
 import solid from "eslint-plugin-solid/configs/typescript";
 import * as tsParser from "@typescript-eslint/parser";
+import tsPlugin from "@typescript-eslint/eslint-plugin";
 import prettier from "eslint-config-prettier";
 import globals from "globals";
 
 export default [
+  // Global ignores - must be standalone object with only ignores key
   {
     ignores: [
-      "node_modules",
-      "dist",
-      "dev-dist",
-      "tmp",
-      ".output",
-      "public/_build",
-      ".vinxi",
+      "node_modules/**",
+      "dist/**",
+      "dev-dist/**",
+      "tmp/**",
+      ".output/**",
+      "public/_build/**",
+      ".vinxi/**",
+      ".wrangler/**",
+      "worker-configuration.d.ts",
+      "functions/**/*.js",
     ],
+  },
+  // Global languageOptions
+  {
     languageOptions: {
       globals: {
         ...globals.browser,
@@ -26,12 +34,29 @@ export default [
   {
     files: ["**/*.{ts,tsx}"],
     ...solid,
+    plugins: {
+      ...solid.plugins,
+      "@typescript-eslint": tsPlugin,
+    },
     languageOptions: {
       parser: tsParser,
       parserOptions: {
         project: "./tsconfig.json",
         tsconfigRootDir: import.meta.dirname,
       },
+    },
+    rules: {
+      ...solid.rules,
+      "no-unused-vars": "off",
+      "@typescript-eslint/no-unused-vars": [
+        "error",
+        {
+          "argsIgnorePattern": "^_",
+          "varsIgnorePattern": "^_",
+          "caughtErrorsIgnorePattern": "^_"
+        }
+      ],
+      "solid/reactivity": "off"
     },
   },
   prettier,

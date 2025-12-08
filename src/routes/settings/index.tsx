@@ -3,7 +3,7 @@ import { User, Tag, Heart, Users, Camera, MapPin, Calendar, Globe, Bell, Chevron
 import { useUpdateProfileMutation, useUploadAvatarMutation, useUserProfileQuery } from '../../lib/api/user';
 import { useTags, useCreateTagMutation, useUpdateTagMutation, useDeleteTagMutation, useToggleTagActiveMutation } from '../../lib/api/tags';
 import { useInterests, useCreateInterestMutation, useUpdateInterestMutation, useDeleteInterestMutation, useToggleInterestActiveMutation } from '../../lib/api/interests';
-import { ProcessedProfileData, UserProfileResponse, PersonalTag, Interest } from '~/lib/api/types';
+import { ProcessedProfileData, UserProfileResponse } from '~/lib/api/types';
 import { useAuth } from '~/contexts/AuthContext';
 import TagsComponent from '@/components/features/Settings/Tags';
 import InterestsComponent from '@/components/features/Settings/Interests';
@@ -11,7 +11,6 @@ import TravelProfiles from '@/components/features/Settings/TravelProfiles';
 
 export default function SettingsPage() {
     const { user } = useAuth();
-    const [isEditing, setIsEditing] = createSignal(false);
     const [notification, setNotification] = createSignal<{ message: string, type: 'success' | 'error' } | null>(null);
     const [activeTab, setActiveTab] = createSignal('settings');
     const uploadAvatarMutation = useUploadAvatarMutation();
@@ -87,7 +86,7 @@ export default function SettingsPage() {
             // Show success notification
             setNotification({ message: 'Settings saved successfully!', type: 'success' });
             setTimeout(() => setNotification(null), 3000);
-        } catch (error) {
+        } catch (error: any) {
             console.error('Failed to update profile:', error);
             // Show error notification
             setNotification({
@@ -125,25 +124,7 @@ export default function SettingsPage() {
         };
     };
 
-    const [editForm, setEditForm] = createSignal({
-        username: '',
-        bio: '',
-        location: ''
-    });
 
-    const startEditing = () => {
-        const profile = profileData();
-        setEditForm({
-            username: profile?.username || '',
-            bio: profile?.bio || '',
-            location: profile?.location || ''
-        });
-        setIsEditing(true);
-    };
-
-    const cancelEditing = () => {
-        setIsEditing(false);
-    };
 
 
     const [photoPreview, setPhotoPreview] = createSignal<string | null>(null);
@@ -188,7 +169,7 @@ export default function SettingsPage() {
     const uploadPhoto = async (file: File) => {
         setIsUploading(true);
         try {
-            const result = await uploadAvatarMutation.mutateAsync(file);
+            const result = await uploadAvatarMutation.mutateAsync(file) as { avatar_url: string };
             //updateProfile('avatar', result.avatar_url);
             setUserProfile(prev => ({ ...prev, avatar: result.avatar_url }));
             await profileQuery.refetch();
@@ -196,7 +177,7 @@ export default function SettingsPage() {
             // Show success notification
             setNotification({ message: 'Profile photo updated successfully!', type: 'success' });
             setTimeout(() => setNotification(null), 3000);
-        } catch (error) {
+        } catch (error: any) {
             console.error('Photo upload failed:', error);
             setNotification({
                 message: error?.message || 'Photo upload failed. Please try again.',
@@ -472,6 +453,48 @@ export default function SettingsPage() {
         );
     };
 
+    const handleCreateTag = async (data: any) => {
+        await createTagMutation.mutateAsync(data);
+        setNotification({ message: 'Tag created successfully!', type: 'success' });
+        setTimeout(() => setNotification(null), 3000);
+    };
+
+    const handleUpdateTag = async (data: any) => {
+        await updateTagMutation.mutateAsync(data);
+        setNotification({ message: 'Tag updated successfully!', type: 'success' });
+        setTimeout(() => setNotification(null), 3000);
+    };
+
+    const handleDeleteTag = async (tag: any) => {
+        if (tag.source === 'global') {
+            setNotification({
+                message: 'Global tags cannot be deleted.',
+                type: 'error'
+            });
+            setTimeout(() => setNotification(null), 3000);
+            return;
+        }
+
+        if (confirm(`Are you sure you want to delete the tag "${tag.name}"?`)) {
+            await deleteTagMutation.mutateAsync(tag.id);
+            setNotification({ message: 'Tag deleted successfully!', type: 'success' });
+            setTimeout(() => setNotification(null), 3000);
+        }
+    };
+
+    const handleToggleTag = async (tag: any) => {
+        const currentActive = tag.active ?? false;
+        await toggleTagActiveMutation.mutateAsync({
+            id: tag.id,
+            active: !currentActive
+        });
+        setNotification({
+            message: `Tag ${!currentActive ? 'activated' : 'deactivated'} successfully!`,
+            type: 'success'
+        });
+        setTimeout(() => setNotification(null), 3000);
+    };
+
     const renderTags = () => {
         return (
             <TagsComponent
@@ -479,50 +502,58 @@ export default function SettingsPage() {
                 isLoading={tagsQuery.isLoading}
                 isError={tagsQuery.isError}
                 onRetry={() => tagsQuery.refetch()}
-                onCreateTag={async (data) => {
-                    await createTagMutation.mutateAsync(data);
-                    setNotification({ message: 'Tag created successfully!', type: 'success' });
-                    setTimeout(() => setNotification(null), 3000);
-                }}
-                onUpdateTag={async (data) => {
-                    await updateTagMutation.mutateAsync(data);
-                    setNotification({ message: 'Tag updated successfully!', type: 'success' });
-                    setTimeout(() => setNotification(null), 3000);
-                }}
-                onDeleteTag={async (tag) => {
-                    if (tag.source === 'global') {
-                        setNotification({
-                            message: 'Global tags cannot be deleted.',
-                            type: 'error'
-                        });
-                        setTimeout(() => setNotification(null), 3000);
-                        return;
-                    }
-
-                    if (confirm(`Are you sure you want to delete the tag "${tag.name}"?`)) {
-                        await deleteTagMutation.mutateAsync(tag.id);
-                        setNotification({ message: 'Tag deleted successfully!', type: 'success' });
-                        setTimeout(() => setNotification(null), 3000);
-                    }
-                }}
-                onToggleActive={async (tag) => {
-                    const currentActive = tag.active ?? false;
-                    await toggleTagActiveMutation.mutateAsync({
-                        id: tag.id,
-                        active: !currentActive
-                    });
-                    setNotification({
-                        message: `Tag ${!currentActive ? 'activated' : 'deactivated'} successfully!`,
-                        type: 'success'
-                    });
-                    setTimeout(() => setNotification(null), 3000);
-                }}
+                onCreateTag={handleCreateTag}
+                onUpdateTag={handleUpdateTag}
+                onDeleteTag={handleDeleteTag}
+                onToggleActive={handleToggleTag}
                 isCreating={createTagMutation.isPending}
                 isUpdating={updateTagMutation.isPending}
                 isDeleting={deleteTagMutation.isPending}
                 isToggling={toggleTagActiveMutation.isPending}
             />
         );
+    };
+
+    const handleCreateInterest = async (data: any) => {
+        await createInterestMutation.mutateAsync(data);
+        setNotification({ message: 'Interest created successfully!', type: 'success' });
+        setTimeout(() => setNotification(null), 3000);
+    };
+
+    const handleUpdateInterest = async (data: any) => {
+        await updateInterestMutation.mutateAsync(data);
+        setNotification({ message: 'Interest updated successfully!', type: 'success' });
+        setTimeout(() => setNotification(null), 3000);
+    };
+
+    const handleDeleteInterest = async (interest: any) => {
+        if (interest.source === 'global') {
+            setNotification({
+                message: 'Global interests cannot be deleted.',
+                type: 'error'
+            });
+            setTimeout(() => setNotification(null), 3000);
+            return;
+        }
+
+        if (confirm(`Are you sure you want to delete the interest "${interest.name}"?`)) {
+            await deleteInterestMutation.mutateAsync(interest.id);
+            setNotification({ message: 'Interest deleted successfully!', type: 'success' });
+            setTimeout(() => setNotification(null), 3000);
+        }
+    };
+
+    const handleToggleInterest = async (interest: any) => {
+        const currentActive = interest.active ?? false;
+        await toggleInterestActiveMutation.mutateAsync({
+            id: interest.id,
+            active: !currentActive
+        });
+        setNotification({
+            message: `Interest ${!currentActive ? 'activated' : 'deactivated'} successfully!`,
+            type: 'success'
+        });
+        setTimeout(() => setNotification(null), 3000);
     };
 
     const renderInterests = () => {
@@ -532,44 +563,10 @@ export default function SettingsPage() {
                 isLoading={interestsQuery.isLoading}
                 isError={interestsQuery.isError}
                 onRetry={() => interestsQuery.refetch()}
-                onCreateInterest={async (data) => {
-                    await createInterestMutation.mutateAsync(data);
-                    setNotification({ message: 'Interest created successfully!', type: 'success' });
-                    setTimeout(() => setNotification(null), 3000);
-                }}
-                onUpdateInterest={async (data) => {
-                    await updateInterestMutation.mutateAsync(data);
-                    setNotification({ message: 'Interest updated successfully!', type: 'success' });
-                    setTimeout(() => setNotification(null), 3000);
-                }}
-                onDeleteInterest={async (interest) => {
-                    if (interest.source === 'global') {
-                        setNotification({
-                            message: 'Global interests cannot be deleted.',
-                            type: 'error'
-                        });
-                        setTimeout(() => setNotification(null), 3000);
-                        return;
-                    }
-
-                    if (confirm(`Are you sure you want to delete the interest "${interest.name}"?`)) {
-                        await deleteInterestMutation.mutateAsync(interest.id);
-                        setNotification({ message: 'Interest deleted successfully!', type: 'success' });
-                        setTimeout(() => setNotification(null), 3000);
-                    }
-                }}
-                onToggleActive={async (interest) => {
-                    const currentActive = interest.active ?? false;
-                    await toggleInterestActiveMutation.mutateAsync({
-                        id: interest.id,
-                        active: !currentActive
-                    });
-                    setNotification({
-                        message: `Interest ${!currentActive ? 'activated' : 'deactivated'} successfully!`,
-                        type: 'success'
-                    });
-                    setTimeout(() => setNotification(null), 3000);
-                }}
+                onCreateInterest={handleCreateInterest}
+                onUpdateInterest={handleUpdateInterest}
+                onDeleteInterest={handleDeleteInterest}
+                onToggleActive={handleToggleInterest}
                 isCreating={createInterestMutation.isPending}
                 isUpdating={updateInterestMutation.isPending}
                 isDeleting={deleteInterestMutation.isPending}
@@ -579,7 +576,7 @@ export default function SettingsPage() {
     };
 
     const renderProfiles = () => (
-        <TravelProfiles 
+        <TravelProfiles
             onNotification={(notification) => {
                 setNotification(notification);
                 setTimeout(() => setNotification(null), 3000);

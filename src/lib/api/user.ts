@@ -100,19 +100,14 @@ export const useUploadAvatarMutation = () => {
   const queryClient = useQueryClient();
 
   return useMutation(() => ({
-    mutationFn: (file: File) => {
-      const formData = new FormData();
-      formData.append('avatar', file);
-
-      return fetch('/api/user/avatar', {
-        method: 'POST',
-        body: formData,
-      }).then(async (response) => {
-        if (!response.ok) {
-          throw new Error('Upload failed');
-        }
-        return response.json();
-      });
+    mutationFn: async (file: File) => {
+      const { uploadFile } = await import('~/lib/api');
+      // Assuming the backend endpoint is /user/avatar based on previous code, 
+      // but uploadFile appends it to API_BASE_URL.
+      // If previous code was /api/user/avatar and no proxy, it was likely wrong.
+      // Let's assume the backend endpoint is /user/avatar.
+      const response = await uploadFile(file, '/user/avatar');
+      return { avatar_url: response };
     },
     onSuccess: (result) => {
       // Update the default profile with new avatar

@@ -1,50 +1,37 @@
 import { For, Show, createSignal } from 'solid-js';
 import { Star, MapPin, Wifi, Car, Coffee, Utensils, ChevronDown, ChevronUp, Heart, Share2 } from 'lucide-solid';
 
-interface Hotel {
-  name: string;
-  latitude?: number;
-  longitude?: number;
-  category?: string;
-  description_poi?: string;
-  address?: string;
-  website?: string;
-  opening_hours?: string;
-  rating?: number;
-  price_range?: string;
-  amenities?: string[];
-  distance?: number;
-}
+import { HotelDetailedInfo } from '~/lib/api/types';
 
 interface HotelResultsProps {
-  hotels: Hotel[];
+  hotels: HotelDetailedInfo[];
   compact?: boolean;
   limit?: number;
   showToggle?: boolean; // Whether to show the "Show More/Less" button
   initialLimit?: number; // Initial number to show before "Show More"
-  onItemClick?: (hotel: Hotel) => void; // Callback for item clicks
-  onFavoriteClick?: (hotel: Hotel) => void; // Callback for favorite button
-  onShareClick?: (hotel: Hotel) => void; // Callback for share button
+  onItemClick?: (hotel: HotelDetailedInfo) => void; // Callback for item clicks
+  onFavoriteClick?: (hotel: HotelDetailedInfo) => void; // Callback for favorite button
+  onShareClick?: (hotel: HotelDetailedInfo) => void; // Callback for share button
   favorites?: string[]; // Array of favorite hotel IDs
 }
 
 export default function HotelResults(props: HotelResultsProps) {
   const [showAll, setShowAll] = createSignal(false);
-  
+
   const displayHotels = () => {
     const hotels = props.hotels || [];
-    
+
     // If a fixed limit is provided (from parent), use it
     if (props.limit && !props.showToggle) {
       return hotels.slice(0, props.limit);
     }
-    
+
     // If showToggle is enabled, use initialLimit and showAll state
     if (props.showToggle) {
       const initialLimit = props.initialLimit || 3;
       return showAll() ? hotels : hotels.slice(0, initialLimit);
     }
-    
+
     // Default: show all
     return hotels;
   };
@@ -59,7 +46,7 @@ export default function HotelResults(props: HotelResultsProps) {
     const hotels = props.hotels || [];
     const initialLimit = props.initialLimit || 3;
     const remaining = hotels.length - initialLimit;
-    
+
     if (showAll()) {
       return 'Show Less';
     } else {
@@ -93,30 +80,28 @@ export default function HotelResults(props: HotelResultsProps) {
           Hotels ({displayHotels().length})
         </h3>
       </div>
-      
+
       <div class={props.compact ? "space-y-2" : "space-y-4"}>
         <For each={displayHotels()}>
           {(hotel) => (
-            <div 
-              class={`rounded-lg border border-gray-200 dark:border-gray-700 ${
-                props.compact 
-                  ? "p-3 bg-gray-50 dark:bg-gray-800" 
-                  : "p-4 bg-white dark:bg-gray-800 shadow-sm hover:shadow-md transition-shadow"
-              } ${props.onItemClick ? 'cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700' : ''}`}
+            <div
+              class={`rounded-lg border border-gray-200 dark:border-gray-700 ${props.compact
+                ? "p-3 bg-gray-50 dark:bg-gray-800"
+                : "p-4 bg-white dark:bg-gray-800 shadow-sm hover:shadow-md transition-shadow"
+                } ${props.onItemClick ? 'cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700' : ''}`}
               onClick={() => props.onItemClick?.(hotel)}
             >
               <div class="flex items-start justify-between mb-2">
                 <div class="flex-1 min-w-0">
-                  <h4 class={`font-medium text-gray-900 dark:text-white truncate ${
-                    props.compact ? "text-sm" : "text-base"
-                  }`}>
+                  <h4 class={`font-medium text-gray-900 dark:text-white truncate ${props.compact ? "text-sm" : "text-base"
+                    }`}>
                     {hotel.name}
                   </h4>
                   <Show when={hotel.category}>
                     <p class="text-xs text-gray-500 dark:text-gray-400">{hotel.category}</p>
                   </Show>
                 </div>
-                
+
                 <div class="flex items-center gap-2 ml-2 flex-shrink-0">
                   <Show when={hotel.rating}>
                     <div class="flex items-center gap-1">
@@ -126,29 +111,29 @@ export default function HotelResults(props: HotelResultsProps) {
                       </span>
                     </div>
                   </Show>
-                  
-                  <Show when={hotel.price_range}>
+
+                  <Show when={hotel.price_level}>
                     <span class="text-xs font-medium text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 px-2 py-1 rounded">
-                      {hotel.price_range}
+                      {hotel.price_level}
                     </span>
                   </Show>
                 </div>
               </div>
 
-              <Show when={hotel.description_poi && !props.compact}>
+              <Show when={hotel.description && !props.compact}>
                 <p class="text-sm text-gray-600 dark:text-gray-300 mb-3 line-clamp-2">
-                  {hotel.description_poi}
+                  {hotel.description}
                 </p>
               </Show>
 
               <div class="flex items-center gap-4 text-xs text-gray-500 dark:text-gray-400">
-                <Show when={hotel.distance}>
+                <Show when={(hotel as any).distance}>
                   <div class="flex items-center gap-1">
                     <MapPin class="w-3 h-3" />
-                    <span>{hotel.distance}km away</span>
+                    <span>{(hotel as any).distance}km away</span>
                   </div>
                 </Show>
-                
+
                 <Show when={hotel.address && !props.compact}>
                   <span class="truncate">{hotel.address}</span>
                 </Show>
@@ -181,11 +166,10 @@ export default function HotelResults(props: HotelResultsProps) {
                         e.stopPropagation();
                         props.onFavoriteClick?.(hotel);
                       }}
-                      class={`p-2 rounded-lg transition-colors ${
-                        props.favorites?.includes(hotel.name)
-                          ? 'text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/30'
-                          : 'text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20'
-                      }`}
+                      class={`p-2 rounded-lg transition-colors ${props.favorites?.includes(hotel.name)
+                        ? 'text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/30'
+                        : 'text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20'
+                        }`}
                       title="Add to favorites"
                     >
                       <Heart class={`w-4 h-4 ${props.favorites?.includes(hotel.name) ? 'fill-current' : ''}`} />
@@ -208,9 +192,9 @@ export default function HotelResults(props: HotelResultsProps) {
 
               <Show when={hotel.website && !props.compact}>
                 <div class="mt-3 pt-3 border-t border-gray-100 dark:border-gray-700">
-                  <a 
-                    href={hotel.website} 
-                    target="_blank" 
+                  <a
+                    href={hotel.website}
+                    target="_blank"
                     rel="noopener noreferrer"
                     class="text-sm text-blue-600 dark:text-blue-400 hover:underline"
                     onClick={(e) => e.stopPropagation()}
@@ -223,7 +207,7 @@ export default function HotelResults(props: HotelResultsProps) {
           )}
         </For>
       </div>
-      
+
       {/* Show More/Less Toggle */}
       <Show when={shouldShowToggle()}>
         <div class="text-center py-3">
@@ -232,14 +216,14 @@ export default function HotelResults(props: HotelResultsProps) {
             class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-700 transition-colors"
           >
             <span>{getToggleText()}</span>
-            {showAll() ? 
-              <ChevronUp class="w-4 h-4" /> : 
+            {showAll() ?
+              <ChevronUp class="w-4 h-4" /> :
               <ChevronDown class="w-4 h-4" />
             }
           </button>
         </div>
       </Show>
-      
+
       {/* Status indicator when using fixed limit */}
       <Show when={props.limit && !props.showToggle && props.hotels.length > props.limit}>
         <div class="text-center py-2">

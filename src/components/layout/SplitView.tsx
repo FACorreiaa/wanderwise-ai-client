@@ -1,4 +1,4 @@
-import { createSignal, Show, JSX } from "solid-js";
+import { createSignal, JSX } from "solid-js";
 import { Map, List, Sidebar } from "lucide-solid";
 
 interface SplitViewProps {
@@ -19,8 +19,8 @@ export default function SplitView(props: SplitViewProps) {
                 <button
                     onClick={() => setMode("list")}
                     class={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-colors ${mode() === "list"
-                            ? "bg-blue-600 text-white shadow-md shadow-blue-500/20"
-                            : "text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+                        ? "bg-blue-600 text-white shadow-md shadow-blue-500/20"
+                        : "text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
                         }`}
                 >
                     <List class="w-4 h-4" />
@@ -29,8 +29,8 @@ export default function SplitView(props: SplitViewProps) {
                 <button
                     onClick={() => setMode("map")}
                     class={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-colors ${mode() === "map"
-                            ? "bg-blue-600 text-white shadow-md shadow-blue-500/20"
-                            : "text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+                        ? "bg-blue-600 text-white shadow-md shadow-blue-500/20"
+                        : "text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
                         }`}
                 >
                     <Map class="w-4 h-4" />
@@ -43,8 +43,8 @@ export default function SplitView(props: SplitViewProps) {
                 <button
                     onClick={() => setMode("list")}
                     class={`p-2 rounded-md transition-colors ${mode() === "list"
-                            ? "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300"
-                            : "text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800"
+                        ? "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300"
+                        : "text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800"
                         }`}
                     title="List Only"
                 >
@@ -53,8 +53,8 @@ export default function SplitView(props: SplitViewProps) {
                 <button
                     onClick={() => setMode("split")}
                     class={`p-2 rounded-md transition-colors ${mode() === "split"
-                            ? "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300"
-                            : "text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800"
+                        ? "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300"
+                        : "text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800"
                         }`}
                     title="Split View"
                 >
@@ -63,8 +63,8 @@ export default function SplitView(props: SplitViewProps) {
                 <button
                     onClick={() => setMode("map")}
                     class={`p-2 rounded-md transition-colors ${mode() === "map"
-                            ? "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300"
-                            : "text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800"
+                        ? "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300"
+                        : "text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800"
                         }`}
                     title="Map Only"
                 >
@@ -76,10 +76,10 @@ export default function SplitView(props: SplitViewProps) {
                 {/* List Panel */}
                 <div
                     class={`flex-1 h-full overflow-y-auto transition-all duration-300 ease-in-out ${mode() === "map"
-                            ? "hidden w-0"
-                            : mode() === "split"
-                                ? "w-1/2 md:max-w-[600px] border-r border-gray-200/50 dark:border-gray-800/50"
-                                : "w-full"
+                        ? "hidden w-0"
+                        : mode() === "split"
+                            ? "w-1/2 md:max-w-[600px] border-r border-gray-200/50 dark:border-gray-800/50"
+                            : "w-full"
                         } bg-transparent`}
                 >
                     <div class="h-full relative z-0">
@@ -90,10 +90,10 @@ export default function SplitView(props: SplitViewProps) {
                 {/* Map Panel */}
                 <div
                     class={`flex-1 h-full transition-all duration-300 ease-in-out relative z-0 ${mode() === "list"
-                            ? "hidden w-0"
-                            : mode() === "split"
-                                ? "w-1/2"
-                                : "w-full"
+                        ? "hidden w-0"
+                        : mode() === "split"
+                            ? "w-1/2"
+                            : "w-full"
                         }`}
                 >
                     {props.mapContent}

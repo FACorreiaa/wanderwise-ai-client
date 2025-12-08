@@ -1,5 +1,4 @@
 import { createEffect, JSX } from 'solid-js';
-// @ts-ignore - Hook import type
 import { useStreamingText } from '~/lib/hooks/useStreamingText';
 
 interface TypingAnimationProps {
@@ -16,5 +15,5 @@ export function TypingAnimation(props: TypingAnimationProps): JSX.Element {
     }
   });
 
-  return <p>{text()}</p>;
+  return <p>{text() as string}</p>;
 }

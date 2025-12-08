@@ -57,15 +57,14 @@ const ErrorBoundary: Component<ErrorBoundaryProps> = (props) => {
                 {/* Dynamic Icon based on error type */}
                 <div class="mb-8 relative">
                   <div
-                    class={`w-24 h-24 mx-auto rounded-full flex items-center justify-center animate-pulse shadow-[0_18px_38px_rgba(248,113,113,0.25)] ${
-                      error instanceof APIError &&
+                    class={`w-24 h-24 mx-auto rounded-full flex items-center justify-center animate-pulse shadow-[0_18px_38px_rgba(248,113,113,0.25)] ${error instanceof APIError &&
                       error.code === "CONNECTION_REFUSED"
-                        ? "bg-orange-500"
-                        : error instanceof APIError &&
-                            error.code === "NETWORK_ERROR"
-                          ? "bg-amber-500"
-                          : "bg-red-500"
-                    }`}
+                      ? "bg-orange-500"
+                      : error instanceof APIError &&
+                        error.code === "NETWORK_ERROR"
+                        ? "bg-amber-500"
+                        : "bg-red-500"
+                      }`}
                   >
                     <Show
                       when={
@@ -94,20 +93,20 @@ const ErrorBoundary: Component<ErrorBoundaryProps> = (props) => {
                 {/* Error Message */}
                 <h1 class="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-white mb-4">
                   {error instanceof APIError &&
-                  error.code === "CONNECTION_REFUSED"
+                    error.code === "CONNECTION_REFUSED"
                     ? "Server Unavailable"
                     : error instanceof APIError &&
-                        error.code === "NETWORK_ERROR"
+                      error.code === "NETWORK_ERROR"
                       ? "Network Error"
                       : "Something went wrong"}
                 </h1>
 
                 <p class="text-gray-600 dark:text-gray-400 mb-6 leading-relaxed">
                   {error instanceof APIError &&
-                  error.code === "CONNECTION_REFUSED"
+                    error.code === "CONNECTION_REFUSED"
                     ? "We't reach our servers right now. They might be down for maintenance or experiencing issues."
                     : error instanceof APIError &&
-                        error.code === "NETWORK_ERROR"
+                      error.code === "NETWORK_ERROR"
                       ? "There seems to be a problem with your network connection. Please check your internet connection and try again."
                       : "An unexpected error occurred. Our team has been notified and is working on a fix."}
                 </p>
@@ -120,10 +119,10 @@ const ErrorBoundary: Component<ErrorBoundaryProps> = (props) => {
                     </summary>
                     <div class="bg-gray-100 dark:bg-gray-800 p-3 rounded text-xs font-mono text-gray-700 dark:text-gray-300 overflow-auto max-h-32">
                       <div class="mb-2">
-                        <strong>Message:</strong> {error.message}
+                        <strong>Message:</strong> {error!.message}
                       </div>
                       <div class="mb-2">
-                        <strong>Type:</strong> {error.constructor.name}
+                        <strong>Type:</strong> {error!.constructor.name}
                       </div>
                       <Show when={error instanceof APIError}>
                         <div class="mb-2">
@@ -198,7 +197,7 @@ const ErrorBoundary: Component<ErrorBoundaryProps> = (props) => {
             </div>
           }
         >
-          <>{props.fallback!(error, reset)}</>
+          <>{props.fallback!(error as Error, reset)}</>
         </Show>
       </Show>
     );
@@ -207,7 +206,7 @@ const ErrorBoundary: Component<ErrorBoundaryProps> = (props) => {
   // Handle errors in child components
   return (
     <Show when={!errorInfo()} fallback={<ErrorDisplay />}>
-      <div onError={handleError}>{props.children}</div>
+      <div onError={(e: any) => handleError(e)}>{props.children}</div>
     </Show>
   );
 };

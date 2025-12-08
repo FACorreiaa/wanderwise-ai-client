@@ -1,8 +1,8 @@
-import { createSignal, For, Show, createEffect, onMount } from 'solid-js';
+import { createSignal, For, Show } from 'solid-js';
 import { A, useNavigate } from '@solidjs/router';
-import { Search, MapPin, Clock, Star, Filter, Grid, List, Calendar, TrendingUp, Sparkles, ChevronRight, Eye, Share2, Trash2, RotateCcw, SortAsc, SortDesc, Bookmark } from 'lucide-solid';
-import { useRecentInteractions, useCityDetails } from '~/lib/api/recents';
-import type { CityInteractions, POIDetailedInfo, HotelDetailedInfo, RestaurantDetailedInfo } from '~/lib/api/types';
+import { Search, MapPin, Clock, Star, Filter, Grid, List, TrendingUp, Sparkles, ChevronRight, RotateCcw, SortAsc, SortDesc, Bookmark } from 'lucide-solid';
+import { useRecentInteractions } from '~/lib/api/recents';
+import type { CityInteractions } from '~/lib/api/types';
 
 export default function RecentsPage() {
   const [searchQuery, setSearchQuery] = createSignal('');
@@ -11,7 +11,7 @@ export default function RecentsPage() {
   const [sortOrder, setSortOrder] = createSignal('desc');
   const [showFilters, setShowFilters] = createSignal(false);
   const [selectedTimeframe, setSelectedTimeframe] = createSignal('all'); // 'today', 'week', 'month', 'all'
-  
+
   const navigate = useNavigate();
   const recentsQuery = useRecentInteractions(50); // Get more cities for better overview
 
@@ -31,8 +31,8 @@ export default function RecentsPage() {
   // Filter cities based on search query and timeframe
   const filteredCities = () => {
     if (!recentsQuery.data?.cities) return [];
-    
-    let filtered = recentsQuery.data?.cities || [];
+
+    let filtered = [...(recentsQuery.data?.cities || [])];
 
     // Search filter
     if (searchQuery()) {
@@ -45,24 +45,27 @@ export default function RecentsPage() {
     // Timeframe filter
     if (selectedTimeframe() !== 'all') {
       const now = new Date();
-      const timeframes = {
+      const timeframes: Record<string, Date> = {
         today: new Date(now.getFullYear(), now.getMonth(), now.getDate()),
         week: new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000),
         month: new Date(now.getFullYear(), now.getMonth(), 1)
       };
-      
+
       const cutoff = timeframes[selectedTimeframe()];
       if (cutoff) {
-        filtered = filtered.filter(city => 
+        filtered = filtered.filter(city =>
           new Date(city.last_activity) >= cutoff
         );
       }
     }
 
     // Sort
+    const currentSortBy = sortBy();
+    const currentSortOrder = sortOrder();
+
     filtered.sort((a, b) => {
       let aVal, bVal;
-      switch (sortBy()) {
+      switch (currentSortBy) {
         case 'alphabetical':
           aVal = a.city_name.toLowerCase();
           bVal = b.city_name.toLowerCase();
@@ -78,7 +81,7 @@ export default function RecentsPage() {
           break;
       }
 
-      if (sortOrder() === 'asc') {
+      if (currentSortOrder === 'asc') {
         return aVal > bVal ? 1 : -1;
       } else {
         return aVal < bVal ? 1 : -1;
@@ -90,10 +93,6 @@ export default function RecentsPage() {
 
   const getTotalInteractions = () => {
     return recentsQuery.data?.cities?.reduce((total, city) => total + city.interactions.length, 0) || 0;
-  };
-
-  const getTotalPOIs = () => {
-    return recentsQuery.data?.cities?.reduce((total, city) => total + city.poi_count, 0) || 0;
   };
 
   const getTotalFavorites = () => {
@@ -113,7 +112,7 @@ export default function RecentsPage() {
     if (diffInHours < 24) return `${Math.floor(diffInHours)} hours ago`;
     if (diffInHours < 48) return 'Yesterday';
     if (diffInHours < 168) return `${Math.floor(diffInHours / 24)} days ago`;
-    
+
     return date.toLocaleDateString();
   };
 
@@ -129,9 +128,9 @@ export default function RecentsPage() {
 
   const renderGridCard = (city: CityInteractions) => {
     const activityInfo = getActivityLevel(city.interactions.length);
-    
+
     return (
-      <div 
+      <div
         onClick={() => handleCityClick(city.city_name)}
         class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden hover:shadow-md transition-all duration-200 cursor-pointer group"
       >
@@ -140,7 +139,7 @@ export default function RecentsPage() {
           <div class="absolute inset-0 flex items-center justify-center text-3xl">
             🏙️
           </div>
-          
+
           {/* Activity Badge */}
           <div class="absolute top-3 left-3">
             <span class={`px-2 py-1 rounded-full text-xs font-medium ${activityInfo.color}`}>
@@ -180,7 +179,7 @@ export default function RecentsPage() {
                 <span>{formatDate(city.last_activity)}</span>
               </div>
             </div>
-            
+
             <Show when={(city.total_favorites || 0) > 0 || (city.total_itineraries || 0) > 0}>
               <div class="flex items-center gap-3 text-xs text-gray-500 dark:text-gray-500">
                 <Show when={(city.total_favorites || 0) > 0}>
@@ -214,9 +213,9 @@ export default function RecentsPage() {
 
   const renderListItem = (city: CityInteractions) => {
     const activityInfo = getActivityLevel(city.interactions.length);
-    
+
     return (
-      <div 
+      <div
         onClick={() => handleCityClick(city.city_name)}
         class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4 hover:shadow-md transition-all duration-200 cursor-pointer group"
       >
@@ -274,7 +273,7 @@ export default function RecentsPage() {
                 <RotateCcw class="w-6 h-6 text-blue-600 dark:text-blue-400" />
                 Recent Activity
               </h1>
-              <Show 
+              <Show
                 when={!recentsQuery.isLoading && recentsQuery.data}
                 fallback={<p class="text-gray-600 dark:text-gray-400 mt-1">Loading your recent activity...</p>}
               >
@@ -430,7 +429,7 @@ export default function RecentsPage() {
             </div>
             <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">Unable to load recent activity</h3>
             <p class="text-gray-600 dark:text-gray-400 mb-4">Please try again later</p>
-            <button 
+            <button
               onClick={() => recentsQuery.refetch()}
               class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
             >
@@ -455,7 +454,7 @@ export default function RecentsPage() {
                   }
                 </p>
                 <Show when={!searchQuery() && selectedTimeframe() === 'all'}>
-                  <A 
+                  <A
                     href="/discover"
                     class="inline-flex items-center gap-2 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                   >
@@ -472,8 +471,8 @@ export default function RecentsPage() {
               </p>
             </div>
 
-            <div class={viewMode() === 'grid' 
-              ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6" 
+            <div class={viewMode() === 'grid'
+              ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
               : "space-y-4"
             }>
               <For each={filteredCities()}>

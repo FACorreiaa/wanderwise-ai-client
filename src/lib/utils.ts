@@ -183,13 +183,13 @@ import type { POIDetailedInfo } from './api/types';
 
 export const searchPOIs = (query: string, pois: POIDetailedInfo[]): POIDetailedInfo[] => {
   if (!query.trim()) return pois;
-  
+
   const lowerQuery = query.toLowerCase();
   return pois.filter(poi =>
-    poi.name.toLowerCase().includes(lowerQuery) ||
-    poi.description.toLowerCase().includes(lowerQuery) ||
-    poi.category.toLowerCase().includes(lowerQuery) ||
-    poi.tags.some((tag: string) => tag.toLowerCase().includes(lowerQuery))
+    (poi.name || '').toLowerCase().includes(lowerQuery) ||
+    (poi.description || '').toLowerCase().includes(lowerQuery) ||
+    (poi.category || '').toLowerCase().includes(lowerQuery) ||
+    (poi.tags || []).some((tag: string) => tag.toLowerCase().includes(lowerQuery))
   );
 };
 
@@ -248,13 +248,13 @@ export const generateAvatarUrl = (name: string, size: number = 40): string => {
     .join('')
     .slice(0, 2)
     .toUpperCase();
-  
+
   // Simple gradient based on name hash
   const hash = name.split('').reduce((a, b) => {
     a = ((a << 5) - a) + b.charCodeAt(0);
     return a & a;
   }, 0);
-  
+
   const hue = Math.abs(hash) % 360;
   return `data:image/svg+xml,${encodeURIComponent(`
     <svg width="${size}" height="${size}" xmlns="http://www.w3.org/2000/svg">
@@ -264,7 +264,7 @@ export const generateAvatarUrl = (name: string, size: number = 40): string => {
           <stop offset="100%" style="stop-color:hsl(${hue + 30}, 70%, 40%);stop-opacity:1" />
         </linearGradient>
       </defs>
-      <circle cx="${size/2}" cy="${size/2}" r="${size/2}" fill="url(#grad)" />
+      <circle cx="${size / 2}" cy="${size / 2}" r="${size / 2}" fill="url(#grad)" />
       <text x="50%" y="50%" text-anchor="middle" dy="0.35em" fill="white" font-family="Arial, sans-serif" font-size="${size * 0.4}" font-weight="bold">${initials}</text>
     </svg>
   `)}`;
@@ -316,7 +316,7 @@ export const getTagColor = (tag: string): string => {
   for (let i = 0; i < tag.length; i++) {
     hash = tag.charCodeAt(i) + ((hash << 5) - hash);
   }
-  
+
   const colors = [
     'bg-red-100 text-red-800',
     'bg-blue-100 text-blue-800',
@@ -327,7 +327,7 @@ export const getTagColor = (tag: string): string => {
     'bg-indigo-100 text-indigo-800',
     'bg-orange-100 text-orange-800',
   ];
-  
+
   return colors[Math.abs(hash) % colors.length];
 };
 
@@ -364,7 +364,7 @@ export const debounce = <T extends (...args: any[]) => any>(
   func: T,
   delay: number
 ): ((...args: Parameters<T>) => void) => {
-  let timeoutId: NodeJS.Timeout;
+  let timeoutId: ReturnType<typeof setTimeout>;
   return (...args: Parameters<T>) => {
     clearTimeout(timeoutId);
     timeoutId = setTimeout(() => func(...args), delay);

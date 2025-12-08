@@ -1,5 +1,5 @@
 import { Component, Show } from 'solid-js';
-import { MapPin, Calendar, Users, ArrowRight } from 'lucide-solid';
+import { MapPin, ArrowRight } from 'lucide-solid';
 
 interface CityInfoHeaderProps {
     city?: string;

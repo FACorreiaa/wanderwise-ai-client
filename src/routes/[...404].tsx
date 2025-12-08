@@ -1,5 +1,5 @@
 import { A } from "@solidjs/router";
-import { MapPin, Home, Search, Compass, ArrowLeft } from 'lucide-solid';
+import { MapPin, Home, Search, Compass } from 'lucide-solid';
 
 export default function NotFound() {
   return (
@@ -28,15 +28,15 @@ export default function NotFound() {
 
         {/* Action Buttons */}
         <div class="space-y-3 sm:space-y-0 sm:space-x-4 sm:flex sm:justify-center">
-          <A 
-            href="/" 
+          <A
+            href="/"
             class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 bg-[#0c7df2] text-white rounded-lg hover:bg-[#0a6ed6] transition-colors font-medium shadow-[0_14px_32px_rgba(12,125,242,0.22)] border border-white/30 dark:border-slate-800/60"
           >
             <Home class="w-4 h-4" />
             Back to Home
           </A>
-          <A 
-            href="/chat" 
+          <A
+            href="/chat"
             class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 bg-white/70 dark:bg-slate-900/60 text-slate-900 dark:text-white rounded-lg hover:bg-white/90 dark:hover:bg-slate-800/80 transition-colors font-medium border border-white/40 dark:border-slate-800/70"
           >
             <Search class="w-4 h-4" />
@@ -50,20 +50,20 @@ export default function NotFound() {
             Or explore these popular destinations:
           </p>
           <div class="flex flex-wrap justify-center gap-3">
-            <A 
-              href="/hotels" 
+            <A
+              href="/hotels"
               class="inline-flex items-center gap-1 px-3 py-2 text-xs bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-full border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
             >
               🏨 Hotels
             </A>
-            <A 
-              href="/restaurants" 
+            <A
+              href="/restaurants"
               class="inline-flex items-center gap-1 px-3 py-2 text-xs bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-full border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
             >
               🍽️ Restaurants
             </A>
-            <A 
-              href="/activities" 
+            <A
+              href="/activities"
               class="inline-flex items-center gap-1 px-3 py-2 text-xs bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-full border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
             >
               🎯 Activities

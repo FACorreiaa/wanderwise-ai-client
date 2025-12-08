@@ -1,5 +1,4 @@
 import { Component, JSX, Show } from 'solid-js';
-import { useLocation } from '@solidjs/router';
 
 interface SplitViewProps {
     children: JSX.Element;

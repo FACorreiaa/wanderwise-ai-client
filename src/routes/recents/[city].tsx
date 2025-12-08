@@ -1,6 +1,6 @@
 import { createSignal, For, Show, createMemo } from 'solid-js';
-import { useParams, A, useNavigate } from '@solidjs/router';
-import { ArrowLeft, MapPin, Clock, Star, MessageCircle, Calendar, TrendingUp, Building, Coffee, Camera, ChevronRight, Eye, Share2, Bookmark, Download } from 'lucide-solid';
+import { useParams, useNavigate } from '@solidjs/router';
+import { ArrowLeft, MapPin, Clock, Star, MessageCircle, Calendar, TrendingUp, Building, Coffee, Eye, Share2, Bookmark, Download } from 'lucide-solid';
 import { useCityDetails } from '~/lib/api/recents';
 import type { RecentInteraction, POIDetailedInfo, HotelDetailedInfo, RestaurantDetailedInfo } from '~/lib/api/types';
 
@@ -8,7 +8,7 @@ export default function CityDetailsPage() {
   const params = useParams();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = createSignal('overview'); // 'overview', 'interactions', 'places', 'favorites', 'itineraries'
-  
+
   const cityDetailsQuery = useCityDetails(decodeURIComponent(params.city || ''));
 
   const formatDate = (dateString: string) => {
@@ -20,23 +20,15 @@ export default function CityDetailsPage() {
     if (diffInHours < 24) return `${Math.floor(diffInHours)} hours ago`;
     if (diffInHours < 48) return 'Yesterday';
     if (diffInHours < 168) return `${Math.floor(diffInHours / 24)} days ago`;
-    
+
     return date.toLocaleDateString();
   };
 
-  const formatDetailedDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
+
 
   // Aggregate all POIs, hotels, and restaurants from interactions
   const allPlaces = createMemo(() => {
-    if (!cityDetailsQuery.data?.interactions) return { pois: [], hotels: [], restaurants: [] };
+    if (!cityDetailsQuery.data?.interactions) return { pois: [] as POIDetailedInfo[], hotels: [] as HotelDetailedInfo[], restaurants: [] as RestaurantDetailedInfo[] };
 
     const pois: POIDetailedInfo[] = [];
     const hotels: HotelDetailedInfo[] = [];
@@ -49,25 +41,25 @@ export default function CityDetailsPage() {
     });
 
     // Remove duplicates based on name
-    const uniquePOIs = pois.filter((poi, index, self) => 
+    const uniquePOIs = pois.filter((poi, index, self) =>
       index === self.findIndex(p => p.name === poi.name)
     );
-    const uniqueHotels = hotels.filter((hotel, index, self) => 
+    const uniqueHotels = hotels.filter((hotel, index, self) =>
       index === self.findIndex(h => h.name === hotel.name)
     );
-    const uniqueRestaurants = restaurants.filter((restaurant, index, self) => 
+    const uniqueRestaurants = restaurants.filter((restaurant, index, self) =>
       index === self.findIndex(r => r.name === restaurant.name)
     );
 
-    return { 
-      pois: uniquePOIs, 
-      hotels: uniqueHotels, 
-      restaurants: uniqueRestaurants 
+    return {
+      pois: uniquePOIs,
+      hotels: uniqueHotels,
+      restaurants: uniqueRestaurants
     };
   });
 
   const getCategoryIcon = (category: string) => {
-    const iconMap = {
+    const iconMap: Record<string, string> = {
       'restaurant': '🍽️',
       'hotel': '🏨',
       'museum': '🏛️',
@@ -83,7 +75,7 @@ export default function CityDetailsPage() {
   };
 
   const getCategoryColor = (category: string) => {
-    const categoryColorMap = {
+    const categoryColorMap: Record<string, string> = {
       'restaurant': 'text-red-700 bg-red-100 dark:text-red-300 dark:bg-red-900',
       'hotel': 'text-blue-700 bg-blue-100 dark:text-blue-300 dark:bg-blue-900',
       'museum': 'text-purple-700 bg-purple-100 dark:text-purple-300 dark:bg-purple-900',
@@ -99,7 +91,7 @@ export default function CityDetailsPage() {
   };
 
   const getPriceColor = (price: string) => {
-    const colorMap = {
+    const colorMap: Record<string, string> = {
       'Free': 'text-green-600 bg-green-50 dark:text-green-400 dark:bg-green-900',
       '€': 'text-blue-600 bg-blue-50 dark:text-blue-400 dark:bg-blue-900',
       '€€': 'text-orange-600 bg-orange-50 dark:text-orange-400 dark:bg-orange-900',
@@ -109,7 +101,7 @@ export default function CityDetailsPage() {
     return colorMap[price] || 'text-gray-600 bg-gray-50 dark:text-gray-400 dark:bg-gray-800';
   };
 
-  const renderPlaceCard = (place: POIDetailedInfo | HotelDetailedInfo | RestaurantDetailedInfo, type: 'poi' | 'hotel' | 'restaurant') => (
+  const renderPlaceCard = (place: POIDetailedInfo | HotelDetailedInfo | RestaurantDetailedInfo) => (
     <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4 hover:shadow-md transition-all duration-200">
       <div class="flex gap-3">
         {/* Icon */}
@@ -127,7 +119,7 @@ export default function CityDetailsPage() {
                   {place.category}
                 </span>
                 <Show when={place.price_level}>
-                  <span class={`px-2 py-0.5 rounded-full text-xs font-medium ${getPriceColor(place.price_level)}`}>
+                  <span class={`px-2 py-0.5 rounded-full text-xs font-medium ${getPriceColor(place.price_level || '')}`}>
                     {place.price_level}
                   </span>
                 </Show>
@@ -153,14 +145,14 @@ export default function CityDetailsPage() {
           {/* Tags */}
           <Show when={place.tags && place.tags.length > 0}>
             <div class="flex flex-wrap gap-1 mt-2">
-              <For each={place.tags.slice(0, 3)}>{tag => (
+              <For each={place.tags || []}>{tag => (
                 <span class="px-2 py-0.5 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded-full text-xs">
                   {tag}
                 </span>
               )}</For>
-              {place.tags.length > 3 && (
+              {(place.tags?.length || 0) > 3 && (
                 <span class="px-2 py-0.5 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 rounded-full text-xs">
-                  +{place.tags.length - 3}
+                  +{(place.tags?.length || 0) - 3}
                 </span>
               )}
             </div>
@@ -176,7 +168,7 @@ export default function CityDetailsPage() {
         <div class="w-10 h-10 bg-blue-100 dark:bg-blue-900 rounded-lg flex items-center justify-center flex-shrink-0">
           <MessageCircle class="w-5 h-5 text-blue-600 dark:text-blue-400" />
         </div>
-        
+
         <div class="flex-1 min-w-0">
           <div class="flex items-start justify-between mb-2">
             <div class="flex-1 min-w-0">
@@ -251,14 +243,14 @@ export default function CityDetailsPage() {
             >
               <ArrowLeft class="w-5 h-5 text-gray-600 dark:text-gray-400" />
             </button>
-            
+
             <div class="flex-1 min-w-0">
               <h1 class="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white truncate">
                 {decodeURIComponent(params.city || '')}
               </h1>
               <Show when={cityDetailsQuery.data}>
                 <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                  {cityDetailsQuery.data?.interactions?.length || 0} interaction{(cityDetailsQuery.data?.interactions?.length || 0) !== 1 ? 's' : ''} • 
+                  {cityDetailsQuery.data?.interactions?.length || 0} interaction{(cityDetailsQuery.data?.interactions?.length || 0) !== 1 ? 's' : ''} •
                   {cityDetailsQuery.data?.poi_count || 0} places discovered
                 </p>
               </Show>
@@ -282,51 +274,46 @@ export default function CityDetailsPage() {
           <div class="flex space-x-8 overflow-x-auto">
             <button
               onClick={() => setActiveTab('overview')}
-              class={`py-4 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${
-                activeTab() === 'overview'
-                  ? 'border-blue-500 text-blue-600 dark:text-blue-400'
-                  : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
-              }`}
+              class={`py-4 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${activeTab() === 'overview'
+                ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+                }`}
             >
               Overview
             </button>
             <button
               onClick={() => setActiveTab('interactions')}
-              class={`py-4 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${
-                activeTab() === 'interactions'
-                  ? 'border-blue-500 text-blue-600 dark:text-blue-400'
-                  : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
-              }`}
+              class={`py-4 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${activeTab() === 'interactions'
+                ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+                }`}
             >
               Interactions ({cityDetailsQuery.data?.interactions.length || 0})
             </button>
             <button
               onClick={() => setActiveTab('places')}
-              class={`py-4 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${
-                activeTab() === 'places'
-                  ? 'border-blue-500 text-blue-600 dark:text-blue-400'
-                  : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
-              }`}
+              class={`py-4 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${activeTab() === 'places'
+                ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+                }`}
             >
               Places ({allPlaces().pois.length + allPlaces().hotels.length + allPlaces().restaurants.length})
             </button>
             <button
               onClick={() => setActiveTab('favorites')}
-              class={`py-4 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${
-                activeTab() === 'favorites'
-                  ? 'border-blue-500 text-blue-600 dark:text-blue-400'
-                  : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
-              }`}
+              class={`py-4 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${activeTab() === 'favorites'
+                ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+                }`}
             >
               Favorites ({cityDetailsQuery.data?.favorite_pois?.length || 0})
             </button>
             <button
               onClick={() => setActiveTab('itineraries')}
-              class={`py-4 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${
-                activeTab() === 'itineraries'
-                  ? 'border-blue-500 text-blue-600 dark:text-blue-400'
-                  : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
-              }`}
+              class={`py-4 px-1 border-b-2 font-medium text-sm whitespace-nowrap ${activeTab() === 'itineraries'
+                ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+                }`}
             >
               Saved Itineraries ({cityDetailsQuery.data?.saved_itineraries?.length || 0})
             </button>
@@ -352,7 +339,7 @@ export default function CityDetailsPage() {
             </div>
             <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">Unable to load city details</h3>
             <p class="text-gray-600 dark:text-gray-400 mb-4">Please try again later</p>
-            <button 
+            <button
               onClick={() => cityDetailsQuery.refetch()}
               class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
             >
@@ -489,7 +476,7 @@ export default function CityDetailsPage() {
                   <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Attractions & Activities</h2>
                   <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <For each={allPlaces().pois}>
-                      {(poi) => renderPlaceCard(poi, 'poi')}
+                      {(poi) => renderPlaceCard(poi)}
                     </For>
                   </div>
                 </div>
@@ -500,7 +487,7 @@ export default function CityDetailsPage() {
                   <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Restaurants</h2>
                   <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <For each={allPlaces().restaurants}>
-                      {(restaurant) => renderPlaceCard(restaurant, 'restaurant')}
+                      {(restaurant) => renderPlaceCard(restaurant)}
                     </For>
                   </div>
                 </div>
@@ -511,7 +498,7 @@ export default function CityDetailsPage() {
                   <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Hotels</h2>
                   <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <For each={allPlaces().hotels}>
-                      {(hotel) => renderPlaceCard(hotel, 'hotel')}
+                      {(hotel) => renderPlaceCard(hotel)}
                     </For>
                   </div>
                 </div>
@@ -537,7 +524,7 @@ export default function CityDetailsPage() {
                   <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Your Favorites in {decodeURIComponent(params.city || '')}</h2>
                   <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <For each={cityDetailsQuery.data?.favorite_pois || []}>
-                      {(poi) => renderPlaceCard(poi, 'poi')}
+                      {(poi) => renderPlaceCard(poi)}
                     </For>
                   </div>
                 </div>
@@ -571,7 +558,7 @@ export default function CityDetailsPage() {
                               <Show when={itinerary.description}>
                                 <p class="text-gray-600 dark:text-gray-400 mb-3">{itinerary.description}</p>
                               </Show>
-                              
+
                               <div class="flex flex-wrap items-center gap-3 text-sm text-gray-500 dark:text-gray-500">
                                 <div class="flex items-center gap-1">
                                   <Calendar class="w-4 h-4" />
@@ -590,7 +577,7 @@ export default function CityDetailsPage() {
                                 </Show>
                               </div>
                             </div>
-                            
+
                             <div class="flex items-center gap-2 ml-4">
                               <button class="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors">
                                 <Eye class="w-4 h-4 text-gray-600 dark:text-gray-400" />

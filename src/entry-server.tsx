@@ -8,7 +8,7 @@ export default createHandler(() => (
         <head>
           <meta charset="utf-8" />
           <meta name="viewport" content="width=device-width, initial-scale=1" />
-          
+
           {/* PWA Meta Tags */}
           <meta name="application-name" content="Loci" />
           <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -18,26 +18,26 @@ export default createHandler(() => (
           <meta name="format-detection" content="telephone=no" />
           <meta name="mobile-web-app-capable" content="yes" />
           <meta name="theme-color" content="#146AFF" />
-          
+
           {/* Apple Touch Icons */}
           <link rel="apple-touch-icon" href="/images/loci.png" />
           <link rel="apple-touch-icon" sizes="152x152" href="/images/loci.png" />
           <link rel="apple-touch-icon" sizes="180x180" href="/images/loci.png" />
           <link rel="apple-touch-icon" sizes="167x167" href="/images/loci.png" />
-          
+
           {/* Icons */}
           <link rel="icon" type="image/png" sizes="32x32" href="/images/loci.png" />
           <link rel="icon" type="image/png" sizes="16x16" href="/images/loci.png" />
           <link rel="icon" href="/favicon.ico" />
-          
+
           {/* Manifest */}
           <link rel="manifest" href="/manifest.json" />
-          
+
           {/* Microsoft */}
           <meta name="msapplication-TileColor" content="#146AFF" />
           <meta name="msapplication-TileImage" content="/images/loci.png" />
           <meta name="msapplication-config" content="/browserconfig.xml" />
-          
+
           {/* Open Graph - Using absolute URLs for better sharing */}
           <meta property="og:type" content="website" />
           <meta property="og:title" content="Loci - AI Travel Companion" />
@@ -55,7 +55,33 @@ export default createHandler(() => (
           <meta name="twitter:image" content="https://loci.app/images/loci.png" />
           <meta name="twitter:site" content="@loci" />
           <meta name="twitter:creator" content="@loci" />
-          
+
+          {/* Theme Initialization Script (Blocking) */}
+          {/* eslint-disable-next-line solid/no-innerhtml */}
+          <script innerHTML={`
+              (function() {
+                try {
+                  var localTheme = localStorage.getItem('theme');
+                  var supportDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                  if (localTheme === 'dark' || (!localTheme && supportDarkMode)) {
+                    document.documentElement.classList.add('dark');
+                    document.documentElement.setAttribute('data-kb-theme', 'dark');
+                  } else {
+                    document.documentElement.classList.remove('dark');
+                    document.documentElement.setAttribute('data-kb-theme', 'light');
+                  }
+                  
+                  var designTheme = localStorage.getItem('designTheme');
+                  if (designTheme && designTheme !== 'default') {
+                    document.documentElement.setAttribute('data-theme', designTheme);
+                  }
+                } catch (e) {
+                  console.error('Theme init failed', e);
+                }
+              })();
+            `}
+          />
+
           {assets}
         </head>
         <body>

@@ -10,13 +10,11 @@ import {
 } from "../rate-limiter";
 import {
   ChatService,
-  ChatRequest,
   ChatRequestSchema,
   ChatResponse as ProtoChatResponse,
   ContinueChatRequestSchema as ContinueChatRequestSchema,
   DomainType as ChatDomainType,
   StartChatRequestSchema as StartChatRequestSchema,
-  StreamEventSchema,
 } from "@buf/loci_loci-proto.bufbuild_es/proto/chat_pb.js";
 import {
   AIItineraryResponse as ProtoAIItineraryResponse,
@@ -41,7 +39,6 @@ import type {
   RestaurantDetailedInfo,
   StreamEvent,
   UnifiedChatResponse,
-  ApiResponse,
   SessionPerformanceMetrics,
   SessionContentMetrics,
   SessionEngagementMetrics,
@@ -145,13 +142,14 @@ const mapPoi = (poi: ProtoPOIDetailedInfo): POIDetailedInfo => {
 
   return {
     id: safeId,
-    city: poi.city,
+    // city: poi.city, removed duplicate
     city_id: poi.cityId,
     name: poi.name,
     latitude: poi.latitude ?? 0,
     longitude: poi.longitude ?? 0,
     category: poi.category,
     description: poi.description || poi.descriptionPoi || "",
+    city: poi.city || "", // Ensure city is string
     address: poi.address || "",
     website: poi.website || "",
     phone_number: poi.phoneNumber || "",
@@ -165,13 +163,13 @@ const mapPoi = (poi: ProtoPOIDetailedInfo): POIDetailedInfo => {
     tags: poi.tags || [],
     images: poi.images || [],
     llm_interaction_id: poi.llmInteractionId || "",
-    cuisine_type: poi.cuisineType,
-    star_rating: poi.starRating,
-    distance: poi.distance,
+    cuisine_type: poi.cuisineType || "",
+    star_rating: typeof poi.starRating === 'string' ? parseFloat(poi.starRating) : (poi.starRating || 0),
+    distance: poi.distance || 0,
     description_poi: poi.descriptionPoi || "",
     created_at:
-      poi.createdAt && typeof poi.createdAt.toDate === "function"
-        ? poi.createdAt.toDate().toISOString()
+      poi.createdAt && typeof (poi.createdAt as any).toDate === "function"
+        ? (poi.createdAt as any).toDate().toISOString()
         : undefined,
   };
 };
@@ -194,30 +192,28 @@ const mapRestaurant = (
   website: restaurant.website || "",
   phone_number:
     (restaurant as ProtoRestaurantDetailedInfo).phoneNumber ||
-    (restaurant as ProtoPOIDetailedInfo).phone_number ||
+    (restaurant as ProtoPOIDetailedInfo).phoneNumber ||
     "",
   opening_hours:
-    typeof (restaurant as ProtoRestaurantDetailedInfo).openingHours === "object"
-      ? JSON.stringify(
-        (restaurant as ProtoRestaurantDetailedInfo).openingHours,
-      )
-      : (restaurant as ProtoRestaurantDetailedInfo).openingHours ||
-      (restaurant as ProtoPOIDetailedInfo).opening_hours ||
-      "",
+    (typeof (restaurant as ProtoRestaurantDetailedInfo).openingHours === "object"
+      ? JSON.stringify((restaurant as ProtoRestaurantDetailedInfo).openingHours)
+      : typeof (restaurant as ProtoRestaurantDetailedInfo).openingHours === 'string'
+        ? (restaurant as ProtoRestaurantDetailedInfo).openingHours
+        : (restaurant as ProtoPOIDetailedInfo).openingHours || "") as string,
   price_level:
     (restaurant as ProtoRestaurantDetailedInfo).priceLevel ||
-    (restaurant as ProtoPOIDetailedInfo).price_level ||
+    (restaurant as ProtoPOIDetailedInfo).priceLevel ||
     "",
   cuisine_type:
     (restaurant as ProtoRestaurantDetailedInfo).cuisineType ||
-    (restaurant as ProtoPOIDetailedInfo).cuisine_type ||
+    (restaurant as ProtoPOIDetailedInfo).cuisineType ||
     "",
   tags: restaurant.tags || [],
   images: restaurant.images || [],
   rating: restaurant.rating ?? 0,
   llm_interaction_id:
     (restaurant as ProtoRestaurantDetailedInfo).llmInteractionId ||
-    (restaurant as ProtoPOIDetailedInfo).llm_interaction_id ||
+    (restaurant as ProtoPOIDetailedInfo).llmInteractionId ||
     "",
 });
 
@@ -242,7 +238,7 @@ const mapAiCityResponse = (
   if (!response) return undefined;
 
   const mappedItinerary =
-    mapItineraryResponse(response.itineraryResponse) || EMPTY_ITINERARY;
+    mapItineraryResponse(response.itineraryResponse) || (EMPTY_ITINERARY as unknown as AIItineraryResponse);
 
   const hotelsFromAccommodation =
     // @ts-expect-error: backend may return accommodationResponse
@@ -250,7 +246,7 @@ const mapAiCityResponse = (
     // Older snake_case variant
     // @ts-expect-error
     response.accommodation_response?.hotels?.map(mapPoi) ||
-    undefined;
+    [];
 
   const deriveLists = () => {
     const points =
@@ -278,13 +274,13 @@ const mapAiCityResponse = (
   const derived = deriveLists();
 
   return {
-    general_city_data: mapGeneralCityData(response.generalCityData),
+    general_city_data: mapGeneralCityData(response.generalCityData) as GeneralCityData || { city: '', country: '', state_province: '', description: '', center_latitude: 0, center_longitude: 0, population: '', area: '', timezone: '', language: '', weather: '', attractions: '', history: '' },
     points_of_interest: response.pointsOfInterest?.map(mapPoi) ?? [],
     itinerary_response: mappedItinerary,
     hotels: hotelsFromAccommodation || derived.hotels,
     restaurants: mappedItinerary.restaurants?.length
       ? mappedItinerary.restaurants
-      : derived.restaurants,
+      : derived.restaurants as unknown as RestaurantDetailedInfo[],
     bars: mappedItinerary.bars,
     session_id: response.sessionId,
   };
@@ -352,6 +348,9 @@ const buildChatStreamResponse = (
 
   if (response.domain === "accommodation") {
     // Check consolidated path first: itineraryResponse.pointsOfInterest
+    const _total_pois = response.updatedItinerary?.points_of_interest?.length || 0;
+    const _total_hotels = response.updatedItinerary?.hotels?.length || 0;
+    const _total_restaurants = response.updatedItinerary?.restaurants?.length || 0;
     const hotels =
       response.updatedItinerary?.hotels?.length
         ? response.updatedItinerary.hotels
@@ -570,7 +569,6 @@ export const StartChatStreamReal = async (
     create(ChatRequestSchema, {
       message: request.initialMessage || "",
       cityName: request.cityName || "",
-      contextType: toProtoDomainType(request.contextType),
     }),
   );
 
@@ -1063,7 +1061,7 @@ export const getUserChatSessions = async (
 
     // Check if it's the specific SQL error
     if (
-      error?.message?.includes("COALESCE types uuid and text cannot be matched")
+      (error as any)?.message?.includes("COALESCE types uuid and text cannot be matched")
     ) {
       console.warn(
         "🔧 Database type mismatch error detected - backend needs to fix COALESCE query",
@@ -1091,9 +1089,9 @@ const generateSessionTitle = (
     const {
       dominant_categories,
       complexity_score,
-      total_pois,
-      total_hotels,
-      total_restaurants,
+      total_pois: _total_pois,
+      total_hotels: _total_hotels,
+      total_restaurants: _total_restaurants,
     } = contentMetrics;
 
     // Generate title based on dominant categories

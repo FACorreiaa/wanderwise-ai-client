@@ -127,7 +127,7 @@ async function makeRequest<T>(
 const parseJwt = (token: string) => {
   try {
     return JSON.parse(atob(token.split('.')[1]));
-  } catch (e) {
+  } catch (_e) {
     return null;
   }
 };
@@ -289,13 +289,26 @@ export const authAPI = {
       throw new Error('Session invalid');
     }
 
+    // Fetch full profile from Legacy REST API to get username/display_name
+    // This is a hybrid approach until User Service is fully migrated to ConnectRPC
+    let fullProfile: any = {};
+    try {
+      fullProfile = await apiRequest('/user/profile');
+    } catch (e) {
+      console.warn('Failed to fetch full profile via REST, falling back to session data:', e);
+    }
+
     return {
-      id: session.user_id || '',
-      email: session.email || '',
-      username: session.username || session.email || '',
+      id: session.user_id || fullProfile.id || '',
+      email: session.email || fullProfile.email || '',
+      username: fullProfile.username || session.username || session.email || '',
+      display_name: fullProfile.username || session.username || '', // Use username as display name
+      firstname: fullProfile.first_name || '',
+      lastname: fullProfile.last_name || '',
+      profile_image_url: fullProfile.profile_image_url,
       is_active: true,
-      created_at: '',
-      updated_at: ''
+      created_at: fullProfile.created_at || '',
+      updated_at: fullProfile.updated_at || ''
     };
   }
 };
@@ -464,7 +477,7 @@ export const poiAPI = {
     return [];
   },
 
-  async addToFavorites(poiId: string) {
+  async addToFavorites(_poiId: string) {
     // return apiRequest<{ message: string }>('/pois/favourites', {
     //   method: 'POST',
     //   body: JSON.stringify({ poi_id: poiId }),
@@ -473,7 +486,7 @@ export const poiAPI = {
     return { message: 'Favorites API disabled' };
   },
 
-  async removeFromFavorites(poiId: string) {
+  async removeFromFavorites(_poiId: string) {
     // return apiRequest<{ message: string }>('/pois/favourites', {
     //   method: 'DELETE',
     //   body: JSON.stringify({ poi_id: poiId }),

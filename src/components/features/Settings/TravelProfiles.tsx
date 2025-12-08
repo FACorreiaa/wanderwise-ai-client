@@ -1,15 +1,15 @@
-import { createSignal, createEffect, For, Show } from 'solid-js';
-import { Plus, Edit3, Trash2, Save, X, Check, MapPin, Clock, DollarSign, Zap, Settings, Users, UtensilsCrossed, Bed, Calendar, Activity, Power } from 'lucide-solid';
-import { 
-  useSearchProfiles, 
-  useCreateSearchProfileMutation, 
-  useUpdateSearchProfileMutation, 
+import { createSignal, For, Show } from 'solid-js';
+import { Plus, Edit3, Trash2, Save, X, MapPin, Clock, DollarSign, Zap, Settings, UtensilsCrossed, Bed, Calendar, Activity, Power } from 'lucide-solid';
+import {
+  useSearchProfiles,
+  useCreateSearchProfileMutation,
+  useUpdateSearchProfileMutation,
   useDeleteSearchProfileMutation,
   useSetDefaultProfileMutation
 } from '~/lib/api/profiles';
 import { useTags } from '~/lib/api/tags';
 import { useInterests } from '~/lib/api/interests';
-import type { SearchProfile, TravelProfileFormData, AccommodationPreferences, DiningPreferences, ActivityPreferences, ItineraryPreferences } from '~/lib/api/types';
+import type { SearchProfile, TravelProfileFormData } from '~/lib/api/types';
 
 interface TravelProfilesProps {
   onNotification: (notification: { message: string; type: 'success' | 'error' }) => void;
@@ -19,7 +19,7 @@ export default function TravelProfiles(props: TravelProfilesProps) {
   const profilesQuery = useSearchProfiles();
   const tagsQuery = useTags();
   const interestsQuery = useInterests();
-  
+
   const createProfileMutation = useCreateSearchProfileMutation();
   const updateProfileMutation = useUpdateSearchProfileMutation();
   const deleteProfileMutation = useDeleteSearchProfileMutation();
@@ -28,7 +28,7 @@ export default function TravelProfiles(props: TravelProfilesProps) {
   const [editingProfile, setEditingProfile] = createSignal<string | null>(null);
   const [isCreating, setIsCreating] = createSignal(false);
   const [activeSection, setActiveSection] = createSignal<string>('basic');
-  
+
   const [formData, setFormData] = createSignal<TravelProfileFormData>({
     profile_name: '',
     is_default: false,
@@ -227,7 +227,7 @@ export default function TravelProfiles(props: TravelProfilesProps) {
         spontaneous_vs_planned: 'semi_planned'
       }
     });
-    
+
     setEditingProfile(profile.id);
     setActiveSection('basic');
 
@@ -243,25 +243,25 @@ export default function TravelProfiles(props: TravelProfilesProps) {
   const saveProfile = async () => {
     try {
       const data = formData();
-      
+
       if (editingProfile()) {
         // Update profile with all domain preferences in a single transaction
-        await updateProfileMutation.mutateAsync({ 
-          profileId: editingProfile()!, 
-          data 
+        await updateProfileMutation.mutateAsync({
+          profileId: editingProfile()!,
+          data
         });
         props.onNotification({ message: 'Profile updated successfully!', type: 'success' });
       } else {
         // Create new profile with all domain preferences
-        const newProfile = await createProfileMutation.mutateAsync(data);
+        const _newProfile = await createProfileMutation.mutateAsync(data);
         props.onNotification({ message: 'Profile created successfully!', type: 'success' });
       }
-      
+
       cancelEditing();
     } catch (error) {
-      props.onNotification({ 
-        message: error?.message || 'Failed to save profile', 
-        type: 'error' 
+      props.onNotification({
+        message: (error as any)?.message || 'Failed to save profile',
+        type: 'error'
       });
     }
   };
@@ -272,9 +272,9 @@ export default function TravelProfiles(props: TravelProfilesProps) {
         await deleteProfileMutation.mutateAsync(profileId);
         props.onNotification({ message: 'Profile deleted successfully!', type: 'success' });
       } catch (error) {
-        props.onNotification({ 
-          message: error?.message || 'Failed to delete profile', 
-          type: 'error' 
+        props.onNotification({
+          message: (error as any)?.message || 'Failed to delete profile',
+          type: 'error'
         });
       }
     }
@@ -285,9 +285,9 @@ export default function TravelProfiles(props: TravelProfilesProps) {
       await setDefaultProfileMutation.mutateAsync(profileId);
       props.onNotification({ message: `"${profileName}" set as default profile!`, type: 'success' });
     } catch (error) {
-      props.onNotification({ 
-        message: error?.message || 'Failed to set default profile', 
-        type: 'error' 
+      props.onNotification({
+        message: (error as any)?.message || 'Failed to set default profile',
+        type: 'error'
       });
     }
   };
@@ -300,7 +300,7 @@ export default function TravelProfiles(props: TravelProfilesProps) {
     setFormData(prev => ({
       ...prev,
       [section]: {
-        ...prev[section as keyof TravelProfileFormData],
+        ...(prev[section as keyof TravelProfileFormData] as unknown as object),
         [field]: value
       }
     }));
@@ -308,7 +308,7 @@ export default function TravelProfiles(props: TravelProfilesProps) {
 
   const toggleArrayValue = (field: string, value: string) => {
     const current = formData()[field as keyof TravelProfileFormData] as string[];
-    const updated = current.includes(value) 
+    const updated = current.includes(value)
       ? current.filter(v => v !== value)
       : [...current, value];
     updateField(field, updated);
@@ -316,7 +316,7 @@ export default function TravelProfiles(props: TravelProfilesProps) {
 
   const toggleNestedArrayValue = (section: string, field: string, value: string) => {
     const current = (formData()[section as keyof TravelProfileFormData] as any)?.[field] || [];
-    const updated = current.includes(value) 
+    const updated = current.includes(value)
       ? current.filter((v: string) => v !== value)
       : [...current, value];
     updateNestedField(section, field, updated);
@@ -463,11 +463,10 @@ export default function TravelProfiles(props: TravelProfilesProps) {
             {(tag) => (
               <button
                 onClick={() => toggleArrayValue('tags', tag.name)}
-                class={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${
-                  formData().tags.includes(tag.name)
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
+                class={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${formData().tags.includes(tag.name)
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
               >
                 {tag.name}
               </button>
@@ -483,11 +482,10 @@ export default function TravelProfiles(props: TravelProfilesProps) {
             {(interest) => (
               <button
                 onClick={() => toggleArrayValue('interests', interest.name)}
-                class={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${
-                  formData().interests.includes(interest.name)
-                    ? 'bg-green-600 text-white'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
+                class={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${formData().interests.includes(interest.name)
+                  ? 'bg-green-600 text-white'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
               >
                 {interest.name}
               </button>
@@ -507,11 +505,10 @@ export default function TravelProfiles(props: TravelProfilesProps) {
             {(type) => (
               <button
                 onClick={() => toggleNestedArrayValue('accommodation_preferences', 'accommodation_type', type)}
-                class={`px-3 py-1 rounded-full text-sm font-medium capitalize transition-colors ${
-                  formData().accommodation_preferences?.accommodation_type.includes(type)
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
+                class={`px-3 py-1 rounded-full text-sm font-medium capitalize transition-colors ${formData().accommodation_preferences?.accommodation_type.includes(type)
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
               >
                 {type}
               </button>
@@ -586,11 +583,10 @@ export default function TravelProfiles(props: TravelProfilesProps) {
             {(amenity) => (
               <button
                 onClick={() => toggleNestedArrayValue('accommodation_preferences', 'amenities', amenity)}
-                class={`px-3 py-1 rounded-full text-sm font-medium capitalize transition-colors ${
-                  formData().accommodation_preferences?.amenities.includes(amenity)
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
+                class={`px-3 py-1 rounded-full text-sm font-medium capitalize transition-colors ${formData().accommodation_preferences?.amenities.includes(amenity)
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
               >
                 {amenity.replace('_', ' ')}
               </button>
@@ -610,11 +606,10 @@ export default function TravelProfiles(props: TravelProfilesProps) {
             {(cuisine) => (
               <button
                 onClick={() => toggleNestedArrayValue('dining_preferences', 'cuisine_types', cuisine)}
-                class={`px-3 py-1 rounded-full text-sm font-medium capitalize transition-colors ${
-                  formData().dining_preferences?.cuisine_types.includes(cuisine)
-                    ? 'bg-green-600 text-white'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
+                class={`px-3 py-1 rounded-full text-sm font-medium capitalize transition-colors ${formData().dining_preferences?.cuisine_types.includes(cuisine)
+                  ? 'bg-green-600 text-white'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
               >
                 {cuisine.replace('_', ' ')}
               </button>
@@ -630,11 +625,10 @@ export default function TravelProfiles(props: TravelProfilesProps) {
             {(style) => (
               <button
                 onClick={() => toggleNestedArrayValue('dining_preferences', 'service_style', style)}
-                class={`px-3 py-1 rounded-full text-sm font-medium capitalize transition-colors ${
-                  formData().dining_preferences?.service_style.includes(style)
-                    ? 'bg-green-600 text-white'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
+                class={`px-3 py-1 rounded-full text-sm font-medium capitalize transition-colors ${formData().dining_preferences?.service_style.includes(style)
+                  ? 'bg-green-600 text-white'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
               >
                 {style.replace('_', ' ')}
               </button>
@@ -727,11 +721,10 @@ export default function TravelProfiles(props: TravelProfilesProps) {
             {(category) => (
               <button
                 onClick={() => toggleNestedArrayValue('activity_preferences', 'activity_categories', category)}
-                class={`px-3 py-1 rounded-full text-sm font-medium capitalize transition-colors ${
-                  formData().activity_preferences?.activity_categories.includes(category)
-                    ? 'bg-purple-600 text-white'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
+                class={`px-3 py-1 rounded-full text-sm font-medium capitalize transition-colors ${formData().activity_preferences?.activity_categories.includes(category)
+                  ? 'bg-purple-600 text-white'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
               >
                 {category.replace('_', ' ')}
               </button>
@@ -837,11 +830,10 @@ export default function TravelProfiles(props: TravelProfilesProps) {
             {(season) => (
               <button
                 onClick={() => toggleNestedArrayValue('itinerary_preferences', 'preferred_seasons', season)}
-                class={`px-3 py-1 rounded-full text-sm font-medium capitalize transition-colors ${
-                  formData().itinerary_preferences?.preferred_seasons.includes(season)
-                    ? 'bg-orange-600 text-white'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
+                class={`px-3 py-1 rounded-full text-sm font-medium capitalize transition-colors ${formData().itinerary_preferences?.preferred_seasons.includes(season)
+                  ? 'bg-orange-600 text-white'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
               >
                 {season}
               </button>
@@ -996,11 +988,10 @@ export default function TravelProfiles(props: TravelProfilesProps) {
                   return (
                     <button
                       onClick={() => setActiveSection(section.id)}
-                      class={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                        activeSection() === section.id
-                          ? 'bg-blue-600 dark:bg-blue-500 text-white'
-                          : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
-                      }`}
+                      class={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${activeSection() === section.id
+                        ? 'bg-blue-600 dark:bg-blue-500 text-white'
+                        : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                        }`}
                     >
                       <Icon class="w-4 h-4" />
                       {section.label}

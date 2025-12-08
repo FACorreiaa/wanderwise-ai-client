@@ -18,7 +18,7 @@ export const ChatFab: Component<ChatFabProps> = (props) => {
             </span>
 
             {/* Pulse effect */}
-            <span class="absolute inset-0 rounded-full bg-blue-500 opacity-20 group-hover:animate-ping -z-10"></span>
+            <span class="absolute inset-0 rounded-full bg-blue-500 opacity-20 group-hover:animate-ping -z-10" />
         </button>
     );
 };

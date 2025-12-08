@@ -23,7 +23,7 @@ export default function ActivitiesPage() {
 
   onMount(() => {
     if (!state.isConnected) {
-      startStream(message(), cityName(), "activities");
+      startStream(message(), cityName());
     }
   });
 

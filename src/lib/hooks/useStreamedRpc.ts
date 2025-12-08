@@ -2,13 +2,12 @@
 import { createStore } from "solid-js/store";
 import { createSignal, onCleanup } from "solid-js";
 import { chatService } from "@/lib/api";
-import { StreamEvent } from "@pb/loci/chat/v1/chat_pb";
-import { AiCityResponse } from "@/types/chat";
+import { AiCityResponse } from "~/lib/api/types";
 
 type StreamedRpcOptions = {
-  onData?: (data: AiCityResponse) => void;
+  onData?: (_: AiCityResponse) => void;
   onComplete?: () => void;
-  onError?: (error: Error) => void;
+  onError?: (_: Error) => void;
 };
 
 export function useStreamedRpc(
@@ -27,7 +26,7 @@ export function useStreamedRpc(
     isLoading: false,
   });
 
-  const [stream, setStream] = createSignal<AsyncIterable<StreamEvent> | null>(
+  const [, setStream] = createSignal<AsyncIterable<any> | null>(
     null
   );
 
@@ -43,7 +42,7 @@ export function useStreamedRpc(
       const stream = chatService.streamChat({
         message: message(),
         cityName: cityName(),
-        profileId: profileId(),
+        // profileId: profileId(), // Not supported by ChatRequest schema
       });
       setStream(stream);
       await readStream(stream);
@@ -57,7 +56,7 @@ export function useStreamedRpc(
     }
   };
 
-  const readStream = async (stream: AsyncIterable<StreamEvent>) => {
+  const readStream = async (stream: AsyncIterable<any>) => {
     for await (const event of stream) {
       switch (event.type) {
         case "itinerary":

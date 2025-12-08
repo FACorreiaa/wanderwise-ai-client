@@ -1,5 +1,5 @@
-import { createEffect, Show, For } from 'solid-js';
-import { MessageCircle, Bot, User, Loader2, CheckCircle } from 'lucide-solid';
+import { createEffect, Show } from 'solid-js';
+import { MessageCircle, Bot, Loader2, CheckCircle } from 'lucide-solid';
 import type { StreamingSession } from '~/lib/api/types';
 import { useChatRPC } from '~/lib/hooks/useChatRPC';
 
@@ -23,8 +23,7 @@ export default function StreamingChatDisplay(props: StreamingChatDisplayProps) {
       // We need to know what message to send.
       // In the previous flow, the session object might have held this or local storage.
       // Here we'll rely on a prop or default.
-      // Also need city/context from session if available.
-      startStream(initMsg, session.data?.city, session.domain as any);
+      startStream(initMsg, session.city);
     }
   });
 
@@ -56,7 +55,7 @@ export default function StreamingChatDisplay(props: StreamingChatDisplayProps) {
           </div>
           {/* Simple progress bar */}
           <div class="w-full bg-gray-200 rounded-full h-1.5 mt-2 dark:bg-gray-700">
-            <div class="bg-blue-600 h-1.5 rounded-full" style={{ width: `${state.progress}%` }}></div>
+            <div class="bg-blue-600 h-1.5 rounded-full" style={{ width: `${state.progress}%` }} />
           </div>
         </div>
       </Show>

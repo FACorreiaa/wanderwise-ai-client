@@ -1,6 +1,6 @@
-import { createSignal, For, Show, createEffect } from 'solid-js';
+import { createSignal, For, Show } from 'solid-js';
 import { useParams } from '@solidjs/router';
-import { Star, MapPin, Wifi, Car, Coffee, Dumbbell, Phone, Mail, Globe, Heart, Share2, Calendar, Users, ArrowLeft } from 'lucide-solid';
+import { Star, MapPin, Phone, Mail, Globe, Heart, Share2, Calendar, ArrowLeft } from 'lucide-solid';
 import { A } from '@solidjs/router';
 import { useHotelDetails } from '~/lib/api/hotels';
 
@@ -11,7 +11,7 @@ export default function HotelDetailPage() {
 
     // Use API hook to fetch hotel details
     const hotelQuery = useHotelDetails(params.id);
-    
+
     const hotel = () => hotelQuery.data;
 
     const tabs = [
@@ -100,7 +100,7 @@ export default function HotelDetailPage() {
                                         <div class="text-sm text-gray-600 dark:text-gray-400">per night</div>
                                     </div>
                                 </div>
-                                
+
                                 <div class="grid grid-cols-2 gap-4 mb-4 text-sm">
                                     <div>
                                         <span class="font-medium text-gray-900 dark:text-white">Size:</span>
@@ -142,14 +142,22 @@ export default function HotelDetailPage() {
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 <For each={hotel()?.amenities}>
                     {(amenity) => {
+                        if (typeof amenity === 'string') {
+                            return (
+                                <div class="flex items-center gap-3 p-3 rounded-lg bg-gray-50 dark:bg-gray-700 text-gray-500 dark:text-gray-400">
+                                    <span class="font-medium">{amenity}</span>
+                                </div>
+                            );
+                        }
                         const IconComponent = amenity.icon;
                         return (
-                            <div class={`flex items-center gap-3 p-3 rounded-lg ${
-                                amenity.available 
-                                    ? 'bg-green-50 dark:bg-green-900/20 text-green-800 dark:text-green-200' 
-                                    : 'bg-gray-50 dark:bg-gray-700 text-gray-500 dark:text-gray-400'
-                            }`}>
-                                <IconComponent class="w-5 h-5" />
+                            <div class={`flex items-center gap-3 p-3 rounded-lg ${amenity.available
+                                ? 'bg-green-50 dark:bg-green-900/20 text-green-800 dark:text-green-200'
+                                : 'bg-gray-50 dark:bg-gray-700 text-gray-500 dark:text-gray-400'
+                                }`}>
+                                <Show when={IconComponent}>
+                                    <IconComponent class="w-5 h-5" />
+                                </Show>
                                 <span class="font-medium">{amenity.name}</span>
                                 <Show when={!amenity.available}>
                                     <span class="text-xs">(Not Available)</span>
@@ -222,9 +230,11 @@ export default function HotelDetailPage() {
                                     🏨
                                 </div>
                                 <div class="grid grid-cols-3 gap-2 mt-2">
-                                    {Array.from({ length: 3 }).map((_, i) => (
-                                        <div class="aspect-video bg-white/70 dark:bg-slate-900/60 border border-white/60 dark:border-slate-800/70 rounded" />
-                                    ))}
+                                    <For each={Array.from({ length: 3 })}>
+                                        {() => (
+                                            <div class="aspect-video bg-white/70 dark:bg-slate-900/60 border border-white/60 dark:border-slate-800/70 rounded" />
+                                        )}
+                                    </For>
                                 </div>
                             </div>
 
@@ -233,16 +243,15 @@ export default function HotelDetailPage() {
                                 <div class="flex items-start justify-between mb-4">
                                     <div>
                                         <h1 class="text-3xl font-bold text-gray-900 dark:text-white">{hotel()?.name}</h1>
-                                        <p class="text-gray-600 dark:text-gray-400 mt-1">{hotel()?.category}</p>
+                                        <p class="text-gray-600 dark:text-gray-400 mt-1">{(hotel() as any)?.category}</p>
                                     </div>
                                     <div class="flex items-center gap-2">
                                         <button
                                             onClick={toggleFavorite}
-                                            class={`p-2 rounded-lg ${
-                                                isFavorite() 
-                                                    ? 'bg-red-100 dark:bg-red-900 text-red-600 dark:text-red-400' 
-                                                    : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400'
-                                            } hover:scale-110 transition-transform`}
+                                            class={`p-2 rounded-lg ${isFavorite()
+                                                ? 'bg-red-100 dark:bg-red-900 text-red-600 dark:text-red-400'
+                                                : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400'
+                                                } hover:scale-110 transition-transform`}
                                         >
                                             <Heart class={`w-5 h-5 ${isFavorite() ? 'fill-current' : ''}`} />
                                         </button>
@@ -276,13 +285,13 @@ export default function HotelDetailPage() {
                                 <div class="mb-6">
                                     <h3 class="font-semibold text-gray-900 dark:text-white mb-2">Popular Amenities</h3>
                                     <div class="flex flex-wrap gap-2">
-                                        <For each={hotel()?.amenities?.filter(a => a.available).slice(0, 4)}>
+                                        <For each={hotel()?.amenities?.filter(a => typeof a !== 'string' && a.available).slice(0, 4)}>
                                             {(amenity) => {
-                                                const IconComponent = amenity.icon;
+                                                const IconComponent = (amenity as any).icon;
                                                 return (
                                                     <div class="flex items-center gap-2 px-3 py-1 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded-full text-sm">
                                                         <IconComponent class="w-4 h-4" />
-                                                        {amenity.name}
+                                                        {(amenity as any).name}
                                                     </div>
                                                 );
                                             }}
@@ -312,11 +321,10 @@ export default function HotelDetailPage() {
                                 {(tab) => (
                                     <button
                                         onClick={() => setSelectedTab(tab.id)}
-                                        class={`py-4 px-1 border-b-2 font-medium text-sm whitespace-nowrap transition-colors ${
-                                            selectedTab() === tab.id
-                                                ? 'border-blue-500 text-blue-600 dark:text-blue-400'
-                                                : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
-                                        }`}
+                                        class={`py-4 px-1 border-b-2 font-medium text-sm whitespace-nowrap transition-colors ${selectedTab() === tab.id
+                                            ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                                            : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+                                            }`}
                                     >
                                         {tab.label}
                                     </button>

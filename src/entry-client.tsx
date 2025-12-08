@@ -1,4 +1,5 @@
 // @refresh reload
+/// <reference types="vite-plugin-pwa/client" />
 import { mount, StartClient } from "@solidjs/start/client";
 import { registerSW } from 'virtual:pwa-register';
 
@@ -15,11 +16,13 @@ if ('serviceWorker' in navigator) {
       console.log('App ready to work offline');
       // You could show a toast notification here
     },
-    onRegistered(r) {
+    onRegistered(r: any) {
       console.log('SW Registered: ' + r);
     },
-    onRegisterError(error) {
+    onRegisterError(error: any) {
       console.log('SW registration error', error);
     }
   });
 }
+
+export default function () { }

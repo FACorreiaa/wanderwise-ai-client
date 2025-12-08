@@ -1,22 +1,22 @@
-import { createSignal, For, Show, createEffect } from 'solid-js';
-import { Folder, Plus, Edit3, Trash2, Share2, Download, Eye, Lock, Globe, Users, MapPin, Calendar, Star, Heart, MoreHorizontal, Copy, ExternalLink, X } from 'lucide-solid';
+import { createSignal, For, Show } from 'solid-js';
+import { Folder, Plus, Edit3, Trash2, Share2, Lock, Globe, Users, Copy, X } from 'lucide-solid';
 import { useLists, useCreateListMutation, useUpdateListMutation, useDeleteListMutation } from '~/lib/api/lists';
+import type { ItineraryList } from '~/lib/api/types';
 
 export default function ListsPage() {
-    const [viewMode, setViewMode] = createSignal('grid'); // 'grid', 'list'
     const [activeTab, setActiveTab] = createSignal('my-lists'); // 'my-lists', 'shared', 'public'
-    const [selectedList, setSelectedList] = createSignal(null);
+    const [selectedList, setSelectedList] = createSignal<ItineraryList | null>(null);
     const [showCreateModal, setShowCreateModal] = createSignal(false);
     const [showEditModal, setShowEditModal] = createSignal(false);
     const [showDeleteModal, setShowDeleteModal] = createSignal(false);
-    
+
     // List form state
     const [listForm, setListForm] = createSignal({
         name: '',
         description: '',
         isPublic: false,
         allowCollaboration: false,
-        tags: []
+        tags: [] as string[]
     });
 
     // API hooks
@@ -35,6 +35,9 @@ export default function ListsPage() {
             description: "Contemporary art galleries and installations across major European cities.",
             itemCount: 12,
             isPublic: false,
+            allowCollaboration: true,
+            createdAt: "2024-01-01",
+            collaborators: ["Sarah Chen"],
             owner: "Sarah Chen",
             sharedWith: "You",
             tags: ["Art", "Galleries", "Contemporary"],
@@ -51,6 +54,9 @@ export default function ListsPage() {
             description: "The most photogenic locations in the City of Light, curated by a local photographer.",
             itemCount: 18,
             isPublic: true,
+            allowCollaboration: false,
+            createdAt: "2024-01-01",
+            collaborators: [],
             owner: "Photography Explorer",
             tags: ["Photography", "Paris", "Instagram"],
             cities: ["Paris"],
@@ -64,6 +70,9 @@ export default function ListsPage() {
             description: "WiFi-friendly cafes perfect for remote work across European cities.",
             itemCount: 45,
             isPublic: true,
+            allowCollaboration: false,
+            createdAt: "2024-01-01",
+            collaborators: [],
             owner: "Remote Worker Hub",
             tags: ["Digital Nomad", "Cafes", "Work"],
             cities: ["Multiple"],
@@ -82,15 +91,7 @@ export default function ListsPage() {
     const createList = async () => {
         try {
             await createListMutation.mutateAsync({
-                ...listForm(),
-                itemCount: 0,
-                owner: "You",
-                collaborators: [],
-                views: 0,
-                likes: 0,
-                cities: [],
-                coverImage: null,
-                recentItems: []
+                ...listForm()
             });
             setShowCreateModal(false);
             resetForm();
@@ -128,13 +129,11 @@ export default function ListsPage() {
         }
     };
 
-    const duplicateList = async (list) => {
+    const duplicateList = async (list: ItineraryList) => {
         try {
             await createListMutation.mutateAsync({
                 ...list,
                 name: `${list.name} (Copy)`,
-                views: 0,
-                likes: 0,
                 isPublic: false
             });
         } catch (error) {
@@ -152,7 +151,7 @@ export default function ListsPage() {
         });
     };
 
-    const openEditModal = (list) => {
+    const openEditModal = (list: ItineraryList) => {
         setSelectedList(list);
         setListForm({
             name: list.name,
@@ -164,19 +163,19 @@ export default function ListsPage() {
         setShowEditModal(true);
     };
 
-    const getVisibilityIcon = (list) => {
+    const getVisibilityIcon = (list: ItineraryList) => {
         if (list.isPublic) return Globe;
         if (list.allowCollaboration) return Users;
         return Lock;
     };
 
-    const getVisibilityLabel = (list) => {
+    const getVisibilityLabel = (list: ItineraryList) => {
         if (list.isPublic) return 'Public';
         if (list.allowCollaboration) return 'Collaborative';
         return 'Private';
     };
 
-    const getVisibilityColor = (list) => {
+    const getVisibilityColor = (list: ItineraryList) => {
         if (list.isPublic) return 'text-green-600 bg-green-50';
         if (list.allowCollaboration) return 'text-blue-600 bg-blue-50';
         return 'text-gray-600 bg-gray-50';
@@ -193,21 +192,21 @@ export default function ListsPage() {
         }
     };
 
-    const renderListCard = (list) => {
+    const renderListCard = (list: ItineraryList) => {
         const VisibilityIcon = getVisibilityIcon(list);
-        
+
         return (
             <div class="cb-card hover:shadow-lg transition-all duration-300 group">
                 {/* Cover Image Placeholder */}
                 <div class="relative h-32 bg-white/70 dark:bg-slate-900/60 border-b border-white/50 dark:border-slate-800/60 overflow-hidden">
                     <div class="absolute inset-0 flex items-center justify-center">
                         <div class="grid grid-cols-3 gap-1 opacity-30">
-                            {Array.from({ length: 9 }).map((_, i) => (
+                            <For each={Array.from({ length: 9 })}>{() => (
                                 <div class="w-4 h-4 bg-white rounded-sm" />
-                            ))}
+                            )}</For>
                         </div>
                     </div>
-                    
+
                     {/* Visibility badge */}
                     <div class="absolute top-3 left-3">
                         <span class={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${getVisibilityColor(list)}`}>
@@ -247,23 +246,7 @@ export default function ListsPage() {
                         </div>
                     </Show>
 
-                    {/* Stats overlay */}
-                    <div class="absolute bottom-3 right-3">
-                        <div class="flex items-center gap-2 text-xs">
-                            <Show when={list.views !== undefined}>
-                                <div class="flex items-center gap-1 bg-white/90 rounded-full px-2 py-1">
-                                    <Eye class="w-3 h-3" />
-                                    <span>{list.views}</span>
-                                </div>
-                            </Show>
-                            <Show when={list.likes !== undefined}>
-                                <div class="flex items-center gap-1 bg-white/90 rounded-full px-2 py-1">
-                                    <Heart class="w-3 h-3 text-red-500" />
-                                    <span>{list.likes}</span>
-                                </div>
-                            </Show>
-                        </div>
-                    </div>
+
                 </div>
 
                 {/* Content */}
@@ -279,32 +262,9 @@ export default function ListsPage() {
 
                     <p class="text-xs text-gray-600 mb-3 line-clamp-2">{list.description}</p>
 
-                    {/* Cities */}
-                    <Show when={list.cities?.length > 0}>
-                        <div class="flex items-center gap-1 text-xs text-gray-500 mb-3">
-                            <MapPin class="w-3 h-3" />
-                            <span class="truncate">
-                                {list.cities.length > 2 
-                                    ? `${list.cities.slice(0, 2).join(', ')} +${list.cities.length - 2} more`
-                                    : list.cities.join(', ')
-                                }
-                            </span>
-                        </div>
-                    </Show>
 
-                    {/* Recent items preview */}
-                    <Show when={list.recentItems?.length > 0}>
-                        <div class="mb-3">
-                            <div class="text-xs font-medium text-gray-700 mb-1">Recent additions:</div>
-                            <div class="space-y-1">
-                                <For each={list.recentItems.slice(0, 2)}>{item => (
-                                    <div class="text-xs text-gray-600 truncate">
-                                        • {item.name} {item.city && `(${item.city})`}
-                                    </div>
-                                )}</For>
-                            </div>
-                        </div>
-                    </Show>
+
+
 
                     {/* Tags */}
                     <div class="flex flex-wrap gap-1 mb-3">
@@ -336,7 +296,7 @@ export default function ListsPage() {
                         </div>
                     </div>
                 </div>
-            </div>
+            </div >
         );
     };
 
@@ -435,11 +395,10 @@ export default function ListsPage() {
                             {(tab) => (
                                 <button
                                     onClick={() => setActiveTab(tab.id)}
-                                    class={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
-                                        activeTab() === tab.id
-                                            ? 'border-blue-500 text-blue-600'
-                                            : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                                    }`}
+                                    class={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${activeTab() === tab.id
+                                        ? 'border-blue-500 text-blue-600'
+                                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                                        }`}
                                 >
                                     {tab.label} ({tab.count})
                                 </button>
@@ -587,7 +546,7 @@ export default function ListsPage() {
                                 </div>
                             </div>
                             <p class="text-gray-700 mb-6">
-                                Are you sure you want to delete "<strong>{selectedList()?.name}</strong>"? 
+                                Are you sure you want to delete "<strong>{selectedList()?.name}</strong>"?
                                 All {selectedList()?.itemCount} places in this list will be removed.
                             </p>
                             <div class="flex items-center justify-end gap-3">

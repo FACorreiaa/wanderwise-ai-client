@@ -1,5 +1,5 @@
-import { createSignal, For, Show, createEffect } from 'solid-js';
-import { BarChart3, Users, MapPin, MessageCircle, Star, Settings, Activity, AlertTriangle, TrendingUp, Eye, Search, Filter, Plus, Download, RefreshCw, CheckCircle, XCircle, Clock, Shield, Database } from 'lucide-solid';
+import { createSignal, For } from 'solid-js';
+import { BarChart3, Users, MapPin, MessageCircle, Star, Settings, AlertTriangle, Download, RefreshCw } from 'lucide-solid';
 
 export default function AdminDashboard() {
     const [activeTab, setActiveTab] = createSignal('overview');
@@ -138,7 +138,7 @@ export default function AdminDashboard() {
     };
 
     const getActivityIcon = (type: any) => {
-        const icons = {
+        const icons: Record<string, string> = {
             'user_registration': '👤',
             'poi_flagged': '🚩',
             'review_flagged': '⚠️',
@@ -148,8 +148,8 @@ export default function AdminDashboard() {
         return icons[type] || '📝';
     };
 
-    const getActivityColor = (severity) => {
-        const colors = {
+    const getActivityColor = (severity: string) => {
+        const colors: Record<string, string> = {
             'info': 'text-blue-600 bg-blue-50',
             'success': 'text-green-600 bg-green-50',
             'warning': 'text-yellow-600 bg-yellow-50',
@@ -158,8 +158,8 @@ export default function AdminDashboard() {
         return colors[severity] || 'text-gray-600 bg-gray-50';
     };
 
-    const getPriorityColor = (priority) => {
-        const colors = {
+    const getPriorityColor = (priority: string) => {
+        const colors: Record<string, string> = {
             'high': 'text-red-600 bg-red-50',
             'medium': 'text-yellow-600 bg-yellow-50',
             'low': 'text-green-600 bg-green-50'
@@ -167,7 +167,7 @@ export default function AdminDashboard() {
         return colors[priority] || 'text-gray-600 bg-gray-50';
     };
 
-    const formatTimestamp = (timestamp) => {
+    const formatTimestamp = (timestamp: string) => {
         return new Date(timestamp).toLocaleString();
     };
 
@@ -360,8 +360,8 @@ export default function AdminDashboard() {
                                                 <span>{item.reportCount} reports</span>
                                                 <span>Created {formatTimestamp(item.createdAt)}</span>
                                                 <span class={`px-2 py-1 rounded-full text-xs ${item.status === 'pending' ? 'bg-yellow-100 text-yellow-700' :
-                                                        item.status === 'investigating' ? 'bg-blue-100 text-blue-700' :
-                                                            'bg-gray-100 text-gray-700'
+                                                    item.status === 'investigating' ? 'bg-blue-100 text-blue-700' :
+                                                        'bg-gray-100 text-gray-700'
                                                     }`}>
                                                     {item.status}
                                                 </span>
@@ -457,8 +457,8 @@ export default function AdminDashboard() {
                                                 <button
                                                     onClick={() => setActiveTab(tab.id)}
                                                     class={`w-full flex items-center gap-3 px-3 py-2 text-left rounded-lg transition-colors ${activeTab() === tab.id
-                                                            ? 'bg-blue-600 text-white'
-                                                            : 'text-gray-700 hover:bg-gray-100'
+                                                        ? 'bg-blue-600 text-white'
+                                                        : 'text-gray-700 hover:bg-gray-100'
                                                         }`}
                                                 >
                                                     <Icon class="w-5 h-5" />

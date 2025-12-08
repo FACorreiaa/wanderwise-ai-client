@@ -1,7 +1,7 @@
 import { createSignal, createMemo, Show } from "solid-js";
 import { useSearchParams } from "@solidjs/router";
 import { useStreamedRpc } from "@/lib/hooks/useStreamedRpc";
-import { POIDetailedInfo } from "@/types/chat";
+import { POIDetailedInfo } from "~/lib/api/types";
 import ItineraryResults from "@/components/results/ItineraryResults";
 import MapComponent from "@/components/features/Map/Map";
 import SplitView from "@/components/layout/SplitView";

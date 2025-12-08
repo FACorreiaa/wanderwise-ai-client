@@ -4,26 +4,7 @@ import { apiRequest, queryKeys } from './shared';
 import type { POI, POIDetailedInfo } from './types';
 import { createResource } from 'solid-js';
 
-// Normalize different favorites response shapes to a plain POI array
-const normalizeFavoritesResponse = (response: unknown): POI[] => {
-  if (Array.isArray(response)) return response;
-  if (response && typeof response === 'object') {
-    const obj = response as Record<string, unknown>;
-    const candidates = [
-      obj.favorites,
-      obj.favorite_pois,
-      obj.data,
-      obj.results,
-    ];
 
-    for (const candidate of candidates) {
-      if (Array.isArray(candidate)) {
-        return candidate as POI[];
-      }
-    }
-  }
-  return [];
-};
 
 // ===============
 // POI QUERIES
@@ -207,7 +188,7 @@ export function useNearbyPOIs(
       //const filters = filtersFn();
       // Serialize filters to detect content changes, use 'no-filters' if undefined
       //const filtersKey = filters ? JSON.stringify(filters) : 'no-filters';
-      return [lat, lon, radiusMeters];
+      return [lat, lon, radiusMeters] as [number, number, number];
     },
     async ([lat, lon, radiusMeters]: [number, number, number]) => {
       // Parse filters back to an object, or undefined if not present

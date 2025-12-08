@@ -1,14 +1,13 @@
-import { Component, createSignal, Show, For, onMount } from 'solid-js';
+import { Component, createSignal, Show, For } from 'solid-js';
 import { useNavigate } from '@solidjs/router';
-import { 
-  Send, Loader2, MapPin, Bookmark, Clock, Star, 
-  Calendar, Users, TrendingUp, Heart, Coffee, 
-  Camera, Globe, ChevronRight, Sparkles, Plus,
-  Map, List, Settings
+import {
+  Send, Loader2, MapPin, Bookmark, Star,
+  TrendingUp, Heart, Coffee, Calendar,
+  Camera, Globe, ChevronRight, Sparkles, Settings
 } from 'lucide-solid';
 import { sendUnifiedChatMessageStream, detectDomain, domainToContextType } from '~/lib/api/llm';
 import { streamingService, createStreamingSession, getDomainRoute } from '~/lib/streaming-service';
-import type { StreamingSession } from '~/lib/api/types';
+import type { StreamingSession, AiCityResponse } from '~/lib/api/types';
 import { useUserLocation } from '~/contexts/LocationContext';
 import { useDefaultSearchProfile } from '~/lib/api/profiles';
 import { useAuth } from '~/contexts/AuthContext';
@@ -18,7 +17,7 @@ import ProfileQuickSelect from './ProfileQuickSelect';
 
 interface QuickAction {
   id: string;
-  icon: Component;
+  icon: Component<{ class?: string }>;
   title: string;
   subtitle: string;
   prompt: string;
@@ -40,15 +39,23 @@ export default function LoggedInDashboard() {
   const [currentMessage, setCurrentMessage] = createSignal('');
   const [isLoading, setIsLoading] = createSignal(false);
   const [streamProgress, setStreamProgress] = createSignal('');
-  const [streamingSession, setStreamingSession] = createSignal<StreamingSession | null>(null);
+  const [_streamingSession, setStreamingSession] = createSignal<StreamingSession | null>(null);
   const [isQuickSettingsOpen, setIsQuickSettingsOpen] = createSignal(false);
 
-  const { userLocation } = useUserLocation();
+  const { userLocation } = useUserLocation() as any;
   const userLatitude = userLocation()?.latitude || 38.7223;
   const userLongitude = userLocation()?.longitude || -9.1393;
 
   // Get default search profile
   const defaultProfileQuery = useDefaultSearchProfile();
+
+  // ... (lines 51-180 preserved) ...
+  /* 
+    NOTE: This block replaces lines 1-51 and 180-200. 
+    But wait, replace_file_content replaces a CONTIGUOUS block.
+    I cannot replace two separate blocks in one call. Use multi_replace_file_content.
+  */
+
   const profileId = () => defaultProfileQuery.data?.id;
 
   // Get user statistics (only if user is authenticated)
@@ -185,8 +192,12 @@ export default function LoggedInDashboard() {
         onProgress: (updatedSession) => {
           setStreamingSession(updatedSession);
           const domain = updatedSession.domain;
-          if (updatedSession.data.general_city_data) {
-            setStreamProgress(`Found information about ${updatedSession.data.general_city_data.city}...`);
+
+          // Type guard or assertion for general_city_data
+          const cityData = (updatedSession.data as Partial<AiCityResponse>)?.general_city_data;
+
+          if (cityData) {
+            setStreamProgress(`Found information about ${cityData.city}...`);
           } else if (domain === 'accommodation') {
             setStreamProgress('Finding hotels...');
           } else if (domain === 'dining') {
@@ -381,7 +392,7 @@ export default function LoggedInDashboard() {
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          
+
           {/* Quick Actions */}
           <div class="lg:col-span-2">
             <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-4">Quick Discoveries</h2>
@@ -531,11 +542,11 @@ export default function LoggedInDashboard() {
           </div>
         </div>
       </div>
-      
+
       {/* Quick Settings Modal */}
-      <QuickSettingsModal 
-        isOpen={isQuickSettingsOpen()} 
-        onClose={() => setIsQuickSettingsOpen(false)} 
+      <QuickSettingsModal
+        isOpen={isQuickSettingsOpen()}
+        onClose={() => setIsQuickSettingsOpen(false)}
       />
     </div>
   );

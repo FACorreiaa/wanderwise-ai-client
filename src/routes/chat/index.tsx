@@ -1,52 +1,37 @@
-import { createSignal, createEffect, For, Show, onMount } from "solid-js";
-import { useNavigate } from "@solidjs/router";
+import { createSignal, For, Show, onMount } from "solid-js";
 import {
   MessageCircle,
   Send,
   Bot,
   User,
   MapPin,
-  Clock,
-  Star,
   Heart,
-  Download,
   Share2,
-  Copy,
-  Trash2,
   Plus,
   Loader2,
   Sparkles,
-  Globe,
-  Calendar,
-  Users,
   ChevronDown,
   ChevronUp,
 } from "lucide-solid";
 import {
   sendUnifiedChatMessageStream,
   detectDomain,
-  getUserChatSessions,
   useGetChatSessionsQuery,
-  ContinueChatStream,
   domainToContextType,
 } from "~/lib/api/llm";
 import {
   streamingService,
   createStreamingSession,
-  getDomainRoute,
 } from "~/lib/streaming-service";
 import type {
-  StreamingSession,
   DomainType,
-  UnifiedChatResponse,
-} from "~/lib/api/types";
+}
+  from "~/lib/api/types";
 import { useUserLocation } from "~/contexts/LocationContext";
-import {
-  HotelResults,
-  RestaurantResults,
-  ActivityResults,
-  ItineraryResults,
-} from "~/components/results";
+import HotelResults from "~/components/results/HotelResults";
+import RestaurantResults from "~/components/results/RestaurantResults";
+import ActivityResults from "~/components/results/ActivityResults";
+import ItineraryResults from "~/components/results/ItineraryResults";
 import DetailedItemModal from "~/components/DetailedItemModal";
 import { useQuery, useQueryClient } from "@tanstack/solid-query";
 import { useDefaultSearchProfile } from "~/lib/api/profiles";
@@ -54,25 +39,22 @@ import { TypingAnimation } from "~/components/TypingAnimation";
 import { API_BASE_URL } from "~/lib/api/shared";
 
 export default function ChatPage() {
-  const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const [messages, setMessages] = createSignal([]);
+  const [messages, setMessages] = createSignal<any[]>([]);
   const [currentMessage, setCurrentMessage] = createSignal("");
   const [isLoading, setIsLoading] = createSignal(false);
-  const [sessionId, setSessionId] = createSignal(null);
+  const [sessionId, setSessionId] = createSignal<string | null>(null);
   const [activeProfile, setActiveProfile] = createSignal("Solo Explorer");
   const [showProfileSelector, setShowProfileSelector] = createSignal(false);
-  const [generatedItinerary, setGeneratedItinerary] = createSignal(null);
-  const [chatSessions, setChatSessions] = createSignal([]);
   const [selectedSession, setSelectedSession] = createSignal(null);
-  const [streamingSession, setStreamingSession] = createSignal(null);
+  const [streamingSession, setStreamingSession] = createSignal<any>(null);
   const [streamProgress, setStreamProgress] = createSignal("");
-  const [expandedResults, setExpandedResults] = createSignal(new Set());
+  const [expandedResults, setExpandedResults] = createSignal<Set<string>>(new Set());
   const [selectedItem, setSelectedItem] = createSignal(null);
   const [showDetailModal, setShowDetailModal] = createSignal(false);
   const [localSessionsVersion, setLocalSessionsVersion] = createSignal(0);
 
-  const { userLocation } = useUserLocation();
+  const { userLocation } = useUserLocation() as any;
   const userLatitude = userLocation()?.latitude || 38.7223;
   const userLongitude = userLocation()?.longitude || -9.1393;
 
@@ -113,7 +95,7 @@ export default function ChatPage() {
         // Remove local sessions that might be duplicated in API
         const apiSessionIds = new Set(apiSessions.map((s) => s.id));
         const uniqueLocalSessions = localSessions.filter(
-          (s) => !apiSessionIds.has(s.id),
+          (s: any) => !apiSessionIds.has(s.id),
         );
         console.log("🔄 Merging API and local sessions");
         console.log(
@@ -239,7 +221,7 @@ export default function ChatPage() {
       // For chat page, always start a new session (no session restoration)
       // This ensures each visit to /chat creates a fresh conversation
       console.log("🆕 Starting fresh chat session for message:", messageContent);
-      
+
       // Always start new session for chat page
       await startNewSession(messageContent);
     } catch (error) {
@@ -301,7 +283,7 @@ export default function ChatPage() {
 
         // Update progress message based on domain and progress
         const domain = updatedSession.domain;
-        if (updatedSession.data.general_city_data) {
+        if ('general_city_data' in updatedSession.data && updatedSession.data.general_city_data) {
           setStreamProgress(
             `Found information about ${updatedSession.data.general_city_data.city}...`,
           );
@@ -350,15 +332,15 @@ export default function ChatPage() {
             const sessionSummary = {
               id: completedSession.sessionId,
               title:
-                completedSession.data.itinerary_response?.itinerary_name ||
+                (completedSession.data as any).itinerary_response?.itinerary_name ||
                 `Trip to ${completedSession.city}` ||
                 "New Conversation",
               preview: `Created an itinerary for ${completedSession.city || "your destination"}`,
               timestamp: new Date().toISOString(),
               messageCount: 2, // Initial user message + response
               hasItinerary: !!(
-                completedSession.data.points_of_interest ||
-                completedSession.data.itinerary_response
+                (completedSession.data as any).points_of_interest ||
+                (completedSession.data as any).itinerary_response
               ),
               cityName: completedSession.city,
               isLocal: true, // Mark as locally stored
@@ -453,248 +435,6 @@ export default function ChatPage() {
     });
   };
 
-  // Function to continue an existing session
-  const continueExistingSession = async (
-    messageContent: string,
-    sessionId: string,
-  ) => {
-    setStreamProgress("Continuing conversation...");
-
-    const domain =
-      streamingSession()?.domain || detectDomain(messageContent);
-    const response = await ContinueChatStream({
-      sessionId,
-      message: messageContent,
-      cityName: streamingSession()?.city,
-      contextType: domainToContextType(domain),
-    });
-
-    // Handle Server-Sent Events (SSE) streaming response
-    const reader = response.body?.getReader();
-    if (!reader) {
-      throw new Error("Response body is not readable");
-    }
-
-    const decoder = new TextDecoder();
-    let assistantMessage = "";
-    let isComplete = false;
-    let updatedData = null;
-
-    try {
-      while (!isComplete) {
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        const chunk = decoder.decode(value, { stream: true });
-        const lines = chunk.split("\n");
-
-        for (const line of lines) {
-          if (line.startsWith("data: ")) {
-            try {
-              const eventData = JSON.parse(line.slice(6));
-              console.log("Continue session - received SSE event:", eventData);
-
-              // Handle different event types
-              switch (eventData.Type || eventData.type) {
-                case "progress":
-                  const progressData = eventData.Data || eventData.data;
-                  console.log("Progress:", progressData);
-                  if (typeof progressData === "string") {
-                    setStreamProgress(progressData);
-                  }
-                  break;
-
-                case "itinerary":
-                  // This is the key event - update the itinerary data
-                  const itineraryData = eventData.Data || eventData.data;
-                  const message = eventData.Message || eventData.message;
-
-                  console.log("Received itinerary update:", itineraryData);
-                  console.log("Itinerary message:", message);
-
-                  if (itineraryData) {
-                    setStreamProgress("Updating your itinerary...");
-
-                    // *** INTELLIGENT DATA HANDLING FOR SESSION CONTINUATION ***
-                    console.log("🔄 Processing itinerary update...");
-                    console.log(
-                      "New itinerary data from server:",
-                      itineraryData,
-                    );
-
-                    // For session continuation, the server should return the COMPLETE updated data
-                    // We should NOT merge with old client-side data to avoid duplicates
-                    // The server maintains the session state and returns the full updated itinerary
-
-                    updatedData = itineraryData; // Use server data as-is (it's already complete)
-
-                    const currentSession = streamingSession();
-                    if (currentSession) {
-                      setStreamingSession({
-                        ...currentSession,
-                        data: itineraryData, // Replace with fresh server data
-                      });
-                    }
-
-                    console.log(
-                      "✅ Updated session with fresh server data:",
-                      itineraryData,
-                    );
-                  }
-
-                  // Use the message from the server if available
-                  if (message) {
-                    assistantMessage += message + " ";
-                  } else {
-                    assistantMessage +=
-                      "Your request has been processed successfully. ";
-                  }
-                  break;
-
-                case "complete":
-                  isComplete = true;
-                  const completeMessage =
-                    eventData.Message || eventData.message;
-                  if (
-                    completeMessage &&
-                    completeMessage !== "Turn completed."
-                  ) {
-                    assistantMessage += completeMessage;
-                  }
-                  console.log("Continue session - streaming complete");
-                  break;
-
-                case "error":
-                  const errorMessage =
-                    eventData.Error ||
-                    eventData.error ||
-                    "Unknown error occurred";
-                  console.error(
-                    "🚨 Continue session - received error event:",
-                    errorMessage,
-                  );
-                  throw new Error(errorMessage);
-
-                default:
-                  // Handle other event types or partial responses
-                  if (eventData.Message || eventData.message) {
-                    assistantMessage += eventData.Message || eventData.message;
-                  }
-                  console.log(
-                    "Continue session - unhandled event type:",
-                    eventData.Type || eventData.type,
-                    eventData,
-                  );
-                  break;
-              }
-            } catch (parseError) {
-              console.warn(
-                "Failed to parse continue session SSE data:",
-                line,
-                parseError,
-              );
-            }
-          }
-        }
-      }
-    } finally {
-      reader.releaseLock();
-    }
-
-    // Complete the loading state
-    setIsLoading(false);
-    setStreamProgress("");
-
-    // Add final assistant response to chat history with merged data
-    const finalStreamingData = (() => {
-      const base = updatedData || streamingSession()?.data;
-      if (!base) return null;
-
-      const mergedPOIs =
-        base.points_of_interest?.length
-          ? base.points_of_interest
-          : base.itinerary_response?.points_of_interest || [];
-      const mergedRestaurants =
-        base.restaurants?.length
-          ? base.restaurants
-          : base.itinerary_response?.restaurants || [];
-      const mergedHotels =
-        base.hotels?.length
-          ? base.hotels
-          : base.itinerary_response?.points_of_interest?.filter((poi: any) =>
-              (poi.category || "").toLowerCase().includes("hotel"),
-            ) || [];
-      const mergedActivities =
-        base.activities?.length
-          ? base.activities
-          : base.itinerary_response?.points_of_interest || [];
-
-      return {
-        ...base,
-        points_of_interest: mergedPOIs,
-        restaurants: mergedRestaurants,
-        hotels: mergedHotels,
-        activities: mergedActivities,
-      };
-    })();
-
-    const hasResults = !!(
-      finalStreamingData &&
-      (finalStreamingData.points_of_interest?.length > 0 ||
-        finalStreamingData.itinerary_response?.points_of_interest?.length > 0 ||
-        finalStreamingData.restaurants?.length > 0 ||
-        finalStreamingData.activities?.length > 0 ||
-        finalStreamingData.hotels?.length > 0)
-    );
-
-    console.log("🎯 Final response data check:", {
-      updatedData,
-      streamingSessionData: streamingSession()?.data,
-      finalStreamingData,
-      hasResults,
-    });
-
-    if (assistantMessage.trim()) {
-      const finalMessage = {
-        id: `msg-${Date.now()}-continue-response`,
-        type: "assistant",
-        content: assistantMessage.trim(),
-        timestamp: new Date(),
-        hasItinerary: hasResults,
-        streamingData: finalStreamingData,
-        showResults: hasResults,
-      };
-      setMessages((prev) => [...prev, finalMessage]);
-    } else {
-      // If no specific message, provide a generic success message
-      const successMessage = {
-        id: `msg-${Date.now()}-continue-success`,
-        type: "assistant",
-        content: "Your request has been processed and added to your itinerary.",
-        timestamp: new Date(),
-        hasItinerary: hasResults,
-        streamingData: finalStreamingData,
-        showResults: hasResults,
-      };
-      setMessages((prev) => [...prev, successMessage]);
-    }
-
-    // Update session storage with merged data
-    if (finalStreamingData && streamingSession()) {
-      const updatedSession = {
-        ...streamingSession(),
-        data: finalStreamingData,
-      };
-      sessionStorage.setItem(
-        "completedStreamingSession",
-        JSON.stringify(updatedSession),
-      );
-      console.log(
-        "💾 Updated session storage with merged data:",
-        updatedSession,
-      );
-    }
-  };
 
   const getCompletionMessage = (domain: DomainType, city?: string) => {
     const cityText = city ? `for ${city}` : "";
@@ -713,21 +453,21 @@ export default function ChatPage() {
     }
   };
 
-  const handleKeyPress = (e) => {
+  const handleKeyPress = (e: KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       sendMessage();
     }
   };
 
-  const useQuickPrompt = (prompt) => {
+  const useQuickPrompt = (prompt: any) => {
     setCurrentMessage(prompt.text);
     sendMessage();
   };
 
-  const toggleResultExpansion = (messageId) => {
+  const toggleResultExpansion = (messageId: string) => {
     setExpandedResults((prev) => {
-      const newSet = new Set(prev);
+      const newSet = new Set<string>(prev);
       if (newSet.has(messageId)) {
         newSet.delete(messageId);
       } else {
@@ -737,7 +477,7 @@ export default function ChatPage() {
     });
   };
 
-  const handleItemClick = (item, type) => {
+  const handleItemClick = (item: any, type: string) => {
     console.log("Opening modal for item:", item.name, "type:", type);
     setSelectedItem({
       ...item,
@@ -752,8 +492,8 @@ export default function ChatPage() {
   };
 
   const renderStreamingResults = (
-    streamingData,
-    messageId,
+    streamingData: any,
+    messageId: string,
     compact = false,
   ) => {
     const isExpanded = expandedResults().has(messageId);
@@ -768,7 +508,7 @@ export default function ChatPage() {
             showToggle={false}
             initialLimit={3}
             limit={actualCompact ? 3 : undefined}
-            onItemClick={(hotel) => handleItemClick(hotel, "hotel")}
+            onItemClick={(hotel: any) => handleItemClick(hotel, "hotel")}
           />
         </Show>
         <Show
@@ -782,7 +522,7 @@ export default function ChatPage() {
             showToggle={false}
             initialLimit={3}
             limit={actualCompact ? 3 : undefined}
-            onItemClick={(restaurant) =>
+            onItemClick={(restaurant: any) =>
               handleItemClick(restaurant, "restaurant")
             }
           />
@@ -796,82 +536,56 @@ export default function ChatPage() {
             showToggle={false}
             initialLimit={3}
             limit={actualCompact ? 3 : undefined}
-            onItemClick={(activity) => handleItemClick(activity, "activity")}
+            onItemClick={(activity: any) => handleItemClick(activity, "activity")}
           />
         </Show>
         {(() => {
           const itineraryPOIs =
             streamingData.points_of_interest?.length
               ? streamingData.points_of_interest
-              : streamingData.itinerary_response?.points_of_interest || [];
+              : (streamingData as any).itinerary_response?.points_of_interest || [];
           return (
             <Show when={itineraryPOIs.length > 0}>
               <ItineraryResults
                 pois={itineraryPOIs}
-                itinerary={streamingData.itinerary_response}
+                itinerary={(streamingData as any).itinerary_response}
                 compact={actualCompact}
                 showToggle={false}
                 initialLimit={5}
                 limit={actualCompact ? 5 : undefined}
-                onItemClick={(poi) => handleItemClick(poi, "poi")}
+                onItemClick={(poi: any) => handleItemClick(poi, "poi")}
               />
             </Show>
           );
         })()}
-        <Show
-          when={
-            streamingData.itinerary_response &&
-            !(
-              streamingData.points_of_interest?.length ||
-              streamingData.itinerary_response?.points_of_interest?.length
-            )
-          }
-        >
+
+        {/* Render generated itinerary if strict structure exists */}
+        <Show when={(streamingData as any).itinerary_response}>
           <ItineraryResults
-            itinerary={streamingData.itinerary_response}
+            itinerary={(streamingData as any).itinerary_response}
             compact={actualCompact}
             showToggle={false}
             initialLimit={5}
             limit={actualCompact ? 5 : undefined}
-            onItemClick={(poi) => handleItemClick(poi, "poi")}
+            onItemClick={(poi: any) => handleItemClick(poi, "poi")}
           />
         </Show>
-        <Show
-          when={
-            streamingData.itinerary_response &&
-            !streamingData.points_of_interest
-          }
-        >
+        {/* Fallback visualizer for generic points_of_interest if no itinerary response */}
+        <Show when={!(streamingData as any).itinerary_response && streamingData.points_of_interest && streamingData.points_of_interest.length > 0 && !streamingData.hotels && !streamingData.restaurants && !streamingData.activities}>
           <ItineraryResults
-            itinerary={streamingData.itinerary_response}
+            pois={streamingData.points_of_interest}
             compact={actualCompact}
             showToggle={false}
             initialLimit={5}
             limit={actualCompact ? 5 : undefined}
-            onItemClick={(poi) => handleItemClick(poi, "poi")}
+            onItemClick={(poi: any) => handleItemClick(poi, "poi")}
           />
         </Show>
       </div>
     );
   };
 
-  const saveItinerary = () => {
-    if (!generatedItinerary()) return;
-    // Implement save functionality
-    console.log("Saving itinerary:", generatedItinerary());
-  };
 
-  const shareItinerary = () => {
-    if (!generatedItinerary()) return;
-    // Implement share functionality
-    console.log("Sharing itinerary:", generatedItinerary());
-  };
-
-  const downloadItinerary = () => {
-    if (!generatedItinerary()) return;
-    // Implement download functionality
-    console.log("Downloading itinerary:", generatedItinerary());
-  };
 
   const newChat = () => {
     console.log("🔥 Starting new chat - clearing all session data");
@@ -885,12 +599,11 @@ export default function ChatPage() {
         hasItinerary: false,
       },
     ]);
-    setGeneratedItinerary(null);
     setSessionId(null); // Clear session ID to start fresh
     setSelectedSession(null);
     setStreamingSession(null); // Clear streaming session
     setStreamProgress("");
-    setExpandedResults(new Set()); // Clear expanded results
+    setExpandedResults(new Set<string>()); // Clear expanded results
 
     // Clear all session storage to prevent cache issues and data bleed between city searches
     sessionStorage.removeItem("currentStreamingSession");
@@ -902,15 +615,14 @@ export default function ChatPage() {
     console.log("✅ All session data cleared");
   };
 
-  const loadSession = async (session) => {
+  const loadSession = async (session: any) => {
     console.log("📂 Loading chat session:", session);
 
     // Clear current session state first
     setSelectedSession(session);
     setMessages([]); // Clear existing messages
     setCurrentMessage("");
-    setGeneratedItinerary(null);
-    setExpandedResults(new Set());
+    setExpandedResults(new Set<string>());
 
     // Clear old session storage
     sessionStorage.removeItem("currentStreamingSession");
@@ -923,7 +635,7 @@ export default function ChatPage() {
       // Try to get detailed session data
       // First, try to find the session in our existing sessions list
       const allSessions = sessions();
-      const fullSession = allSessions.find((s) => s.id === session.id);
+      const fullSession = allSessions.find((s: any) => s.id === session.id);
 
       let sessionData;
       if (fullSession && fullSession.conversationHistory) {
@@ -980,15 +692,15 @@ export default function ChatPage() {
         sessionData.conversation_history.length > 0
       ) {
         conversationMessages = sessionData.conversation_history.map(
-          (msg, index) => ({
+          (msg: any, index: any) => ({
             id: `session-${session.id}-msg-${index}`,
             type: msg.role === "user" ? "user" : "assistant",
             content: msg.content || msg.message || "No content available",
             timestamp: new Date(
               msg.timestamp ||
-                msg.created_at ||
-                sessionData.updated_at ||
-                sessionData.timestamp,
+              msg.created_at ||
+              sessionData.updated_at ||
+              sessionData.timestamp,
             ),
             hasItinerary:
               msg.role === "assistant" && (msg.data || msg.streaming_data)
@@ -1031,7 +743,7 @@ export default function ChatPage() {
 
       // If there's session data from the last assistant message, restore it
       const lastAssistantMessage = sessionData.conversation_history
-        ?.filter((msg) => msg.role === "assistant" && msg.data)
+        ?.filter((msg: any) => msg.role === "assistant" && msg.data)
         ?.pop();
 
       if (lastAssistantMessage?.data) {
@@ -1097,7 +809,7 @@ export default function ChatPage() {
     }
   };
 
-  const formatTimestamp = (timestamp) => {
+  const formatTimestamp = (timestamp: any) => {
     return new Date(timestamp).toLocaleString([], {
       month: "short",
       day: "numeric",
@@ -1181,7 +893,7 @@ export default function ChatPage() {
 
         // Generic fallback for other JSON
         return "I've prepared some personalized recommendations for you! Check out the details below.";
-      } catch (e) {
+      } catch {
         // If JSON parsing fails, check if we can extract some meaning
         const lowerContent = cleanedContent.toLowerCase();
 
@@ -1219,7 +931,7 @@ export default function ChatPage() {
     return content;
   };
 
-  const renderMessage = (message) => (
+  const renderMessage = (message: any) => (
     <div
       class={`flex gap-2 sm:gap-3 ${message.type === "user" ? "justify-end" : "justify-start"}`}
     >
@@ -1233,198 +945,103 @@ export default function ChatPage() {
         class={`max-w-[85%] sm:max-w-[70%] ${message.type === "user" ? "order-1" : ""}`}
       >
         <div
-          class={`rounded-2xl px-3 py-2 sm:px-4 sm:py-3 ${
-            message.type === "user"
-              ? "bg-blue-600 text-white"
-              : message.type === "error"
-                ? "bg-red-50 dark:bg-red-900/20 text-red-800 dark:text-red-200 border border-red-200 dark:border-red-800"
-                : "bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200"
-          }`}
+          class={`rounded-2xl px-3 py-2 sm:px-4 sm:py-3 ${message.type === "user"
+            ? "bg-blue-600 text-white"
+            : message.type === "error"
+              ? "bg-red-50 dark:bg-red-900/20 text-red-800 dark:text-red-200 border border-red-200 dark:border-red-800"
+              : "bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200"
+            }`}
         >
-          <p class="text-sm whitespace-pre-wrap">
+          <div class="text-sm whitespace-pre-wrap">
             <TypingAnimation text={formatMessageContent(message.content)} />
-          </p>
+          </div>
         </div>
 
-        {/* Streaming data preview - Mobile First */}
-        <Show
-          when={
-            message.hasItinerary && (message.itinerary || message.streamingData)
-          }
-        >
+        {/* Streaming data preview */}
+        <Show when={message.streamingData}>
           <div class="mt-2 sm:mt-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 sm:p-4">
-            <Show
-              when={message.streamingData}
-              fallback={
-                // Legacy itinerary display
-                <div>
-                  <div class="flex items-center justify-between mb-3">
-                    <div>
-                      <h4 class="font-semibold text-gray-900 dark:text-white">
-                        {message.itinerary?.title}
-                      </h4>
-                      <p class="text-sm text-gray-600 dark:text-gray-300">
-                        {message.itinerary?.duration} •{" "}
-                        {message.itinerary?.places?.length} places
-                      </p>
-                    </div>
-                    <div class="flex items-center gap-2">
-                      <button
-                        onClick={saveItinerary}
-                        class="p-2 text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg"
-                        title="Save itinerary"
-                      >
-                        <Heart class="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={shareItinerary}
-                        class="p-2 text-gray-600 dark:text-gray-300 hover:text-green-600 dark:hover:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg"
-                        title="Share itinerary"
-                      >
-                        <Share2 class="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={downloadItinerary}
-                        class="p-2 text-gray-600 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20 rounded-lg"
-                        title="Download itinerary"
-                      >
-                        <Download class="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
+            {/* Header section */}
+            <Show when={message.streamingData.general_city_data}>
+              <div class="flex items-center justify-between mb-2 sm:mb-3">
+                <div class="min-w-0 flex-1 pr-2">
+                  <h4 class="font-semibold text-gray-900 dark:text-white text-sm sm:text-base truncate">
+                    {(() => {
+                      const rawName =
+                        message.streamingData.itinerary_response?.itinerary_name;
+                      if (!rawName)
+                        return `${message.streamingData.general_city_data.city} Guide`;
 
-                  <div class="space-y-2">
-                    <For each={message.itinerary?.places?.slice(0, 3)}>
-                      {(place) => (
-                        <div class="flex items-center gap-3 p-2 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                          <div
-                            class={`w-6 h-6 rounded-full ${place.priority === 1 ? "bg-red-500" : "bg-blue-500"} flex items-center justify-center text-white text-xs`}
-                          >
-                            {place.priority}
-                          </div>
-                          <div class="flex-1 min-w-0">
-                            <p class="text-sm font-medium text-gray-900 dark:text-white truncate">
-                              {place.name}
-                            </p>
-                            <p class="text-xs text-gray-500 dark:text-gray-400">
-                              {place.category} • {place.timeToSpend}
-                            </p>
-                          </div>
-                          <div class="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
-                            <Star class="w-3 h-3 text-yellow-500 dark:text-yellow-400 fill-current" />
-                            <span>{place.rating}</span>
-                          </div>
-                        </div>
-                      )}
-                    </For>
-
-                    <Show when={message.itinerary?.places?.length > 3}>
-                      <p class="text-xs text-gray-500 dark:text-gray-400 text-center py-2">
-                        +{message.itinerary.places.length - 3} more places
-                      </p>
-                    </Show>
-                  </div>
-
-                  <button class="w-full mt-3 cb-button cb-button-primary py-2 text-sm">
-                    View Full Itinerary
-                  </button>
-                </div>
-              }
-            >
-              {/* New streaming data display with expandable results */}
-              <div>
-                {/* Header section */}
-                <Show when={message.streamingData.general_city_data}>
-                  <div class="flex items-center justify-between mb-2 sm:mb-3">
-                    <div class="min-w-0 flex-1 pr-2">
-                      <h4 class="font-semibold text-gray-900 dark:text-white text-sm sm:text-base truncate">
-                        {(() => {
-                          const rawName =
-                            message.streamingData.itinerary_response
-                              ?.itinerary_name;
-                          if (!rawName)
-                            return `${message.streamingData.general_city_data.city} Guide`;
-
-                          // Handle case where itinerary_name might be a JSON string or object
-                          if (
-                            typeof rawName === "string" &&
-                            rawName.startsWith("{")
-                          ) {
-                            try {
-                              const parsed = JSON.parse(rawName);
-                              return (
-                                parsed.itinerary_name ||
-                                parsed.name ||
-                                `${message.streamingData.general_city_data.city} Guide`
-                              );
-                            } catch (e) {
-                              console.warn(
-                                "Failed to parse itinerary name JSON in chat:",
-                                e,
-                              );
-                              return `${message.streamingData.general_city_data.city} Guide`;
-                            }
-                          } else if (
-                            typeof rawName === "object" &&
-                            rawName?.itinerary_name
-                          ) {
-                            return rawName.itinerary_name;
-                          }
-
+                      // Handle case where itinerary_name might be a JSON string or object
+                      if (typeof rawName === "string" && rawName.startsWith("{")) {
+                        try {
+                          const parsed = JSON.parse(rawName);
                           return (
-                            rawName ||
+                            parsed.itinerary_name ||
+                            parsed.name ||
                             `${message.streamingData.general_city_data.city} Guide`
                           );
-                        })()}
-                      </h4>
-                      <p class="text-xs sm:text-sm text-gray-600 dark:text-gray-300 truncate">
-                        {message.streamingData.general_city_data.city},{" "}
-                        {message.streamingData.general_city_data.country}
-                      </p>
-                    </div>
-                    <div class="flex items-center gap-1 sm:gap-2 flex-shrink-0">
-                      <button
-                        class="p-1.5 sm:p-2 text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg"
-                        title="Save"
-                      >
-                        <Heart class="w-3 h-3 sm:w-4 sm:h-4" />
-                      </button>
-                      <button
-                        class="p-1.5 sm:p-2 text-gray-600 dark:text-gray-300 hover:text-green-600 dark:hover:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg"
-                        title="Share"
-                      >
-                        <Share2 class="w-3 h-3 sm:w-4 sm:h-4" />
-                      </button>
-                    </div>
-                  </div>
-                </Show>
+                        } catch (e) {
+                          console.warn(
+                            "Failed to parse itinerary name JSON in chat:",
+                            e,
+                          );
+                          return `${message.streamingData.general_city_data.city} Guide`;
+                        }
+                      } else if (
+                        typeof rawName === "object" &&
+                        rawName?.itinerary_name
+                      ) {
+                        return rawName.itinerary_name;
+                      }
 
-                {/* Compact results preview */}
-                {renderStreamingResults(
-                  message.streamingData,
-                  message.id,
-                  true,
-                )}
-
-                {/* Expand/Collapse button - Mobile First */}
-                <Show when={message.showResults}>
+                      return (
+                        rawName ||
+                        `${message.streamingData.general_city_data.city} Guide`
+                      );
+                    })()}
+                  </h4>
+                  <p class="text-xs sm:text-sm text-gray-600 dark:text-gray-300 truncate">
+                    {message.streamingData.general_city_data.city},{" "}
+                    {message.streamingData.general_city_data.country}
+                  </p>
+                </div>
+                <div class="flex items-center gap-1 sm:gap-2 flex-shrink-0">
                   <button
-                    class="w-full mt-2 sm:mt-3 flex items-center justify-center gap-1 sm:gap-2 py-2 text-xs sm:text-sm text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-700 transition-colors"
-                    onClick={() => toggleResultExpansion(message.id)}
+                    class="p-1.5 sm:p-2 text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg"
+                    title="Save"
                   >
-                    <span>
-                      {expandedResults().has(message.id)
-                        ? "Show Less"
-                        : "Show All Details"}
-                    </span>
-                    {expandedResults().has(message.id) ? (
-                      <ChevronUp class="w-3 h-3 sm:w-4 sm:h-4" />
-                    ) : (
-                      <ChevronDown class="w-3 h-3 sm:w-4 sm:h-4" />
-                    )}
+                    <Heart class="w-3 h-3 sm:w-4 sm:h-4" />
                   </button>
-                </Show>
+                  <button
+                    class="p-1.5 sm:p-2 text-gray-600 dark:text-gray-300 hover:text-green-600 dark:hover:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg"
+                    title="Share"
+                  >
+                    <Share2 class="w-3 h-3 sm:w-4 sm:h-4" />
+                  </button>
+                </div>
               </div>
+            </Show>
+
+            {/* Compact results preview */}
+            {renderStreamingResults(message.streamingData, message.id, true)}
+
+            {/* Expand/Collapse button */}
+            <Show when={message.showResults}>
+              <button
+                class="w-full mt-2 sm:mt-3 flex items-center justify-center gap-1 sm:gap-2 py-2 text-xs sm:text-sm text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-700 transition-colors"
+                onClick={() => toggleResultExpansion(message.id)}
+              >
+                <span>
+                  {expandedResults().has(message.id)
+                    ? "Show Less"
+                    : "Show All Details"}
+                </span>
+                {expandedResults().has(message.id) ? (
+                  <ChevronUp class="w-3 h-3 sm:w-4 sm:h-4" />
+                ) : (
+                  <ChevronDown class="w-3 h-3 sm:w-4 sm:h-4" />
+                )}
+              </button>
             </Show>
           </div>
         </Show>
@@ -1491,11 +1108,10 @@ export default function ChatPage() {
                         setActiveProfile(profile.name);
                         setShowProfileSelector(false);
                       }}
-                      class={`w-full flex items-center gap-2 sm:gap-3 p-2 sm:p-3 hover:bg-gray-50 dark:hover:bg-gray-700 dark:bg-gray-700 transition-colors first:rounded-t-lg last:rounded-b-lg ${
-                        activeProfile() === profile.name
-                          ? "bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400"
-                          : "text-gray-700 dark:text-gray-300"
-                      }`}
+                      class={`w-full flex items-center gap-2 sm:gap-3 p-2 sm:p-3 hover:bg-gray-50 dark:hover:bg-gray-700 dark:bg-gray-700 transition-colors first:rounded-t-lg last:rounded-b-lg ${activeProfile() === profile.name
+                        ? "bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400"
+                        : "text-gray-700 dark:text-gray-300"
+                        }`}
                     >
                       <span class="text-base sm:text-lg">{profile.icon}</span>
                       <div class="flex-1 text-left min-w-0">
@@ -1586,11 +1202,10 @@ export default function ChatPage() {
                     <button
                       onClick={() => loadSession(session)}
                       disabled={isLoading()}
-                      class={`w-full text-left p-2 sm:p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
-                        selectedSession()?.id === session.id
-                          ? "bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700"
-                          : "border border-transparent"
-                      }`}
+                      class={`w-full text-left p-2 sm:p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${(selectedSession() as any)?.id === session.id
+                        ? "bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700"
+                        : "border border-transparent"
+                        }`}
                     >
                       <div class="flex items-start justify-between mb-1">
                         <div class="flex-1 min-w-0">
@@ -1652,17 +1267,16 @@ export default function ChatPage() {
                           {/* Engagement level indicator */}
                           <Show when={session.engagementMetrics}>
                             <div
-                              class={`w-2 h-2 rounded-full ${
-                                session.engagementMetrics!.engagement_level ===
+                              class={`w-2 h-2 rounded-full ${session.engagementMetrics!.engagement_level ===
                                 "high"
-                                  ? "bg-green-500"
-                                  : session.engagementMetrics!
-                                        .engagement_level === "medium"
-                                    ? "bg-yellow-500"
-                                    : "bg-gray-400"
-                              }`}
+                                ? "bg-green-500"
+                                : session.engagementMetrics!
+                                  .engagement_level === "medium"
+                                  ? "bg-yellow-500"
+                                  : "bg-gray-400"
+                                }`}
                               title={`${session.engagementMetrics!.engagement_level} engagement`}
-                             />
+                            />
                           </Show>
                           {/* Complexity score indicator */}
                           <Show
@@ -1674,7 +1288,7 @@ export default function ChatPage() {
                             <div
                               class="w-1.5 h-1.5 bg-blue-500 rounded-full"
                               title="Complex session"
-                             />
+                            />
                           </Show>
                         </div>
                       </div>
@@ -1691,7 +1305,7 @@ export default function ChatPage() {
                             when={
                               session.performanceMetrics &&
                               session.performanceMetrics.avg_response_time_ms >
-                                0
+                              0
                             }
                           >
                             <span

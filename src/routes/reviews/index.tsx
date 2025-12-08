@@ -1,7 +1,34 @@
-import { createSignal, createEffect, For, Show } from 'solid-js';
-import { Star, Filter, Search, ThumbsUp, Camera, MapPin, Calendar, Users, Plus, SortAsc, SortDesc, Eye } from 'lucide-solid';
+import { createSignal, For, Show } from 'solid-js';
+import { Star, Search, MapPin, Plus, SortAsc, SortDesc } from 'lucide-solid';
 import ReviewCard from '~/components/ReviewCard';
 import ReviewForm from '~/components/ReviewForm';
+
+interface Place {
+    id: string;
+    name: string;
+    location: string;
+}
+
+interface Review {
+    id: string;
+    userId: string;
+    userName: string;
+    userAvatar?: string;
+    poiId: string;
+    poiName: string;
+    rating: number;
+    title: string;
+    content: string;
+    date: string;
+    visitDate: string;
+    helpful: number;
+    notHelpful: number;
+    verified: boolean;
+    photos: string[];
+    location: string;
+    travelType: string;
+    userReaction: 'helpful' | 'not-helpful' | null;
+}
 
 export default function ReviewsPage() {
     const [activeTab, setActiveTab] = createSignal('all'); // 'all', 'my-reviews', 'places'
@@ -11,15 +38,15 @@ export default function ReviewsPage() {
     const [sortBy, setSortBy] = createSignal('recent'); // 'recent', 'helpful', 'rating'
     const [sortOrder, setSortOrder] = createSignal('desc');
     const [showReviewForm, setShowReviewForm] = createSignal(false);
-    const [selectedPlace, setSelectedPlace] = createSignal(null);
+    const [selectedPlace, setSelectedPlace] = createSignal<Place | null>(null);
 
     // Sample reviews data
-    const [reviews, setReviews] = createSignal([
+    const [reviews, setReviews] = createSignal<Review[]>([
         {
             id: 'rev-1',
             userId: 'user-1',
             userName: 'Sarah Chen',
-            userAvatar: null,
+
             poiId: 'poi-1',
             poiName: 'Livraria Lello',
             rating: 5,
@@ -39,7 +66,7 @@ export default function ReviewsPage() {
             id: 'rev-2',
             userId: 'user-2',
             userName: 'Marco Silva',
-            userAvatar: null,
+
             poiId: 'poi-2',
             poiName: 'Ponte Luís I',
             rating: 4,
@@ -59,7 +86,7 @@ export default function ReviewsPage() {
             id: 'rev-3',
             userId: 'user-3',
             userName: 'Emma Johnson',
-            userAvatar: null,
+
             poiId: 'poi-3',
             poiName: 'Cais da Ribeira',
             rating: 5,
@@ -79,7 +106,7 @@ export default function ReviewsPage() {
             id: 'rev-4',
             userId: 'user-4',
             userName: 'David Park',
-            userAvatar: null,
+
             poiId: 'poi-1',
             poiName: 'Livraria Lello',
             rating: 3,
@@ -97,12 +124,12 @@ export default function ReviewsPage() {
         }
     ]);
 
-    const [myReviews] = createSignal([
+    const [myReviews] = createSignal<Review[]>([
         {
             id: 'my-rev-1',
             userId: 'current-user',
             userName: 'You',
-            userAvatar: null,
+
             poiId: 'poi-4',
             poiName: 'Jardins do Palácio de Cristal',
             rating: 4,
@@ -120,7 +147,7 @@ export default function ReviewsPage() {
         }
     ]);
 
-    const ratingFilters = [
+    const ratingFilters = () => [
         { value: 'all', label: 'All Ratings', count: reviews().length },
         { value: '5', label: '5 Stars', count: 2 },
         { value: '4', label: '4 Stars', count: 1 },
@@ -144,7 +171,7 @@ export default function ReviewsPage() {
         { value: 'rating', label: 'Highest Rating' }
     ];
 
-    const tabs = [
+    const tabs = () => [
         { id: 'all', label: 'All Reviews', count: reviews().length },
         { id: 'my-reviews', label: 'My Reviews', count: myReviews().length },
         { id: 'places', label: 'Places to Review', count: 3 }
@@ -152,7 +179,7 @@ export default function ReviewsPage() {
 
     // Filter and sort reviews
     const filteredReviews = () => {
-        let filtered = activeTab() === 'my-reviews' ? myReviews() : reviews();
+        let filtered = [...(activeTab() === 'my-reviews' ? myReviews() : reviews())];
 
         // Search filter
         if (searchQuery()) {
@@ -176,9 +203,12 @@ export default function ReviewsPage() {
         }
 
         // Sort
+        const currentSortBy = sortBy();
+        const currentSortOrder = sortOrder();
+
         filtered.sort((a, b) => {
             let aVal, bVal;
-            switch (sortBy()) {
+            switch (currentSortBy) {
                 case 'helpful':
                     aVal = a.helpful;
                     bVal = b.helpful;
@@ -194,7 +224,7 @@ export default function ReviewsPage() {
                     break;
             }
 
-            if (sortOrder() === 'asc') {
+            if (currentSortOrder === 'asc') {
                 return aVal > bVal ? 1 : -1;
             } else {
                 return aVal < bVal ? 1 : -1;
@@ -204,7 +234,7 @@ export default function ReviewsPage() {
         return filtered;
     };
 
-    const handleReaction = (reviewId, reaction) => {
+    const handleReaction = (reviewId: string, reaction: 'helpful' | 'not-helpful') => {
         setReviews(prev => prev.map(review => {
             if (review.id === reviewId) {
                 const currentReaction = review.userReaction;
@@ -216,7 +246,7 @@ export default function ReviewsPage() {
                 if (currentReaction === 'not-helpful') newNotHelpful--;
 
                 // Add new reaction if different
-                let newReaction = null;
+                let newReaction: 'helpful' | 'not-helpful' | null = null;
                 if (currentReaction !== reaction) {
                     newReaction = reaction;
                     if (reaction === 'helpful') newHelpful++;
@@ -234,13 +264,13 @@ export default function ReviewsPage() {
         }));
     };
 
-    const handleSubmitReview = async (reviewData) => {
+    const handleSubmitReview = async (reviewData: any) => {
         // Simulate API call
         const newReview = {
             id: `rev-${Date.now()}`,
             userId: 'current-user',
             userName: 'You',
-            userAvatar: null,
+            //userAvatar: undefined,
             poiId: reviewData.poiId,
             poiName: selectedPlace()?.name || 'Unknown Place',
             rating: reviewData.rating,
@@ -333,15 +363,14 @@ export default function ReviewsPage() {
             <div class="bg-white border-b border-gray-200">
                 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div class="flex space-x-8">
-                        <For each={tabs}>
+                        <For each={tabs()}>
                             {(tab) => (
                                 <button
                                     onClick={() => setActiveTab(tab.id)}
-                                    class={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
-                                        activeTab() === tab.id
-                                            ? 'border-blue-500 text-blue-600'
-                                            : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                                    }`}
+                                    class={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${activeTab() === tab.id
+                                        ? 'border-blue-500 text-blue-600'
+                                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                                        }`}
                                 >
                                     {tab.label} ({tab.count})
                                 </button>
@@ -374,7 +403,7 @@ export default function ReviewsPage() {
                                 onChange={(e) => setSelectedRating(e.target.value)}
                                 class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                             >
-                                <For each={ratingFilters}>
+                                <For each={ratingFilters()}>
                                     {(filter) => (
                                         <option value={filter.value}>
                                             {filter.label} {filter.count !== undefined && `(${filter.count})`}
@@ -433,7 +462,7 @@ export default function ReviewsPage() {
                                 <Star class="w-12 h-12 text-gray-300 mx-auto mb-4" />
                                 <h3 class="text-lg font-semibold text-gray-900 mb-2">No reviews found</h3>
                                 <p class="text-gray-600 mb-4">
-                                    {activeTab() === 'my-reviews' 
+                                    {activeTab() === 'my-reviews'
                                         ? "You haven't written any reviews yet"
                                         : "No reviews match your current filters"
                                     }

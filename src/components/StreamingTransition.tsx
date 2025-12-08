@@ -1,6 +1,6 @@
-import { createSignal, createEffect, Show } from 'solid-js';
+import { createSignal, createEffect, Show, For } from 'solid-js';
 import { useNavigate } from '@solidjs/router';
-import { ArrowRight, MapPin, Clock, Sparkles } from 'lucide-solid';
+import { ArrowRight, MapPin, Sparkles } from 'lucide-solid';
 import StreamingChatDisplay from './StreamingChatDisplay';
 import type { StreamingSession } from '~/lib/api/types';
 import { getDomainRoute } from '~/lib/streaming-service';
@@ -30,7 +30,7 @@ export default function StreamingTransition(props: StreamingTransitionProps) {
     console.log('Chat complete, received data:', data);
     setPreviewData(data);
     setTransitionPhase('preview');
-    
+
     // Auto-navigate after showing preview
     setTimeout(() => {
       navigateToResults(data);
@@ -39,13 +39,13 @@ export default function StreamingTransition(props: StreamingTransitionProps) {
 
   const navigateToResults = (data: any) => {
     setTransitionPhase('navigating');
-    
+
     const session = props.session();
     if (!session) return;
 
     // Determine the route based on domain and data
     const route = getDomainRoute(session.domain);
-    
+
     // Store the streaming data for the destination page
     sessionStorage.setItem('completedStreamingSession', JSON.stringify({
       sessionId: session.sessionId,
@@ -56,12 +56,12 @@ export default function StreamingTransition(props: StreamingTransitionProps) {
 
     // Navigate after a short delay for smooth transition
     setTimeout(() => {
-      navigate(route, { 
-        state: { 
+      navigate(route, {
+        state: {
           streamingData: data,
           sessionId: session.sessionId,
-          fromChat: true 
-        } 
+          fromChat: true
+        }
       });
       setShowTransition(false);
       if (props.onClose) props.onClose();
@@ -81,7 +81,7 @@ export default function StreamingTransition(props: StreamingTransitionProps) {
           description: 'Perfect stays tailored to your preferences and budget',
           items: data.hotels?.slice(0, 3).map((hotel: any) => hotel.name) || []
         };
-      
+
       case 'dining':
         return {
           title: '🍽️ Delicious Discoveries!',
@@ -89,7 +89,7 @@ export default function StreamingTransition(props: StreamingTransitionProps) {
           description: 'From local gems to fine dining experiences',
           items: data.restaurants?.slice(0, 3).map((restaurant: any) => restaurant.name) || []
         };
-      
+
       case 'activities':
         return {
           title: '🎯 Exciting Activities!',
@@ -97,7 +97,7 @@ export default function StreamingTransition(props: StreamingTransitionProps) {
           description: 'Adventures and attractions just for you',
           items: data.activities?.slice(0, 3).map((activity: any) => activity.name) || []
         };
-      
+
       case 'itinerary':
       case 'general':
         return {
@@ -106,7 +106,7 @@ export default function StreamingTransition(props: StreamingTransitionProps) {
           description: data.itinerary_response?.overall_description || 'A perfectly crafted travel plan',
           items: data.points_of_interest?.slice(0, 3).map((poi: any) => poi.name) || []
         };
-      
+
       default:
         return {
           title: '🌟 Planning Complete!',
@@ -137,12 +137,14 @@ export default function StreamingTransition(props: StreamingTransitionProps) {
           {/* Preview items */}
           <Show when={preview.items.length > 0}>
             <div class="space-y-2 mb-6">
-              {preview.items.map((item: string, index: number) => (
-                <div class="flex items-center gap-2 text-sm text-gray-700 bg-white/60 rounded-lg px-3 py-2">
-                  <MapPin class="w-4 h-4 text-blue-500" />
-                  <span>{item}</span>
-                </div>
-              ))}
+              <For each={preview.items}>
+                {(item) => (
+                  <div class="flex items-center gap-2 text-sm text-gray-700 bg-white/60 rounded-lg px-3 py-2">
+                    <MapPin class="w-4 h-4 text-blue-500" />
+                    <span>{item}</span>
+                  </div>
+                )}
+              </For>
             </div>
           </Show>
 
@@ -171,7 +173,7 @@ export default function StreamingTransition(props: StreamingTransitionProps) {
       <div class={`fixed inset-0 z-50 ${props.fullScreen ? '' : 'bg-black/50 flex items-center justify-center'}`}>
         <div class={`${props.fullScreen ? 'h-full w-full' : 'w-full max-w-2xl h-[600px] bg-white rounded-xl shadow-2xl overflow-hidden'}`}>
           <Show when={transitionPhase() === 'chat'}>
-            <StreamingChatDisplay 
+            <StreamingChatDisplay
               session={props.session}
               onComplete={handleChatComplete}
               class="h-full"

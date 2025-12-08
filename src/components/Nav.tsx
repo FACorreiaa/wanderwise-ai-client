@@ -6,7 +6,6 @@ import { Menu, X, User, Settings, LogOut, MessageCircle, Heart, List, MapPin, Cl
 import { createSignal, For, Show, onMount, onCleanup } from "solid-js";
 import { ImageRoot, ImageFallback, Image } from "@/ui/image";
 import { useAuth } from "~/contexts/AuthContext";
-import { useTheme } from "~/contexts/ThemeContext";
 import PWAInstall from "~/components/PWAInstall";
 import ThemeSelector from "~/components/ThemeSelector";
 
@@ -31,7 +30,6 @@ const authNavigationItems = [
 
 export default function Nav() {
   const { isAuthenticated, user, logout, isLoading } = useAuth();
-  const { isDark, toggleTheme } = useTheme();
   const location = useLocation();
   const [isMenuOpen, setIsMenuOpen] = createSignal(false);
   const [showUserMenu, setShowUserMenu] = createSignal(false);
@@ -122,7 +120,7 @@ export default function Nav() {
                       >
                         <IconComponent class="w-4 h-4" />
                         {item.name}
-                        <Show when={item.experimental}>
+                        <Show when={(item as any).experimental}>
                           <Badge variant="secondary" class="ml-1 bg-orange-100 dark:bg-orange-900 text-orange-800 dark:text-orange-300 border border-orange-300 dark:border-orange-700 text-xs px-1.5 py-0.5">
                             Experimental
                           </Badge>
@@ -267,7 +265,7 @@ export default function Nav() {
                           <IconComponent class="w-5 h-5" />
                           <div class="flex items-center gap-2">
                             {item.name}
-                            <Show when={item.experimental}>
+                            <Show when={(item as any).experimental}>
                               <Badge variant="secondary" class="bg-orange-100/20 text-orange-200 text-xs px-1.5 py-0.5">
                                 Experimental
                               </Badge>

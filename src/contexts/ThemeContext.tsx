@@ -34,7 +34,8 @@ export const ThemeProvider = (props: ThemeProviderProps) => {
     const saved = localStorage.getItem('theme');
     const savedDesignTheme = localStorage.getItem('designTheme') as DesignTheme || 'default';
     const systemPreference = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    
+
+    // Sync state with what the blocking script likely did
     if (saved === 'dark' || (!saved && systemPreference)) {
       setIsDark(true);
     } else if (saved === 'light') {
@@ -42,7 +43,8 @@ export const ThemeProvider = (props: ThemeProviderProps) => {
     }
 
     setDesignThemeSignal(savedDesignTheme);
-    
+    setInitialized(true);
+
     // Listen for system theme changes
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
     const handleSystemThemeChange = (e: MediaQueryListEvent) => {
@@ -51,23 +53,27 @@ export const ThemeProvider = (props: ThemeProviderProps) => {
         setIsDark(e.matches);
       }
     };
-    
+
     mediaQuery.addEventListener('change', handleSystemThemeChange);
-    
+
     // Cleanup listener on unmount
     return () => mediaQuery.removeEventListener('change', handleSystemThemeChange);
   });
 
+  const [initialized, setInitialized] = createSignal(false);
+
   // Apply theme to document
   createEffect(() => {
+    if (!initialized()) return;
+
     const html = document.documentElement;
     const body = document.body;
-    
+
     // Clear existing theme classes
     html.classList.remove('dark');
     body.classList.remove('dark');
     html.removeAttribute('data-theme');
-    
+
     if (isDark()) {
       html.classList.add('dark');
       body.classList.add('dark');

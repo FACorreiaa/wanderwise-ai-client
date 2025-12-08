@@ -1,7 +1,7 @@
 import { createContext, useContext, createSignal, createEffect, onMount, JSX } from 'solid-js';
 import { useNavigate } from '@solidjs/router';
 import { getAuthToken, getRefreshToken, setAuthToken, clearAuthToken, isPersistentSession } from '~/lib/auth/tokens';
-import { authAPI, profileAPI } from '~/lib/api';
+import { authAPI } from '~/lib/api';
 
 interface User {
   id: string;
@@ -214,11 +214,7 @@ export const AuthProvider = (props: AuthProviderProps) => {
   };
 
   const updatePassword = async (oldPassword: string, newPassword: string): Promise<void> => {
-    try {
-      await authAPI.updatePassword(oldPassword, newPassword);
-    } catch (error) {
-      throw error;
-    }
+    await authAPI.updatePassword(oldPassword, newPassword);
   };
 
   const isAuthenticated = () => !!user();
@@ -258,6 +254,7 @@ export const ProtectedRoute = (props: ProtectedRouteProps) => {
   });
 
   if (isLoading()) {
+    // eslint-disable-next-line solid/components-return-once
     return (
       <div class="min-h-screen flex items-center justify-center">
         <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600" />
@@ -266,6 +263,7 @@ export const ProtectedRoute = (props: ProtectedRouteProps) => {
   }
 
   if (!isAuthenticated()) {
+    // eslint-disable-next-line solid/components-return-once
     return props.fallback || (
       <div class="min-h-screen flex items-center justify-center">
         <div class="text-center">
@@ -296,6 +294,7 @@ export const PublicRoute = (props: PublicRouteProps) => {
   });
 
   if (isLoading()) {
+    // eslint-disable-next-line solid/components-return-once
     return (
       <div class="min-h-screen flex items-center justify-center">
         <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600" />

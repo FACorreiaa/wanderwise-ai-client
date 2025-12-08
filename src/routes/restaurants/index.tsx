@@ -22,7 +22,7 @@ export default function RestaurantsPage() {
 
   onMount(() => {
     if (!state.isConnected) {
-      startStream(message(), cityName(), "restaurants");
+      startStream(message(), cityName());
     }
   });
 

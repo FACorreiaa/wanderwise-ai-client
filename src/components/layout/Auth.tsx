@@ -1,45 +1,26 @@
 import { Component, Show, For } from 'solid-js';
-import { useNavigate } from '@solidjs/router';
-import { Button } from "@/ui/button";
-import { Badge } from "@/ui/badge";
 import { FiArrowLeft, FiCheck } from 'solid-icons/fi';
 import { useTheme } from '~/contexts/ThemeContext';
-
-// Types
-type AuthMode = 'signin' | 'signup' | 'forgot';
-
-interface AuthPagesProps {
-    initialMode?: AuthMode;
-}
-
-interface FormData {
-    email: string;
-    password: string;
-    confirmPassword: string;
-    firstName: string;
-    lastName: string;
-    company: string;
-}
 
 // Auth Layout Component
 const AuthLayout: Component<{ children: any; showBackButton?: boolean; onBack?: () => void }> = (props) => {
     const { isDark } = useTheme();
-    const shellBg = isDark()
+    const shellBg = () => isDark()
         ? "bg-gradient-to-br from-[#050915] via-[#0b1c36] to-[#030712]"
         : "bg-gradient-to-br from-[#f5f7fb] via-[#eef2ff] to-[#e8f4ff]";
-    const cardBg = isDark()
+    const cardBg = () => isDark()
         ? "bg-[#0c152c]/95 border border-white/12 text-white"
         : "bg-white border border-slate-200 text-slate-900";
-    const cardShadow = isDark()
+    const cardShadow = () => isDark()
         ? "shadow-[0_30px_100px_rgba(3,7,18,0.65)]"
         : "shadow-[0_24px_80px_rgba(15,23,42,0.12)]";
-    const accentPill = isDark()
+    const accentPill = () => isDark()
         ? "bg-emerald-400/15 border border-emerald-300/30 text-emerald-100"
         : "bg-emerald-100 border border-emerald-200 text-emerald-700";
-    const textSoft = isDark() ? "text-slate-200/80" : "text-slate-600";
+    const textSoft = () => isDark() ? "text-slate-200/80" : "text-slate-600";
 
     return (
-        <div class={`min-h-screen relative overflow-hidden ${shellBg} ${isDark() ? 'text-white' : 'text-slate-900'}`}>
+        <div class={`min-h-screen relative overflow-hidden ${shellBg()} ${isDark() ? 'text-white' : 'text-slate-900'}`}>
             <Show when={isDark()}>
                 <div class="absolute inset-0 opacity-60">
                     <div class="domain-grid" aria-hidden="true" />
@@ -89,7 +70,7 @@ const AuthLayout: Component<{ children: any; showBackButton?: boolean; onBack?: 
                     <div class="w-full max-w-xl mx-auto">
                         <Show when={props.showBackButton}>
                             <button
-                                onClick={props.onBack}
+                                onClick={() => props.onBack?.()}
                                 class={`flex items-center gap-2 mb-4 sm:mb-6 ${isDark() ? 'text-slate-200 hover:text-emerald-200' : 'text-slate-700 hover:text-emerald-700'} transition-colors`}
                             >
                                 <FiArrowLeft class="w-4 h-4" />
@@ -97,13 +78,13 @@ const AuthLayout: Component<{ children: any; showBackButton?: boolean; onBack?: 
                             </button>
                         </Show>
 
-                        <div class={`rounded-3xl p-5 sm:p-6 lg:p-7 ${cardBg} ${cardShadow}`}>
+                        <div class={`rounded-3xl p-5 sm:p-6 lg:p-7 ${cardBg()} ${cardShadow()}`}>
                             <div class="flex items-center gap-2 mb-6">
                                 <div class={`w-9 h-9 sm:w-10 sm:h-10 rounded-xl ${isDark() ? 'bg-white/15 border border-white/30 text-white shadow-[0_14px_32px_rgba(12,125,242,0.32)]' : 'bg-emerald-50 border border-emerald-100 text-emerald-700 shadow-[0_12px_28px_rgba(16,185,129,0.25)]'} backdrop-blur flex items-center justify-center font-bold`}>
                                     L
                                 </div>
                                 <span class="text-lg sm:text-xl font-bold tracking-tight">Loci</span>
-                                <span class={`text-xs px-2 py-1 rounded-full ml-auto ${accentPill}`}>
+                                <span class={`text-xs px-2 py-1 rounded-full ml-auto ${accentPill()}`}>
                                     Private beta
                                 </span>
                             </div>
@@ -111,7 +92,7 @@ const AuthLayout: Component<{ children: any; showBackButton?: boolean; onBack?: 
                             {props.children}
                         </div>
 
-                        <div class={`text-center mt-4 sm:mt-6 text-xs sm:text-sm px-2 sm:px-0 ${textSoft}`}>
+                        <div class={`text-center mt-4 sm:mt-6 text-xs sm:text-sm px-2 sm:px-0 ${textSoft()}`}>
                             By continuing, you agree to our{" "}
                             <a href="#" class={`${isDark() ? 'text-emerald-200 hover:text-emerald-100' : 'text-emerald-700 hover:text-emerald-600'} underline-offset-4`}>Terms</a>
                             {" "}and{" "}

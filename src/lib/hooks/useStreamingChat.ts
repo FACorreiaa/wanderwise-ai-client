@@ -1,12 +1,12 @@
 import { createSignal, onCleanup } from 'solid-js';
 import { getAuthToken } from '~/lib/api';
-import type { StreamEvent, DomainType, StreamingSession } from '~/lib/api/types';
+import type { StreamEvent, DomainType } from '~/lib/api/types';
 
 export interface StreamingChatOptions {
-  onProgress?: (data: any) => void;
-  onComplete?: (response: any) => void;
-  onError?: (error: string) => void;
-  onRedirect?: (domain: DomainType, sessionId: string, city: string) => void;
+  onProgress?: (_: any) => void;
+  onComplete?: (_: any) => void;
+  onError?: (_: string) => void;
+  onRedirect?: (_domain: DomainType, _sessionId: string, _city: string) => void;
 }
 
 export interface StreamingChatState {
@@ -84,17 +84,17 @@ export function useStreamingChat(options: StreamingChatOptions = {}) {
         console.log('Stream was aborted');
         return;
       }
-      
+
       console.error('Streaming failed:', err);
       const errorMessage = err.message || 'Failed to start streaming';
-      
+
       setState(prev => ({
         ...prev,
         error: errorMessage,
         isStreaming: false,
         isConnected: false,
       }));
-      
+
       options.onError?.(errorMessage);
     }
   };
@@ -106,7 +106,7 @@ export function useStreamingChat(options: StreamingChatOptions = {}) {
     try {
       while (true) {
         const { done, value } = await reader.read();
-        
+
         if (done) {
           setState(prev => ({
             ...prev,
@@ -117,7 +117,7 @@ export function useStreamingChat(options: StreamingChatOptions = {}) {
           }));
           break;
         }
-        
+
         const chunk = decoder.decode(value, { stream: true });
         const lines = chunk.split('\n');
 
@@ -125,7 +125,7 @@ export function useStreamingChat(options: StreamingChatOptions = {}) {
           if (line.startsWith('data: ')) {
             const data = line.slice(6).trim();
             if (data === '') continue;
-            
+
             try {
               const event: StreamEvent = JSON.parse(data);
               processStreamEvent(event);
@@ -156,17 +156,19 @@ export function useStreamingChat(options: StreamingChatOptions = {}) {
           progress: 15,
         }));
         break;
-        
-      case 'progress':
-        if (event.data?.progress) {
+
+      case 'progress': {
+        const progressData = event.data as any;
+        if (progressData?.progress) {
           setState(prev => ({
             ...prev,
-            progress: event.data.progress,
-            currentStep: event.data.message || prev.currentStep,
+            progress: progressData.progress,
+            currentStep: progressData.message || prev.currentStep,
           }));
         }
         break;
-        
+      }
+
       case 'city_data':
         setState(prev => ({
           ...prev,
@@ -175,7 +177,7 @@ export function useStreamingChat(options: StreamingChatOptions = {}) {
         }));
         options.onProgress?.(event.data);
         break;
-        
+
       case 'general_pois':
         setState(prev => ({
           ...prev,
@@ -184,7 +186,7 @@ export function useStreamingChat(options: StreamingChatOptions = {}) {
         }));
         options.onProgress?.(event.data);
         break;
-        
+
       case 'itinerary':
         setState(prev => ({
           ...prev,
@@ -193,7 +195,7 @@ export function useStreamingChat(options: StreamingChatOptions = {}) {
         }));
         options.onProgress?.(event.data);
         break;
-        
+
       case 'hotels':
         setState(prev => ({
           ...prev,
@@ -202,7 +204,7 @@ export function useStreamingChat(options: StreamingChatOptions = {}) {
         }));
         options.onProgress?.(event.data);
         break;
-        
+
       case 'restaurants':
         setState(prev => ({
           ...prev,
@@ -211,7 +213,7 @@ export function useStreamingChat(options: StreamingChatOptions = {}) {
         }));
         options.onProgress?.(event.data);
         break;
-        
+
       case 'activities':
         setState(prev => ({
           ...prev,
@@ -220,9 +222,9 @@ export function useStreamingChat(options: StreamingChatOptions = {}) {
         }));
         options.onProgress?.(event.data);
         break;
-        
-      case 'complete':
-        const completeData = event.data;
+
+      case 'complete': {
+        const completeData = event.data as any;
         setState(prev => ({
           ...prev,
           isStreaming: false,
@@ -231,7 +233,7 @@ export function useStreamingChat(options: StreamingChatOptions = {}) {
           progress: 100,
           streamedData: completeData,
         }));
-        
+
         // Handle redirect if navigation data is provided
         if (completeData?.domain && completeData?.session_id && completeData?.city) {
           options.onRedirect?.(
@@ -240,12 +242,13 @@ export function useStreamingChat(options: StreamingChatOptions = {}) {
             completeData.city
           );
         }
-        
+
         options.onComplete?.(completeData);
         break;
-        
-      case 'error':
-        const errorMessage = event.data?.message || 'An error occurred during streaming';
+      }
+
+      case 'error': {
+        const errorMessage = (event.data as any)?.message || 'An error occurred during streaming';
         setState(prev => ({
           ...prev,
           error: errorMessage,
@@ -254,7 +257,8 @@ export function useStreamingChat(options: StreamingChatOptions = {}) {
         }));
         options.onError?.(errorMessage);
         break;
-        
+      }
+
       default:
         console.log('Unknown event type:', event.type, event);
     }

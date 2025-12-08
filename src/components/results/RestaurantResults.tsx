@@ -1,32 +1,19 @@
 import { For, Show, createSignal } from 'solid-js';
-import { Star, MapPin, Clock, DollarSign, Utensils, ChevronDown, ChevronUp, Heart, Share2 } from 'lucide-solid';
+import { Star, MapPin, Clock, DollarSign, ChevronDown, ChevronUp, Heart, Share2 } from 'lucide-solid';
 import AddToListButton from '~/components/lists/AddToListButton';
 
-interface Restaurant {
-  name: string;
-  latitude?: number;
-  longitude?: number;
-  category?: string;
-  description_poi?: string;
-  address?: string;
-  website?: string;
-  opening_hours?: string;
-  rating?: number;
-  price_range?: string;
-  cuisine_type?: string;
-  distance?: number;
-}
+import { RestaurantDetailedInfo } from '~/lib/api/types';
 
 interface RestaurantResultsProps {
-  restaurants: Restaurant[];
+  restaurants: RestaurantDetailedInfo[];
   compact?: boolean;
   limit?: number;
   showToggle?: boolean; // Whether to show the "Show More/Less" button
   initialLimit?: number; // Initial number to show before "Show More"
-  onItemClick?: (restaurant: Restaurant) => void; // Callback for item clicks
-  onFavoriteClick?: (restaurant: Restaurant) => void; // Callback for favorite button (legacy)
-  onToggleFavorite?: (restaurantId: string, restaurant: Restaurant) => void; // New callback for toggling favorites
-  onShareClick?: (restaurant: Restaurant) => void; // Callback for share button
+  onItemClick?: (restaurant: RestaurantDetailedInfo) => void;
+  onFavoriteClick?: (restaurant: RestaurantDetailedInfo) => void; // Callback for favorite button (legacy)
+  onToggleFavorite?: (restaurantId: string, restaurant: RestaurantDetailedInfo) => void; // New callback for toggling favorites
+  onShareClick?: (restaurant: RestaurantDetailedInfo) => void; // Callback for share button
   favorites?: string[]; // Array of favorite restaurant IDs
   showAuthMessage?: boolean; // Whether to show auth message for non-authenticated users
   isLoadingFavorites?: boolean; // Loading state for favorites
@@ -39,21 +26,21 @@ export default function RestaurantResults(props: RestaurantResultsProps) {
   const isFavorite = (restaurantName: string) => {
     return props.favorites?.includes(restaurantName) || false;
   };
-  
+
   const displayRestaurants = () => {
     const restaurants = props.restaurants || [];
-    
+
     // If a fixed limit is provided (from parent), use it
     if (props.limit && !props.showToggle) {
       return restaurants.slice(0, props.limit);
     }
-    
+
     // If showToggle is enabled, use initialLimit and showAll state
     if (props.showToggle) {
       const initialLimit = props.initialLimit || 3;
       return showAll() ? restaurants : restaurants.slice(0, initialLimit);
     }
-    
+
     // Default: show all
     return restaurants;
   };
@@ -68,7 +55,7 @@ export default function RestaurantResults(props: RestaurantResultsProps) {
     const restaurants = props.restaurants || [];
     const initialLimit = props.initialLimit || 3;
     const remaining = restaurants.length - initialLimit;
-    
+
     if (showAll()) {
       return 'Show Less';
     } else {
@@ -83,10 +70,10 @@ export default function RestaurantResults(props: RestaurantResultsProps) {
     return 'text-gray-600 dark:text-gray-400';
   };
 
-  const getPriceColor = (priceRange: string) => {
-    if (priceRange.includes('€€€€') || priceRange.includes('$$$$')) return 'text-red-600 dark:text-red-400';
-    if (priceRange.includes('€€€') || priceRange.includes('$$$')) return 'text-orange-600 dark:text-orange-400';
-    if (priceRange.includes('€€') || priceRange.includes('$$')) return 'text-yellow-600 dark:text-yellow-400';
+  const getPriceColor = (priceLevel: string) => {
+    if (priceLevel.includes('€€€€') || priceLevel.includes('$$$$')) return 'text-red-600 dark:text-red-400';
+    if (priceLevel.includes('€€€') || priceLevel.includes('$$$')) return 'text-orange-600 dark:text-orange-400';
+    if (priceLevel.includes('€€') || priceLevel.includes('$$')) return 'text-yellow-600 dark:text-yellow-400';
     return 'text-green-600 dark:text-green-400';
   };
 
@@ -114,24 +101,22 @@ export default function RestaurantResults(props: RestaurantResultsProps) {
           Restaurants ({displayRestaurants().length})
         </h3>
       </div>
-      
+
       <div class={props.compact ? "space-y-2" : "space-y-4"}>
         <For each={displayRestaurants()}>
           {(restaurant) => (
-            <div 
-              class={`rounded-lg border border-gray-200 dark:border-gray-700 ${
-                props.compact 
-                  ? "p-3 bg-gray-50 dark:bg-gray-800" 
-                  : "p-4 bg-white dark:bg-gray-800 shadow-sm hover:shadow-md transition-shadow"
-              } ${props.onItemClick ? 'cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700' : ''}`}
+            <div
+              class={`rounded-lg border border-gray-200 dark:border-gray-700 ${props.compact
+                ? "p-3 bg-gray-50 dark:bg-gray-800"
+                : "p-4 bg-white dark:bg-gray-800 shadow-sm hover:shadow-md transition-shadow"
+                } ${props.onItemClick ? 'cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700' : ''}`}
               onClick={() => props.onItemClick?.(restaurant)}
             >
               <div class="flex items-start justify-between mb-2">
                 <div class="flex-1 min-w-0">
                   <div class="flex items-center gap-2">
-                    <h4 class={`font-medium text-gray-900 dark:text-white truncate ${
-                      props.compact ? "text-sm" : "text-base"
-                    }`}>
+                    <h4 class={`font-medium text-gray-900 dark:text-white truncate ${props.compact ? "text-sm" : "text-base"
+                      }`}>
                       {restaurant.name}
                     </h4>
                     <Show when={restaurant.cuisine_type}>
@@ -146,7 +131,7 @@ export default function RestaurantResults(props: RestaurantResultsProps) {
                     </p>
                   </Show>
                 </div>
-                
+
                 <div class="flex items-center gap-2 ml-2 flex-shrink-0">
                   <Show when={restaurant.rating}>
                     <div class="flex items-center gap-1">
@@ -156,39 +141,39 @@ export default function RestaurantResults(props: RestaurantResultsProps) {
                       </span>
                     </div>
                   </Show>
-                  
-                  <Show when={restaurant.price_range}>
+
+                  <Show when={restaurant.price_level}>
                     <div class="flex items-center gap-1">
-                      <DollarSign class={`w-3 h-3 ${getPriceColor(restaurant.price_range!)}`} />
-                      <span class={`text-xs font-medium ${getPriceColor(restaurant.price_range!)}`}>
-                        {restaurant.price_range}
+                      <DollarSign class={`w-3 h-3 ${getPriceColor(restaurant.price_level!)}`} />
+                      <span class={`text-xs font-medium ${getPriceColor(restaurant.price_level!)}`}>
+                        {restaurant.price_level}
                       </span>
                     </div>
                   </Show>
                 </div>
               </div>
 
-              <Show when={restaurant.description_poi && !props.compact}>
+              <Show when={restaurant.description && !props.compact}>
                 <p class="text-sm text-gray-600 dark:text-gray-300 mb-3 line-clamp-2">
-                  {restaurant.description_poi}
+                  {restaurant.description}
                 </p>
               </Show>
 
               <div class="flex items-center gap-4 text-xs text-gray-500 dark:text-gray-400 flex-wrap">
-                <Show when={restaurant.distance}>
+                <Show when={(restaurant as any).distance}>
                   <div class="flex items-center gap-1">
                     <MapPin class="w-3 h-3" />
-                    <span>{restaurant.distance}km away</span>
+                    <span>{(restaurant as any).distance.toFixed(1)}km away</span>
                   </div>
                 </Show>
-                
+
                 <Show when={restaurant.opening_hours && !props.compact}>
                   <div class="flex items-center gap-1">
                     <Clock class="w-3 h-3" />
                     <span class="truncate">{restaurant.opening_hours}</span>
                   </div>
                 </Show>
-                
+
                 <Show when={restaurant.address && !props.compact}>
                   <span class="truncate">{restaurant.address}</span>
                 </Show>
@@ -208,13 +193,12 @@ export default function RestaurantResults(props: RestaurantResultsProps) {
                         }
                       }}
                       disabled={props.isLoadingFavorites || (!props.onToggleFavorite && !props.onFavoriteClick)}
-                      class={`p-2 rounded-lg transition-colors ${
-                        (!props.onToggleFavorite && !props.onFavoriteClick)
-                          ? "text-gray-300 dark:text-gray-600 cursor-not-allowed bg-gray-50 dark:bg-gray-800"
-                          : isFavorite(restaurant.name)
-                            ? "text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/30"
-                            : "text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
-                      } disabled:opacity-50 disabled:cursor-not-allowed`}
+                      class={`p-2 rounded-lg transition-colors ${(!props.onToggleFavorite && !props.onFavoriteClick)
+                        ? "text-gray-300 dark:text-gray-600 cursor-not-allowed bg-gray-50 dark:bg-gray-800"
+                        : isFavorite(restaurant.name)
+                          ? "text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/30"
+                          : "text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
+                        } disabled:opacity-50 disabled:cursor-not-allowed`}
                       title={isFavorite(restaurant.name) ? "Remove from favorites" : "Add to favorites"}
                     >
                       <Show
@@ -225,7 +209,7 @@ export default function RestaurantResults(props: RestaurantResultsProps) {
                       </Show>
                     </button>
                   </Show>
-                  
+
                   {/* Add to List Button */}
                   <AddToListButton
                     itemId={restaurant.id || restaurant.name}
@@ -234,7 +218,7 @@ export default function RestaurantResults(props: RestaurantResultsProps) {
                     variant="icon"
                     size="md"
                     sourceInteractionId={restaurant.llm_interaction_id}
-                    aiDescription={restaurant.description_poi}
+                    aiDescription={restaurant.description}
                   />
                   <Show when={props.onShareClick}>
                     <button
@@ -253,9 +237,9 @@ export default function RestaurantResults(props: RestaurantResultsProps) {
 
               <Show when={restaurant.website && !props.compact}>
                 <div class="mt-3 pt-3 border-t border-gray-100 dark:border-gray-700">
-                  <a 
-                    href={restaurant.website} 
-                    target="_blank" 
+                  <a
+                    href={restaurant.website}
+                    target="_blank"
                     rel="noopener noreferrer"
                     class="text-sm text-blue-600 dark:text-blue-400 hover:underline"
                     onClick={(e) => e.stopPropagation()}
@@ -268,7 +252,7 @@ export default function RestaurantResults(props: RestaurantResultsProps) {
           )}
         </For>
       </div>
-      
+
       {/* Show More/Less Toggle */}
       <Show when={shouldShowToggle()}>
         <div class="text-center py-3">
@@ -277,14 +261,14 @@ export default function RestaurantResults(props: RestaurantResultsProps) {
             class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-700 transition-colors"
           >
             <span>{getToggleText()}</span>
-            {showAll() ? 
-              <ChevronUp class="w-4 h-4" /> : 
+            {showAll() ?
+              <ChevronUp class="w-4 h-4" /> :
               <ChevronDown class="w-4 h-4" />
             }
           </button>
         </div>
       </Show>
-      
+
       {/* Status indicator when using fixed limit */}
       <Show when={props.limit && !props.showToggle && props.restaurants.length > props.limit}>
         <div class="text-center py-2">
