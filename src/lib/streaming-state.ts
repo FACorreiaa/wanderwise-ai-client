@@ -98,9 +98,24 @@ export function updateStreamingData(partialData: any) {
   }
 
   // Check if this is an incremental update (adding to itinerary) vs a full update
-  const isIncrementalUpdate =
-    partialData.itinerary_response &&
-    !partialData.general_city_data;
+  // Handle both camelCase and snake_case formats from API
+  const hasItineraryResponse = Boolean(
+    partialData.itinerary_response || partialData.itineraryResponse
+  );
+  const hasExistingData = Boolean(
+    session.data?.itinerary_response || session.data?.general_city_data
+  );
+
+  // It's incremental if we have existing data and we're getting an itinerary update
+  const isIncrementalUpdate = hasExistingData && hasItineraryResponse;
+
+  // Normalize incoming itinerary_response (handle both camelCase and snake_case)
+  const incomingItinerary = partialData.itinerary_response ||
+    (partialData.itineraryResponse ? {
+      itinerary_name: partialData.itineraryResponse.itineraryName || partialData.itineraryResponse.itinerary_name,
+      overall_description: partialData.itineraryResponse.overallDescription || partialData.itineraryResponse.overall_description,
+      points_of_interest: partialData.itineraryResponse.pointsOfInterest || partialData.itineraryResponse.points_of_interest || [],
+    } : undefined);
 
   const mergedData = {
     ...session.data,
@@ -109,11 +124,11 @@ export function updateStreamingData(partialData: any) {
     points_of_interest: !isIncrementalUpdate && partialData.points_of_interest
       ? partialData.points_of_interest
       : session.data?.points_of_interest,
-    // Always update itinerary_response
-    itinerary_response: {
+    // Always update itinerary_response with merged data
+    itinerary_response: incomingItinerary ? {
       ...session.data?.itinerary_response,
-      ...partialData.itinerary_response,
-    },
+      ...incomingItinerary,
+    } : session.data?.itinerary_response,
   };
 
   setStreamingSession({

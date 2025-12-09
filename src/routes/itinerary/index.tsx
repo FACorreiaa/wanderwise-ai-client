@@ -1,4 +1,4 @@
-import { createSignal, createMemo, Show } from "solid-js";
+import { createSignal, createMemo, Show, onMount } from "solid-js";
 import { useSearchParams } from "@solidjs/router";
 import { useStreamedRpc } from "@/lib/hooks/useStreamedRpc";
 import { POIDetailedInfo } from "~/lib/api/types";
@@ -21,8 +21,60 @@ export default function ItineraryPage() {
 
   const { store, connect, setStore } = useStreamedRpc(message, cityName, profileId);
 
-  // Connect on mount
-  connect();
+  // Connect on mount - but only if we don't already have data from navigation
+  onMount(() => {
+    const sessionIdFromUrl = searchParams.sessionId as string;
+    const streaming = searchParams.streaming === 'true';
+    const domain = searchParams.domain as string;
+
+    console.log('🔍 Itinerary page mount - checking params:', { sessionIdFromUrl, streaming, domain });
+
+    // If we have a sessionId in the URL, we came from navigation (chat page or deep link)
+    // In this case, DON'T start a new connection - the FloatingChat will handle updates
+    if (sessionIdFromUrl) {
+      console.log('📍 SessionId found in URL, attempting to restore data...');
+
+      // Try to restore data from session storage
+      const completedSession = sessionStorage.getItem('completedStreamingSession');
+      if (completedSession) {
+        try {
+          const parsed = JSON.parse(completedSession);
+          const parsedData = parsed.data || parsed;
+          if (parsedData && (parsed.sessionId === sessionIdFromUrl || parsedData.session_id === sessionIdFromUrl)) {
+            console.log('✅ Found completed streaming session data, restoring...');
+            setStore('data', parsedData);
+            return;
+          }
+        } catch (e) {
+          console.warn('Failed to parse completed streaming session:', e);
+        }
+      }
+
+      // Check active streaming session
+      const activeSession = sessionStorage.getItem('active_streaming_session');
+      if (activeSession) {
+        try {
+          const parsed = JSON.parse(activeSession);
+          if (parsed.sessionId === sessionIdFromUrl && parsed.data) {
+            console.log('✅ Found active streaming session data, restoring...');
+            setStore('data', parsed.data);
+            return;
+          }
+        } catch (e) {
+          console.warn('Failed to parse active streaming session:', e);
+        }
+      }
+
+      // No data found but we have sessionId - data might still be streaming
+      // DON'T start a new connection - FloatingChat will handle updates via useChatSession
+      console.log('⏳ SessionId present but no cached data yet - waiting for streaming data via FloatingChat...');
+      return;
+    }
+
+    // No sessionId in URL - this is a fresh page load, start new connection
+    console.log('🆕 Fresh page load (no sessionId), starting new streaming connection...');
+    connect();
+  });
 
   const itineraryData = createMemo(() => store.data?.itinerary_response);
   const cityData = createMemo(() => store.data?.general_city_data);
@@ -169,6 +221,7 @@ export default function ItineraryPage() {
       <FloatingChat
         getStreamingData={() => store.data}
         setStreamingData={(fn) => setStore('data', fn)}
+        initialSessionId={searchParams.sessionId as string}
       />
     </>
   );

@@ -17,6 +17,7 @@ export interface ChatMessage {
 
 export interface UseChatSessionOptions {
   sessionIdPrefix?: string;
+  initialSessionId?: string; // Initial session ID from URL params to continue existing session
   onStreamingComplete?: (data: any) => void;
   onError?: (error: Error) => void;
   onUpdateStart?: () => void;
@@ -117,6 +118,77 @@ const decodeEventData = (data: any): any => {
   return null;
 };
 
+// Helper to normalize camelCase API responses to snake_case format
+// This is needed because the server may return data in camelCase format
+const normalizeItineraryData = (data: any): any => {
+  if (!data) return null;
+
+  // Handle updatedItinerary wrapper (from ContinueChat response)
+  const itinerarySource = data.updatedItinerary || data;
+
+  const normalized: any = {};
+
+  // Normalize general_city_data
+  if (itinerarySource.generalCityData) {
+    normalized.general_city_data = itinerarySource.generalCityData;
+  } else if (itinerarySource.general_city_data) {
+    normalized.general_city_data = itinerarySource.general_city_data;
+  }
+
+  // Normalize itinerary_response
+  if (itinerarySource.itineraryResponse) {
+    const ir = itinerarySource.itineraryResponse;
+    normalized.itinerary_response = {
+      itinerary_name: ir.itineraryName || ir.itinerary_name,
+      overall_description: ir.overallDescription || ir.overall_description,
+      points_of_interest: ir.pointsOfInterest || ir.points_of_interest || [],
+    };
+  } else if (itinerarySource.itinerary_response) {
+    normalized.itinerary_response = itinerarySource.itinerary_response;
+  }
+
+  // Normalize points_of_interest (general POIs, separate from itinerary)
+  // IMPORTANT: Only set general points_of_interest if there's no itinerary_response
+  // This prevents itinerary POIs from being added to the general POIs list
+  // which would cause them to appear in the wrong section of the UI
+  if (itinerarySource.pointsOfInterest && !itinerarySource.itineraryResponse && !itinerarySource.itinerary_response) {
+    // camelCase: Only set if there's no itinerary response
+    normalized.points_of_interest = itinerarySource.pointsOfInterest;
+  } else if (itinerarySource.points_of_interest && !itinerarySource.itineraryResponse && !itinerarySource.itinerary_response) {
+    // snake_case: Also guard against itinerary response to prevent POIs appearing in wrong section
+    normalized.points_of_interest = itinerarySource.points_of_interest;
+  }
+
+  // Copy session info
+  normalized.session_id = data.sessionId || data.session_id || itinerarySource.sessionId || itinerarySource.session_id;
+
+  // Preserve any other fields from the original data
+  if (data.hotels) normalized.hotels = data.hotels;
+  if (data.restaurants) normalized.restaurants = data.restaurants;
+  if (data.activities) normalized.activities = data.activities;
+
+  return normalized;
+};
+
+// Detect if this is an incremental update (adding a single POI to itinerary)
+// vs a full response (initial query or full regeneration)
+const isIncrementalUpdate = (data: any, prevData: any): boolean => {
+  if (!data) return false;
+
+  // If this is a ContinueChat response, it's likely an incremental update
+  // The key indicator is: has itinerary_response but preserving existing structure
+  const hasItineraryResponse = Boolean(data.itinerary_response);
+
+  // Check if prev data exists (meaning this is a follow-up)
+  const hasExistingData = Boolean(prevData?.itinerary_response || prevData?.general_city_data);
+
+  // An incremental update typically only adds POIs without changing general city data significantly
+  // We consider it incremental if:
+  // 1. We have existing data AND
+  // 2. We have an itinerary_response update
+  return hasExistingData && hasItineraryResponse;
+};
+
 const persistCompletedSession = (sessionIdValue: string | null, data: any) => {
   if (!data) return;
 
@@ -147,8 +219,14 @@ export function useChatSession(options: UseChatSessionOptions = {}) {
   const [chatMessage, setChatMessage] = createSignal('');
   const [chatHistory, setChatHistory] = createSignal<ChatMessage[]>([]);
   const [isLoading, setIsLoading] = createSignal(false);
-  const [sessionId, setSessionId] = createSignal<string | null>(null);
+  // Initialize sessionId from options if provided (e.g., from URL params)
+  const [sessionId, setSessionId] = createSignal<string | null>(options.initialSessionId || null);
   const [isUpdatingItinerary, setIsUpdatingItinerary] = createSignal(false);
+
+  // Log initial session ID for debugging
+  if (options.initialSessionId) {
+    console.log('🔗 useChatSession initialized with session ID:', options.initialSessionId);
+  }
 
   // Chunk buffer for progressive JSON parsing (similar to StreamingChatService)
   const chunkBuffer: {
@@ -914,11 +992,14 @@ export function useChatSession(options: UseChatSessionOptions = {}) {
 
                   case 'itinerary': {
                     // This is the key event - update the itinerary data
-                    const itineraryData = decodeEventData(eventData.Data || eventData.data);
+                    const rawItineraryData = decodeEventData(eventData.Data || eventData.data);
+                    // Normalize data format (camelCase -> snake_case)
+                    const itineraryData = normalizeItineraryData(rawItineraryData);
                     const message = eventData.Message || eventData.message;
                     const derivedLists = deriveDomainLists(itineraryData);
 
-                    console.log('📦 Received itinerary update:', itineraryData);
+                    console.log('📦 Received itinerary update (raw):', rawItineraryData);
+                    console.log('📦 Normalized itinerary data:', itineraryData);
                     console.log('Itinerary message:', message);
                     console.log('Updated POIs count:', itineraryData?.itinerary_response?.points_of_interest?.length);
                     console.log('Updated POIs:', itineraryData?.itinerary_response?.points_of_interest);
@@ -950,14 +1031,11 @@ export function useChatSession(options: UseChatSessionOptions = {}) {
                           options.setStreamingData((prev: any) => {
                             if (!prev) return itineraryData;
 
-                            // Check if this is an incremental update (adding to itinerary)
-                            // vs a full new query response
-                            const isIncrementalUpdate =
-                              itineraryData.itinerary_response &&
-                              !itineraryData.general_city_data;
+                            // Use the helper function to detect incremental updates
+                            const incremental = isIncrementalUpdate(itineraryData, prev);
 
-                            console.log('🔍 Update type:', isIncrementalUpdate ? 'INCREMENTAL (add to itinerary)' : 'FULL (new query)');
-                            if (isIncrementalUpdate) {
+                            console.log('🔍 Update type:', incremental ? 'INCREMENTAL (add to itinerary)' : 'FULL (new query)');
+                            if (incremental) {
                               console.log('✅ Updating ONLY custom itinerary, preserving general POIs');
                             }
 
@@ -988,9 +1066,9 @@ export function useChatSession(options: UseChatSessionOptions = {}) {
                               }),
                               // Only update general points of interest for NEW queries, not incremental updates
                               // This prevents new POIs from appearing in the general list when they should only be in the custom itinerary
-                              ...(!isIncrementalUpdate && itineraryData.points_of_interest && {
+                              ...(!incremental && itineraryData.points_of_interest ? {
                                 points_of_interest: itineraryData.points_of_interest
-                              }),
+                              } : {}),
                               // ALWAYS update itinerary response (this is the custom itinerary)
                               ...(itineraryData.itinerary_response && {
                                 itinerary_response: itineraryData.itinerary_response

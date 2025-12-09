@@ -7,6 +7,7 @@ interface FloatingChatProps {
     initialMessage?: string;
     getStreamingData?: () => any;
     setStreamingData?: (data: any) => void;
+    initialSessionId?: string; // Session ID from URL params for continuing sessions
 }
 
 export const FloatingChat: Component<FloatingChatProps> = (props) => {
@@ -21,6 +22,7 @@ export const FloatingChat: Component<FloatingChatProps> = (props) => {
     } = useChatSession({
         getStreamingData: props.getStreamingData,
         setStreamingData: props.setStreamingData,
+        initialSessionId: props.initialSessionId,
     });
 
     const handleKeyPress = (e: KeyboardEvent) => {
