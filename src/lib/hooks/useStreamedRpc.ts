@@ -87,5 +87,5 @@ export function useStreamedRpc(
     // This depends on how the connect-es client handles cancellation
   });
 
-  return { store, connect };
+  return { store, connect, setStore };
 }

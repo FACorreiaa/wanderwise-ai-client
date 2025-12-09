@@ -7,7 +7,7 @@ import MapComponent from "~/components/features/Map/Map";
 import { SplitView } from "~/components/shared/SplitView";
 import { CityInfoHeader } from "~/components/shared/CityInfoHeader";
 import { ActionToolbar } from "~/components/shared/ActionToolbar";
-import { ChatFab } from "~/components/shared/ChatFab";
+import FloatingChat from "~/components/features/Chat/FloatingChat";
 import { Skeleton } from "~/ui/skeleton";
 import { Share, Heart, Download } from "lucide-solid";
 
@@ -141,7 +141,7 @@ export default function RestaurantsPage() {
       <SplitView
         children={ListContent}
         map={MapContent}
-        fab={<ChatFab onClick={() => console.log("Open chat")} />}
+        fab={<FloatingChat />}
       />
     </>
   );

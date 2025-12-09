@@ -7,7 +7,7 @@ import MapComponent from "@/components/features/Map/Map";
 import SplitView from "@/components/layout/SplitView";
 import { CityInfoHeader } from "@/components/ui/CityInfoHeader";
 import { ActionToolbar } from "@/components/ui/ActionToolbar";
-import { ChatFab } from "@/components/ui/ChatFab";
+import FloatingChat from "@/components/features/Chat/FloatingChat";
 import { Skeleton } from "@/ui/skeleton";
 import { Card, CardContent, CardHeader } from "@/ui/card";
 
@@ -19,20 +19,19 @@ export default function ItineraryPage() {
   const [cityName] = createSignal((searchParams.cityName as string) || "London");
   const [profileId] = createSignal((searchParams.profileId as string) || "");
 
-  const { store, connect } = useStreamedRpc(message, cityName, profileId);
+  const { store, connect, setStore } = useStreamedRpc(message, cityName, profileId);
 
   // Connect on mount
   connect();
 
   const itineraryData = createMemo(() => store.data?.itinerary_response);
   const cityData = createMemo(() => store.data?.general_city_data);
+  const pointsOfInterest = createMemo(() => store.data?.points_of_interest || []);
 
   // Aggregate all POIs for the map
   const allPois = createMemo(() => {
     const itineraryPois = itineraryData()?.points_of_interest || [];
-    // Cast to any to avoid type checking issues with potentially nested structure if types are slightly off
-    const rawGeneralPois = store.data?.points_of_interest as any;
-    const generalPois = (rawGeneralPois?.points_of_interest || rawGeneralPois || []) as POIDetailedInfo[];
+    const generalPois = pointsOfInterest();
 
     const poiMap = new Map<string, any>();
 
@@ -128,12 +127,32 @@ export default function ItineraryPage() {
           <ItinerarySkeleton />
         </Show>
 
+        {/* Display Generic Points of Interest first if available */}
+        <Show when={pointsOfInterest().length > 0}>
+          <div class="mb-8">
+            <h3 class="text-xl font-bold mb-4 text-gray-800 dark:text-white flex items-center gap-2">
+              <span class="text-2xl">📍</span> Points of Interest
+            </h3>
+            <ItineraryResults
+              pois={pointsOfInterest()}
+              showToggle={true}
+              initialLimit={3}
+            />
+          </div>
+        </Show>
+
+        {/* Display Custom Itinerary */}
         <Show when={itineraryData()} keyed>
           {(itinerary) => (
-            <ItineraryResults
-              itinerary={itinerary}
-              showToggle={false} // Show all by default in the main view
-            />
+            <div>
+              <h3 class="text-xl font-bold mb-4 text-gray-800 dark:text-white flex items-center gap-2">
+                <span class="text-2xl">🗺️</span> Your Itinerary
+              </h3>
+              <ItineraryResults
+                itinerary={itinerary}
+                showToggle={false} // Show all by default in the main view
+              />
+            </div>
           )}
         </Show>
       </div>
@@ -147,7 +166,10 @@ export default function ItineraryPage() {
         mapContent={MapContent}
         initialMode="split"
       />
-      <ChatFab onClick={() => console.log("Open chat")} />
+      <FloatingChat
+        getStreamingData={() => store.data}
+        setStreamingData={(fn) => setStore('data', fn)}
+      />
     </>
   );
 }

@@ -6,7 +6,7 @@ import MapComponent from "~/components/features/Map/Map";
 import { SplitView } from "~/components/shared/SplitView";
 import { CityInfoHeader } from "~/components/shared/CityInfoHeader";
 import { ActionToolbar } from "~/components/shared/ActionToolbar";
-import { ChatFab } from "~/components/shared/ChatFab";
+import FloatingChat from "~/components/features/Chat/FloatingChat";
 import { Skeleton } from "~/ui/skeleton";
 import { Card, CardContent, CardHeader, CardTitle } from "~/ui/card";
 import { Badge } from "~/ui/badge";
@@ -156,7 +156,7 @@ export default function ActivitiesPage() {
       <SplitView
         children={ListContent}
         map={MapContent}
-        fab={<ChatFab onClick={() => console.log("Open chat")} />}
+        fab={<FloatingChat />}
       />
     </>
   );
