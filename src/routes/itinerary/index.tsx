@@ -21,6 +21,30 @@ export default function ItineraryPage() {
 
   const { store, connect, setStore } = useStreamedRpc(message, cityName, profileId);
 
+  // Helper to normalize stored data - flattens nested itinerary_response structure
+  const normalizeStoredData = (data: any): any => {
+    if (!data) return null;
+
+    // Check if data is wrapped in itinerary_response that contains the actual payload
+    // Server sometimes returns: { itinerary_response: { general_city_data, points_of_interest, itinerary_response, session_id } }
+    if (data.itinerary_response &&
+      (data.itinerary_response.general_city_data || data.itinerary_response.points_of_interest)) {
+      const inner = data.itinerary_response;
+      return {
+        general_city_data: inner.general_city_data,
+        points_of_interest: inner.points_of_interest,
+        itinerary_response: inner.itinerary_response,
+        session_id: inner.session_id || data.session_id,
+        // Preserve any other top-level fields
+        hotels: data.hotels || inner.hotels,
+        restaurants: data.restaurants || inner.restaurants,
+        activities: data.activities || inner.activities,
+      };
+    }
+
+    return data;
+  };
+
   // Connect on mount - but only if we don't already have data from navigation
   onMount(() => {
     const sessionIdFromUrl = searchParams.sessionId as string;
@@ -42,7 +66,9 @@ export default function ItineraryPage() {
           const parsedData = parsed.data || parsed;
           if (parsedData && (parsed.sessionId === sessionIdFromUrl || parsedData.session_id === sessionIdFromUrl)) {
             console.log('✅ Found completed streaming session data, restoring...');
-            setStore('data', parsedData);
+            const normalizedData = normalizeStoredData(parsedData);
+            console.log('📦 Normalized data:', normalizedData);
+            setStore('data', normalizedData);
             return;
           }
         } catch (e) {
@@ -57,7 +83,9 @@ export default function ItineraryPage() {
           const parsed = JSON.parse(activeSession);
           if (parsed.sessionId === sessionIdFromUrl && parsed.data) {
             console.log('✅ Found active streaming session data, restoring...');
-            setStore('data', parsed.data);
+            const normalizedData = normalizeStoredData(parsed.data);
+            console.log('📦 Normalized data:', normalizedData);
+            setStore('data', normalizedData);
             return;
           }
         } catch (e) {

@@ -123,8 +123,20 @@ const decodeEventData = (data: any): any => {
 const normalizeItineraryData = (data: any): any => {
   if (!data) return null;
 
+  // Detect if this is a ContinueChat response (has updatedItinerary wrapper)
+  // vs a full StreamChat response (direct data without wrapper)
+  const isContinueChatResponse = Boolean(data.updatedItinerary);
+
   // Handle updatedItinerary wrapper (from ContinueChat response)
-  const itinerarySource = data.updatedItinerary || data;
+  let itinerarySource = data.updatedItinerary || data;
+
+  // Handle case where server wraps everything in itinerary_response (snake_case)
+  // This happens in some StreamChat responses
+  if (itinerarySource.itinerary_response &&
+    (itinerarySource.itinerary_response.general_city_data ||
+      itinerarySource.itinerary_response.points_of_interest)) {
+    itinerarySource = itinerarySource.itinerary_response;
+  }
 
   const normalized: any = {};
 
@@ -148,16 +160,19 @@ const normalizeItineraryData = (data: any): any => {
   }
 
   // Normalize points_of_interest (general POIs, separate from itinerary)
-  // IMPORTANT: Only set general points_of_interest if there's no itinerary_response
-  // This prevents itinerary POIs from being added to the general POIs list
-  // which would cause them to appear in the wrong section of the UI
-  if (itinerarySource.pointsOfInterest && !itinerarySource.itineraryResponse && !itinerarySource.itinerary_response) {
-    // camelCase: Only set if there's no itinerary response
-    normalized.points_of_interest = itinerarySource.pointsOfInterest;
-  } else if (itinerarySource.points_of_interest && !itinerarySource.itineraryResponse && !itinerarySource.itinerary_response) {
-    // snake_case: Also guard against itinerary response to prevent POIs appearing in wrong section
-    normalized.points_of_interest = itinerarySource.points_of_interest;
+  // For ContinueChat responses: Do NOT add POIs to the general list 
+  //   (they belong only in itinerary_response.points_of_interest)
+  // For full StreamChat responses: DO include general POIs
+  if (!isContinueChatResponse) {
+    // Full response - include general points of interest
+    if (itinerarySource.pointsOfInterest) {
+      normalized.points_of_interest = itinerarySource.pointsOfInterest;
+    } else if (itinerarySource.points_of_interest) {
+      normalized.points_of_interest = itinerarySource.points_of_interest;
+    }
   }
+  // For ContinueChat (isContinueChatResponse === true): 
+  // Leave points_of_interest undefined - caller will preserve existing POIs
 
   // Copy session info
   normalized.session_id = data.sessionId || data.session_id || itinerarySource.sessionId || itinerarySource.session_id;
