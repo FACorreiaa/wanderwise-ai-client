@@ -1,11 +1,11 @@
 import { Component, Show } from "solid-js";
-import { Download, Share2, Star } from "lucide-solid";
+import { Download, Share2, Bookmark } from "lucide-solid";
 
 interface ActionToolbarProps {
     onDownload?: () => void;
     onShare?: () => void;
-    onFavorite?: () => void;
-    isFavorite?: boolean;
+    onBookmark?: () => void;
+    isBookmarked?: boolean;
 }
 
 export const ActionToolbar: Component<ActionToolbarProps> = (props) => {
@@ -21,16 +21,16 @@ export const ActionToolbar: Component<ActionToolbarProps> = (props) => {
                 </button>
             </Show>
 
-            <Show when={props.onFavorite}>
+            <Show when={props.onBookmark}>
                 <button
-                    onClick={props.onFavorite}
-                    class={`p-2 rounded-full transition-colors ${props.isFavorite
-                            ? "text-yellow-500 bg-yellow-50 dark:bg-yellow-900/10"
-                            : "text-gray-600 dark:text-gray-300 hover:text-yellow-500 hover:bg-yellow-50 dark:hover:bg-yellow-900/20"
+                    onClick={props.onBookmark}
+                    class={`p-2 rounded-full transition-colors ${props.isBookmarked
+                        ? "text-blue-500 bg-blue-50 dark:bg-blue-900/10"
+                        : "text-gray-600 dark:text-gray-300 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20"
                         }`}
-                    title={props.isFavorite ? "Remove from Favorites" : "Add to Favorites"}
+                    title={props.isBookmarked ? "Saved to Lists" : "Save to Lists"}
                 >
-                    <Star class={`w-4 h-4 ${props.isFavorite ? "fill-current" : ""}`} />
+                    <Bookmark class={`w-4 h-4 ${props.isBookmarked ? "fill-current" : ""}`} />
                 </button>
             </Show>
 

@@ -1,11 +1,43 @@
 import { useQuery } from "@tanstack/solid-query";
-import { getAuthToken } from "../api";
+import { getAuthToken, authAPI } from "../api";
+import { createClient } from "@connectrpc/connect";
+import { createConnectTransport } from "@connectrpc/connect-web";
+import { StatisticsService } from "@buf/loci_loci-proto.bufbuild_es/proto/statistics_pb.js";
 
 // Get API base URL
 const API_BASE_URL =
   import.meta.env.VITE_CONNECT_BASE_URL || "http://localhost:8000";
 
-// Statistics types
+// Helper to get current user ID from session
+const getCurrentUserId = async (): Promise<string | null> => {
+  try {
+    const session = await authAPI.validateSession();
+    if (session.valid && session.user_id) {
+      return session.user_id;
+    }
+  } catch (e) {
+    console.warn("Failed to get user ID from session:", e);
+  }
+  return null;
+};
+
+// Create transport for ConnectRPC
+const createStatisticsTransport = () => {
+  const token = getAuthToken();
+  return createConnectTransport({
+    baseUrl: API_BASE_URL,
+    interceptors: [
+      (next) => async (req) => {
+        if (token) {
+          req.header.set("Authorization", `Bearer ${token}`);
+        }
+        return await next(req);
+      },
+    ],
+  });
+};
+
+// Statistics types (matching proto definitions)
 export interface MainPageStatistics {
   total_users_count: number;
   total_itineraries_saved: number;
@@ -33,47 +65,106 @@ export interface LandingPageUserStats {
   discoveries: number;
 }
 
-// Helper function for making authenticated requests
-async function statisticsRequest<T>(endpoint: string): Promise<T> {
-  const token = getAuthToken();
-  const url = `${API_BASE_URL.replace(/\/$/, "")}/${endpoint.replace(/^\//, "")}`;
-
-  const response = await fetch(url, {
-    headers: {
-      "Content-Type": "application/json",
-      ...(token && { Authorization: `Bearer ${token}` }),
-    },
-    credentials: "include",
-  });
-
-  if (!response.ok) {
-    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-  }
-
-  return response.json();
-}
-
-// API functions
+// RPC API functions
 export const getMainPageStatistics = async (): Promise<MainPageStatistics> => {
-  return statisticsRequest<MainPageStatistics>("/statistics/main-page");
+  try {
+    const transport = createStatisticsTransport();
+    const client = createClient(StatisticsService, transport);
+    const response = await client.getMainPageStatistics({
+      includeTrends: false,
+      timeRange: "7d",
+    });
+
+    const stats = response.statistics;
+    return {
+      total_users_count: Number(stats?.totalUsers || 0),
+      total_itineraries_saved: Number(stats?.totalItineraries || 0),
+      total_unique_pois: Number(stats?.totalPois || 0),
+    };
+  } catch (error) {
+    console.error("Failed to fetch main page statistics via RPC:", error);
+    // Return zeros on error
+    return {
+      total_users_count: 0,
+      total_itineraries_saved: 0,
+      total_unique_pois: 0,
+    };
+  }
 };
 
-export const getDetailedPOIStatistics =
-  async (): Promise<DetailedPOIStatistics> => {
-    return statisticsRequest<DetailedPOIStatistics>("/user-statistics/poi/detailed");
-  };
+export const getDetailedPOIStatistics = async (): Promise<DetailedPOIStatistics> => {
+  try {
+    const transport = createStatisticsTransport();
+    const client = createClient(StatisticsService, transport);
+    const response = await client.getDetailedPOIStatistics({});
 
-export const getLandingPageStatistics =
-  async (): Promise<LandingPageUserStats> => {
-    // return statisticsRequest<LandingPageUserStats>("/user-statistics/landing-page");
-    console.log("⏸ Landing page stats call disabled for /user-statistics/landing-page");
+    const stats = response.statistics;
+    return {
+      general_pois: Number(stats?.favoritePoisCount || 0),
+      suggested_pois: 0,
+      hotels: 0,
+      restaurants: 0,
+      total_pois: Number(stats?.totalPoiSearches || 0),
+    };
+  } catch (error) {
+    console.error("Failed to fetch detailed POI statistics via RPC:", error);
+    return {
+      general_pois: 0,
+      suggested_pois: 0,
+      hotels: 0,
+      restaurants: 0,
+      total_pois: 0,
+    };
+  }
+};
+
+export const getLandingPageStatistics = async (): Promise<LandingPageUserStats> => {
+  try {
+    const token = getAuthToken();
+    if (!token) {
+      return {
+        saved_places: 0,
+        itineraries: 0,
+        cities_explored: 0,
+        discoveries: 0,
+      };
+    }
+
+    // Get user ID from session for the RPC request
+    const userId = await getCurrentUserId();
+    if (!userId) {
+      console.warn("No user ID available for landing page statistics");
+      return {
+        saved_places: 0,
+        itineraries: 0,
+        cities_explored: 0,
+        discoveries: 0,
+      };
+    }
+
+    const transport = createStatisticsTransport();
+    const client = createClient(StatisticsService, transport);
+    const response = await client.getLandingPageStatistics({
+      userId: userId,
+    });
+
+    const stats = response.statistics;
+    return {
+      saved_places: Number(stats?.newFavoritesThisWeek || 0),
+      itineraries: Number(stats?.itinerariesCreatedThisMonth || 0),
+      cities_explored: 0, // Not directly available in response
+      discoveries: Number(stats?.searchesThisWeek || 0),
+    };
+  } catch (error) {
+    console.error("Failed to fetch landing page statistics via RPC:", error);
     return {
       saved_places: 0,
       itineraries: 0,
       cities_explored: 0,
       discoveries: 0,
     };
-  };
+  }
+};
 
 // Custom hooks for statistics
 export const useMainPageStatistics = () => {
@@ -93,6 +184,7 @@ export const useDetailedPOIStatistics = () => {
     queryFn: getDetailedPOIStatistics,
     refetchInterval: 60000, // Refetch every minute as fallback
     staleTime: 30000, // Consider data stale after 30 seconds
+    enabled: !!getAuthToken(), // Only fetch if authenticated
   }));
 };
 
@@ -106,7 +198,7 @@ export const useLandingPageStatistics = () => {
   }));
 };
 
-// SSE connection class for real-time statistics updates
+// SSE connection class for real-time statistics updates (kept for compatibility)
 export class StatisticsSSE {
   private eventSource: EventSource | null = null;
   private onUpdate: ((stats: MainPageStatistics) => void) | null = null;

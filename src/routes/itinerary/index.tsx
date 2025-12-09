@@ -21,6 +21,9 @@ export default function ItineraryPage() {
 
   const { store, connect, setStore } = useStreamedRpc(message, cityName, profileId);
 
+  // Local favorites state
+  const [favorites, setFavorites] = createSignal<string[]>([]);
+
   // Helper to normalize stored data - flattens nested itinerary_response structure
   const normalizeStoredData = (data: any): any => {
     if (!data) return null;
@@ -156,9 +159,19 @@ export default function ItineraryPage() {
     }
   };
 
-  const handleFavorite = () => {
-    // Implement favorite logic here (interaction with backend/local storage)
-    console.log("Favorited current itinerary");
+  const handleBookmark = () => {
+    // Implement bookmark logic here - saves the full itinerary to user's lists
+    console.log("Bookmarked current itinerary");
+  };
+
+  const handleItemFavorite = (poi: any) => {
+    const name = poi.name;
+    setFavorites(prev =>
+      prev.includes(name)
+        ? prev.filter(n => n !== name)
+        : [...prev, name]
+    );
+    console.log(`Toggled favorite for: ${name}`);
   };
 
   // Map Content
@@ -184,7 +197,7 @@ export default function ItineraryPage() {
         <ActionToolbar
           onDownload={handleDownload}
           onShare={handleShare}
-          onFavorite={handleFavorite}
+          onBookmark={handleBookmark}
         />
       </div>
     </div>
@@ -217,6 +230,8 @@ export default function ItineraryPage() {
               pois={pointsOfInterest()}
               showToggle={true}
               initialLimit={3}
+              onFavoriteClick={handleItemFavorite}
+              favorites={favorites()}
             />
           </div>
         </Show>
@@ -230,7 +245,9 @@ export default function ItineraryPage() {
               </h3>
               <ItineraryResults
                 itinerary={itinerary}
-                showToggle={false} // Show all by default in the main view
+                showToggle={false}
+                onFavoriteClick={handleItemFavorite}
+                favorites={favorites()}
               />
             </div>
           )}

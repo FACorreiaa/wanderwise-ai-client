@@ -1,573 +1,439 @@
-import { createSignal, For, Show } from 'solid-js';
-import { Folder, Plus, Edit3, Trash2, Share2, Lock, Globe, Users, Copy, X } from 'lucide-solid';
-import { useLists, useCreateListMutation, useUpdateListMutation, useDeleteListMutation } from '~/lib/api/lists';
-import type { ItineraryList } from '~/lib/api/types';
+import { createSignal, For, Show, createMemo } from 'solid-js';
+import { Title, Meta } from '@solidjs/meta';
+import { A } from '@solidjs/router';
+import {
+    Folder, Plus, Edit3, Trash2, Share2, Lock, Globe,
+    Loader2, X, FolderPlus, ChevronRight, MapPin, Calendar, Heart, Bookmark
+} from 'lucide-solid';
+import {
+    useLists,
+    useCreateListMutation,
+    useUpdateListMutation,
+    useDeleteListMutation,
+    type CreateListData
+} from '~/lib/api/lists';
 
 export default function ListsPage() {
-    const [activeTab, setActiveTab] = createSignal('my-lists'); // 'my-lists', 'shared', 'public'
-    const [selectedList, setSelectedList] = createSignal<ItineraryList | null>(null);
-    const [showCreateModal, setShowCreateModal] = createSignal(false);
-    const [showEditModal, setShowEditModal] = createSignal(false);
-    const [showDeleteModal, setShowDeleteModal] = createSignal(false);
+    // State
+    const [showModal, setShowModal] = createSignal(false);
+    const [editingList, setEditingList] = createSignal<any | null>(null);
+    const [formName, setFormName] = createSignal('');
+    const [formDescription, setFormDescription] = createSignal('');
+    const [formIsPublic, setFormIsPublic] = createSignal(false);
+    const [formIsItinerary, setFormIsItinerary] = createSignal(false);
+    const [activeTab, setActiveTab] = createSignal<'all' | 'custom' | 'itineraries'>('all');
+    const [deleteConfirmId, setDeleteConfirmId] = createSignal<string | null>(null);
 
-    // List form state
-    const [listForm, setListForm] = createSignal({
-        name: '',
-        description: '',
-        isPublic: false,
-        allowCollaboration: false,
-        tags: [] as string[]
+    // Queries & Mutations
+    const listsQuery = useLists();
+    const createMutation = useCreateListMutation();
+    const updateMutation = useUpdateListMutation();
+    const deleteMutation = useDeleteListMutation();
+
+    // Derived state
+    const lists = createMemo(() => listsQuery.data || []);
+    const isLoading = createMemo(() => listsQuery.isLoading);
+
+    // Filter lists by tab
+    const filteredLists = createMemo(() => {
+        const all = lists();
+        switch (activeTab()) {
+            case 'custom':
+                return all.filter((l: any) => !l.isItinerary);
+            case 'itineraries':
+                return all.filter((l: any) => l.isItinerary);
+            default:
+                return all;
+        }
     });
 
-    // API hooks
-    const listsQuery = useLists();
-    const createListMutation = useCreateListMutation();
-    const updateListMutation = useUpdateListMutation();
-    const deleteListMutation = useDeleteListMutation();
-
-    // Get lists from API or fallback to empty array
-    const lists = () => listsQuery.data || [];
-
-    const [sharedLists] = createSignal([
-        {
-            id: "shared-1",
-            name: "Sarah's Art Route",
-            description: "Contemporary art galleries and installations across major European cities.",
-            itemCount: 12,
-            isPublic: false,
-            allowCollaboration: true,
-            createdAt: "2024-01-01",
-            collaborators: ["Sarah Chen"],
-            owner: "Sarah Chen",
-            sharedWith: "You",
-            tags: ["Art", "Galleries", "Contemporary"],
-            cities: ["Berlin", "Paris", "Amsterdam"],
-            likes: 8,
-            updatedAt: "2024-01-17"
-        }
-    ]);
-
-    const [publicLists] = createSignal([
-        {
-            id: "public-1",
-            name: "Instagram-worthy Spots in Paris",
-            description: "The most photogenic locations in the City of Light, curated by a local photographer.",
-            itemCount: 18,
-            isPublic: true,
-            allowCollaboration: false,
-            createdAt: "2024-01-01",
-            collaborators: [],
-            owner: "Photography Explorer",
-            tags: ["Photography", "Paris", "Instagram"],
-            cities: ["Paris"],
-            likes: 312,
-            views: 1547,
-            updatedAt: "2024-01-19"
-        },
-        {
-            id: "public-2",
-            name: "Digital Nomad Cafes - Europe",
-            description: "WiFi-friendly cafes perfect for remote work across European cities.",
-            itemCount: 45,
-            isPublic: true,
-            allowCollaboration: false,
-            createdAt: "2024-01-01",
-            collaborators: [],
-            owner: "Remote Worker Hub",
-            tags: ["Digital Nomad", "Cafes", "Work"],
-            cities: ["Multiple"],
-            likes: 89,
-            views: 2341,
-            updatedAt: "2024-01-16"
-        }
-    ]);
-
-    const tabs = [
-        { id: 'my-lists', label: 'My Lists', count: lists().length },
-        { id: 'shared', label: 'Shared with Me', count: sharedLists().length },
-        { id: 'public', label: 'Public Lists', count: publicLists().length }
-    ];
-
-    const createList = async () => {
-        try {
-            await createListMutation.mutateAsync({
-                ...listForm()
-            });
-            setShowCreateModal(false);
-            resetForm();
-        } catch (error) {
-            console.error('Failed to create list:', error);
-        }
+    // Form handlers
+    const openCreateModal = () => {
+        setEditingList(null);
+        setFormName('');
+        setFormDescription('');
+        setFormIsPublic(false);
+        setFormIsItinerary(false);
+        setShowModal(true);
     };
 
-    const updateList = async () => {
-        const listId = selectedList()?.id;
-        if (listId) {
-            try {
-                await updateListMutation.mutateAsync({
-                    listId,
-                    listData: listForm()
+    const openEditModal = (list: any) => {
+        setEditingList(list);
+        setFormName(list.name || '');
+        setFormDescription(list.description || '');
+        setFormIsPublic(list.isPublic || false);
+        setFormIsItinerary(list.isItinerary || false);
+        setShowModal(true);
+    };
+
+    const closeModal = () => {
+        setShowModal(false);
+        setEditingList(null);
+    };
+
+    const handleSubmit = async (e: Event) => {
+        e.preventDefault();
+        if (!formName().trim()) return;
+
+        const data: CreateListData = {
+            name: formName().trim(),
+            description: formDescription().trim(),
+            isPublic: formIsPublic(),
+            isItinerary: formIsItinerary(),
+        };
+
+        try {
+            if (editingList()) {
+                await updateMutation.mutateAsync({
+                    listId: editingList().id,
+                    data
                 });
-                setShowEditModal(false);
-                resetForm();
-            } catch (error) {
-                console.error('Failed to update list:', error);
+            } else {
+                await createMutation.mutateAsync(data);
             }
-        }
-    };
-
-    const deleteList = async () => {
-        const listId = selectedList()?.id;
-        if (listId) {
-            try {
-                await deleteListMutation.mutateAsync(listId);
-                setShowDeleteModal(false);
-                setSelectedList(null);
-            } catch (error) {
-                console.error('Failed to delete list:', error);
-            }
-        }
-    };
-
-    const duplicateList = async (list: ItineraryList) => {
-        try {
-            await createListMutation.mutateAsync({
-                ...list,
-                name: `${list.name} (Copy)`,
-                isPublic: false
-            });
+            closeModal();
         } catch (error) {
-            console.error('Failed to duplicate list:', error);
+            console.error('Failed to save list:', error);
         }
     };
 
-    const resetForm = () => {
-        setListForm({
-            name: '',
-            description: '',
-            isPublic: false,
-            allowCollaboration: false,
-            tags: []
-        });
-    };
-
-    const openEditModal = (list: ItineraryList) => {
-        setSelectedList(list);
-        setListForm({
-            name: list.name,
-            description: list.description,
-            isPublic: list.isPublic,
-            allowCollaboration: list.allowCollaboration,
-            tags: [...list.tags]
-        });
-        setShowEditModal(true);
-    };
-
-    const getVisibilityIcon = (list: ItineraryList) => {
-        if (list.isPublic) return Globe;
-        if (list.allowCollaboration) return Users;
-        return Lock;
-    };
-
-    const getVisibilityLabel = (list: ItineraryList) => {
-        if (list.isPublic) return 'Public';
-        if (list.allowCollaboration) return 'Collaborative';
-        return 'Private';
-    };
-
-    const getVisibilityColor = (list: ItineraryList) => {
-        if (list.isPublic) return 'text-green-600 bg-green-50';
-        if (list.allowCollaboration) return 'text-blue-600 bg-blue-50';
-        return 'text-gray-600 bg-gray-50';
-    };
-
-    const getCurrentLists = () => {
-        switch (activeTab()) {
-            case 'shared':
-                return sharedLists();
-            case 'public':
-                return publicLists();
-            default:
-                return lists();
+    const handleDelete = async (listId: string) => {
+        try {
+            await deleteMutation.mutateAsync(listId);
+            setDeleteConfirmId(null);
+        } catch (error) {
+            console.error('Failed to delete list:', error);
         }
     };
 
-    const renderListCard = (list: ItineraryList) => {
-        const VisibilityIcon = getVisibilityIcon(list);
+    const formatDate = (timestamp: any) => {
+        if (!timestamp) return '';
+        try {
+            const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+            return date.toLocaleDateString('en-US', {
+                month: 'short',
+                day: 'numeric'
+            });
+        } catch {
+            return '';
+        }
+    };
 
-        return (
-            <div class="cb-card hover:shadow-lg transition-all duration-300 group">
-                {/* Cover Image Placeholder */}
-                <div class="relative h-32 bg-white/70 dark:bg-slate-900/60 border-b border-white/50 dark:border-slate-800/60 overflow-hidden">
-                    <div class="absolute inset-0 flex items-center justify-center">
-                        <div class="grid grid-cols-3 gap-1 opacity-30">
-                            <For each={Array.from({ length: 9 })}>{() => (
-                                <div class="w-4 h-4 bg-white rounded-sm" />
-                            )}</For>
-                        </div>
-                    </div>
+    return (
+        <>
+            <Title>My Lists - Organize Your Travel | Loci</Title>
+            <Meta name="description" content="Create and manage custom lists of your favorite places, itineraries, and travel plans." />
 
-                    {/* Visibility badge */}
-                    <div class="absolute top-3 left-3">
-                        <span class={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${getVisibilityColor(list)}`}>
-                            <VisibilityIcon class="w-3 h-3" />
-                            {getVisibilityLabel(list)}
-                        </span>
-                    </div>
-
-                    {/* Actions - only show for own lists */}
-                    <Show when={activeTab() === 'my-lists'}>
-                        <div class="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <div class="flex gap-1">
+            <div class="min-h-screen relative transition-colors">
+                {/* Header */}
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                    <div class="loci-hero">
+                        <div class="loci-hero__content p-6 sm:p-8 space-y-6">
+                            <div class="flex items-center justify-between flex-wrap gap-4">
+                                <div class="flex items-center gap-3">
+                                    <div class="relative">
+                                        <div class="absolute -inset-1 bg-gradient-to-tr from-purple-500/60 via-pink-500/60 to-orange-500/60 blur-md opacity-80" />
+                                        <div class="relative w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center text-white shadow-lg ring-2 ring-white/60">
+                                            <Folder class="w-6 h-6" />
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <h1 class="text-3xl sm:text-4xl font-bold tracking-tight">My Lists</h1>
+                                        <p class="text-white/80 text-sm mt-1">
+                                            Organize your saved places and travel plans
+                                        </p>
+                                    </div>
+                                </div>
                                 <button
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        openEditModal(list);
-                                    }}
-                                    class="p-1.5 bg-white/90 text-gray-700 rounded-lg hover:bg-white"
-                                    title="Edit list"
+                                    onClick={openCreateModal}
+                                    class="flex items-center gap-2 px-5 py-2.5 bg-white/20 hover:bg-white/30 rounded-xl text-white font-semibold transition-all border border-white/30 shadow-lg"
                                 >
-                                    <Edit3 class="w-3 h-3" />
-                                </button>
-                                <button
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        duplicateList(list);
-                                    }}
-                                    class="p-1.5 bg-white/90 text-gray-700 rounded-lg hover:bg-white"
-                                    title="Duplicate list"
-                                >
-                                    <Copy class="w-3 h-3" />
-                                </button>
-                                <button class="p-1.5 bg-white/90 text-gray-700 rounded-lg hover:bg-white">
-                                    <Share2 class="w-3 h-3" />
+                                    <Plus class="w-5 h-5" />
+                                    New List
                                 </button>
                             </div>
+
+                            {/* Quick Links */}
+                            <div class="flex items-center gap-3 flex-wrap">
+                                <A
+                                    href="/favorites"
+                                    class="flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 rounded-lg text-white/90 text-sm font-medium transition-all border border-white/20"
+                                >
+                                    <Heart class="w-4 h-4" />
+                                    View Favorites
+                                </A>
+                                <A
+                                    href="/bookmarks"
+                                    class="flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 rounded-lg text-white/90 text-sm font-medium transition-all border border-white/20"
+                                >
+                                    <Bookmark class="w-4 h-4" />
+                                    View Bookmarks
+                                </A>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-16">
+                    {/* Tabs */}
+                    <div class="flex items-center gap-2 mb-6 border-b border-gray-200 dark:border-gray-700">
+                        <button
+                            onClick={() => setActiveTab('all')}
+                            class={`px-4 py-3 text-sm font-medium border-b-2 transition-colors ${activeTab() === 'all'
+                                ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                                : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
+                                }`}
+                        >
+                            All Lists ({lists().length})
+                        </button>
+                        <button
+                            onClick={() => setActiveTab('custom')}
+                            class={`px-4 py-3 text-sm font-medium border-b-2 transition-colors ${activeTab() === 'custom'
+                                ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                                : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
+                                }`}
+                        >
+                            Custom Lists
+                        </button>
+                        <button
+                            onClick={() => setActiveTab('itineraries')}
+                            class={`px-4 py-3 text-sm font-medium border-b-2 transition-colors ${activeTab() === 'itineraries'
+                                ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                                : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
+                                }`}
+                        >
+                            Itineraries
+                        </button>
+                    </div>
+
+                    {/* Loading State */}
+                    <Show when={isLoading()}>
+                        <div class="flex items-center justify-center py-16">
+                            <Loader2 class="w-8 h-8 animate-spin text-blue-500" />
+                            <span class="ml-3 text-gray-600 dark:text-gray-400">Loading your lists...</span>
                         </div>
                     </Show>
 
-
-                </div>
-
-                {/* Content */}
-                <div class="p-4">
-                    <div class="flex items-start justify-between mb-2">
-                        <div class="flex-1 min-w-0">
-                            <h3 class="font-semibold text-gray-900 text-sm mb-1 truncate">{list.name}</h3>
-                            <p class="text-xs text-gray-500">
-                                By {list.owner} • {list.itemCount} places
-                            </p>
-                        </div>
-                    </div>
-
-                    <p class="text-xs text-gray-600 mb-3 line-clamp-2">{list.description}</p>
-
-
-
-
-
-                    {/* Tags */}
-                    <div class="flex flex-wrap gap-1 mb-3">
-                        <For each={list.tags.slice(0, 2)}>{tag => (
-                            <span class="px-2 py-0.5 bg-blue-100 text-blue-800 rounded-full text-xs">
-                                {tag}
-                            </span>
-                        )}</For>
-                        {list.tags.length > 2 && (
-                            <span class="px-2 py-0.5 bg-gray-100 text-gray-600 rounded-full text-xs">
-                                +{list.tags.length - 2}
-                            </span>
-                        )}
-                    </div>
-
-                    {/* Footer */}
-                    <div class="flex items-center justify-between text-xs text-gray-500">
-                        <span>Updated {new Date(list.updatedAt).toLocaleDateString()}</span>
-                        <div class="flex items-center gap-2">
-                            <Show when={list.collaborators?.length > 0}>
-                                <div class="flex items-center gap-1">
-                                    <Users class="w-3 h-3" />
-                                    <span>{list.collaborators.length}</span>
-                                </div>
-                            </Show>
-                            <button class="text-blue-600 hover:text-blue-700 font-medium">
-                                View →
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div >
-        );
-    };
-
-    const renderListForm = () => (
-        <div class="space-y-6">
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">List Name</label>
-                <input
-                    type="text"
-                    value={listForm().name}
-                    onInput={(e) => setListForm(prev => ({ ...prev, name: e.target.value }))}
-                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="e.g., Hidden Gems in Europe"
-                />
-            </div>
-
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">Description</label>
-                <textarea
-                    value={listForm().description}
-                    onInput={(e) => setListForm(prev => ({ ...prev, description: e.target.value }))}
-                    rows={3}
-                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="Describe what makes this list special..."
-                />
-            </div>
-
-            <div class="space-y-3">
-                <div class="flex items-start space-x-3">
-                    <input
-                        type="checkbox"
-                        id="isPublic"
-                        checked={listForm().isPublic}
-                        onChange={(e) => setListForm(prev => ({ ...prev, isPublic: e.target.checked }))}
-                        class="mt-1 text-blue-600 rounded focus:ring-blue-500"
-                    />
-                    <div class="flex-1">
-                        <label for="isPublic" class="text-sm font-medium text-gray-700">
-                            Make this list public
-                        </label>
-                        <p class="text-xs text-gray-600">
-                            Others can discover and view your list
-                        </p>
-                    </div>
-                </div>
-
-                <div class="flex items-start space-x-3">
-                    <input
-                        type="checkbox"
-                        id="allowCollaboration"
-                        checked={listForm().allowCollaboration}
-                        onChange={(e) => setListForm(prev => ({ ...prev, allowCollaboration: e.target.checked }))}
-                        class="mt-1 text-blue-600 rounded focus:ring-blue-500"
-                    />
-                    <div class="flex-1">
-                        <label for="allowCollaboration" class="text-sm font-medium text-gray-700">
-                            Allow collaboration
-                        </label>
-                        <p class="text-xs text-gray-600">
-                            Let others contribute to this list
-                        </p>
-                    </div>
-                </div>
-            </div>
-        </div>
-    );
-
-    return (
-        <div class="min-h-screen bg-gray-50">
-            {/* Header */}
-            <div class="bg-white border-b border-gray-200">
-                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-                    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                        <div>
-                            <h1 class="text-2xl font-bold text-gray-900">My Collections</h1>
-                            <p class="text-gray-600 mt-1">Organize and share your favorite places</p>
-                        </div>
-                        <Show when={activeTab() === 'my-lists'}>
-                            <button
-                                onClick={() => setShowCreateModal(true)}
-                                class="cb-button cb-button-primary px-4 py-2 flex items-center gap-2"
-                            >
-                                <Plus class="w-4 h-4" />
-                                Create List
-                            </button>
-                        </Show>
-                    </div>
-                </div>
-            </div>
-
-            {/* Tabs */}
-            <div class="bg-white border-b border-gray-200">
-                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div class="flex space-x-8">
-                        <For each={tabs}>
-                            {(tab) => (
-                                <button
-                                    onClick={() => setActiveTab(tab.id)}
-                                    class={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${activeTab() === tab.id
-                                        ? 'border-blue-500 text-blue-600'
-                                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                                        }`}
-                                >
-                                    {tab.label} ({tab.count})
-                                </button>
-                            )}
-                        </For>
-                    </div>
-                </div>
-            </div>
-
-            {/* Content */}
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-                <Show
-                    when={getCurrentLists().length > 0}
-                    fallback={
-                        <div class="text-center py-12">
-                            <Folder class="w-12 h-12 text-gray-300 mx-auto mb-4" />
-                            <h3 class="text-lg font-semibold text-gray-900 mb-2">
-                                {activeTab() === 'my-lists' && 'No lists yet'}
-                                {activeTab() === 'shared' && 'No shared lists'}
-                                {activeTab() === 'public' && 'No public lists found'}
+                    {/* Empty State */}
+                    <Show when={!isLoading() && filteredLists().length === 0}>
+                        <div class="text-center py-16">
+                            <div class="w-20 h-20 mx-auto mb-6 rounded-full bg-gradient-to-br from-purple-100 to-pink-100 dark:from-purple-900/30 dark:to-pink-900/30 flex items-center justify-center">
+                                <FolderPlus class="w-10 h-10 text-purple-500" />
+                            </div>
+                            <h3 class="text-xl font-semibold text-gray-800 dark:text-white mb-2">
+                                {activeTab() === 'all' ? 'No Lists Yet' : `No ${activeTab() === 'custom' ? 'Custom Lists' : 'Itineraries'} Yet`}
                             </h3>
-                            <p class="text-gray-600 mb-4">
-                                {activeTab() === 'my-lists' && 'Create your first list to organize your favorite places'}
-                                {activeTab() === 'shared' && "Lists shared with you will appear here"}
-                                {activeTab() === 'public' && 'Discover amazing lists created by the community'}
+                            <p class="text-gray-600 dark:text-gray-400 mb-6 max-w-md mx-auto">
+                                Create your first list to start organizing your favorite places and travel plans.
                             </p>
-                            <Show when={activeTab() === 'my-lists'}>
-                                <button
-                                    onClick={() => setShowCreateModal(true)}
-                                    class="cb-button cb-button-primary px-6 py-2"
-                                >
-                                    Create Your First List
-                                </button>
-                            </Show>
+                            <button
+                                onClick={openCreateModal}
+                                class="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl font-semibold hover:from-purple-700 hover:to-pink-700 transition-all shadow-lg"
+                            >
+                                <Plus class="w-5 h-5" />
+                                Create Your First List
+                            </button>
                         </div>
-                    }
-                >
-                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                        <For each={getCurrentLists()}>
-                            {(list) => renderListCard(list)}
-                        </For>
+                    </Show>
+
+                    {/* Lists Grid */}
+                    <Show when={!isLoading() && filteredLists().length > 0}>
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            <For each={filteredLists()}>
+                                {(list: any) => (
+                                    <div class="glass-panel rounded-2xl p-5 hover:shadow-xl transition-all duration-200 group relative">
+                                        {/* Delete Confirmation Overlay */}
+                                        <Show when={deleteConfirmId() === list.id}>
+                                            <div class="absolute inset-0 bg-white/95 dark:bg-gray-900/95 backdrop-blur rounded-2xl flex flex-col items-center justify-center z-10 p-4">
+                                                <p class="text-sm text-gray-700 dark:text-gray-300 mb-4 text-center">
+                                                    Delete "{list.name}"?
+                                                </p>
+                                                <div class="flex gap-2">
+                                                    <button
+                                                        onClick={() => setDeleteConfirmId(null)}
+                                                        class="px-3 py-1.5 text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg"
+                                                    >
+                                                        Cancel
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleDelete(list.id)}
+                                                        disabled={deleteMutation.isPending}
+                                                        class="px-3 py-1.5 text-sm bg-red-500 text-white rounded-lg hover:bg-red-600 disabled:opacity-50"
+                                                    >
+                                                        {deleteMutation.isPending ? 'Deleting...' : 'Delete'}
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </Show>
+
+                                        <div class="flex items-start justify-between mb-3">
+                                            <div class="flex-1 min-w-0">
+                                                <div class="flex items-center gap-2 mb-1">
+                                                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white truncate">
+                                                        {list.name}
+                                                    </h3>
+                                                    {list.isPublic ? (
+                                                        <span title="Public"><Globe class="w-4 h-4 text-green-500 flex-shrink-0" /></span>
+                                                    ) : (
+                                                        <span title="Private"><Lock class="w-4 h-4 text-gray-400 flex-shrink-0" /></span>
+                                                    )}
+                                                </div>
+                                                <Show when={list.isItinerary}>
+                                                    <span class="inline-block px-2 py-0.5 text-xs font-medium bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300 rounded-full">
+                                                        Itinerary
+                                                    </span>
+                                                </Show>
+                                            </div>
+
+                                            {/* Action Buttons */}
+                                            <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <button
+                                                    onClick={() => openEditModal(list)}
+                                                    class="p-2 text-gray-400 hover:text-blue-500 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/20"
+                                                    title="Edit"
+                                                >
+                                                    <Edit3 class="w-4 h-4" />
+                                                </button>
+                                                <button
+                                                    onClick={() => setDeleteConfirmId(list.id)}
+                                                    class="p-2 text-gray-400 hover:text-red-500 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20"
+                                                    title="Delete"
+                                                >
+                                                    <Trash2 class="w-4 h-4" />
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        <Show when={list.description}>
+                                            <p class="text-sm text-gray-600 dark:text-gray-300 line-clamp-2 mb-3">
+                                                {list.description}
+                                            </p>
+                                        </Show>
+
+                                        <div class="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400 mb-4">
+                                            <div class="flex items-center gap-3">
+                                                <Show when={list.cityId}>
+                                                    <span class="flex items-center gap-1">
+                                                        <MapPin class="w-3 h-3" />
+                                                        {list.cityId}
+                                                    </span>
+                                                </Show>
+                                                <span>{list.itemCount || 0} items</span>
+                                            </div>
+                                            <Show when={list.createdAt}>
+                                                <span class="flex items-center gap-1">
+                                                    <Calendar class="w-3 h-3" />
+                                                    {formatDate(list.createdAt)}
+                                                </span>
+                                            </Show>
+                                        </div>
+
+                                        <A
+                                            href={`/lists/${list.id}`}
+                                            class="flex items-center justify-center gap-2 w-full py-2.5 bg-gray-100 dark:bg-white/5 hover:bg-blue-50 dark:hover:bg-blue-900/20 text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 rounded-xl font-medium text-sm transition-colors"
+                                        >
+                                            View List
+                                            <ChevronRight class="w-4 h-4" />
+                                        </A>
+                                    </div>
+                                )}
+                            </For>
+                        </div>
+                    </Show>
+                </div>
+
+                {/* Create/Edit Modal */}
+                <Show when={showModal()}>
+                    <div class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                        <div class="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+                            <div class="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                                <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
+                                    {editingList() ? 'Edit List' : 'Create New List'}
+                                </h2>
+                                <button
+                                    onClick={closeModal}
+                                    class="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800"
+                                >
+                                    <X class="w-5 h-5" />
+                                </button>
+                            </div>
+
+                            <form onSubmit={handleSubmit} class="p-6 space-y-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                        Name *
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={formName()}
+                                        onInput={(e) => setFormName(e.currentTarget.value)}
+                                        placeholder="My Travel List"
+                                        class="w-full px-4 py-2.5 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                        required
+                                    />
+                                </div>
+
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                        Description
+                                    </label>
+                                    <textarea
+                                        value={formDescription()}
+                                        onInput={(e) => setFormDescription(e.currentTarget.value)}
+                                        placeholder="Optional description..."
+                                        rows={3}
+                                        class="w-full px-4 py-2.5 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
+                                    />
+                                </div>
+
+                                <div class="flex items-center gap-6">
+                                    <label class="flex items-center gap-2 cursor-pointer">
+                                        <input
+                                            type="checkbox"
+                                            checked={formIsItinerary()}
+                                            onChange={(e) => setFormIsItinerary(e.currentTarget.checked)}
+                                            class="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                        />
+                                        <span class="text-sm text-gray-700 dark:text-gray-300">This is an itinerary</span>
+                                    </label>
+
+                                    <label class="flex items-center gap-2 cursor-pointer">
+                                        <input
+                                            type="checkbox"
+                                            checked={formIsPublic()}
+                                            onChange={(e) => setFormIsPublic(e.currentTarget.checked)}
+                                            class="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                        />
+                                        <span class="text-sm text-gray-700 dark:text-gray-300">Make public</span>
+                                    </label>
+                                </div>
+
+                                <div class="flex justify-end gap-3 pt-4">
+                                    <button
+                                        type="button"
+                                        onClick={closeModal}
+                                        class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        type="submit"
+                                        disabled={createMutation.isPending || updateMutation.isPending}
+                                        class="px-5 py-2 text-sm font-semibold bg-gradient-to-r from-blue-600 to-cyan-600 text-white rounded-lg hover:from-blue-700 hover:to-cyan-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                                    >
+                                        {createMutation.isPending || updateMutation.isPending ? (
+                                            <span class="flex items-center gap-2">
+                                                <Loader2 class="w-4 h-4 animate-spin" />
+                                                Saving...
+                                            </span>
+                                        ) : editingList() ? 'Save Changes' : 'Create List'}
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
                     </div>
                 </Show>
             </div>
-
-            {/* Create List Modal */}
-            <Show when={showCreateModal()}>
-                <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-                    <div class="bg-white rounded-lg max-w-2xl w-full">
-                        <div class="p-6 border-b border-gray-200">
-                            <div class="flex items-center justify-between">
-                                <h2 class="text-xl font-semibold text-gray-900">Create New List</h2>
-                                <button
-                                    onClick={() => setShowCreateModal(false)}
-                                    class="p-2 hover:bg-gray-100 rounded-lg"
-                                >
-                                    <X class="w-5 h-5" />
-                                </button>
-                            </div>
-                        </div>
-                        <div class="p-6">
-                            {renderListForm()}
-                        </div>
-                        <div class="p-6 border-t border-gray-200 flex items-center justify-end gap-3">
-                            <button
-                                onClick={() => setShowCreateModal(false)}
-                                class="cb-button cb-button-secondary px-4 py-2"
-                            >
-                                Cancel
-                            </button>
-                            <button
-                                onClick={createList}
-                                disabled={!listForm().name.trim() || createListMutation.isPending}
-                                class="cb-button cb-button-primary px-4 py-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                                {createListMutation.isPending ? 'Creating...' : 'Create List'}
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </Show>
-
-            {/* Edit List Modal */}
-            <Show when={showEditModal()}>
-                <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-                    <div class="bg-white rounded-lg max-w-2xl w-full">
-                        <div class="p-6 border-b border-gray-200">
-                            <div class="flex items-center justify-between">
-                                <h2 class="text-xl font-semibold text-gray-900">Edit List</h2>
-                                <button
-                                    onClick={() => setShowEditModal(false)}
-                                    class="p-2 hover:bg-gray-100 rounded-lg"
-                                >
-                                    <X class="w-5 h-5" />
-                                </button>
-                            </div>
-                        </div>
-                        <div class="p-6">
-                            {renderListForm()}
-                        </div>
-                        <div class="p-6 border-t border-gray-200 flex items-center justify-between">
-                            <button
-                                onClick={() => {
-                                    setSelectedList(selectedList());
-                                    setShowEditModal(false);
-                                    setShowDeleteModal(true);
-                                }}
-                                class="cb-button text-red-600 hover:bg-red-50 px-4 py-2 flex items-center gap-2"
-                            >
-                                <Trash2 class="w-4 h-4" />
-                                Delete List
-                            </button>
-                            <div class="flex items-center gap-3">
-                                <button
-                                    onClick={() => setShowEditModal(false)}
-                                    class="cb-button cb-button-secondary px-4 py-2"
-                                >
-                                    Cancel
-                                </button>
-                                <button
-                                    onClick={updateList}
-                                    disabled={!listForm().name.trim() || updateListMutation.isPending}
-                                    class="cb-button cb-button-primary px-4 py-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                                >
-                                    {updateListMutation.isPending ? 'Saving...' : 'Save Changes'}
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </Show>
-
-            {/* Delete Confirmation Modal */}
-            <Show when={showDeleteModal()}>
-                <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-                    <div class="bg-white rounded-lg max-w-md w-full">
-                        <div class="p-6">
-                            <div class="flex items-center gap-3 mb-4">
-                                <div class="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
-                                    <Trash2 class="w-5 h-5 text-red-600" />
-                                </div>
-                                <div>
-                                    <h3 class="text-lg font-semibold text-gray-900">Delete List</h3>
-                                    <p class="text-sm text-gray-600">This action cannot be undone</p>
-                                </div>
-                            </div>
-                            <p class="text-gray-700 mb-6">
-                                Are you sure you want to delete "<strong>{selectedList()?.name}</strong>"?
-                                All {selectedList()?.itemCount} places in this list will be removed.
-                            </p>
-                            <div class="flex items-center justify-end gap-3">
-                                <button
-                                    onClick={() => setShowDeleteModal(false)}
-                                    class="cb-button cb-button-secondary px-4 py-2"
-                                >
-                                    Cancel
-                                </button>
-                                <button
-                                    onClick={deleteList}
-                                    disabled={deleteListMutation.isPending}
-                                    class="cb-button bg-red-600 text-white hover:bg-red-700 px-4 py-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                                >
-                                    {deleteListMutation.isPending ? 'Deleting...' : 'Delete List'}
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </Show>
-        </div>
+        </>
     );
 }

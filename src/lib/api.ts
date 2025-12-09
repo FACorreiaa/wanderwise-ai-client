@@ -149,14 +149,25 @@ export const authAPI = {
     const request = create(LoginRequestSchema, { email, password });
     const response = await authClient.login(request);
 
+    // The RPC response uses camelCase field names
+    // Note: TypeScript types may lag behind proto definition, using type assertion
+    const loginResponse = response as unknown as {
+      accessToken: string;
+      refreshToken: string;
+      message: string;
+      userId?: string;
+      username?: string;
+      email?: string;
+    };
+
     return {
-      access_token: response.accessToken,
-      refresh_token: response.refreshToken,
-      message: response.message,
-      // Pass through user details to avoid needing an immediate getCurrentUser call
-      user_id: (response as any).userId,
-      username: (response as any).username,
-      email: (response as any).email,
+      access_token: loginResponse.accessToken,
+      refresh_token: loginResponse.refreshToken,
+      message: loginResponse.message,
+      // Pass through user details from login response
+      user_id: loginResponse.userId || '',
+      username: loginResponse.username || '',
+      email: loginResponse.email || email, // Fallback to input email
     };
   },
 
@@ -294,15 +305,20 @@ export const authAPI = {
     let fullProfile: any = {};
     try {
       fullProfile = await apiRequest('/user/profile');
+      console.log('getCurrentUser: Full profile fetched:', fullProfile);
     } catch (e) {
-      console.warn('Failed to fetch full profile via REST, falling back to session data:', e);
+      console.warn('Failed to fetch full profile via REST, using session data:', e);
     }
+
+    // Use session data as primary source since it comes from validated token
+    const username = session.username || fullProfile.username || session.email?.split('@')[0] || '';
+    const displayName = fullProfile.username || session.username || username;
 
     return {
       id: session.user_id || fullProfile.id || '',
       email: session.email || fullProfile.email || '',
-      username: fullProfile.username || session.username || session.email || '',
-      display_name: fullProfile.username || session.username || '', // Use username as display name
+      username: username,
+      display_name: displayName,
       firstname: fullProfile.first_name || '',
       lastname: fullProfile.last_name || '',
       profile_image_url: fullProfile.profile_image_url,

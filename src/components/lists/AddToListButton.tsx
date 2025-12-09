@@ -48,12 +48,10 @@ export default function AddToListButton(props: AddToListButtonProps) {
       await addToListMutation.mutateAsync({
         listId,
         itemData: {
-          item_id: props.itemId,
-          content_type: props.contentType,
+          itemId: props.itemId,
+          contentType: props.contentType,
           position: 0, // Will be set by backend
           notes: '',
-          source_llm_interaction_id: props.sourceInteractionId,
-          item_ai_description: props.aiDescription,
         },
       });
       setShowListModal(false);
@@ -74,7 +72,9 @@ export default function AddToListButton(props: AddToListButtonProps) {
       });
 
       // Add the item to the newly created list
-      await addToList(newList.id);
+      if (newList?.id) {
+        await addToList(newList.id);
+      }
       setNewListName('');
       setShowCreateForm(false);
     } catch (error) {
@@ -201,7 +201,7 @@ export default function AddToListButton(props: AddToListButtonProps) {
                     }
                   >
                     <For each={lists()}>
-                      {(list) => (
+                      {(list: any) => (
                         <button
                           onClick={() => addToList(list.id)}
                           disabled={addToListMutation.isPending}

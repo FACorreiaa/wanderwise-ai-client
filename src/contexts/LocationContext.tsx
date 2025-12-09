@@ -87,7 +87,7 @@ export function LocationProvider(props: LocationProviderProps) {
     }
   };
 
-  // Initialize permission status and listen for changes
+  // Initialize permission status and listen for changes (without auto-requesting)
   onMount(() => {
     if (!isGeolocationSupported) {
       setError('Geolocation is not supported by your browser.');
@@ -97,8 +97,10 @@ export function LocationProvider(props: LocationProviderProps) {
     if ('permissions' in navigator) {
       navigator.permissions.query({ name: 'geolocation' }).then((permission) => {
         setPermissionStatus(permission.state);
+        // Only auto-fetch if permission was already granted previously
+        // This avoids triggering the browser prompt on page load
         if (permission.state === 'granted') {
-          requestLocation(); // Auto-fetch if already granted
+          requestLocation();
         }
 
         // Listen for permission changes

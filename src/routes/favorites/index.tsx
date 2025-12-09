@@ -209,20 +209,20 @@ export default function FavoritesPage() {
       {/* Content */}
       <div class="p-4">
         <div class="mb-3">
-          <h3 class="font-semibold text-gray-900 text-base mb-1 line-clamp-2">
+          <h3 class="font-semibold text-gray-900 dark:text-white text-base mb-1 line-clamp-2">
             {favorite.name}
           </h3>
           <Show when={formatDistance(favorite.distance)}>
-            <p class="text-sm text-gray-500">{formatDistance(favorite.distance)} away</p>
+            <p class="text-sm text-gray-500 dark:text-slate-400">{formatDistance(favorite.distance)} away</p>
           </Show>
         </div>
 
-        <p class="text-sm text-gray-600 mb-4 line-clamp-3">
+        <p class="text-sm text-gray-600 dark:text-slate-400 mb-4 line-clamp-3">
           {favorite.description_poi || favorite.description}
         </p>
 
         {/* Location details */}
-        <div class="space-y-2 text-sm text-gray-500 mb-4">
+        <div class="space-y-2 text-sm text-gray-500 dark:text-slate-400 mb-4">
           <Show when={favorite.address}>
             <div class="flex items-start gap-2">
               <MapPin class="w-4 h-4 mt-0.5 flex-shrink-0" />
@@ -242,7 +242,7 @@ export default function FavoritesPage() {
                 href={favorite.website}
                 target="_blank"
                 rel="noopener noreferrer"
-                class="text-blue-600 hover:text-blue-800 truncate"
+                class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 truncate"
               >
                 Visit Website
               </a>
@@ -251,7 +251,7 @@ export default function FavoritesPage() {
         </div>
 
         {/* Coordinates */}
-        <div class="text-xs text-gray-400 pt-2 border-t border-gray-100">
+        <div class="text-xs text-gray-400 dark:text-slate-500 pt-2 border-t border-gray-100 dark:border-slate-700">
           {favorite.latitude?.toFixed(4)}, {favorite.longitude?.toFixed(4)}
         </div>
       </div>
@@ -279,7 +279,7 @@ export default function FavoritesPage() {
           <div class="flex-1 min-w-0">
             <div class="flex items-start justify-between mb-3">
               <div class="flex-1 min-w-0">
-                <h3 class="font-semibold text-gray-900 text-lg mb-1">
+                <h3 class="font-semibold text-gray-900 dark:text-white text-lg mb-1">
                   {favorite.name}
                 </h3>
                 <div class="flex items-center gap-2 mb-2">
@@ -287,31 +287,31 @@ export default function FavoritesPage() {
                     {favorite.category}
                   </span>
                   <Show when={formatDistance(favorite.distance)}>
-                    <span class="text-sm text-gray-500">{formatDistance(favorite.distance)} away</span>
+                    <span class="text-sm text-gray-500 dark:text-slate-400">{formatDistance(favorite.distance)} away</span>
                   </Show>
                 </div>
               </div>
 
               {/* Action buttons */}
               <div class="flex items-center gap-1 ml-4">
-                <button class="p-2 text-gray-600 hover:bg-gray-50 rounded-lg">
+                <button class="p-2 text-gray-600 dark:text-slate-400 hover:bg-gray-50 dark:hover:bg-slate-700 rounded-lg">
                   <Share2 class="w-4 h-4" />
                 </button>
                 <button
                   onClick={() => removeFavorite(favorite.id)}
-                  class="p-2 text-red-600 hover:bg-red-50 rounded-lg"
+                  class="p-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg"
                 >
                   <Trash2 class="w-4 h-4" />
                 </button>
               </div>
             </div>
 
-            <p class="text-sm text-gray-600 mb-4 leading-relaxed">
+            <p class="text-sm text-gray-600 dark:text-slate-400 mb-4 leading-relaxed">
               {favorite.description_poi || favorite.description}
             </p>
 
             {/* Location and contact details */}
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm text-gray-500">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm text-gray-500 dark:text-slate-400">
               <Show when={favorite.address}>
                 <div class="flex items-start gap-2">
                   <MapPin class="w-4 h-4 mt-0.5 flex-shrink-0" />
@@ -322,7 +322,7 @@ export default function FavoritesPage() {
               <Show when={favorite.phone_number}>
                 <div class="flex items-center gap-2">
                   <span class="w-4 h-4 text-center">📞</span>
-                  <a href={`tel:${favorite.phone_number}`} class="hover:text-blue-600">
+                  <a href={`tel:${favorite.phone_number}`} class="hover:text-blue-600 dark:hover:text-blue-400">
                     {favorite.phone_number}
                   </a>
                 </div>
@@ -335,7 +335,7 @@ export default function FavoritesPage() {
                     href={favorite.website}
                     target="_blank"
                     rel="noopener noreferrer"
-                    class="text-blue-600 hover:text-blue-800 truncate"
+                    class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 truncate"
                   >
                     Visit Website
                   </a>
@@ -344,7 +344,7 @@ export default function FavoritesPage() {
 
               <div class="flex items-center gap-2">
                 <span class="w-4 h-4 text-center">📍</span>
-                <span class="text-xs text-gray-400">
+                <span class="text-xs text-gray-400 dark:text-slate-500">
                   {favorite.latitude?.toFixed(4)}, {favorite.longitude?.toFixed(4)}
                 </span>
               </div>
@@ -352,11 +352,11 @@ export default function FavoritesPage() {
 
             {/* Opening hours if available */}
             <Show when={favorite.opening_hours}>
-              <div class="mt-3 pt-3 border-t border-gray-100">
-                <div class="flex items-start gap-2 text-sm text-gray-500">
+              <div class="mt-3 pt-3 border-t border-gray-100 dark:border-slate-700">
+                <div class="flex items-start gap-2 text-sm text-gray-500 dark:text-slate-400">
                   <Clock class="w-4 h-4 mt-0.5" />
                   <div>
-                    <p class="font-medium text-gray-700 mb-1">Opening Hours</p>
+                    <p class="font-medium text-gray-700 dark:text-slate-300 mb-1">Opening Hours</p>
                     <p>{favorite.opening_hours}</p>
                   </div>
                 </div>
@@ -369,14 +369,14 @@ export default function FavoritesPage() {
   );
 
   return (
-    <div class="min-h-screen bg-gray-50">
+    <div class="min-h-screen bg-gray-50 dark:bg-slate-900">
       {/* Header */}
-      <div class="bg-white border-b border-gray-200">
+      <div class="bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-              <h1 class="text-2xl font-bold text-gray-900">My Favorites</h1>
-              <p class="text-gray-600 mt-1">
+              <h1 class="text-2xl font-bold text-gray-900 dark:text-white">My Favorites</h1>
+              <p class="text-gray-600 dark:text-slate-400 mt-1">
                 {favorites().length} places you've saved
               </p>
             </div>
@@ -395,18 +395,18 @@ export default function FavoritesPage() {
       </div>
 
       {/* Filters and Controls */}
-      <div class="bg-white border-b border-gray-200">
+      <div class="bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div class="flex flex-col lg:flex-row lg:items-center gap-4">
             {/* Search */}
             <div class="relative flex-1 max-w-md">
-              <Search class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+              <Search class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-slate-500 w-4 h-4" />
               <input
                 type="text"
                 placeholder="Search favorites..."
                 value={searchQuery()}
                 onInput={(e) => setSearchQuery(e.target.value)}
-                class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                class="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-slate-500 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
 
@@ -414,7 +414,7 @@ export default function FavoritesPage() {
             <select
               value={selectedCategory()}
               onChange={(e) => setSelectedCategory(e.target.value)}
-              class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              class="px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
               <For each={categories()}>
                 {(category) => (
@@ -430,7 +430,7 @@ export default function FavoritesPage() {
               <select
                 value={sortBy()}
                 onChange={(e) => setSortBy(e.target.value)}
-                class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                class="px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
                 <For each={sortOptions}>
                   {(option) => (
@@ -442,7 +442,7 @@ export default function FavoritesPage() {
                 onClick={() =>
                   setSortOrder((prev) => (prev === "asc" ? "desc" : "asc"))
                 }
-                class="p-2 border border-gray-300 rounded-lg hover:bg-gray-50"
+                class="p-2 border border-gray-300 dark:border-slate-600 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-700 text-gray-700 dark:text-slate-300"
               >
                 {sortOrder() === "asc" ? (
                   <SortAsc class="w-4 h-4" />
@@ -453,16 +453,16 @@ export default function FavoritesPage() {
             </div>
 
             {/* View mode */}
-            <div class="flex items-center border border-gray-300 rounded-lg p-1">
+            <div class="flex items-center border border-gray-300 dark:border-slate-600 rounded-lg p-1 bg-white dark:bg-slate-700">
               <button
                 onClick={() => setViewMode("grid")}
-                class={`p-2 rounded ${viewMode() === "grid" ? "bg-blue-600 text-white" : "text-gray-600 hover:bg-gray-50"}`}
+                class={`p-2 rounded ${viewMode() === "grid" ? "bg-blue-600 text-white" : "text-gray-600 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-600"}`}
               >
                 <Grid class="w-4 h-4" />
               </button>
               <button
                 onClick={() => setViewMode("list")}
-                class={`p-2 rounded ${viewMode() === "list" ? "bg-blue-600 text-white" : "text-gray-600 hover:bg-gray-50"}`}
+                class={`p-2 rounded ${viewMode() === "list" ? "bg-blue-600 text-white" : "text-gray-600 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-600"}`}
               >
                 <List class="w-4 h-4" />
               </button>
@@ -471,25 +471,25 @@ export default function FavoritesPage() {
 
           {/* Bulk actions */}
           <Show when={selectedPOIs().length > 0}>
-            <div class="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+            <div class="mt-4 p-3 bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 rounded-lg">
               <div class="flex items-center justify-between">
-                <span class="text-sm text-blue-800">
+                <span class="text-sm text-blue-800 dark:text-blue-300">
                   {selectedPOIs().length} item
                   {selectedPOIs().length > 1 ? "s" : ""} selected
                 </span>
                 <div class="flex items-center gap-2">
-                  <button class="text-sm text-blue-600 hover:text-blue-700">
+                  <button class="text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300">
                     Add to List
                   </button>
-                  <button class="text-sm text-blue-600 hover:text-blue-700">
+                  <button class="text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300">
                     Export Selected
                   </button>
-                  <button class="text-sm text-red-600 hover:text-red-700">
+                  <button class="text-sm text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300">
                     Remove Selected
                   </button>
                   <button
                     onClick={clearSelection}
-                    class="text-sm text-gray-600 hover:text-gray-700"
+                    class="text-sm text-gray-600 hover:text-gray-700 dark:text-slate-400 dark:hover:text-slate-300"
                   >
                     Clear Selection
                   </button>
@@ -506,11 +506,11 @@ export default function FavoritesPage() {
           when={filteredFavorites().length > 0}
           fallback={
             <div class="text-center py-12">
-              <Heart class="w-12 h-12 text-gray-300 mx-auto mb-4" />
-              <h3 class="text-lg font-semibold text-gray-900 mb-2">
+              <Heart class="w-12 h-12 text-gray-300 dark:text-slate-600 mx-auto mb-4" />
+              <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">
                 No favorites found
               </h3>
-              <p class="text-gray-600 mb-4">
+              <p class="text-gray-600 dark:text-slate-400 mb-4">
                 {searchQuery() || selectedCategory() !== "all"
                   ? "Try adjusting your search or filters"
                   : "Start exploring and save places you love!"}

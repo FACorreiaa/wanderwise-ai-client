@@ -6,6 +6,7 @@ import type { TrendingDiscovery, POI, DomainType, ChatSession } from '~/lib/api/
 import { useAuth } from '~/contexts/AuthContext';
 import RegisterBanner from '~/components/ui/RegisterBanner';
 import { sendUnifiedChatMessageStream } from '~/lib/api/llm';
+import FavoriteButton from '~/components/shared/FavoriteButton';
 
 export default function DiscoverPage() {
     const { isAuthenticated } = useAuth();
@@ -545,13 +546,24 @@ export default function DiscoverPage() {
                                             {(poi) => (
                                                 <div class="glass-panel rounded-2xl p-4 hover:shadow-xl hover:scale-[1.02] transition-all duration-200 cursor-pointer">
                                                     <div class="flex items-start justify-between gap-3 mb-2">
-                                                        <div>
+                                                        <div class="flex-1">
                                                             <h3 class="text-base font-semibold text-gray-900 dark:text-white">{poi.name}</h3>
                                                             <p class="text-xs font-medium text-gray-600 dark:text-gray-400">{poi.category || 'Place'}</p>
                                                         </div>
-                                                        <span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-gradient-to-r from-blue-100 to-cyan-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-200 border border-blue-200/50 dark:border-blue-800/50">
-                                                            {poi.city || 'Unknown'}
-                                                        </span>
+                                                        <div class="flex items-center gap-2">
+                                                            <FavoriteButton
+                                                                item={{
+                                                                    id: poi.id || poi.name,
+                                                                    name: poi.name,
+                                                                    contentType: 'poi',
+                                                                    description: poi.description_poi || poi.description || '',
+                                                                }}
+                                                                size="sm"
+                                                            />
+                                                            <span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-gradient-to-r from-blue-100 to-cyan-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-200 border border-blue-200/50 dark:border-blue-800/50">
+                                                                {poi.city || 'Unknown'}
+                                                            </span>
+                                                        </div>
                                                     </div>
                                                     <p class="text-sm text-gray-700 dark:text-gray-400 line-clamp-2 mb-3 leading-relaxed">
                                                         {poi.description_poi || poi.description || 'No description provided.'}

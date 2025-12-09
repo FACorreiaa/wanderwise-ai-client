@@ -1,6 +1,6 @@
 import { For, Show, createSignal } from 'solid-js';
-import { Star, MapPin, Wifi, Car, Coffee, Utensils, ChevronDown, ChevronUp, Heart, Share2 } from 'lucide-solid';
-
+import { Star, MapPin, Wifi, Car, Coffee, Utensils, ChevronDown, ChevronUp, Share2 } from 'lucide-solid';
+import FavoriteButton from '~/components/shared/FavoriteButton';
 import { HotelDetailedInfo } from '~/lib/api/types';
 
 interface HotelResultsProps {
@@ -158,23 +158,17 @@ export default function HotelResults(props: HotelResultsProps) {
               </Show>
 
               {/* Action Buttons */}
-              <Show when={!props.compact && (props.onFavoriteClick || props.onShareClick)}>
+              <Show when={!props.compact}>
                 <div class="flex items-center gap-2 mt-3">
-                  <Show when={props.onFavoriteClick}>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        props.onFavoriteClick?.(hotel);
-                      }}
-                      class={`p-2 rounded-lg transition-colors ${props.favorites?.includes(hotel.name)
-                        ? 'text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/30'
-                        : 'text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20'
-                        }`}
-                      title="Add to favorites"
-                    >
-                      <Heart class={`w-4 h-4 ${props.favorites?.includes(hotel.name) ? 'fill-current' : ''}`} />
-                    </button>
-                  </Show>
+                  <FavoriteButton
+                    item={{
+                      id: hotel.name,
+                      name: hotel.name,
+                      contentType: 'hotel',
+                      description: hotel.description || '',
+                    }}
+                    size="sm"
+                  />
                   <Show when={props.onShareClick}>
                     <button
                       onClick={(e) => {

@@ -1,16 +1,42 @@
-// Interests queries and mutations
-import { useQuery, useMutation, useQueryClient } from '@tanstack/solid-query';
-import { apiRequest, queryKeys } from './shared';
+// Interests queries and mutations - RPC version
+import { createQuery, createMutation, useQueryClient } from '@tanstack/solid-query';
+import { createClient } from '@connectrpc/connect';
+import { create } from '@bufbuild/protobuf';
+import { InterestService } from '@buf/loci_loci-proto.bufbuild_es/proto/interest_pb.js';
+import {
+  GetInterestsRequestSchema,
+  CreateInterestRequestSchema,
+  UpdateInterestRequestSchema,
+} from '@buf/loci_loci-proto.bufbuild_es/proto/interest_pb.js';
+import { queryKeys } from './shared';
+import { getAuthToken } from '../auth/tokens';
+import { transport } from '../connect-transport';
 import type { Interest } from './types';
+
+// Create the interest service client
+const interestClient = createClient(InterestService, transport);
 
 // ===================
 // INTERESTS QUERIES
 // ===================
 
 export const useInterests = () => {
-  return useQuery(() => ({
+  return createQuery(() => ({
     queryKey: queryKeys.interests,
-    queryFn: () => apiRequest<Interest[]>('/user/interests'),
+    queryFn: async (): Promise<Interest[]> => {
+      const request = create(GetInterestsRequestSchema, { activeOnly: false });
+      const response = await interestClient.getInterests(request);
+
+      return response.interests.map((interest): Interest => ({
+        id: interest.id,
+        name: interest.name,
+        description: interest.description ?? null,
+        active: interest.active ?? true,
+        source: (interest.source === 'global' ? 'global' : 'custom') as 'global' | 'custom',
+        created_at: interest.createdAt ? new Date(Number(interest.createdAt.seconds) * 1000).toISOString() : '',
+        updated_at: interest.updatedAt ? new Date(Number(interest.updatedAt.seconds) * 1000).toISOString() : null,
+      }));
+    },
     staleTime: 15 * 60 * 1000, // 15 minutes - interests don't change often
   }));
 };
@@ -18,14 +44,19 @@ export const useInterests = () => {
 export const useCreateInterestMutation = () => {
   const queryClient = useQueryClient();
 
-  return useMutation(() => ({
-    mutationFn: ({ name, description, active = true }: { name: string; description: string; active?: boolean }) =>
-      apiRequest<Interest>('/user/interests/create', {
-        method: 'POST',
-        body: JSON.stringify({ name, description, active }),
-      }),
-    onSuccess: (newInterest) => {
-      queryClient.setQueryData(queryKeys.interests, (old: Interest[] = []) => [...old, newInterest]);
+  return createMutation(() => ({
+    mutationFn: async ({ name, description, active = true }: { name: string; description: string; active?: boolean }) => {
+      const request = create(CreateInterestRequestSchema, {
+        name,
+        description,
+        active,
+      });
+
+      const response = await interestClient.createInterest(request);
+      return { success: response.success, message: response.message };
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.interests });
     },
   }));
 };
@@ -33,25 +64,24 @@ export const useCreateInterestMutation = () => {
 export const useUpdateInterestMutation = () => {
   const queryClient = useQueryClient();
 
-  return useMutation(() => ({
-    mutationFn: ({ id, name, description, active }: { 
-      id: string; 
-      name?: string; 
-      description?: string; 
-      active?: boolean 
+  return createMutation(() => ({
+    mutationFn: async ({ id, name, description, active }: {
+      id: string;
+      name?: string;
+      description?: string;
+      active?: boolean
     }) => {
-      const updateData: any = {};
-      if (name !== undefined) updateData.name = name;
-      if (description !== undefined) updateData.description = description;
-      if (active !== undefined) updateData.active = active;
-
-      return apiRequest(`/user/interests/${id}`, {
-        method: 'PUT',
-        body: JSON.stringify(updateData),
+      const request = create(UpdateInterestRequestSchema, {
+        interestId: id,
+        name: name ?? '',
+        description,
+        active: active ?? true,
       });
+
+      const response = await interestClient.updateInterest(request);
+      return { success: response.success, message: response.message };
     },
     onSuccess: () => {
-      // API returns response object, not updated interest, so refetch
       queryClient.invalidateQueries({ queryKey: queryKeys.interests });
     },
   }));
@@ -60,15 +90,18 @@ export const useUpdateInterestMutation = () => {
 export const useToggleInterestActiveMutation = () => {
   const queryClient = useQueryClient();
 
-  return useMutation(() => ({
-    mutationFn: ({ id, active }: { id: string; active: boolean }) => {
-      return apiRequest(`/user/interests/${id}`, {
-        method: 'PUT',
-        body: JSON.stringify({ active }),
+  return createMutation(() => ({
+    mutationFn: async ({ id, active }: { id: string; active: boolean }) => {
+      const request = create(UpdateInterestRequestSchema, {
+        interestId: id,
+        name: '', // Required by proto but not changing
+        active,
       });
+
+      const response = await interestClient.updateInterest(request);
+      return { success: response.success, message: response.message };
     },
     onSuccess: () => {
-      // API returns response object, not updated interest, so refetch
       queryClient.invalidateQueries({ queryKey: queryKeys.interests });
     },
   }));
@@ -77,14 +110,21 @@ export const useToggleInterestActiveMutation = () => {
 export const useDeleteInterestMutation = () => {
   const queryClient = useQueryClient();
 
-  return useMutation(() => ({
-    mutationFn: (interestId: string) =>
-      apiRequest<{ message: string }>(`/user/interests/${interestId}`, { method: 'DELETE' }),
-    onSuccess: (_, interestId) => {
-      // Remove from interests list
-      queryClient.setQueryData(queryKeys.interests, (old: Interest[] = []) =>
-        old.filter(interest => interest?.id !== interestId)
-      );
+  return createMutation(() => ({
+    // Note: Delete might not be in the proto - using a placeholder that toggles inactive
+    mutationFn: async (interestId: string) => {
+      // For now, toggle to inactive since proto doesn't have delete
+      const request = create(UpdateInterestRequestSchema, {
+        interestId,
+        name: '',
+        active: false,
+      });
+
+      const response = await interestClient.updateInterest(request);
+      return { success: response.success, message: response.message };
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.interests });
     },
   }));
 };

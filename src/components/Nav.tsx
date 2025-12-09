@@ -2,7 +2,7 @@ import { Badge } from "@/ui/badge";
 import { Button } from "@/ui/button";
 import { useLocation } from "@solidjs/router";
 import { A } from '@solidjs/router';
-import { Menu, X, User, Settings, LogOut, MessageCircle, Heart, List, MapPin, Clock, Compass } from "lucide-solid";
+import { Menu, X, User, Settings, LogOut, MessageCircle, Heart, List, MapPin, Clock, Compass, Bookmark } from "lucide-solid";
 import { createSignal, For, Show, onMount, onCleanup } from "solid-js";
 import { ImageRoot, ImageFallback, Image } from "@/ui/image";
 import { useAuth } from "~/contexts/AuthContext";
@@ -17,15 +17,21 @@ const publicNavigationItems = [
   { name: 'Pricing', href: '/pricing' }
 ];
 
-// Authenticated navigation items
+// Authenticated navigation items (main nav bar)
 const authNavigationItems = [
   { name: 'Discover', href: '/discover', icon: Compass },
-  { name: 'Near Me', href: '/near', icon: MapPin },
+  { name: 'Near Me', href: '/nearme', icon: MapPin },
   { name: 'Recents', href: '/recents', icon: Clock },
   { name: 'Chat', href: '/chat', icon: MessageCircle },
+];
+
+// User menu dropdown items
+const userMenuItems = [
   { name: 'Favorites', href: '/favorites', icon: Heart },
-  { name: 'Lists', href: '/lists', icon: List },
-  { name: 'Profile', href: '/profile', icon: User }
+  { name: 'Bookmarks', href: '/bookmarks', icon: Bookmark },
+  { name: 'My Lists', href: '/lists', icon: List },
+  { name: 'Profile', href: '/profiles', icon: User },
+  { name: 'Settings', href: '/settings', icon: Settings },
 ];
 
 export default function Nav() {
@@ -64,7 +70,7 @@ export default function Nav() {
             <A href="/" class="flex items-center">
               <div class="w-6 h-6 sm:w-8 sm:h-8 flex items-center justify-center">
                 <ImageRoot>
-                  <Image src="/images/loci-abstract-symbol.svg" class="w-full h-full object-contain" />
+                  <Image src="/images/loci-abstract-symbol.svg" alt="Loci logo" class="w-full h-full object-contain" />
                   <ImageFallback class="w-full h-full bg-blue-600 text-white rounded flex items-center justify-center text-sm font-bold">L</ImageFallback>
                 </ImageRoot>
               </div>
@@ -179,21 +185,37 @@ export default function Nav() {
 
                 {/* User Dropdown Menu */}
                 <Show when={showUserMenu()}>
-                  <div class="absolute top-full right-0 mt-2 w-48 bg-white dark:bg-[#0b1c36]/95 backdrop-blur-xl rounded-2xl shadow-[0_24px_70px_rgba(3,7,18,0.55)] border border-gray-300 dark:border-white/10 py-1 z-50 transition-colors">
-                    <A
-                      href="/settings"
-                      class="flex items-center gap-3 px-4 py-2 text-sm font-medium text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-white/5 transition-colors rounded-md mx-1"
-                      onClick={() => setShowUserMenu(false)}
-                    >
-                      <Settings class="w-4 h-4" />
-                      Settings
-                    </A>
+                  <div class="absolute top-full right-0 mt-2 w-56 bg-white dark:bg-[#0b1c36]/95 backdrop-blur-xl rounded-2xl shadow-[0_24px_70px_rgba(3,7,18,0.55)] border border-gray-300 dark:border-white/10 py-2 z-50 transition-colors">
+                    {/* User Menu Items */}
+                    <For each={userMenuItems}>
+                      {(item) => {
+                        const IconComponent = item.icon;
+                        return (
+                          <A
+                            href={item.href}
+                            class={`flex items-center gap-3 px-4 py-2.5 text-sm font-medium transition-colors mx-1 rounded-lg ${location.pathname === item.href
+                              ? 'bg-blue-50 dark:bg-white/10 text-blue-600 dark:text-blue-300'
+                              : 'text-gray-700 dark:text-slate-200 hover:bg-gray-100 dark:hover:bg-white/5'
+                              }`}
+                            onClick={() => setShowUserMenu(false)}
+                          >
+                            <IconComponent class="w-4 h-4" />
+                            {item.name}
+                          </A>
+                        );
+                      }}
+                    </For>
+
+                    {/* Divider */}
+                    <div class="my-2 mx-3 border-t border-gray-200 dark:border-white/10" />
+
+                    {/* Sign Out */}
                     <button
                       onClick={() => {
                         setShowUserMenu(false);
                         handleLogout();
                       }}
-                      class="w-full flex items-center gap-3 px-4 py-2 text-sm font-medium text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-white/5 transition-colors rounded-md mx-1"
+                      class="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors rounded-lg mx-1"
                     >
                       <LogOut class="w-4 h-4" />
                       Sign Out
@@ -215,7 +237,7 @@ export default function Nav() {
               <A href="/" class="flex items-center" onClick={() => setIsMenuOpen(false)}>
                 <div class="w-6 h-6 flex items-center justify-center">
                   <ImageRoot>
-                    <Image src="/images/loci-abstract-symbol.svg" class="w-full h-full object-contain" />
+                    <Image src="/images/loci-abstract-symbol.svg" alt="Loci logo" class="w-full h-full object-contain" />
                     <ImageFallback class="w-full h-full bg-blue-600 text-white rounded flex items-center justify-center text-sm font-bold">L</ImageFallback>
                   </ImageRoot>
                 </div>

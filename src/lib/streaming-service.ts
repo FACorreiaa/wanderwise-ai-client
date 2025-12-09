@@ -54,6 +54,16 @@ export class StreamingChatService {
   ): void {
     this.manager = manager;
 
+    // Reset chunk buffer for new stream to prevent corruption from previous requests
+    this.chunkBuffer = {
+      general_pois: '',
+      itinerary: '',
+      city_data: '',
+      hotels: '',
+      restaurants: '',
+      activities: ''
+    };
+
     if (!response.body) {
       this.manager.onError('No response body received');
       return;
@@ -203,8 +213,10 @@ export class StreamingChatService {
 
     let buffer = this.chunkBuffer[part];
 
-    // Remove markdown code blocks
-    buffer = buffer.replace(/```json\n?/g, '').replace(/```\n?/g, '');
+    // Remove markdown code blocks more carefully:
+    // 1. Remove opening code block marker (backticks + optional language) at start
+    // 2. Remove closing code block marker (backticks) at end
+    buffer = buffer.replace(/^`+(?:json)?\s*/i, '').replace(/\s*`+$/g, '').trim();
 
     // Try to find complete JSON objects
     let braceCount = 0;
@@ -435,13 +447,25 @@ export class StreamingChatService {
     if (!this.manager || !event.data) return;
 
     try {
-      const hotels: HotelDetailedInfo[] = this.parseStreamData(event.data);
+      // Backend sends pre-parsed data with structure: { general_city_data, hotels, session_id }
+      const data = event.data as { general_city_data?: GeneralCityData; hotels?: HotelDetailedInfo[]; session_id?: string };
+
+      // Update city from general_city_data if available
+      if (data.general_city_data?.city) {
+        this.manager.session.city = data.general_city_data.city;
+      }
 
       this.manager.session.data = {
-        hotels,
+        general_city_data: data.general_city_data,
+        hotels: data.hotels || [],
         domain: 'accommodation',
-        session_id: this.manager.session.sessionId
+        session_id: data.session_id || this.manager.session.sessionId
       } as AccommodationResponse;
+
+      console.log('✅ Received pre-parsed hotels event:', {
+        city: data.general_city_data?.city,
+        hotelCount: data.hotels?.length || 0
+      });
 
       this.manager.onProgress(this.manager.session);
     } catch (error) {
@@ -453,13 +477,25 @@ export class StreamingChatService {
     if (!this.manager || !event.data) return;
 
     try {
-      const restaurants: RestaurantDetailedInfo[] = this.parseStreamData(event.data);
+      // Backend sends pre-parsed data with structure: { general_city_data, restaurants, session_id }
+      const data = event.data as { general_city_data?: GeneralCityData; restaurants?: RestaurantDetailedInfo[]; session_id?: string };
+
+      // Update city from general_city_data if available
+      if (data.general_city_data?.city) {
+        this.manager.session.city = data.general_city_data.city;
+      }
 
       this.manager.session.data = {
-        restaurants,
+        general_city_data: data.general_city_data,
+        restaurants: data.restaurants || [],
         domain: 'dining',
-        session_id: this.manager.session.sessionId
+        session_id: data.session_id || this.manager.session.sessionId
       } as DiningResponse;
+
+      console.log('✅ Received pre-parsed restaurants event:', {
+        city: data.general_city_data?.city,
+        restaurantCount: data.restaurants?.length || 0
+      });
 
       this.manager.onProgress(this.manager.session);
     } catch (error) {
@@ -471,17 +507,91 @@ export class StreamingChatService {
     if (!this.manager || !event.data) return;
 
     try {
-      const activities: POIDetailedInfo[] = this.parseStreamData(event.data);
+      // Backend sends pre-parsed data with structure: { general_city_data, activities, session_id }
+      const data = event.data as { general_city_data?: GeneralCityData; activities?: POIDetailedInfo[]; session_id?: string };
+
+      // Update city from general_city_data if available
+      if (data.general_city_data?.city) {
+        this.manager.session.city = data.general_city_data.city;
+      }
 
       this.manager.session.data = {
-        activities,
+        general_city_data: data.general_city_data,
+        activities: data.activities || [],
         domain: 'activities',
-        session_id: this.manager.session.sessionId
+        session_id: data.session_id || this.manager.session.sessionId
       } as ActivitiesResponse;
+
+      console.log('✅ Received pre-parsed activities event:', {
+        city: data.general_city_data?.city,
+        activityCount: data.activities?.length || 0
+      });
 
       this.manager.onProgress(this.manager.session);
     } catch (error) {
       console.error('Error processing activities data:', error);
+    }
+  }
+
+  // Force flush any remaining buffered data before stream completion
+  private flushBufferedData(): void {
+    if (!this.manager) return;
+
+    const bufferKeys: (keyof typeof this.chunkBuffer)[] = [
+      'hotels', 'restaurants', 'activities', 'city_data', 'general_pois', 'itinerary'
+    ];
+
+    for (const part of bufferKeys) {
+      let buffer = this.chunkBuffer[part];
+      if (!buffer || buffer.trim() === '') continue;
+
+      console.log(`🔄 Flushing remaining buffer for ${part}:`, buffer.substring(0, 100) + '...');
+
+      // Remove markdown code blocks more carefully:
+      // 1. Remove opening code block marker (backticks + optional language) at start
+      // 2. Remove closing code block marker (backticks) at end
+      buffer = buffer.replace(/^`+(?:json)?\s*/i, '').replace(/\s*`+$/g, '').trim();
+
+      // Try to find and parse JSON objects
+      try {
+        // Look for JSON object in the buffer
+        const startIdx = buffer.indexOf('{');
+        const endIdx = buffer.lastIndexOf('}');
+
+        if (startIdx !== -1 && endIdx > startIdx) {
+          const jsonStr = buffer.substring(startIdx, endIdx + 1);
+          const jsonData = JSON.parse(jsonStr);
+
+          console.log(`✅ Successfully flushed ${part} data:`, jsonData);
+
+          switch (part) {
+            case 'city_data':
+              this.handleParsedCityData(jsonData);
+              break;
+            case 'general_pois':
+              this.handleParsedGeneralPOIs(jsonData);
+              break;
+            case 'itinerary':
+              this.handleParsedItinerary(jsonData);
+              break;
+            case 'hotels':
+              this.handleParsedHotels(jsonData);
+              break;
+            case 'restaurants':
+              this.handleParsedRestaurants(jsonData);
+              break;
+            case 'activities':
+              this.handleParsedActivities(jsonData);
+              break;
+          }
+
+          // Clear the processed buffer
+          this.chunkBuffer[part] = '';
+        }
+      } catch (e) {
+        console.warn(`⚠️ Could not flush ${part} buffer:`, e);
+        console.warn(`⚠️ Buffer content (first 500 chars):`, buffer.substring(0, 500));
+      }
     }
   }
 
@@ -492,11 +602,21 @@ export class StreamingChatService {
       return;
     }
 
+    // Guard against processing complete event multiple times
+    if (this.manager.session.isComplete) {
+      console.log('⚠️ Complete event already processed, skipping');
+      return;
+    }
+
+    // Flush any remaining buffered data before completing
+    this.flushBufferedData();
+
     console.log('📦 Session data before complete:', {
       sessionId: this.manager.session.sessionId,
       domain: this.manager.session.domain,
       city: this.manager.session.city,
-      hasData: !!this.manager.session.data
+      hasData: !!this.manager.session.data,
+      dataKeys: Object.keys(this.manager.session.data || {})
     });
 
     this.manager.session.isComplete = true;

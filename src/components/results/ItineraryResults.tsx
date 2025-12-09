@@ -9,7 +9,7 @@ import {
   ChevronUp,
   Share2,
 } from "lucide-solid";
-
+import FavoriteButton from '~/components/shared/FavoriteButton';
 import { POIDetailedInfo, AIItineraryResponse } from '~/lib/api/types';
 
 interface ItineraryResultsProps {
@@ -251,35 +251,19 @@ export default function ItineraryResults(props: ItineraryResultsProps) {
                   {/* Action Buttons */}
                   <Show when={!props.compact}>
                     <div class="flex items-center gap-2 mt-3">
-                      {/* Favorite Button - now uses star icon like discover page */}
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          if (props.onToggleFavorite) {
-                            props.onToggleFavorite(poi.name, poi);
-                          } else if (props.onFavoriteClick) {
-                            props.onFavoriteClick(poi);
-                          }
+                      {/* Favorite Button */}
+                      <FavoriteButton
+                        item={{
+                          id: poi.name,
+                          name: poi.name,
+                          contentType: 'poi',
+                          description: poi.description || '',
+                          llmInteractionId: poi.llm_interaction_id,
                         }}
-                        disabled={props.isLoadingFavorites || (!props.onToggleFavorite && !props.onFavoriteClick)}
-                        data-poi-id={poi.name}
-                        class={`p-2 rounded-lg transition-colors ${(!props.onToggleFavorite && !props.onFavoriteClick)
-                          ? "text-gray-300 dark:text-gray-600 cursor-not-allowed bg-gray-50 dark:bg-gray-800"
-                          : isFavorite(poi.name)
-                            ? "text-yellow-600 dark:text-yellow-400 bg-yellow-50 dark:bg-yellow-900/20 hover:bg-yellow-100 dark:hover:bg-yellow-900/30"
-                            : "text-gray-400 hover:text-yellow-600 dark:hover:text-yellow-400 hover:bg-yellow-50 dark:hover:bg-yellow-900/20"
-                          } disabled:opacity-50 disabled:cursor-not-allowed`}
-                        title={isFavorite(poi.name) ? "Remove from favorites" : "Add to favorites"}
-                      >
-                        <Show
-                          when={!props.isLoadingFavorites}
-                          fallback={<div class="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />}
-                        >
-                          <Star class={`w-4 h-4 ${isFavorite(poi.name) ? "fill-current" : ""}`} />
-                        </Show>
-                      </button>
+                        size="sm"
+                      />
 
-                      {/* Share Button - show always but disable if no callback */}
+                      {/* Share Button */}
                       <button
                         onClick={(e) => {
                           e.stopPropagation();

@@ -1,39 +1,142 @@
-// Lists queries and mutations
-import { useQuery, useMutation, useQueryClient } from '@tanstack/solid-query';
-import { apiRequest, queryKeys } from './shared';
-import type { ItineraryList } from './types';
+// Lists queries and mutations using ConnectRPC ListService
+import { createQuery, useMutation, useQueryClient } from '@tanstack/solid-query';
+import { createClient } from "@connectrpc/connect";
+import {
+  ListService,
+  GetListsRequestSchema,
+  GetListRequestSchema,
+  CreateListRequestSchema,
+  UpdateListRequestSchema,
+  DeleteListRequestSchema,
+  AddListItemRequestSchema,
+  RemoveListItemRequestSchema,
+  ContentType
+} from "@buf/loci_loci-proto.bufbuild_es/proto/list_pb.js";
+import { create } from "@bufbuild/protobuf";
+import { transport } from "../connect-transport";
+import { getAuthToken, authAPI } from "../api";
+
+const listClient = createClient(ListService, transport);
+
+// Cache for user ID
+let cachedUserId: string | null = null;
+let cacheTimestamp: number = 0;
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
+const getUserId = async (): Promise<string | null> => {
+  const now = Date.now();
+  if (cachedUserId && (now - cacheTimestamp) < CACHE_TTL) {
+    return cachedUserId;
+  }
+
+  const token = getAuthToken();
+  if (!token) return null;
+
+  try {
+    const session = await authAPI.validateSession();
+    if (session.valid && session.user_id) {
+      cachedUserId = session.user_id;
+      cacheTimestamp = now;
+      return cachedUserId;
+    }
+  } catch (e) {
+    console.warn("Failed to get user ID:", e);
+  }
+  return null;
+};
+
+// Helper to map content type string to proto enum
+export const contentTypeToProto = (type: string): ContentType => {
+  switch (type.toLowerCase()) {
+    case 'poi': return ContentType.POI;
+    case 'restaurant': return ContentType.RESTAURANT;
+    case 'hotel': return ContentType.HOTEL;
+    case 'itinerary': return ContentType.ITINERARY;
+    default: return ContentType.UNSPECIFIED;
+  }
+};
 
 // ===============
-// LISTS QUERIES
+// LISTS QUERIES (RPC)
 // ===============
 
 export const useLists = () => {
-  return useQuery(() => ({
-    queryKey: queryKeys.lists,
-    queryFn: () => apiRequest<ItineraryList[]>('/itineraries/lists'),
+  return createQuery(() => ({
+    queryKey: ['lists'],
+    queryFn: async () => {
+      const userId = await getUserId();
+      if (!userId) return [];
+
+      const response = await listClient.getLists(
+        create(GetListsRequestSchema, {
+          userId,
+          limit: 100,
+          offset: 0,
+        })
+      );
+      // Extract the list object from ListWithItems
+      return (response.lists || []).map((item: any) => item.list || item);
+    },
     staleTime: 5 * 60 * 1000,
   }));
 };
 
 export const useList = (listId: string) => {
-  return useQuery(() => ({
-    queryKey: queryKeys.list(listId),
-    queryFn: () => apiRequest<ItineraryList>(`/itineraries/lists/${listId}`),
+  return createQuery(() => ({
+    queryKey: ['list', listId],
+    queryFn: async () => {
+      const userId = await getUserId();
+      if (!userId) return null;
+
+      const response = await listClient.getList(
+        create(GetListRequestSchema, {
+          userId,
+          listId,
+          includeDetailedItems: true,
+        })
+      );
+      return response.list;
+    },
     enabled: !!listId,
   }));
 };
+
+// ===============
+// LISTS MUTATIONS (RPC)
+// ===============
+
+export interface CreateListData {
+  name: string;
+  description?: string;
+  cityId?: string;
+  isItinerary?: boolean;
+  isPublic?: boolean;
+}
 
 export const useCreateListMutation = () => {
   const queryClient = useQueryClient();
 
   return useMutation(() => ({
-    mutationFn: (listData: Partial<ItineraryList>) =>
-      apiRequest<ItineraryList>('/itineraries/lists', {
-        method: 'POST',
-        body: JSON.stringify(listData),
-      }),
-    onSuccess: (newList) => {
-      queryClient.setQueryData(queryKeys.lists, (old: ItineraryList[] = []) => [...old, newList]);
+    mutationFn: async (data: CreateListData) => {
+      const userId = await getUserId();
+      if (!userId) throw new Error("Not authenticated");
+
+      const response = await listClient.createList(
+        create(CreateListRequestSchema, {
+          userId,
+          name: data.name,
+          description: data.description || '',
+          cityId: data.cityId || '',
+          isItinerary: data.isItinerary || false,
+          isPublic: data.isPublic || false,
+        })
+      );
+      return response.list;
+    },
+    onSuccess: (newList: any) => {
+      if (newList) {
+        queryClient.setQueryData(['lists'], (old: any[] = []) => [...old, newList]);
+      }
     },
   }));
 };
@@ -42,16 +145,28 @@ export const useUpdateListMutation = () => {
   const queryClient = useQueryClient();
 
   return useMutation(() => ({
-    mutationFn: ({ listId, listData }: { listId: string; listData: Partial<ItineraryList> }) =>
-      apiRequest<ItineraryList>(`/itineraries/lists/${listId}`, {
-        method: 'PUT',
-        body: JSON.stringify(listData),
-      }),
-    onSuccess: (updatedList, { listId }) => {
-      queryClient.setQueryData(queryKeys.list(listId), updatedList);
-      queryClient.setQueryData(queryKeys.lists, (old: ItineraryList[] = []) =>
-        old.map(list => list.id === listId ? updatedList : list)
+    mutationFn: async ({ listId, data }: { listId: string; data: Partial<CreateListData> }) => {
+      const userId = await getUserId();
+      if (!userId) throw new Error("Not authenticated");
+
+      const response = await listClient.updateList(
+        create(UpdateListRequestSchema, {
+          userId,
+          listId,
+          name: data.name,
+          description: data.description,
+          isPublic: data.isPublic,
+        })
       );
+      return { list: response.list, listId };
+    },
+    onSuccess: (result: { list: any; listId: string }) => {
+      if (result.list) {
+        queryClient.setQueryData(['list', result.listId], result.list);
+        queryClient.setQueryData(['lists'], (old: any[] = []) =>
+          old.map(list => list.id === result.listId ? result.list : list)
+        );
+      }
     },
   }));
 };
@@ -60,65 +175,78 @@ export const useDeleteListMutation = () => {
   const queryClient = useQueryClient();
 
   return useMutation(() => ({
-    mutationFn: (listId: string) =>
-      apiRequest<{ message: string }>(`/itineraries/lists/${listId}`, { method: 'DELETE' }),
-    onMutate: async (listId) => {
-      await queryClient.cancelQueries({ queryKey: queryKeys.lists });
-      const previousLists = queryClient.getQueryData(queryKeys.lists);
+    mutationFn: async (listId: string) => {
+      const userId = await getUserId();
+      if (!userId) throw new Error("Not authenticated");
 
-      queryClient.setQueryData(queryKeys.lists, (old: ItineraryList[] = []) =>
+      await listClient.deleteList(
+        create(DeleteListRequestSchema, {
+          userId,
+          listId,
+        })
+      );
+    },
+    onMutate: async (listId: string) => {
+      await queryClient.cancelQueries({ queryKey: ['lists'] });
+      const previousLists = queryClient.getQueryData(['lists']);
+
+      queryClient.setQueryData(['lists'], (old: any[] = []) =>
         old.filter(list => list.id !== listId)
       );
 
       return { previousLists };
     },
-    onError: (err, listId, context) => {
+    onError: (_err: unknown, _listId: string, context: any) => {
       if (context?.previousLists) {
-        queryClient.setQueryData(queryKeys.lists, context.previousLists);
+        queryClient.setQueryData(['lists'], context.previousLists);
       }
     },
-    onSettled: (_, __, listId) => {
-      queryClient.removeQueries({ queryKey: queryKeys.list(listId) });
-      queryClient.invalidateQueries({ queryKey: queryKeys.lists });
+    onSettled: (_: unknown, __: unknown, listId: string) => {
+      queryClient.removeQueries({ queryKey: ['list', listId] });
+      queryClient.invalidateQueries({ queryKey: ['lists'] });
     },
   }));
 };
 
 // ===============
-// LIST ITEMS MUTATIONS
+// LIST ITEMS MUTATIONS (RPC)
 // ===============
 
-export interface AddToListItemData {
-  item_id: string;
-  content_type: 'poi' | 'restaurant' | 'hotel' | 'itinerary';
+export interface AddListItemData {
+  itemId: string;
+  contentType: 'poi' | 'restaurant' | 'hotel' | 'itinerary';
   position?: number;
   notes?: string;
-  day_number?: number;
-  time_slot?: string;
-  duration_minutes?: number;
-  source_llm_interaction_id?: string;
-  item_ai_description?: string;
-}
-
-export interface AddToListMutationData {
-  listId: string;
-  itemData: AddToListItemData;
+  dayNumber?: number;
+  durationMinutes?: number;
+  itemAiDescription?: string;
 }
 
 export const useAddToListMutation = () => {
   const queryClient = useQueryClient();
 
   return useMutation(() => ({
-    mutationFn: ({ listId, itemData }: AddToListMutationData) =>
-      apiRequest(`/itineraries/lists/${listId}/items`, {
-        method: 'POST',
-        body: JSON.stringify(itemData),
-      }),
+    mutationFn: async ({ listId, itemData }: { listId: string; itemData: AddListItemData }) => {
+      const userId = await getUserId();
+      if (!userId) throw new Error("Not authenticated");
+
+      const response = await listClient.addListItem(
+        create(AddListItemRequestSchema, {
+          userId,
+          listId,
+          itemId: itemData.itemId,
+          contentType: contentTypeToProto(itemData.contentType),
+          position: itemData.position || 0,
+          notes: itemData.notes || '',
+          dayNumber: itemData.dayNumber || 0,
+          durationMinutes: itemData.durationMinutes || 0,
+        })
+      );
+      return response;
+    },
     onSuccess: (_, { listId }) => {
-      // Invalidate the specific list to refresh its items
-      queryClient.invalidateQueries({ queryKey: queryKeys.list(listId) });
-      // Also invalidate the lists overview to update item counts
-      queryClient.invalidateQueries({ queryKey: queryKeys.lists });
+      queryClient.invalidateQueries({ queryKey: ['list', listId] });
+      queryClient.invalidateQueries({ queryKey: ['lists'] });
     },
   }));
 };
@@ -127,11 +255,21 @@ export const useRemoveFromListMutation = () => {
   const queryClient = useQueryClient();
 
   return useMutation(() => ({
-    mutationFn: ({ listId, itemId }: { listId: string; itemId: string }) =>
-      apiRequest(`/itineraries/lists/${listId}/items/${itemId}`, { method: 'DELETE' }),
+    mutationFn: async ({ listId, itemId }: { listId: string; itemId: string }) => {
+      const userId = await getUserId();
+      if (!userId) throw new Error("Not authenticated");
+
+      await listClient.removeListItem(
+        create(RemoveListItemRequestSchema, {
+          userId,
+          listId,
+          itemId,
+        })
+      );
+    },
     onSuccess: (_, { listId }) => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.list(listId) });
-      queryClient.invalidateQueries({ queryKey: queryKeys.lists });
+      queryClient.invalidateQueries({ queryKey: ['list', listId] });
+      queryClient.invalidateQueries({ queryKey: ['lists'] });
     },
   }));
 };

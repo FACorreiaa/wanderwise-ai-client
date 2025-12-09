@@ -155,23 +155,26 @@ export const AuthProvider = (props: AuthProviderProps) => {
       console.log('AuthProvider: Login attempt for:', email, 'Remember me:', rememberMe);
       // Authenticate with server and get access token
       const response = await authAPI.login(email, password);
-      console.log('AuthProvider: Login successful, got token');
+      console.log('AuthProvider: Login successful, response:', response);
 
-      const { access_token, refresh_token, ...userData } = response;
+      const { access_token, refresh_token, user_id, username, email: userEmail } = response;
       setAuthToken(access_token, rememberMe, refresh_token);
 
-      console.log('AuthProvider: Token stored, setting user...');
+      // Build display name with proper fallbacks
+      const displayName = username || userEmail?.split('@')[0] || email.split('@')[0];
+
+      console.log('AuthProvider: Setting user with id:', user_id, 'username:', username, 'display_name:', displayName);
       setUser({
-        id: userData.user_id,
-        email: userData.email,
-        username: userData.username,
+        id: user_id || '',
+        email: userEmail || email,
+        username: username || '',
         is_active: true,
-        created_at: new Date().toISOString(), // Fallback
+        created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
-        role: 'user', // Default or from response if available
+        role: 'user',
         firstname: '',
         lastname: '',
-        display_name: userData.username,
+        display_name: displayName,
       });
 
       console.log('AuthProvider: User set, navigating...');

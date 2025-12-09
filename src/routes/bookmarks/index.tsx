@@ -1,0 +1,232 @@
+import { createSignal, For, Show, createMemo } from 'solid-js';
+import { Title, Meta } from '@solidjs/meta';
+import { Bookmark, Plus, FolderOpen, Loader2, Trash2, ExternalLink, MapPin, Calendar } from 'lucide-solid';
+import { A } from '@solidjs/router';
+import { createQuery, useMutation, useQueryClient } from '@tanstack/solid-query';
+import { createClient } from "@connectrpc/connect";
+import {
+    ListService,
+    GetSavedListsRequestSchema,
+    UnsaveListRequestSchema
+} from "@buf/loci_loci-proto.bufbuild_es/proto/list_pb.js";
+import { create } from "@bufbuild/protobuf";
+import { transport } from "~/lib/connect-transport";
+import { authAPI, getAuthToken } from "~/lib/api";
+
+const listClient = createClient(ListService, transport);
+
+// Fetch user's saved/bookmarked lists
+const fetchSavedLists = async () => {
+    const token = getAuthToken();
+    if (!token) return [];
+
+    const session = await authAPI.validateSession();
+    if (!session.valid || !session.user_id) return [];
+
+    const response = await listClient.getSavedLists(
+        create(GetSavedListsRequestSchema, {
+            userId: session.user_id,
+            limit: 50,
+            offset: 0,
+        })
+    );
+
+    return response.lists || [];
+};
+
+export default function BookmarksPage() {
+    const queryClient = useQueryClient();
+    const [selectedList, setSelectedList] = createSignal<string | null>(null);
+
+    // Query for saved lists
+    const savedListsQuery = createQuery(() => ({
+        queryKey: ['savedLists'],
+        queryFn: fetchSavedLists,
+        staleTime: 5 * 60 * 1000,
+    }));
+
+    // Unsave mutation
+    const unsaveMutation = useMutation(() => ({
+        mutationFn: async (listId: string) => {
+            const session = await authAPI.validateSession();
+            if (!session.valid || !session.user_id) throw new Error("Not authenticated");
+
+            await listClient.unsaveList(
+                create(UnsaveListRequestSchema, {
+                    userId: session.user_id,
+                    listId: listId,
+                })
+            );
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['savedLists'] });
+        },
+    }));
+
+    const lists = createMemo(() => savedListsQuery.data || []);
+    const isLoading = createMemo(() => savedListsQuery.isLoading);
+    const isError = createMemo(() => savedListsQuery.isError);
+
+    const handleUnsave = async (listId: string, e: Event) => {
+        e.preventDefault();
+        e.stopPropagation();
+        unsaveMutation.mutate(listId);
+    };
+
+    const formatDate = (timestamp: any) => {
+        if (!timestamp) return 'Unknown date';
+        try {
+            const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+            return date.toLocaleDateString('en-US', {
+                month: 'short',
+                day: 'numeric',
+                year: 'numeric'
+            });
+        } catch {
+            return 'Unknown date';
+        }
+    };
+
+    return (
+        <>
+            <Title>Bookmarks - Your Saved Itineraries | Loci</Title>
+            <Meta name="description" content="View and manage your bookmarked itineraries and travel plans." />
+
+            <div class="min-h-screen relative transition-colors">
+                {/* Header */}
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                    <div class="loci-hero">
+                        <div class="loci-hero__content p-6 sm:p-8 space-y-6">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center gap-3">
+                                    <div class="relative">
+                                        <div class="absolute -inset-1 bg-gradient-to-tr from-blue-500/60 via-cyan-500/60 to-purple-600/60 blur-md opacity-80" />
+                                        <div class="relative w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center text-white shadow-lg ring-2 ring-white/60">
+                                            <Bookmark class="w-6 h-6" />
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <h1 class="text-3xl sm:text-4xl font-bold tracking-tight">Bookmarks</h1>
+                                        <p class="text-white/80 text-sm mt-1">
+                                            Your saved itineraries and travel plans
+                                        </p>
+                                    </div>
+                                </div>
+                                <A
+                                    href="/lists"
+                                    class="flex items-center gap-2 px-4 py-2 bg-white/20 hover:bg-white/30 rounded-xl text-white font-medium transition-all border border-white/30"
+                                >
+                                    <Plus class="w-4 h-4" />
+                                    Create List
+                                </A>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-16">
+                    {/* Loading State */}
+                    <Show when={isLoading()}>
+                        <div class="flex items-center justify-center py-16">
+                            <Loader2 class="w-8 h-8 animate-spin text-blue-500" />
+                            <span class="ml-3 text-gray-600 dark:text-gray-400">Loading your bookmarks...</span>
+                        </div>
+                    </Show>
+
+                    {/* Error State */}
+                    <Show when={isError()}>
+                        <div class="text-center py-16">
+                            <div class="text-red-500 mb-4">Failed to load bookmarks</div>
+                            <button
+                                onClick={() => savedListsQuery.refetch()}
+                                class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+                            >
+                                Try Again
+                            </button>
+                        </div>
+                    </Show>
+
+                    {/* Empty State */}
+                    <Show when={!isLoading() && !isError() && lists().length === 0}>
+                        <div class="text-center py-16">
+                            <div class="w-20 h-20 mx-auto mb-6 rounded-full bg-gradient-to-br from-blue-100 to-cyan-100 dark:from-blue-900/30 dark:to-cyan-900/30 flex items-center justify-center">
+                                <Bookmark class="w-10 h-10 text-blue-500" />
+                            </div>
+                            <h3 class="text-xl font-semibold text-gray-800 dark:text-white mb-2">No Bookmarks Yet</h3>
+                            <p class="text-gray-600 dark:text-gray-400 mb-6 max-w-md mx-auto">
+                                Save itineraries and travel plans to quickly access them later.
+                                Click the bookmark icon on any itinerary to save it here.
+                            </p>
+                            <A
+                                href="/discover"
+                                class="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-cyan-600 text-white rounded-xl font-semibold hover:from-blue-700 hover:to-cyan-700 transition-all shadow-lg"
+                            >
+                                <FolderOpen class="w-5 h-5" />
+                                Discover Places
+                            </A>
+                        </div>
+                    </Show>
+
+                    {/* Bookmarks Grid */}
+                    <Show when={!isLoading() && lists().length > 0}>
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            <For each={lists()}>
+                                {(list: any) => (
+                                    <div class="glass-panel rounded-2xl p-5 hover:shadow-xl hover:scale-[1.02] transition-all duration-200 cursor-pointer group">
+                                        <div class="flex items-start justify-between mb-4">
+                                            <div class="flex-1">
+                                                <h3 class="text-lg font-semibold text-gray-900 dark:text-white line-clamp-1">
+                                                    {list.name || 'Untitled'}
+                                                </h3>
+                                                <Show when={list.cityId}>
+                                                    <div class="flex items-center gap-1 text-sm text-gray-500 dark:text-gray-400 mt-1">
+                                                        <MapPin class="w-3 h-3" />
+                                                        <span>{list.cityId}</span>
+                                                    </div>
+                                                </Show>
+                                            </div>
+                                            <button
+                                                onClick={(e) => handleUnsave(list.id, e)}
+                                                disabled={unsaveMutation.isPending}
+                                                class="p-2 text-gray-400 hover:text-red-500 dark:hover:text-red-400 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors opacity-0 group-hover:opacity-100"
+                                                title="Remove bookmark"
+                                            >
+                                                <Trash2 class="w-4 h-4" />
+                                            </button>
+                                        </div>
+
+                                        <Show when={list.description}>
+                                            <p class="text-sm text-gray-600 dark:text-gray-300 line-clamp-2 mb-4">
+                                                {list.description}
+                                            </p>
+                                        </Show>
+
+                                        <div class="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
+                                            <div class="flex items-center gap-3">
+                                                <span class="flex items-center gap-1">
+                                                    <Calendar class="w-3 h-3" />
+                                                    {formatDate(list.createdAt)}
+                                                </span>
+                                                <Show when={list.itemCount > 0}>
+                                                    <span>{list.itemCount} items</span>
+                                                </Show>
+                                            </div>
+                                            <A
+                                                href={`/lists/${list.id}`}
+                                                class="flex items-center gap-1 text-blue-600 dark:text-blue-400 hover:underline"
+                                                onClick={(e) => e.stopPropagation()}
+                                            >
+                                                View
+                                                <ExternalLink class="w-3 h-3" />
+                                            </A>
+                                        </div>
+                                    </div>
+                                )}
+                            </For>
+                        </div>
+                    </Show>
+                </div>
+            </div>
+        </>
+    );
+}

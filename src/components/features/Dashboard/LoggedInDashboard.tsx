@@ -1,26 +1,28 @@
-import { Component, createSignal, Show, For } from 'solid-js';
+import { Component, createSignal, Show, For, createEffect, createMemo } from 'solid-js';
 import { useNavigate } from '@solidjs/router';
 import {
   Send, Loader2, MapPin, Bookmark, Star,
   TrendingUp, Heart, Coffee, Calendar,
-  Camera, Globe, ChevronRight, Sparkles, Settings
+  Camera, Globe, ChevronRight, Sparkles, Settings, Clock
 } from 'lucide-solid';
 import { sendUnifiedChatMessageStream, detectDomain, domainToContextType } from '~/lib/api/llm';
 import { streamingService, createStreamingSession, getDomainRoute } from '~/lib/streaming-service';
-import type { StreamingSession, AiCityResponse } from '~/lib/api/types';
+import type { StreamingSession, AiCityResponse, CityInteractions } from '~/lib/api/types';
 import { useUserLocation } from '~/contexts/LocationContext';
 import { useDefaultSearchProfile } from '~/lib/api/profiles';
 import { useAuth } from '~/contexts/AuthContext';
 import { useLandingPageStatistics } from '~/lib/api/statistics';
+import { useRecentInteractions } from '~/lib/api/recents';
+import { useTrendingDiscoveries } from '~/lib/api/discover';
 import QuickSettingsModal from '~/components/modals/QuickSettingsModal';
 import ProfileQuickSelect from './ProfileQuickSelect';
 
-interface QuickAction {
+interface QuickDiscovery {
   id: string;
   icon: Component<{ class?: string }>;
   title: string;
   subtitle: string;
-  prompt: string;
+  route: string;
   tone: string;
 }
 
@@ -49,25 +51,67 @@ export default function LoggedInDashboard() {
   // Get default search profile
   const defaultProfileQuery = useDefaultSearchProfile();
 
-  // ... (lines 51-180 preserved) ...
-  /* 
-    NOTE: This block replaces lines 1-51 and 180-200. 
-    But wait, replace_file_content replaces a CONTIGUOUS block.
-    I cannot replace two separate blocks in one call. Use multi_replace_file_content.
-  */
-
   const profileId = () => defaultProfileQuery.data?.id;
 
   // Get user statistics (only if user is authenticated)
   const userStatsQuery = useLandingPageStatistics();
 
-  const quickActions: QuickAction[] = [
+  // Get recent interactions from API
+  const recentInteractionsQuery = useRecentInteractions(5);
+
+  // Get trending discoveries
+  const trendingQuery = useTrendingDiscoveries(5);
+
+  // Helper function to format relative time
+  const formatRelativeTime = (dateStr: string) => {
+    const date = new Date(dateStr);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    if (diffMins < 60) return `${diffMins} min ago`;
+    if (diffHours < 24) return `${diffHours} hours ago`;
+    if (diffDays < 7) return `${diffDays} days ago`;
+    return date.toLocaleDateString();
+  };
+
+  // Map recent interactions to activity items
+  const recentActivities = createMemo(() => {
+    const cities = recentInteractionsQuery.data?.cities || [];
+    const activities: RecentActivity[] = [];
+
+    cities.forEach((city: CityInteractions) => {
+      city.interactions?.slice(0, 3).forEach((interaction) => {
+        // Determine type based on content
+        let activityType: 'itinerary' | 'restaurant' | 'hotel' | 'activity' = 'itinerary';
+        if (interaction.hotels?.length > 0) activityType = 'hotel';
+        else if (interaction.restaurants?.length > 0) activityType = 'restaurant';
+        else if (interaction.pois?.length > 0) activityType = 'activity';
+
+        activities.push({
+          id: interaction.id,
+          type: activityType,
+          title: interaction.prompt?.slice(0, 50) || city.city_name,
+          location: city.city_name,
+          timestamp: formatRelativeTime(interaction.created_at),
+          saved: false
+        });
+      });
+    });
+
+    return activities.slice(0, 5);
+  });
+
+  // Quick discoveries - navigate to /discover with category
+  const quickDiscoveries: QuickDiscovery[] = [
     {
       id: 'discover-nearby',
       icon: MapPin,
       title: 'Discover Nearby',
       subtitle: 'Find hidden gems around you',
-      prompt: 'Show me interesting places near my current location',
+      route: '/discover?category=nearby',
       tone: 'bg-[#0c7df2]'
     },
     {
@@ -75,7 +119,7 @@ export default function LoggedInDashboard() {
       icon: Coffee,
       title: 'Food Adventure',
       subtitle: 'Culinary discoveries await',
-      prompt: 'Find the best local restaurants and food experiences near me',
+      route: '/discover?category=dining',
       tone: 'bg-[#f97316]'
     },
     {
@@ -83,7 +127,7 @@ export default function LoggedInDashboard() {
       icon: Camera,
       title: 'Cultural Tour',
       subtitle: 'Museums, art, and history',
-      prompt: 'Create a cultural itinerary with museums and historical sites',
+      route: '/discover?category=cultural',
       tone: 'bg-[#4338ca]'
     },
     {
@@ -91,59 +135,15 @@ export default function LoggedInDashboard() {
       icon: Calendar,
       title: 'Weekend Plan',
       subtitle: 'Perfect 2-day getaway',
-      prompt: 'Plan a perfect weekend itinerary for this city',
+      route: '/discover?category=weekend',
       tone: 'bg-emerald-600'
     }
   ];
 
-  // Mock recent activities - in real app, fetch from API
-  const recentActivities: RecentActivity[] = [
-    {
-      id: '1',
-      type: 'itinerary',
-      title: 'Hidden Gems of Lisbon',
-      location: 'Lisbon, Portugal',
-      timestamp: '2 hours ago',
-      saved: true
-    },
-    {
-      id: '2',
-      type: 'restaurant',
-      title: 'Pastéis de Belém',
-      location: 'Belém, Lisbon',
-      timestamp: '1 day ago',
-      saved: true
-    },
-    {
-      id: '3',
-      type: 'activity',
-      title: 'Fado Performance at Alfama',
-      location: 'Alfama, Lisbon',
-      timestamp: '3 days ago',
-      saved: false
-    }
-  ];
-
-  const personalizedSuggestions = [
-    {
-      icon: '🎨',
-      title: 'Art Galleries in Your Area',
-      description: 'Based on your love for contemporary art',
-      action: 'Explore Now'
-    },
-    {
-      icon: '🍷',
-      title: 'Wine Tasting Experience',
-      description: 'Perfect for your weekend plans',
-      action: 'Book Now'
-    },
-    {
-      icon: '🏛️',
-      title: 'Historical Walking Tour',
-      description: 'Matches your interest in history',
-      action: 'Learn More'
-    }
-  ];
+  // Handle quick discovery click - navigate to discover page
+  const handleQuickDiscovery = (discovery: QuickDiscovery) => {
+    navigate(discovery.route);
+  };
 
   const sendMessage = async () => {
     if (!currentMessage().trim() || isLoading()) return;
@@ -247,10 +247,7 @@ export default function LoggedInDashboard() {
     }
   };
 
-  const handleQuickAction = (action: QuickAction) => {
-    setCurrentMessage(action.prompt);
-    setTimeout(() => sendMessage(), 100);
-  };
+  // Delete handleQuickAction - replaced by handleQuickDiscovery
 
   const getActivityIcon = (type: string) => {
     switch (type) {
@@ -397,52 +394,59 @@ export default function LoggedInDashboard() {
           <div class="lg:col-span-2">
             <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-4">Quick Discoveries</h2>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-              <For each={quickActions}>
-                {(action) => (
+              <For each={quickDiscoveries}>
+                {(discovery) => (
                   <button
-                    onClick={() => handleQuickAction(action)}
-                    class={`rounded-2xl p-6 text-white shadow-xl dark:shadow-[0_20px_70px_rgba(3,7,18,0.45)] hover:shadow-2xl dark:hover:shadow-[0_25px_80px_rgba(52,211,153,0.25)] transform hover:translate-y-[-4px] transition-all duration-200 text-left group border border-gray-300 dark:border-white/15 backdrop-blur bg-gradient-to-br ${action.tone} from-white/8`}
+                    onClick={() => handleQuickDiscovery(discovery)}
+                    class={`rounded-2xl p-6 text-white shadow-xl dark:shadow-[0_20px_70px_rgba(3,7,18,0.45)] hover:shadow-2xl dark:hover:shadow-[0_25px_80px_rgba(52,211,153,0.25)] transform hover:translate-y-[-4px] transition-all duration-200 text-left group border border-gray-300 dark:border-white/15 backdrop-blur bg-gradient-to-br ${discovery.tone} from-white/8`}
                   >
                     <div class="flex items-start justify-between mb-3">
-                      <action.icon class="w-8 h-8" />
+                      <discovery.icon class="w-8 h-8" />
                       <ChevronRight class="w-5 h-5 opacity-0 group-hover:opacity-100 transform translate-x-2 group-hover:translate-x-0 transition-all duration-200" />
                     </div>
-                    <h3 class="font-semibold text-lg mb-1">{action.title}</h3>
-                    <p class="text-white/90 text-sm">{action.subtitle}</p>
+                    <h3 class="font-semibold text-lg mb-1">{discovery.title}</h3>
+                    <p class="text-white/90 text-sm">{discovery.subtitle}</p>
                   </button>
                 )}
               </For>
             </div>
 
             {/* Personalized Suggestions */}
-            <div class="rounded-2xl p-6 bg-white/90 dark:bg-white/5 border border-gray-300 dark:border-white/10 backdrop-blur shadow-xl dark:shadow-[0_22px_80px_rgba(3,7,18,0.45)]">
-              <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-                <TrendingUp class="w-5 h-5 text-emerald-600 dark:text-emerald-200" />
-                Just for You
-              </h3>
-              <div class="space-y-4">
-                <For each={personalizedSuggestions}>
-                  {(suggestion) => (
-                    <div class="flex items-center justify-between p-4 rounded-lg border border-gray-300 dark:border-white/15 hover:bg-gray-100 dark:hover:bg-white/5 transition-colors group cursor-pointer">
-                      <div class="flex items-center gap-3">
-                        <span class="text-2xl">{suggestion.icon}</span>
-                        <div>
-                          <h4 class="font-semibold text-gray-900 dark:text-white group-hover:text-emerald-600 dark:group-hover:text-emerald-200 transition-colors">
-                            {suggestion.title}
-                          </h4>
-                          <p class="text-sm text-gray-600 dark:text-slate-200/80">
-                            {suggestion.description}
-                          </p>
+            {/* Trending Destinations */}
+            <Show when={trendingQuery.data && trendingQuery.data.length > 0}>
+              <div class="rounded-2xl p-6 bg-white/90 dark:bg-white/5 border border-gray-300 dark:border-white/10 backdrop-blur shadow-xl dark:shadow-[0_22px_80px_rgba(3,7,18,0.45)]">
+                <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                  <TrendingUp class="w-5 h-5 text-emerald-600 dark:text-emerald-200" />
+                  Trending Destinations
+                </h3>
+                <div class="space-y-4">
+                  <For each={trendingQuery.data}>
+                    {(trending) => (
+                      <div
+                        class="flex items-center justify-between p-4 rounded-lg border border-gray-300 dark:border-white/15 hover:bg-gray-100 dark:hover:bg-white/5 transition-colors group cursor-pointer"
+                        onClick={() => {
+                          setCurrentMessage(`Tell me about ${trending.city_name}`);
+                          setTimeout(() => sendMessage(), 100);
+                        }}
+                      >
+                        <div class="flex items-center gap-3">
+                          <span class="text-2xl">{trending.emoji}</span>
+                          <div>
+                            <h4 class="font-semibold text-gray-900 dark:text-white group-hover:text-emerald-600 dark:group-hover:text-emerald-200 transition-colors">
+                              {trending.city_name}
+                            </h4>
+                            <p class="text-sm text-gray-600 dark:text-slate-200/80">
+                              {trending.search_count} searches this week
+                            </p>
+                          </div>
                         </div>
+                        <ChevronRight class="w-5 h-5 text-gray-400 group-hover:text-emerald-600 dark:group-hover:text-emerald-200 transition-colors" />
                       </div>
-                      <button class="text-emerald-600 dark:text-emerald-200 hover:text-emerald-700 dark:hover:text-white font-semibold text-sm px-3 py-1 rounded-lg hover:bg-gray-200 dark:hover:bg-white/5 transition-colors">
-                        {suggestion.action}
-                      </button>
-                    </div>
-                  )}
-                </For>
+                    )}
+                  </For>
+                </div>
               </div>
-            </div>
+            </Show>
           </div>
 
           {/* Sidebar */}
@@ -457,7 +461,7 @@ export default function LoggedInDashboard() {
                 </button>
               </div>
               <div class="space-y-3">
-                <For each={recentActivities}>
+                <For each={recentActivities()}>
                   {(activity) => {
                     const IconComponent = getActivityIcon(activity.type);
                     return (
@@ -508,7 +512,7 @@ export default function LoggedInDashboard() {
                 </button>
 
                 <button
-                  onClick={() => navigate('/itinerary')}
+                  onClick={() => navigate('/lists')}
                   class="w-full flex items-center gap-3 p-3 text-left rounded-lg hover:bg-gray-100 dark:hover:bg-white/5 transition-colors group border border-gray-300 dark:border-white/10"
                 >
                   <div class="flex-shrink-0 w-10 h-10 bg-gray-100 dark:bg-white/10 rounded-lg flex items-center justify-center">
@@ -524,7 +528,10 @@ export default function LoggedInDashboard() {
                   </div>
                 </button>
 
-                <button class="w-full flex items-center gap-3 p-3 text-left rounded-lg hover:bg-gray-100 dark:hover:bg-white/5 transition-colors group border border-gray-300 dark:border-white/10">
+                <button
+                  onClick={() => navigate('/lists?tab=favorites')}
+                  class="w-full flex items-center gap-3 p-3 text-left rounded-lg hover:bg-gray-100 dark:hover:bg-white/5 transition-colors group border border-gray-300 dark:border-white/10"
+                >
                   <div class="flex-shrink-0 w-10 h-10 bg-gray-100 dark:bg-white/10 rounded-lg flex items-center justify-center">
                     <Heart class="w-5 h-5 text-emerald-600 dark:text-emerald-200" />
                   </div>
