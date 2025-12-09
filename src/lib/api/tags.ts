@@ -1,38 +1,69 @@
-// Tags queries and mutations
-import { useQuery, useMutation, useQueryClient } from '@tanstack/solid-query';
-import { apiRequest, queryKeys } from './shared';
+// Tags queries and mutations - RPC version
+import { createQuery, createMutation, useQueryClient } from '@tanstack/solid-query';
+import { createClient } from '@connectrpc/connect';
+import { create } from '@bufbuild/protobuf';
+import { TagsService } from '@buf/loci_loci-proto.bufbuild_es/proto/tags_pb.js';
+import {
+  GetTagsRequestSchema,
+  CreateTagRequestSchema,
+  UpdateTagRequestSchema,
+  DeleteTagRequestSchema,
+} from '@buf/loci_loci-proto.bufbuild_es/proto/tags_pb.js';
+import { queryKeys } from './shared';
+import { transport } from '../connect-transport';
 import type { PersonalTag } from './types';
+
+// Create the tags service client
+const tagsClient = createClient(TagsService, transport);
 
 // ===============
 // TAGS QUERIES
 // ===============
 
 export const useTags = () => {
-  return useQuery(() => ({
+  return createQuery(() => ({
     queryKey: queryKeys.tags,
-    queryFn: () => apiRequest<PersonalTag[]>('/user/tags'),
+    queryFn: async (): Promise<PersonalTag[]> => {
+      const request = create(GetTagsRequestSchema, {});
+      const response = await tagsClient.getTags(request);
+
+      return response.tags.map((tag): PersonalTag => ({
+        id: tag.id,
+        name: tag.name,
+        tag_type: tag.tagType,
+        description: tag.description ?? null,
+        source: (tag.source === 'global' ? 'global' : 'personal') as 'global' | 'personal' | null,
+        active: tag.active ?? true,
+        created_at: tag.createdAt ? new Date(Number(tag.createdAt.seconds) * 1000).toISOString() : '',
+        updated_at: tag.updatedAt ? new Date(Number(tag.updatedAt.seconds) * 1000).toISOString() : null,
+      }));
+    },
     staleTime: 15 * 60 * 1000,
   }));
 };
 
-
 export const useCreateTagMutation = () => {
   const queryClient = useQueryClient();
 
-  return useMutation(() => ({
-    mutationFn: ({ name, description, tag_type, active = true }: {
+  return createMutation(() => ({
+    mutationFn: async ({ name, description, tag_type, active = true }: {
       name: string;
       description: string;
       tag_type: string;
       active?: boolean;
-    }) =>
-      apiRequest<PersonalTag>('/user/tags', {
-        method: 'POST',
-        body: JSON.stringify({ name, description, tag_type, active }),
-      }),
-    onSuccess: (newTag) => {
-      // Add to tags list
-      queryClient.setQueryData(queryKeys.tags, (old: PersonalTag[] = []) => [...old, newTag]);
+    }) => {
+      const request = create(CreateTagRequestSchema, {
+        name,
+        description,
+        tagType: tag_type,
+        active,
+      });
+
+      const response = await tagsClient.createTag(request);
+      return response.tag;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.tags });
     },
   }));
 };
@@ -40,27 +71,26 @@ export const useCreateTagMutation = () => {
 export const useUpdateTagMutation = () => {
   const queryClient = useQueryClient();
 
-  return useMutation(() => ({
-    mutationFn: ({ id, name, description, tag_type, active }: {
+  return createMutation(() => ({
+    mutationFn: async ({ id, name, description, tag_type, active }: {
       id: string;
       name?: string;
       description?: string;
       tag_type?: string;
       active?: boolean;
     }) => {
-      const updateData: any = {};
-      if (name !== undefined) updateData.name = name;
-      if (description !== undefined) updateData.description = description;
-      if (tag_type !== undefined) updateData.tag_type = tag_type;
-      if (active !== undefined) updateData.active = active;
-
-      return apiRequest<PersonalTag>(`/user/tags/${id}`, {
-        method: 'PUT',
-        body: JSON.stringify(updateData),
+      const request = create(UpdateTagRequestSchema, {
+        tagId: id,
+        name: name ?? '',
+        description: description ?? '',
+        tagType: tag_type ?? '',
+        active: active ?? true,
       });
+
+      const response = await tagsClient.updateTag(request);
+      return { success: response.success };
     },
     onSuccess: () => {
-      // API returns response object, not updated tag, so refetch
       queryClient.invalidateQueries({ queryKey: queryKeys.tags });
     },
   }));
@@ -69,16 +99,20 @@ export const useUpdateTagMutation = () => {
 export const useToggleTagActiveMutation = () => {
   const queryClient = useQueryClient();
 
-  return useMutation(() => ({
-    mutationFn: ({ id, active }: { id: string; active: boolean }) => {
-      // Use PUT endpoint to update tag active status
-      return apiRequest<PersonalTag>(`/user/tags/${id}`, {
-        method: 'PUT',
-        body: JSON.stringify({ active }),
+  return createMutation(() => ({
+    mutationFn: async ({ id, active }: { id: string; active: boolean }) => {
+      const request = create(UpdateTagRequestSchema, {
+        tagId: id,
+        name: '',
+        description: '',
+        tagType: '',
+        active,
       });
+
+      const response = await tagsClient.updateTag(request);
+      return { success: response.success };
     },
     onSuccess: () => {
-      // API returns response object, not updated tag, so refetch
       queryClient.invalidateQueries({ queryKey: queryKeys.tags });
     },
   }));
@@ -87,14 +121,14 @@ export const useToggleTagActiveMutation = () => {
 export const useDeleteTagMutation = () => {
   const queryClient = useQueryClient();
 
-  return useMutation(() => ({
-    mutationFn: (tagId: string) =>
-      apiRequest<{ message: string }>(`/user/tags/${tagId}`, { method: 'DELETE' }),
-    onSuccess: (_, tagId) => {
-      // Remove from tags list
-      queryClient.setQueryData(queryKeys.tags, (old: PersonalTag[] = []) =>
-        old.filter(tag => tag.id !== tagId)
-      );
+  return createMutation(() => ({
+    mutationFn: async (tagId: string) => {
+      const request = create(DeleteTagRequestSchema, { tagId });
+      const response = await tagsClient.deleteTag(request);
+      return { success: response.success };
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.tags });
     },
   }));
 };

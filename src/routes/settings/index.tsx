@@ -200,7 +200,7 @@ export default function SettingsPage() {
         const profile = profileData();
 
         return (
-            <div class="space-y-8">
+            <div class="space-y-6">
                 {/* Header card inspired by go-templui */}
                 <div class="relative overflow-hidden rounded-3xl border border-white/30 bg-gradient-to-br from-[#0c7df2] via-[#6aa5ff] to-[#0c1747] text-white shadow-2xl">
                     <div class="absolute inset-0 opacity-30 bg-[radial-gradient(circle_at_20%_20%,rgba(255,255,255,0.45),transparent_35%),radial-gradient(circle_at_80%_0%,rgba(255,255,255,0.35),transparent_30%),radial-gradient(circle_at_50%_80%,rgba(255,255,255,0.25),transparent_32%)]" />
@@ -283,7 +283,7 @@ export default function SettingsPage() {
                 <div class="grid lg:grid-cols-3 gap-6">
                     <div class="lg:col-span-2 space-y-6">
                         {/* Personal Information */}
-                        <div class="rounded-2xl bg-white/80 dark:bg-slate-800/80 backdrop-blur border border-gray-200 dark:border-slate-700 shadow-sm p-6 sm:p-7">
+                        <div class="rounded-3xl bg-white/80 dark:bg-slate-800/80 backdrop-blur border border-gray-200 dark:border-slate-700 shadow-sm p-6 sm:p-8">
                             <div class="flex items-start justify-between mb-4">
                                 <div>
                                     <h3 class="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white">Personal Information</h3>
@@ -300,7 +300,7 @@ export default function SettingsPage() {
                             </div>
 
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-                                <div class="pb-2">
+                                <div class="sm:col-span-2 pb-2">
                                     <label class="block text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Username</label>
                                     <input
                                         type="text"
@@ -396,8 +396,8 @@ export default function SettingsPage() {
                         </div>
                     </div>
 
-                    <div class="space-y-4">
-                        <div class="rounded-2xl bg-white/80 dark:bg-slate-800/80 backdrop-blur border border-gray-200 dark:border-slate-700 shadow-sm p-5">
+                    <div class="space-y-6">
+                        <div class="rounded-3xl bg-white/80 dark:bg-slate-800/80 backdrop-blur border border-gray-200 dark:border-slate-700 shadow-sm p-6 sm:p-8">
                             <div class="flex items-center justify-between mb-3">
                                 <div>
                                     <p class="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">Profile strength</p>
@@ -411,7 +411,7 @@ export default function SettingsPage() {
                             <p class="text-xs text-gray-500 dark:text-gray-400 mt-2">Complete your details and tune interests/tags for sharper recommendations.</p>
                         </div>
 
-                        <div class="rounded-2xl bg-gradient-to-br from-white to-blue-50 dark:from-slate-800 dark:to-slate-700 border border-blue-100 dark:border-slate-600 shadow p-5 space-y-3">
+                        <div class="rounded-3xl bg-gradient-to-br from-white to-blue-50 dark:from-slate-800 dark:to-slate-700 border border-blue-100 dark:border-slate-600 shadow p-6 sm:p-8 space-y-3">
                             <div class="flex items-center gap-2">
                                 <Bell class="w-5 h-5 text-blue-600 dark:text-blue-400" />
                                 <h4 class="text-sm font-semibold text-gray-900 dark:text-white">Quick actions</h4>
