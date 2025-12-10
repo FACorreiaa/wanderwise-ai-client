@@ -83,7 +83,7 @@ export default function NearmePage() {
     const searchNearby = (lat: number, lon: number, distanceKm: number) => {
         const message = `Find places near me within ${distanceKm} kilometers. My location is at latitude ${lat.toFixed(6)} and longitude ${lon.toFixed(6)}. Show me restaurants, attractions, hotels, and activities nearby.`;
 
-        startStream(message, "nearme");
+        startStream(message, "nearme", { latitude: lat, longitude: lon });
     };
 
     // Re-search with new distance

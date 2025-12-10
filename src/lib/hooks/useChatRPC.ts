@@ -44,7 +44,7 @@ export function useChatRPC(options: UseChatRPCOptions = {}) {
     const startStream = async (
         message: string,
         cityName?: string,
-        // contextType?: ChatContextType
+        userLocation?: { latitude: number; longitude: number }
     ) => {
         // Reset state for new chat
         setState({
@@ -63,7 +63,10 @@ export function useChatRPC(options: UseChatRPCOptions = {}) {
             const request = create(ChatRequestSchema, {
                 message: message,
                 cityName: cityName || "",
-                // contextType: toProtoDomainType(contextType),
+                userLocation: userLocation ? {
+                    latitude: userLocation.latitude,
+                    longitude: userLocation.longitude,
+                } : undefined,
             });
 
             const stream = chatClient.streamChat(request);
@@ -81,7 +84,18 @@ export function useChatRPC(options: UseChatRPCOptions = {}) {
 
                 const eventType = response.type;
                 const _msgData = response.message; // usually chunk text
-                const data = response.data as any; // Cast to any to access properties
+
+                // Decode the data from Uint8Array to JSON object
+                let data: any = null;
+                if (response.data && response.data.length > 0) {
+                    try {
+                        const decoder = new TextDecoder();
+                        const jsonString = decoder.decode(response.data);
+                        data = JSON.parse(jsonString);
+                    } catch (e) {
+                        console.error("Failed to parse event data:", e);
+                    }
+                }
 
                 // Update progress based on event type
                 handleProgress(eventType, data);
@@ -96,14 +110,22 @@ export function useChatRPC(options: UseChatRPCOptions = {}) {
 
                 // Handle completion
                 if (eventType === "complete") {
+                    // Only update streamedData if it contains actual POI data
+                    // (don't overwrite POIs from nearby/hotels/etc events with empty session_id data)
+                    const hasExistingData = state.streamedData?.points_of_interest?.length > 0 ||
+                        state.streamedData?.hotels?.length > 0 ||
+                        state.streamedData?.restaurants?.length > 0 ||
+                        state.streamedData?.activities?.length > 0;
+
                     setState({
                         isStreaming: false,
                         isConnected: false,
                         progress: 100,
                         currentStep: "Complete!",
-                        streamedData: response.data
+                        // Preserve existing data if complete event only has session_id
+                        streamedData: hasExistingData ? state.streamedData : data
                     });
-                    options.onComplete?.(response.data);
+                    options.onComplete?.(state.streamedData || data);
 
                     // Check for redirect info
                     if (response.navigation) {
@@ -152,6 +174,16 @@ export function useChatRPC(options: UseChatRPCOptions = {}) {
                 break;
             case 'activities':
                 setState({ currentStep: "Finding activities...", progress: 70 });
+                options.onProgress?.(data);
+                break;
+            case 'nearby':
+                console.log('[useChatRPC] nearby event received:', data);
+                console.log('[useChatRPC] nearby points_of_interest:', data?.points_of_interest);
+                setState({
+                    currentStep: "Finding places near you...",
+                    progress: 80,
+                    streamedData: data  // Update streamedData with nearby POIs
+                });
                 options.onProgress?.(data);
                 break;
         }
