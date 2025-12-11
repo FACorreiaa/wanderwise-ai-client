@@ -144,9 +144,9 @@ export default function PublicLandingPage() {
         message: message,
         userLocation: userLocation()
           ? {
-              userLat: userLocation()!.latitude,
-              userLon: userLocation()!.longitude,
-            }
+            userLat: userLocation()!.latitude,
+            userLon: userLocation()!.longitude,
+          }
           : undefined,
       });
 
@@ -220,7 +220,7 @@ export default function PublicLandingPage() {
               <h1 class="text-4xl sm:text-5xl lg:text-6xl font-extrabold leading-tight tracking-tight text-gray-900 dark:text-white">
                 Plan like a local.
                 <span class="block text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-cyan-600 to-teal-600 dark:from-cyan-300 dark:via-emerald-200 dark:to-blue-300">
-                  Preview for free.
+                  See it in action.
                 </span>
               </h1>
               <p class="text-lg sm:text-xl text-gray-700 dark:text-slate-200/90 leading-relaxed max-w-xl">
@@ -233,7 +233,7 @@ export default function PublicLandingPage() {
                   onClick={() => prefillAndSearch("48 hours in Kyoto with coffee and design stops")}
                   class="inline-flex items-center gap-2 px-5 py-3 rounded-xl font-semibold bg-gradient-to-r from-cyan-600 to-blue-600 dark:bg-cyan-500 text-white dark:text-slate-950 hover:from-cyan-700 hover:to-blue-700 dark:hover:bg-cyan-400 transition-all shadow-lg"
                 >
-                  Start a free preview
+                  Preview: 48h in Kyoto
                   <ArrowRight class="w-4 h-4" />
                 </button>
                 <button
@@ -310,10 +310,10 @@ export default function PublicLandingPage() {
                 <div class="flex items-center justify-between gap-3">
                   <div class="flex items-center gap-2 text-gray-700 dark:text-slate-200">
                     <Smartphone class="w-4 h-4" />
-                    <span class="text-sm font-medium">Try a search without logging in</span>
+                    <span class="text-sm font-medium">See Loci in action</span>
                   </div>
                   <span class="text-xs px-2 py-1 rounded-full bg-emerald-100 dark:bg-white/10 border border-emerald-300 dark:border-white/15 text-emerald-800 dark:text-emerald-100 font-semibold">
-                    Free preview
+                    Live Demo
                   </span>
                 </div>
                 <div class="flex items-end gap-3">
@@ -339,7 +339,7 @@ export default function PublicLandingPage() {
                       <Loader2 class="w-4 h-4 animate-spin" />
                     </Show>
                     <span class="hidden sm:inline">
-                      <Show when={isLoading()} fallback="Preview">
+                      <Show when={isLoading()} fallback="Run">
                         Working...
                       </Show>
                     </span>
@@ -352,7 +352,7 @@ export default function PublicLandingPage() {
                   >
                     <div class="flex items-center gap-2 text-sm text-emerald-700 dark:text-emerald-100 font-medium">
                       <Sparkles class="w-4 h-4" />
-                      Preview panel
+                      Quick Example
                     </div>
                     <p class="text-gray-900 dark:text-white font-semibold">Paris ateliers, rainy day</p>
                   </button>
@@ -362,7 +362,7 @@ export default function PublicLandingPage() {
                   >
                     <div class="flex items-center gap-2 text-sm text-emerald-700 dark:text-emerald-100 font-medium">
                       <Sparkles class="w-4 h-4" />
-                      Preview panel
+                      Quick Example
                     </div>
                     <p class="text-gray-900 dark:text-white font-semibold">CDMX street food + music</p>
                   </button>
@@ -391,16 +391,13 @@ export default function PublicLandingPage() {
                   <card.icon class="w-5 h-5" />
                 </div>
                 <div class="flex-1">
-                  <p class="text-xs uppercase tracking-[0.2em] text-gray-600 dark:text-slate-200/70">
-                    Try without login
-                  </p>
                   <h3 class="text-lg font-semibold text-gray-900 dark:text-white">{card.title}</h3>
                   <p class="text-sm text-gray-700 dark:text-slate-100/80 mt-1">{card.description}</p>
                 </div>
               </div>
               <div class="relative mt-4 flex items-center gap-2 text-sm text-emerald-700 dark:text-emerald-100 group-hover:text-emerald-800 dark:group-hover:text-white">
                 <ShieldCheck class="w-4 h-4" />
-                Search works. Chat and saves unlock once you register.
+                Search available. Unlock chat when you register.
               </div>
             </A>
           )}</For>
@@ -450,7 +447,7 @@ export default function PublicLandingPage() {
               </p>
               <h3 class="text-2xl font-bold text-gray-900 dark:text-white">Safe to try. Easy to leave.</h3>
               <p class="text-sm text-gray-700 dark:text-slate-100/80">
-                Search without logging in. No spam. Delete your data from settings anytime.
+                Search free. No spam. Delete your data from settings anytime.
               </p>
             </div>
             <div class="space-y-3">

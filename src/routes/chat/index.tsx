@@ -15,6 +15,7 @@ import {
 } from "lucide-solid";
 import {
   sendUnifiedChatMessageStream,
+  ContinueChatStream,
   detectDomain,
   useGetChatSessionsQuery,
   domainToContextType,
@@ -218,12 +219,17 @@ export default function ChatPage() {
     setStreamProgress("Analyzing your request...");
 
     try {
-      // For chat page, always start a new session (no session restoration)
-      // This ensures each visit to /chat creates a fresh conversation
-      console.log("🆕 Starting fresh chat session for message:", messageContent);
+      const currentSessionId = sessionId();
 
-      // Always start new session for chat page
-      await startNewSession(messageContent);
+      if (currentSessionId) {
+        // Use ContinueChat for follow-up messages to maintain LLM context
+        console.log("💬 Continuing existing session:", currentSessionId);
+        await continueExistingSession(currentSessionId, messageContent);
+      } else {
+        // Start new session for first message
+        console.log("🆕 Starting fresh chat session for message:", messageContent);
+        await startNewSession(messageContent);
+      }
     } catch (error) {
       console.error("Error sending message:", error);
       setIsLoading(false);
@@ -435,6 +441,143 @@ export default function ChatPage() {
     });
   };
 
+  // Function to continue an existing session (maintains LLM context)
+  const continueExistingSession = async (existingSessionId: string, messageContent: string) => {
+    setStreamProgress("Continuing conversation...");
+
+    const domain = detectDomain(messageContent);
+    const currentProfileId = profileId();
+
+    if (!currentProfileId) {
+      throw new Error("No default search profile found");
+    }
+
+    // Get city name from current streaming session
+    const currentCity = streamingSession()?.city ||
+      streamingSession()?.data?.general_city_data?.city ||
+      "";
+
+    console.log("🔄 ContinueChat request:", {
+      sessionId: existingSessionId,
+      message: messageContent,
+      city: currentCity,
+      domain
+    });
+
+    try {
+      const response = await ContinueChatStream({
+        sessionId: existingSessionId,
+        message: messageContent,
+        cityName: currentCity,
+        contextType: domainToContextType(domain),
+      });
+
+      if (!response.ok) {
+        // Session might be expired or invalid - start a new session
+        console.warn("⚠️ ContinueChat failed, session may be expired. Starting new session...");
+        setSessionId(null); // Clear invalid session
+        await startNewSession(messageContent);
+        return;
+      }
+
+      // Create a session object for the streaming service
+      const session = createStreamingSession(domain);
+      session.query = messageContent;
+      session.sessionId = existingSessionId;
+      session.city = currentCity;
+      setStreamingSession(session);
+
+      // Set up streaming manager (same as startNewSession)
+      streamingService.startStream(response, {
+        session,
+        onProgress: (updatedSession) => {
+          setStreamingSession(updatedSession);
+
+          // Update progress message based on response content
+          if ('general_city_data' in updatedSession.data && updatedSession.data.general_city_data) {
+            setStreamProgress(
+              `Processing updates for ${updatedSession.data.general_city_data.city}...`,
+            );
+          } else {
+            setStreamProgress("Processing your follow-up request...");
+          }
+
+          // Update session storage
+          sessionStorage.setItem(
+            "currentStreamingSession",
+            JSON.stringify(updatedSession),
+          );
+        },
+        onComplete: (completedSession) => {
+          setStreamingSession(completedSession);
+          setIsLoading(false);
+          setStreamProgress("");
+
+          // Keep the existing session ID (don't overwrite with new one)
+          console.log("✅ ContinueChat completed, session maintained:", existingSessionId);
+
+          // Add assistant message with results
+          const assistantMessage = {
+            id: `msg-${Date.now()}-response`,
+            type: "assistant",
+            content: getCompletionMessage(
+              completedSession.domain,
+              completedSession.city,
+            ),
+            timestamp: new Date(),
+            hasItinerary: true,
+            streamingData: completedSession.data,
+            showResults: true,
+          };
+
+          setMessages((prev) => [...prev, assistantMessage]);
+
+          // Store completed session
+          sessionStorage.setItem(
+            "completedStreamingSession",
+            JSON.stringify(completedSession),
+          );
+
+          // Invalidate chat sessions query to refresh the sidebar
+          const currentProfileIdValue = profileId();
+          if (currentProfileIdValue) {
+            queryClient.invalidateQueries({
+              queryKey: ["chatSessions", currentProfileIdValue],
+            });
+          }
+        },
+        onError: (error) => {
+          console.error("ContinueChat streaming error:", error);
+
+          // Check if this is a session-not-found error
+          if (error.includes("not found") || error.includes("expired")) {
+            console.log("Session expired, clearing and will start fresh on next message");
+            setSessionId(null);
+          }
+
+          setIsLoading(false);
+          setStreamProgress("");
+
+          const errorMessage = {
+            id: `msg-${Date.now()}-error`,
+            type: "error",
+            content: `Sorry, there was an error: ${error}. Try sending your message again.`,
+            timestamp: new Date(),
+          };
+          setMessages((prev) => [...prev, errorMessage]);
+        },
+        onRedirect: (redirectDomain, data) => {
+          console.log("ContinueChat redirect:", redirectDomain, data);
+        },
+      });
+    } catch (error: any) {
+      console.error("ContinueChat exception:", error);
+      // If ContinueChat fails completely, try starting a new session
+      console.log("Falling back to new session...");
+      setSessionId(null);
+      await startNewSession(messageContent);
+    }
+  };
 
   const getCompletionMessage = (domain: DomainType, city?: string) => {
     const cityText = city ? `for ${city}` : "";
@@ -945,11 +1088,11 @@ export default function ChatPage() {
         class={`max-w-[85%] sm:max-w-[70%] ${message.type === "user" ? "order-1" : ""}`}
       >
         <div
-          class={`rounded-2xl px-3 py-2 sm:px-4 sm:py-3 ${message.type === "user"
-            ? "bg-blue-600 text-white"
+          class={`rounded-2xl px-3 py-2 sm:px-4 sm:py-3 shadow-sm ${message.type === "user"
+            ? "bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-blue-500/20"
             : message.type === "error"
-              ? "bg-red-50 dark:bg-red-900/20 text-red-800 dark:text-red-200 border border-red-200 dark:border-red-800"
-              : "bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200"
+              ? "bg-red-50/80 dark:bg-red-900/30 text-red-800 dark:text-red-200 border border-red-200/50 dark:border-red-800/50 backdrop-blur-sm"
+              : "bg-white/80 dark:bg-slate-800/80 text-gray-800 dark:text-gray-200 backdrop-blur-sm border border-gray-200/50 dark:border-white/10"
             }`}
         >
           <div class="text-sm whitespace-pre-wrap">
@@ -959,7 +1102,7 @@ export default function ChatPage() {
 
         {/* Streaming data preview */}
         <Show when={message.streamingData}>
-          <div class="mt-2 sm:mt-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 sm:p-4">
+          <div class="mt-2 sm:mt-3 bg-white/90 dark:bg-slate-800/90 backdrop-blur-xl border border-gray-200/50 dark:border-white/10 rounded-xl p-3 sm:p-4 shadow-lg shadow-gray-500/5 dark:shadow-black/20">
             {/* Header section */}
             <Show when={message.streamingData.general_city_data}>
               <div class="flex items-center justify-between mb-2 sm:mb-3">
@@ -1062,11 +1205,17 @@ export default function ChatPage() {
   );
 
   return (
-    <div class="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col lg:flex-row">
+    <div class="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-slate-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 flex flex-col lg:flex-row relative overflow-hidden">
+      {/* Background decorative effects */}
+      <div class="absolute inset-0 domain-grid pointer-events-none opacity-40" />
+      <div class="absolute inset-0 domain-veil pointer-events-none" />
+      <div class="absolute top-0 right-0 w-96 h-96 bg-blue-400/10 dark:bg-blue-500/5 rounded-full blur-3xl pointer-events-none" />
+      <div class="absolute bottom-0 left-0 w-80 h-80 bg-purple-400/10 dark:bg-purple-500/5 rounded-full blur-3xl pointer-events-none" />
+
       {/* Sidebar - Chat History - Mobile First */}
-      <div class="w-full lg:w-80 bg-white dark:bg-gray-800 border-b lg:border-b-0 lg:border-r border-gray-200 dark:border-gray-700 flex flex-col order-2 lg:order-1">
+      <div class="w-full lg:w-80 glass-panel lg:rounded-none lg:rounded-r-2xl flex flex-col order-2 lg:order-1 relative z-10">
         {/* Sidebar Header - Mobile First */}
-        <div class="p-3 sm:p-4 border-b border-gray-200 dark:border-gray-700">
+        <div class="p-3 sm:p-4 border-b border-gray-200/50 dark:border-white/10">
           <div class="flex items-center justify-between mb-3 sm:mb-4">
             <h2 class="text-base sm:text-lg font-semibold text-gray-900 dark:text-white">
               AI Assistant
@@ -1084,7 +1233,7 @@ export default function ChatPage() {
           <div class="relative">
             <button
               onClick={() => setShowProfileSelector(!showProfileSelector())}
-              class="w-full flex items-center gap-2 p-2 sm:p-3 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
+              class="w-full flex items-center gap-2 p-2 sm:p-3 bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm rounded-lg hover:bg-white/70 dark:hover:bg-slate-700/70 transition-all border border-gray-200/50 dark:border-white/10"
             >
               <div class="w-6 h-6 sm:w-8 sm:h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-xs sm:text-sm">
                 🎒
@@ -1100,7 +1249,7 @@ export default function ChatPage() {
             </button>
 
             <Show when={showProfileSelector()}>
-              <div class="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-10 max-h-60 overflow-y-auto">
+              <div class="absolute top-full left-0 right-0 mt-2 bg-white/95 dark:bg-slate-800/95 backdrop-blur-xl border border-gray-200/50 dark:border-white/10 rounded-xl shadow-xl shadow-gray-500/10 dark:shadow-black/30 z-10 max-h-60 overflow-y-auto">
                 <For each={profiles}>
                   {(profile) => (
                     <button
@@ -1343,9 +1492,9 @@ export default function ChatPage() {
       </div>
 
       {/* Main Chat Area - Mobile First */}
-      <div class="flex-1 flex flex-col order-1 lg:order-2">
+      <div class="flex-1 flex flex-col order-1 lg:order-2 relative z-10">
         {/* Chat Header - Mobile First */}
-        <div class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 p-3 sm:p-4">
+        <div class="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-b border-gray-200/50 dark:border-white/10 p-3 sm:p-4 shadow-sm">
           <div class="flex items-center justify-between">
             <div class="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
               <div class="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center flex-shrink-0">
@@ -1389,7 +1538,7 @@ export default function ChatPage() {
         </div>
 
         {/* Messages - Mobile First */}
-        <div class="flex-1 overflow-y-auto p-3 sm:p-4 space-y-3 sm:space-y-4">
+        <div class="flex-1 overflow-y-auto p-3 sm:p-4 space-y-3 sm:space-y-4 bg-white/30 dark:bg-slate-900/30 backdrop-blur-sm">
           <For each={messages()}>{(message) => renderMessage(message)}</For>
 
           {/* Loading indicator with streaming progress - Mobile First */}
@@ -1398,7 +1547,7 @@ export default function ChatPage() {
               <div class="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center flex-shrink-0">
                 <Bot class="w-3 h-3 sm:w-4 sm:h-4 text-white" />
               </div>
-              <div class="bg-gray-100 dark:bg-gray-700 rounded-2xl px-3 py-2 sm:px-4 sm:py-3 max-w-xs sm:max-w-md">
+              <div class="bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm border border-gray-200/50 dark:border-white/10 rounded-2xl px-3 py-2 sm:px-4 sm:py-3 max-w-xs sm:max-w-md shadow-sm">
                 <div class="flex items-center gap-1 sm:gap-2 text-gray-600 dark:text-gray-300 mb-2">
                   <Loader2 class="w-3 h-3 sm:w-4 sm:h-4 animate-spin flex-shrink-0" />
                   <span class="text-xs sm:text-sm">
@@ -1446,7 +1595,7 @@ export default function ChatPage() {
                   {(prompt) => (
                     <button
                       onClick={() => useQuickPrompt(prompt)}
-                      class="cb-card hover:shadow-md transition-all duration-200 p-3 sm:p-4 text-left"
+                      class="bg-white/70 dark:bg-slate-800/70 backdrop-blur-sm border border-gray-200/50 dark:border-white/10 rounded-xl hover:bg-white/90 dark:hover:bg-slate-700/90 hover:shadow-lg hover:shadow-blue-500/10 hover:border-blue-300/50 dark:hover:border-blue-500/30 transition-all duration-300 p-3 sm:p-4 text-left group"
                     >
                       <div class="flex items-start gap-2 sm:gap-3">
                         <span class="text-xl sm:text-2xl flex-shrink-0">
@@ -1470,7 +1619,7 @@ export default function ChatPage() {
         </div>
 
         {/* Message Input - Mobile First */}
-        <div class="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 p-3 sm:p-4">
+        <div class="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-t border-gray-200/50 dark:border-white/10 p-3 sm:p-4 shadow-[0_-4px_20px_rgba(0,0,0,0.05)]">
           <div class="max-w-4xl mx-auto">
             <div class="flex items-end gap-2 sm:gap-3">
               <div class="flex-1">
@@ -1479,7 +1628,7 @@ export default function ChatPage() {
                   onInput={(e) => setCurrentMessage(e.target.value)}
                   onKeyPress={handleKeyPress}
                   placeholder="Ask me about destinations, activities, or let me create an itinerary for you..."
-                  class="w-full resize-none border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg px-3 py-2 sm:px-4 sm:py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder-gray-500 dark:placeholder-gray-400 text-sm sm:text-base"
+                  class="w-full resize-none border border-gray-200/50 dark:border-white/10 bg-white/70 dark:bg-slate-800/70 backdrop-blur-sm text-gray-900 dark:text-white rounded-xl px-3 py-2 sm:px-4 sm:py-3 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-300 dark:focus:border-blue-500 focus:bg-white dark:focus:bg-slate-800 placeholder-gray-500 dark:placeholder-gray-400 text-sm sm:text-base transition-all"
                   rows="2"
                   disabled={isLoading()}
                 />

@@ -2,20 +2,17 @@ import { createSignal, For, Show } from "solid-js";
 import { Title, Meta } from "@solidjs/meta";
 import {
   Sparkles,
-  Brain,
-  Filter,
   Map as MapIcon,
-  Bookmark,
   Smartphone,
   CheckCircle2,
   Clock,
   Rocket,
   Zap,
+  Globe,
+  Share2,
   Download,
-  Upload,
-  MessageSquare,
-  Layers,
-  MicIcon
+  Mic,
+  Calendar
 } from "lucide-solid";
 import { A } from "@solidjs/router";
 
@@ -23,354 +20,257 @@ interface Phase {
   number: number;
   title: string;
   status: "completed" | "in-progress" | "planned";
-  features: string[];
-  subFeatures?: { title: string; items: string[] }[];
-}
-
-interface Feature {
-  icon: any;
-  title: string;
   description: string;
-  color: string;
+  features: string[];
 }
 
 export default function Roadmap() {
-  const [selectedPhase, setSelectedPhase] = createSignal<number>(1);
-
   const phases: Phase[] = [
     {
       number: 1,
       title: "MVP Foundation",
       status: "completed",
+      description: "The core engine powering personal travel discovery.",
       features: [
-        "Core recommendation engine (Gemini-powered)",
-        "User accounts & authentication",
-        "Interactive map view",
-        "Itinerary personalization",
-        "Basic search & filtering"
+        "Gemini-powered recommendation engine",
+        "Interactive map & routing",
+        "User accounts & basic bookmarks",
+        "Itinerary personalization"
       ]
     },
     {
       number: 2,
       title: "Enhanced Intelligence",
       status: "in-progress",
+      description: "Deepening the AI capabilities and premium features.",
       features: [
-        "Premium tier launch",
-        "Enhanced AI with embeddings",
-        "Vector database (pgvector) integration",
-        "Reviews & ratings system",
-        "Booking partnerships"
-      ],
-      subFeatures: [
-        {
-          title: "Gemini Advanced Features",
-          items: [
-            "Speech to text for hands-free planning",
-            "Itinerary download (PDF/Markdown formats)",
-            "Itinerary uploads & sharing",
-            "24/7 personalized AI agent"
-          ]
-        }
+        "Vector database (pgvector) context",
+        "Speech-to-text hands-free planning",
+        "PDF/Markdown itinerary downloads",
+        "Premium subscription tier"
       ]
     },
     {
       number: 3,
       title: "Global Scale",
       status: "planned",
+      description: "Mobile apps and community-driven exploration.",
       features: [
-        "Multi-city expansion",
-        "Curated editorial content",
-        "Native mobile apps (iOS & Android)",
+        "Native iOS & Android Apps",
         "Collaborative trip planning",
-        "Offline mode support"
+        "Offline maps & guides",
+        "Community curated lists"
       ]
     }
   ];
 
-  const coreFeatures: Feature[] = [
-    {
-      icon: Brain,
-      title: "AI-Powered Personalization",
-      description: "Recommendations adapt based on explicit user preferences and learned behavior over time.",
-      color: "from-purple-500 to-pink-500"
-    },
-    {
-      icon: Filter,
-      title: "Contextual Filtering",
-      description: "Smart filters by distance, available time, opening hours, interests, and budget to show only what matters to you.",
-      color: "from-blue-500 to-cyan-500"
-    },
-    {
-      icon: MapIcon,
-      title: "Interactive Map Integration",
-      description: "Visualize recommendations, your location, and potential routes in an intuitive map interface.",
-      color: "from-emerald-500 to-teal-500"
-    },
-    {
-      icon: Bookmark,
-      title: "Save & Organize",
-      description: "Bookmark favorites, create custom lists or simple itineraries. Enhanced organization in Premium.",
-      color: "from-amber-500 to-orange-500"
-    },
-    {
-      icon: Smartphone,
-      title: "Mobile-First Design",
-      description: "Optimized for on-the-go browsing via web browser, with native apps coming in Phase 3.",
-      color: "from-rose-500 to-red-500"
-    }
-  ];
-
-  const getStatusColor = (status: Phase["status"]) => {
-    switch (status) {
-      case "completed":
-        return "bg-emerald-100 dark:bg-emerald-900/40 text-emerald-800 dark:text-emerald-300 border-emerald-300 dark:border-emerald-700";
-      case "in-progress":
-        return "bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-300 border-blue-300 dark:border-blue-700";
-      case "planned":
-        return "bg-gray-200 dark:bg-gray-800/40 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-700";
-    }
-  };
-
-  const getStatusIcon = (status: Phase["status"]) => {
-    switch (status) {
-      case "completed":
-        return CheckCircle2;
-      case "in-progress":
-        return Clock;
-      case "planned":
-        return Rocket;
-    }
-  };
-
   return (
     <>
-      <Title>Product Roadmap - Loci AI Travel Companion</Title>
-      <Meta name="description" content="Explore Loci's product roadmap and vision. See our development phases from MVP to global scale, including AI enhancements, native apps, and premium features." />
-      <Meta name="keywords" content="Loci roadmap, travel app development, AI travel features, product roadmap, travel tech, personalized travel planning" />
-      <Meta property="og:title" content="Product Roadmap - Loci" />
-      <Meta property="og:description" content="Follow our journey as we build intelligent, personalized travel experiences. See our development phases and upcoming features." />
-      <Meta property="og:url" content="https://loci.app/roadmap" />
-      <Meta name="twitter:title" content="Product Roadmap - Loci" />
-      <Meta name="twitter:description" content="Follow our journey as we build intelligent, personalized travel experiences." />
-      <link rel="canonical" href="https://loci.app/roadmap" />
+      <Title>Product Roadmap - Loci</Title>
+      <Meta name="description" content="Explore Loci's product roadmap and vision." />
 
-      <div class="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-gray-100 dark:from-[#050915] dark:via-[#0b1c36] dark:to-[#030712] text-gray-900 dark:text-white transition-colors">
-        <div class="absolute inset-0 opacity-40 dark:opacity-60 pointer-events-none">
-          <div class="domain-grid" aria-hidden="true" />
-          <div class="domain-veil" aria-hidden="true" />
-        </div>
+      {/* Main Page Container - Adaptive Theme */}
+      <div class="min-h-screen bg-white dark:bg-[#111111] text-gray-900 dark:text-white selection:bg-blue-500/30 font-sans transition-colors duration-300">
 
-        <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16 lg:py-20">
-          {/* Header */}
-          <div class="text-center mb-12 sm:mb-16">
-            <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold bg-gradient-to-r from-purple-100 to-pink-100 dark:from-purple-900/40 dark:to-pink-900/40 text-purple-800 dark:text-purple-300 border border-purple-300 dark:border-purple-700 mb-6">
-              <Sparkles class="w-4 h-4" />
-              Building the Future of Travel Discovery
+        {/* HERO SECTION with Diagonal Cut */}
+        <section class="relative bg-gradient-to-r from-blue-900 via-indigo-900 to-purple-900 overflow-hidden pb-32 lg:pb-48">
+          {/* Diagonal Cut Effect - matches the body background */}
+          <div
+            class="absolute bottom-0 left-0 right-0 h-24 bg-white dark:bg-[#111111] transition-colors duration-300"
+            style={{ "clip-path": "polygon(0 100%, 100% 0, 100% 100%)" }}
+          />
+
+          <div class="container mx-auto px-4 pt-24 sm:pt-32 relative z-10">
+            <div class="max-w-4xl">
+              <h1 class="text-5xl sm:text-6xl md:text-7xl font-bold mb-6 tracking-tight text-white">
+                Roadmap
+              </h1>
+              <p class="text-xl sm:text-2xl text-blue-100 max-w-2xl font-light leading-relaxed">
+                We love travel and mad science. Here is what powers Loci and where we are heading next.
+              </p>
             </div>
 
-            <h1 class="text-4xl sm:text-5xl lg:text-6xl font-extrabold leading-tight tracking-tight mb-6">
-              <span class="text-gray-900 dark:text-white">Product </span>
-              <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-cyan-600 to-teal-600 dark:from-cyan-300 dark:via-emerald-200 dark:to-blue-300">
-                Roadmap
-              </span>
-            </h1>
-
-            <p class="text-lg sm:text-xl text-gray-700 dark:text-slate-200/90 max-w-3xl mx-auto leading-relaxed">
-              Follow our journey as we build intelligent, personalized travel experiences that adapt to your unique preferences and lifestyle.
-            </p>
+            {/* Floating 3D-ish Element */}
+            <div class="hidden lg:block absolute right-10 top-20 opacity-90 animate-in fade-in slide-in-from-right-10 duration-1000">
+              <div class="relative w-96 h-96">
+                <div class="absolute inset-0 bg-blue-500/20 blur-3xl rounded-full"></div>
+                <Rocket class="w-full h-full text-blue-300 drop-shadow-[0_0_30px_rgba(59,130,246,0.5)] rotate-12" />
+              </div>
+            </div>
           </div>
+        </section>
 
-          {/* Elevator Pitch */}
-          <section class="mb-16 sm:mb-20">
-            <div class="glass-panel gradient-border rounded-3xl p-6 sm:p-8 lg:p-10">
-              <div class="flex items-start gap-4 mb-4">
-                <div class="p-3 rounded-2xl bg-gradient-to-br from-blue-100 to-cyan-100 dark:bg-cyan-900/40 border border-blue-300 dark:border-cyan-700 shadow-sm">
-                  <Zap class="w-6 h-6 text-blue-700 dark:text-cyan-300" />
+        {/* PHASES GRID */}
+        <section class="container mx-auto px-4 py-12 -mt-10 relative z-20">
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-x-12 gap-y-16">
+
+            {/* COMPLETED */}
+            <div class="group">
+              <div class="flex items-start gap-6">
+                <div class="shrink-0">
+                  <CheckCircle2 class="w-16 h-16 text-emerald-500 hover:scale-110 transition-transform" />
                 </div>
                 <div>
-                  <h2 class="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-2">
-                    The Vision
-                  </h2>
-                  <p class="text-sm text-gray-600 dark:text-slate-400 uppercase tracking-wider font-semibold">
-                    Elevator Pitch
+                  <h2 class="text-3xl font-bold mb-3 text-gray-900 dark:text-white">MVP Foundation</h2>
+                  <p class="text-gray-600 dark:text-gray-400 leading-relaxed mb-4 text-lg">
+                    {phases[0].description}
                   </p>
-                </div>
-              </div>
-
-              <p class="text-lg text-gray-800 dark:text-slate-200 leading-relaxed mb-4">
-                Tired of generic city guides? <span class="font-bold text-blue-600 dark:text-cyan-300">Loci</span> learns what you love—be it history, food, art, nightlife, or hidden gems—and combines it with your available time and location to suggest the perfect spots, activities, and restaurants.
-              </p>
-
-              <p class="text-lg text-gray-800 dark:text-slate-200 leading-relaxed">
-                Whether you're a tourist on a tight schedule or a local looking for something new, discover your city like never before with <span class="font-semibold">hyper-personalized, intelligent recommendations</span>.
-              </p>
-            </div>
-          </section>
-
-          {/* Roadmap Phases */}
-          <section class="mb-16 sm:mb-20">
-            <h2 class="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-white text-center mb-10">
-              Development Phases
-            </h2>
-
-            {/* Phase Timeline */}
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-              <For each={phases}>
-                {(phase) => {
-                  const StatusIcon = getStatusIcon(phase.status);
-                  const isSelected = selectedPhase() === phase.number;
-
-                  return (
-                    <button
-                      onClick={() => setSelectedPhase(phase.number)}
-                      class={`glass-panel rounded-2xl p-6 text-left transition-all duration-300 border-2 ${isSelected
-                          ? 'border-blue-500 dark:border-cyan-400 shadow-xl scale-105'
-                          : 'border-transparent hover:border-blue-300 dark:hover:border-cyan-600 hover:shadow-lg'
-                        }`}
-                    >
-                      <div class="flex items-center gap-3 mb-4">
-                        <div class={`p-2 rounded-xl ${getStatusColor(phase.status)} border`}>
-                          <StatusIcon class="w-5 h-5" />
-                        </div>
-                        <span class={`text-xs font-bold px-2 py-1 rounded-full ${getStatusColor(phase.status)} border`}>
-                          {phase.status === "completed" ? "Completed" : phase.status === "in-progress" ? "In Progress" : "Planned"}
-                        </span>
-                      </div>
-
-                      <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-2">
-                        Phase {phase.number}
-                      </h3>
-                      <p class="text-base font-semibold text-gray-700 dark:text-slate-300">
-                        {phase.title}
-                      </p>
-                    </button>
-                  );
-                }}
-              </For>
-            </div>
-
-            {/* Selected Phase Details */}
-            <Show when={phases.find(p => p.number === selectedPhase())}>
-              {(phase) => (
-                <div class="glass-panel gradient-border rounded-2xl p-6 sm:p-8 animate-in fade-in duration-300">
-                  <div class="flex items-center gap-3 mb-6">
-                    <div class="p-3 rounded-2xl bg-gradient-to-br from-blue-100 to-cyan-100 dark:bg-blue-900/40 border border-blue-300 dark:border-blue-700 shadow-sm">
-                      <Layers class="w-6 h-6 text-blue-700 dark:text-blue-300" />
-                    </div>
-                    <h3 class="text-2xl font-bold text-gray-900 dark:text-white">
-                      Phase {phase().number}: {phase().title}
-                    </h3>
-                  </div>
-
-                  <div class="space-y-3 mb-6">
-                    <For each={phase().features}>
-                      {(feature) => (
-                        <div class="flex items-start gap-3 p-3 rounded-xl bg-white/60 dark:bg-white/5 border border-gray-200 dark:border-white/10">
-                          <CheckCircle2 class="w-5 h-5 text-emerald-600 dark:text-emerald-400 flex-shrink-0 mt-0.5" />
-                          <span class="text-gray-800 dark:text-slate-200 font-medium">{feature}</span>
-                        </div>
+                  <ul class="space-y-2">
+                    <For each={phases[0].features}>
+                      {(feat) => (
+                        <li class="flex items-center gap-2 text-gray-700 dark:text-gray-400 text-sm font-medium">
+                          <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                          {feat}
+                        </li>
                       )}
                     </For>
-                  </div>
+                  </ul>
+                </div>
+              </div>
+            </div>
 
-                  <Show when={phase().subFeatures}>
-                    <For each={phase().subFeatures}>
-                      {(subFeature) => (
-                        <div class="mt-6 p-6 rounded-2xl bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 border border-purple-200 dark:border-purple-800">
-                          <div class="flex items-center gap-2 mb-4">
-                            <Sparkles class="w-5 h-5 text-purple-600 dark:text-purple-400" />
-                            <h4 class="text-lg font-bold text-gray-900 dark:text-white">
-                              {subFeature.title}
-                            </h4>
-                          </div>
-                          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                            <For each={subFeature.items}>
-                              {(item) => {
-                                let Icon = MessageSquare;
-                                if (item.includes("Speech")) Icon = MicIcon;
-                                if (item.includes("download")) Icon = Download;
-                                if (item.includes("upload")) Icon = Upload;
-                                if (item.includes("24/7")) Icon = Clock;
-
-                                return (
-                                  <div class="flex items-start gap-2 p-3 rounded-lg bg-white dark:bg-white/5">
-                                    <Icon class="w-4 h-4 text-purple-600 dark:text-purple-400 flex-shrink-0 mt-0.5" />
-                                    <span class="text-sm text-gray-800 dark:text-slate-200 font-medium">{item}</span>
-                                  </div>
-                                );
-                              }}
-                            </For>
-                          </div>
-                        </div>
+            {/* IN PROGRESS */}
+            <div class="group">
+              <div class="flex items-start gap-6">
+                <div class="shrink-0">
+                  <Zap class="w-16 h-16 text-amber-500 hover:scale-110 transition-transform" />
+                </div>
+                <div>
+                  <h2 class="text-3xl font-bold mb-3 text-gray-900 dark:text-white">Enhanced Intelligence</h2>
+                  <p class="text-gray-600 dark:text-gray-400 leading-relaxed mb-4 text-lg">
+                    {phases[1].description}
+                  </p>
+                  <ul class="space-y-2">
+                    <For each={phases[1].features}>
+                      {(feat) => (
+                        <li class="flex items-center gap-2 text-gray-700 dark:text-gray-400 text-sm font-medium">
+                          <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+                          {feat}
+                        </li>
                       )}
                     </For>
-                  </Show>
+                  </ul>
                 </div>
-              )}
-            </Show>
-          </section>
-
-          {/* Core Features */}
-          <section class="mb-16">
-            <h2 class="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-white text-center mb-10">
-              Core Features
-            </h2>
-
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              <For each={coreFeatures}>
-                {(feature) => (
-                  <div class="glass-panel gradient-border rounded-2xl p-6 hover:shadow-xl transition-all duration-300 group">
-                    <div class={`inline-flex p-3 rounded-2xl bg-gradient-to-r ${feature.color} mb-4 shadow-lg`}>
-                      <feature.icon class="w-6 h-6 text-white" />
-                    </div>
-
-                    <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-3">
-                      {feature.title}
-                    </h3>
-
-                    <p class="text-gray-700 dark:text-slate-300 leading-relaxed">
-                      {feature.description}
-                    </p>
-                  </div>
-                )}
-              </For>
-            </div>
-          </section>
-
-          {/* CTA Section */}
-          <section class="text-center">
-            <div class="glass-panel gradient-border rounded-3xl p-8 sm:p-10 lg:p-12">
-              <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold bg-emerald-100 dark:bg-emerald-900/40 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700 mb-6">
-                <Rocket class="w-4 h-4" />
-                Ready to Join the Journey?
               </div>
+            </div>
 
-              <h2 class="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-white mb-4">
-                Be Part of Our Story
-              </h2>
+            {/* PLANNED */}
+            <div class="group lg:col-span-2 lg:w-2/3">
+              <div class="flex items-start gap-6">
+                <div class="shrink-0">
+                  <Globe class="w-16 h-16 text-blue-500 hover:scale-110 transition-transform" />
+                </div>
+                <div>
+                  <h2 class="text-3xl font-bold mb-3 text-gray-900 dark:text-white">Global Scale</h2>
+                  <p class="text-gray-600 dark:text-gray-400 leading-relaxed mb-4 text-lg">
+                    {phases[2].description}
+                  </p>
+                  <ul class="space-y-2">
+                    <For each={phases[2].features}>
+                      {(feat) => (
+                        <li class="flex items-center gap-2 text-gray-700 dark:text-gray-400 text-sm font-medium">
+                          <span class="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
+                          {feat}
+                        </li>
+                      )}
+                    </For>
+                  </ul>
+                </div>
+              </div>
+            </div>
 
-              <p class="text-lg text-gray-700 dark:text-slate-200 max-w-2xl mx-auto mb-8">
-                Sign up today to experience the future of personalized travel discovery and help shape our roadmap with your feedback.
+          </div>
+        </section>
+
+        {/* FEATURE DETAILS STACK */}
+        <section class="container mx-auto px-4 py-24">
+          <div class="mb-12">
+            <h3 class="text-2xl font-bold text-gray-900 dark:text-gray-200 mb-2">Upcoming Highlights</h3>
+            <div class="h-1 w-20 bg-blue-500 rounded-full"></div>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-10">
+            {/* Highlight 1 */}
+            <div class="flex gap-4 p-4 rounded-xl hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">
+              <div class="mt-1">
+                <Mic class="w-8 h-8 text-purple-500 dark:text-purple-400" />
+              </div>
+              <div>
+                <h4 class="text-xl font-bold text-gray-900 dark:text-white mb-2">Voice Interaction</h4>
+                <p class="text-gray-600 dark:text-gray-400">Speak to Loci naturally to refine plans while on the go. Perfect for when you need quick answers without typing.</p>
+              </div>
+            </div>
+
+            {/* Highlight 2 */}
+            <div class="flex gap-4 p-4 rounded-xl hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">
+              <div class="mt-1">
+                <Share2 class="w-8 h-8 text-pink-500 dark:text-pink-400" />
+              </div>
+              <div>
+                <h4 class="text-xl font-bold text-gray-900 dark:text-white mb-2">Social Itineraries</h4>
+                <p class="text-gray-600 dark:text-gray-400">Share your perfect trip with friends or publish it to the Loci community to help others discover hidden gems.</p>
+              </div>
+            </div>
+
+            {/* Highlight 3 */}
+            <div class="flex gap-4 p-4 rounded-xl hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">
+              <div class="mt-1">
+                <Download class="w-8 h-8 text-cyan-500 dark:text-cyan-400" />
+              </div>
+              <div>
+                <h4 class="text-xl font-bold text-gray-900 dark:text-white mb-2">Offline Mode</h4>
+                <p class="text-gray-600 dark:text-gray-400">Download your city guides and maps for use without data roaming. Essential for international travel.</p>
+              </div>
+            </div>
+
+            {/* Highlight 4 */}
+            <div class="flex gap-4 p-4 rounded-xl hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">
+              <div class="mt-1">
+                <Calendar class="w-8 h-8 text-indigo-500 dark:text-indigo-400" />
+              </div>
+              <div>
+                <h4 class="text-xl font-bold text-gray-900 dark:text-white mb-2">Smart Scheduling</h4>
+                <p class="text-gray-600 dark:text-gray-400">AI that understands opening hours and travel time to build realistically playable itineraries.</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* ANGLED SEPARATOR / CTA Section */}
+        <section class="relative bg-blue-600 mt-20 pt-24 pb-24 overflow-hidden">
+          {/* Top Diagonal - matches body background */}
+          <div
+            class="absolute top-0 left-0 right-0 h-16 bg-white dark:bg-[#111111] transition-colors duration-300"
+            style={{ "clip-path": "polygon(0 0, 100% 0, 0 100%)" }}
+          />
+
+          <div class="container mx-auto px-4 relative z-10 flex flex-col md:flex-row items-center justify-between gap-12">
+            <div class="text-white max-w-lg">
+              <h2 class="text-3xl md:text-4xl font-bold mb-4">Join the party now</h2>
+              <p class="text-blue-100 text-lg opacity-90">
+                Start planning your next adventure with the most advanced AI travel companion.
               </p>
+            </div>
 
-              <div class="flex flex-wrap items-center justify-center gap-4">
-                <A href="/auth/signup">
-                  <button class="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-semibold bg-gradient-to-r from-blue-600 to-cyan-600 dark:bg-cyan-500 text-white dark:text-slate-950 hover:from-blue-700 hover:to-cyan-700 dark:hover:bg-cyan-400 transition-all shadow-lg hover:shadow-xl">
-                    Get Started Free
-                    <Sparkles class="w-4 h-4" />
-                  </button>
-                </A>
-
-                <A href="/discover">
-                  <button class="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-semibold border-2 border-gray-300 dark:border-white/30 text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-white/10 transition-all">
-                    Try Without Signup
-                    <MapIcon class="w-4 h-4" />
-                  </button>
-                </A>
+            <div class="flex flex-col gap-4">
+              <A href="/auth/signup">
+                <button class="bg-white text-blue-600 font-bold px-8 py-4 rounded-full shadow-xl hover:shadow-2xl hover:scale-105 transition-all text-lg w-full md:w-auto">
+                  Get Loci for Free
+                </button>
+              </A>
+              <div class="flex items-center gap-4 opacity-75 grayscale hover:grayscale-0 transition-all cursor-not-allowed">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/7/78/Google_Play_Store_badge_EN.svg" class="h-12" alt="Play Store" />
+                {/* Placeholder for App Store */}
               </div>
             </div>
-          </section>
-        </div>
+          </div>
+        </section>
+
+        {/* Footer Area */}
+        <section class="bg-gray-100 dark:bg-[#0b0b0f] pt-12 pb-20 transition-colors duration-300">
+          {/* This area just blends into the main footer component if it exists, or acts as a buffer */}
+        </section>
+
       </div>
     </>
   );
