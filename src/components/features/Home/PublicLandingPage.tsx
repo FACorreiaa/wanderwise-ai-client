@@ -333,6 +333,7 @@ export default function PublicLandingPage() {
                   <button
                     onClick={handleSearchClick}
                     disabled={isLoading() || !currentMessage().trim()}
+                    aria-label="Search"
                     class="px-5 py-3 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 dark:bg-cyan-500 dark:hover:bg-cyan-400 disabled:bg-gray-400 dark:disabled:bg-slate-500/60 disabled:cursor-not-allowed text-white dark:text-slate-950 rounded-xl font-semibold transition-all flex items-center gap-2 shadow-lg"
                   >
                     <Show when={isLoading()} fallback={<Send class="w-4 h-4" />}>
@@ -379,28 +380,31 @@ export default function PublicLandingPage() {
         </section>
 
         {/* Domain previews */}
-        <section class="mt-12 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <For each={previewCards}>{(card) => (
-            <A
-              href={card.href}
-              class="group relative overflow-hidden rounded-2xl border border-gray-200 dark:border-white/10 bg-white/90 dark:bg-white/5 backdrop-blur-xl p-5 shadow-xl dark:shadow-[0_20px_80px_rgba(3,7,18,0.45)] hover:-translate-y-1 transition-all"
-            >
-              <div class={`absolute inset-0 bg-gradient-to-br ${card.accent} opacity-20 dark:opacity-40`} aria-hidden="true" />
-              <div class="relative flex items-start gap-3">
-                <div class="p-3 rounded-2xl bg-gray-100 dark:bg-white/15 border border-gray-300 dark:border-white/20 text-gray-900 dark:text-white">
-                  <card.icon class="w-5 h-5" />
+        <section class="mt-12">
+          <h2 class="sr-only">Explore Features</h2>
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <For each={previewCards}>{(card) => (
+              <A
+                href={card.href}
+                class="group relative overflow-hidden rounded-2xl border border-gray-200 dark:border-white/10 bg-white/90 dark:bg-white/5 backdrop-blur-xl p-5 shadow-xl dark:shadow-[0_20px_80px_rgba(3,7,18,0.45)] hover:-translate-y-1 transition-all"
+              >
+                <div class={`absolute inset-0 bg-gradient-to-br ${card.accent} opacity-20 dark:opacity-40`} aria-hidden="true" />
+                <div class="relative flex items-start gap-3">
+                  <div class="p-3 rounded-2xl bg-gray-100 dark:bg-white/15 border border-gray-300 dark:border-white/20 text-gray-900 dark:text-white">
+                    <card.icon class="w-5 h-5" />
+                  </div>
+                  <div class="flex-1">
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white">{card.title}</h3>
+                    <p class="text-sm text-gray-700 dark:text-slate-100/80 mt-1">{card.description}</p>
+                  </div>
                 </div>
-                <div class="flex-1">
-                  <h3 class="text-lg font-semibold text-gray-900 dark:text-white">{card.title}</h3>
-                  <p class="text-sm text-gray-700 dark:text-slate-100/80 mt-1">{card.description}</p>
+                <div class="relative mt-4 flex items-center gap-2 text-sm text-emerald-700 dark:text-emerald-100 group-hover:text-emerald-800 dark:group-hover:text-white">
+                  <ShieldCheck class="w-4 h-4" />
+                  Search available. Unlock chat when you register.
                 </div>
-              </div>
-              <div class="relative mt-4 flex items-center gap-2 text-sm text-emerald-700 dark:text-emerald-100 group-hover:text-emerald-800 dark:group-hover:text-white">
-                <ShieldCheck class="w-4 h-4" />
-                Search available. Unlock chat when you register.
-              </div>
-            </A>
-          )}</For>
+              </A>
+            )}</For>
+          </div>
         </section>
 
         {/* Value stack + social proof */}
@@ -445,7 +449,7 @@ export default function PublicLandingPage() {
               <p class="text-xs uppercase tracking-[0.2em] text-emerald-700 dark:text-emerald-200">
                 Objections handled
               </p>
-              <h3 class="text-2xl font-bold text-gray-900 dark:text-white">Safe to try. Easy to leave.</h3>
+              <h2 class="text-2xl font-bold text-gray-900 dark:text-white">Safe to try. Easy to leave.</h2>
               <p class="text-sm text-gray-700 dark:text-slate-100/80">
                 Search free. No spam. Delete your data from settings anytime.
               </p>

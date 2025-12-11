@@ -7,6 +7,7 @@ interface FavoriteButtonProps {
     size?: 'sm' | 'md' | 'lg';
     className?: string;
     showLabel?: boolean;
+    onClick?: (e: Event) => void;
 }
 
 const FavoriteButton: Component<FavoriteButtonProps> = (props) => {
@@ -38,6 +39,10 @@ const FavoriteButton: Component<FavoriteButtonProps> = (props) => {
     const handleClick = async (e: Event) => {
         e.preventDefault();
         e.stopPropagation();
+        if (props.onClick) {
+            props.onClick(e);
+            return;
+        }
         await toggleFavorite(props.item);
     };
 

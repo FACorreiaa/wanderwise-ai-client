@@ -87,6 +87,7 @@ export default function Nav() {
             size="sm"
             class="md:hidden p-2 text-gray-900 dark:text-white hover:text-blue-700 dark:hover:text-emerald-200"
             onClick={() => setIsMenuOpen(!isMenuOpen())}
+            aria-label={isMenuOpen() ? "Close menu" : "Open menu"}
           >
             <Show when={!isMenuOpen()} fallback={<X class="w-5 h-5" />}>
               <Menu class="w-5 h-5" />

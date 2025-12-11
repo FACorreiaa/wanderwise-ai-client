@@ -65,8 +65,6 @@ export default function PreviewActivitiesPage() {
                         </h3>
                         <ActivityResults
                             activities={activities()}
-                            onFavoriteClick={() => { alert("Sign in to save!") }}
-                            favorites={[]}
                         />
                     </div>
                 </Show>

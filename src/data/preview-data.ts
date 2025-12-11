@@ -11,8 +11,8 @@ export const TOKYO_CITY_DATA = {
 };
 
 export const TOKYO_ITINERARY = {
-    title: "48 Hours in Tokyo: Tradition & Neon",
-    description: "A balanced mix of efficient sightseeing, deep culture, and electric nightlife.",
+    itinerary_name: "48 Hours in Tokyo: Tradition & Neon",
+    overall_description: "A balanced mix of efficient sightseeing, deep culture, and electric nightlife.",
     days: [
         {
             day_number: 1,
@@ -56,37 +56,37 @@ export const TOKYO_ITINERARY = {
         }
     ],
     points_of_interest: [
-        { name: "Meiji Shrine", category: "Attraction", description: "Peaceful forest shrine dedicated to Emperor Meiji.", latitude: 35.6764, longitude: 139.6993, rating: 4.7, address: "1-1 Yoyogikamizonocho, Shibuya City, Tokyo" },
-        { name: "Harajuku Takeshita Street", category: "Shopping", description: "Bustling shopping street famous for youth fashion and crepe shops.", latitude: 35.6715, longitude: 139.7030, rating: 4.3, address: "1 Chome-17 Jingumae, Shibuya City, Tokyo" },
-        { name: "Afuri Ramen", category: "Restaurant", description: "Popular ramen shop known for its refreshing yuzu-scented broth.", latitude: 35.6710, longitude: 139.7025, rating: 4.5, price_level: "$$", address: "3 Chome-63-1 Sendagaya, Shibuya City, Tokyo" },
-        { name: "Shibuya Crossing", category: "Attraction", description: "Iconic scramble crossing, a symbol of Tokyo's energy.", latitude: 35.6595, longitude: 139.7004, rating: 4.6, address: "Shibuya, Tokyo" },
-        { name: "TeamLab Planets", category: "Activity", description: "Body immersive digital art exhibition where you walk through water.", latitude: 35.6530, longitude: 139.7972, rating: 4.8, price_level: "$$$", address: "6 Chome-1-16 Toyosu, Koto City, Tokyo" },
-        { name: "Tsukiji Outer Market", category: "Food", description: "historic market area with many small food stalls and restaurants.", latitude: 35.6655, longitude: 139.7707, rating: 4.4, address: "4 Chome-16-2 Tsukiji, Chuo City, Tokyo" },
-        { name: "Akihabara Electric Town", category: "Shopping", description: "Major shopping area for electronic goods and otaku culture.", latitude: 35.6984, longitude: 139.7730, rating: 4.2, address: "Akihabara, Taito City, Tokyo" }
+        { id: "meiji-shrine", name: "Meiji Shrine", category: "Attraction", description: "Peaceful forest shrine dedicated to Emperor Meiji.", latitude: 35.6764, longitude: 139.6993, rating: 4.7, address: "1-1 Yoyogikamizonocho, Shibuya City, Tokyo", city: "Tokyo", tags: [], images: [], llm_interaction_id: "mock" },
+        { id: "harajuku-takeshita", name: "Harajuku Takeshita Street", category: "Shopping", description: "Bustling shopping street famous for youth fashion and crepe shops.", latitude: 35.6715, longitude: 139.7030, rating: 4.3, address: "1 Chome-17 Jingumae, Shibuya City, Tokyo", city: "Tokyo", tags: [], images: [], llm_interaction_id: "mock" },
+        { id: "afuri-ramen", name: "Afuri Ramen", category: "Restaurant", description: "Popular ramen shop known for its refreshing yuzu-scented broth.", latitude: 35.6710, longitude: 139.7025, rating: 4.5, price_level: "$$", address: "3 Chome-63-1 Sendagaya, Shibuya City, Tokyo", city: "Tokyo", tags: [], images: [], llm_interaction_id: "mock" },
+        { id: "shibuya-crossing", name: "Shibuya Crossing", category: "Attraction", description: "Iconic scramble crossing, a symbol of Tokyo's energy.", latitude: 35.6595, longitude: 139.7004, rating: 4.6, address: "Shibuya, Tokyo", city: "Tokyo", tags: [], images: [], llm_interaction_id: "mock" },
+        { id: "teamlab-planets", name: "TeamLab Planets", category: "Activity", description: "Body immersive digital art exhibition where you walk through water.", latitude: 35.6530, longitude: 139.7972, rating: 4.8, price_level: "$$$", address: "6 Chome-1-16 Toyosu, Koto City, Tokyo", city: "Tokyo", tags: [], images: [], llm_interaction_id: "mock" },
+        { id: "tsukiji-outer-market", name: "Tsukiji Outer Market", category: "Food", description: "historic market area with many small food stalls and restaurants.", latitude: 35.6655, longitude: 139.7707, rating: 4.4, address: "4 Chome-16-2 Tsukiji, Chuo City, Tokyo", city: "Tokyo", tags: [], images: [], llm_interaction_id: "mock" },
+        { id: "akihabara-electric-town", name: "Akihabara Electric Town", category: "Shopping", description: "Major shopping area for electronic goods and otaku culture.", latitude: 35.6984, longitude: 139.7730, rating: 4.2, address: "Akihabara, Taito City, Tokyo", city: "Tokyo", tags: [], images: [], llm_interaction_id: "mock" }
     ]
 };
 
 export const TOKYO_HOTELS = [
-    { name: "Aman Tokyo", category: "Hotel", description: "Serene urban sanctuary high above the Otemachi district.", latitude: 35.6875, longitude: 139.7630, rating: 4.8, price_level: "$$$$", address: "The Otemachi Tower, 1-5-6 Otemachi, Chiyoda City, Tokyo" },
-    { name: "Hoshinoya Tokyo", category: "Ryokan", description: "Luxury ryokan experience in the heart of the business district.", latitude: 35.6865, longitude: 139.7640, rating: 4.7, price_level: "$$$$", address: "1-9-1 Otemachi, Chiyoda City, Tokyo" },
-    { name: "Trunk Hotel", category: "Hotel", description: "Hip boutique hotel in Shibuya with a vibrant social scene.", latitude: 35.6650, longitude: 139.7060, rating: 4.5, price_level: "$$$", address: "5-31 Jingumae, Shibuya City, Tokyo" },
-    { name: "Hotel Koe Tokyo", category: "Hotel", description: "Stylish concept hotel combining fashion, music, and food.", latitude: 35.6615, longitude: 139.6995, rating: 4.4, price_level: "$$$", address: "3-7 Udagawacho, Shibuya City, Tokyo" },
-    { name: "Park Hyatt Tokyo", category: "Hotel", description: "Iconic luxury hotel in Shinjuku with stunning city views.", latitude: 35.6855, longitude: 139.6909, rating: 4.6, price_level: "$$$$", address: "3-7-1-2 Nishi-Shinjuku, Shinjuku City, Tokyo" }
+    { id: "aman-tokyo", name: "Aman Tokyo", category: "Hotel", description: "Serene urban sanctuary high above the Otemachi district.", latitude: 35.6875, longitude: 139.7630, rating: 4.8, price_level: "$$$$", address: "The Otemachi Tower, 1-5-6 Otemachi, Chiyoda City, Tokyo", city: "Tokyo", tags: [], images: [], amenities: [], llm_interaction_id: "mock" },
+    { id: "hoshinoya-tokyo", name: "Hoshinoya Tokyo", category: "Ryokan", description: "Luxury ryokan experience in the heart of the business district.", latitude: 35.6865, longitude: 139.7640, rating: 4.7, price_level: "$$$$", address: "1-9-1 Otemachi, Chiyoda City, Tokyo", city: "Tokyo", tags: [], images: [], amenities: [], llm_interaction_id: "mock" },
+    { id: "trunk-hotel", name: "Trunk Hotel", category: "Hotel", description: "Hip boutique hotel in Shibuya with a vibrant social scene.", latitude: 35.6650, longitude: 139.7060, rating: 4.5, price_level: "$$$", address: "5-31 Jingumae, Shibuya City, Tokyo", city: "Tokyo", tags: [], images: [], amenities: [], llm_interaction_id: "mock" },
+    { id: "hotel-koe-tokyo", name: "Hotel Koe Tokyo", category: "Hotel", description: "Stylish concept hotel combining fashion, music, and food.", latitude: 35.6615, longitude: 139.6995, rating: 4.4, price_level: "$$$", address: "3-7 Udagawacho, Shibuya City, Tokyo", city: "Tokyo", tags: [], images: [], amenities: [], llm_interaction_id: "mock" },
+    { id: "park-hyatt-tokyo", name: "Park Hyatt Tokyo", category: "Hotel", description: "Iconic luxury hotel in Shinjuku with stunning city views.", latitude: 35.6855, longitude: 139.6909, rating: 4.6, price_level: "$$$$", address: "3-7-1-2 Nishi-Shinjuku, Shinjuku City, Tokyo", city: "Tokyo", tags: [], images: [], amenities: [], llm_interaction_id: "mock" }
 ];
 
 export const TOKYO_RESTAURANTS = [
-    { name: "Sukiyabashi Jiro", category: "Sushi", description: "World-famous sushi master Jiro Ono's counter.", latitude: 35.6725, longitude: 139.7640, rating: 4.9, price_level: "$$$$", address: "Tsukamoto Sogyo Building B1F, 4-2-15 Ginza, Chuo City, Tokyo" },
-    { name: "Narisawa", category: "Modern Japanese", description: "Innovative Satoyama cuisine focused on nature.", latitude: 35.6660, longitude: 139.7220, rating: 4.8, price_level: "$$$$", address: "Minami Aoyama 2-6-15, Minato City, Tokyo" },
-    { name: "Savoy Pizza", category: "Pizza", description: "Legendary wood-fired pizza in Azabujuban.", latitude: 35.6555, longitude: 139.7350, rating: 4.6, price_level: "$$", address: "3-10-1 Motoazabu, Minato City, Tokyo" },
-    { name: "Bar Benfiddich", category: "Bar", description: "Creative cocktails using farm-to-bar herbs and spices.", latitude: 35.6920, longitude: 139.6980, rating: 4.8, price_level: "$$$", address: "1F, 1-13-7 Nishishinjuku, Shinjuku City, Tokyo" },
-    { name: "Tonkatsu Maisen Aoyama", category: "Tonkatsu", description: "Famous for tender pork cutlets in a converted bathhouse.", latitude: 35.6650, longitude: 139.7120, rating: 4.5, price_level: "$$", address: "4-8-5 Jingumae, Shibuya City, Tokyo" },
-    { name: "Ichiran Shibuya", category: "Ramen", description: "Famous solo-dining tonkotsu ramen booths.", latitude: 35.6605, longitude: 139.7000, rating: 4.4, price_level: "$", address: "1-22-7 Jinnan, Shibuya City, Tokyo" }
+    { id: "sukiyabashi-jiro", name: "Sukiyabashi Jiro", category: "Sushi", description: "World-famous sushi master Jiro Ono's counter.", latitude: 35.6725, longitude: 139.7640, rating: 4.9, price_level: "$$$$", address: "Tsukamoto Sogyo Building B1F, 4-2-15 Ginza, Chuo City, Tokyo", city: "Tokyo", tags: [], images: [], llm_interaction_id: "mock" },
+    { id: "narisawa", name: "Narisawa", category: "Modern Japanese", description: "Innovative Satoyama cuisine focused on nature.", latitude: 35.6660, longitude: 139.7220, rating: 4.8, price_level: "$$$$", address: "Minami Aoyama 2-6-15, Minato City, Tokyo", city: "Tokyo", tags: [], images: [], llm_interaction_id: "mock" },
+    { id: "savoy-pizza", name: "Savoy Pizza", category: "Pizza", description: "Legendary wood-fired pizza in Azabujuban.", latitude: 35.6555, longitude: 139.7350, rating: 4.6, price_level: "$$", address: "3-10-1 Motoazabu, Minato City, Tokyo", city: "Tokyo", tags: [], images: [], llm_interaction_id: "mock" },
+    { id: "bar-benfiddich", name: "Bar Benfiddich", category: "Bar", description: "Creative cocktails using farm-to-bar herbs and spices.", latitude: 35.6920, longitude: 139.6980, rating: 4.8, price_level: "$$$", address: "1F, 1-13-7 Nishishinjuku, Shinjuku City, Tokyo", city: "Tokyo", tags: [], images: [], llm_interaction_id: "mock" },
+    { id: "tonkatsu-maisen", name: "Tonkatsu Maisen Aoyama", category: "Tonkatsu", description: "Famous for tender pork cutlets in a converted bathhouse.", latitude: 35.6650, longitude: 139.7120, rating: 4.5, price_level: "$$", address: "4-8-5 Jingumae, Shibuya City, Tokyo", city: "Tokyo", tags: [], images: [], llm_interaction_id: "mock" },
+    { id: "ichiran-shibuya", name: "Ichiran Shibuya", category: "Ramen", description: "Famous solo-dining tonkotsu ramen booths.", latitude: 35.6605, longitude: 139.7000, rating: 4.4, price_level: "$", address: "1-22-7 Jinnan, Shibuya City, Tokyo", city: "Tokyo", tags: [], images: [], llm_interaction_id: "mock" }
 ];
 
 export const TOKYO_ACTIVITIES = [
-    { name: "Sumo Practice Viewing", category: "Culture", description: "Watch morning practice at a sumo stable.", latitude: 35.6940, longitude: 139.7950, rating: 4.7, price_level: "Free", address: "Ryogoku, Sumida City, Tokyo" },
-    { name: "Mario Kart Tour", category: "Activity", description: "Drive go-karts through Tokyo streets in costume.", latitude: 35.6260, longitude: 139.7400, rating: 4.5, price_level: "$$$", address: "Shinagawa, Tokyo" },
-    { name: "Robot Restaurant", category: "Show", description: "Flashy, energetic robot and cabaret show (temporarily closed/changed).", latitude: 35.6950, longitude: 139.7030, rating: 4.2, price_level: "$$$", address: "1-7-1 Kabukicho, Shinjuku City, Tokyo" },
-    { name: "Ghibli Museum", category: "Museum", description: "Whimsical museum dedicated to Studio Ghibli films.", latitude: 35.6960, longitude: 139.5700, rating: 4.8, price_level: "$$", address: "1-1-83 Shimorenjaku, Mitaka, Tokyo" },
-    { name: "Ueno Park Cherry Blossoms", category: "Nature", description: "Best spot for hanami (cherry blossom viewing) in spring.", latitude: 35.7140, longitude: 139.7740, rating: 4.6, price_level: "Free", address: "Uenokoen, Taito City, Tokyo" }
+    { id: "sumo-practice", name: "Sumo Practice Viewing", category: "Culture", description: "Watch morning practice at a sumo stable.", latitude: 35.6940, longitude: 139.7950, rating: 4.7, price_level: "Free", address: "Ryogoku, Sumida City, Tokyo", city: "Tokyo", tags: [], images: [], llm_interaction_id: "mock" },
+    { id: "mario-kart", name: "Mario Kart Tour", category: "Activity", description: "Drive go-karts through Tokyo streets in costume.", latitude: 35.6260, longitude: 139.7400, rating: 4.5, price_level: "$$$", address: "Shinagawa, Tokyo", city: "Tokyo", tags: [], images: [], llm_interaction_id: "mock" },
+    { id: "robot-restaurant", name: "Robot Restaurant", category: "Show", description: "Flashy, energetic robot and cabaret show (temporarily closed/changed).", latitude: 35.6950, longitude: 139.7030, rating: 4.2, price_level: "$$$", address: "1-7-1 Kabukicho, Shinjuku City, Tokyo", city: "Tokyo", tags: [], images: [], llm_interaction_id: "mock" },
+    { id: "ghibli-museum", name: "Ghibli Museum", category: "Museum", description: "Whimsical museum dedicated to Studio Ghibli films.", latitude: 35.6960, longitude: 139.5700, rating: 4.8, price_level: "$$", address: "1-1-83 Shimorenjaku, Mitaka, Tokyo", city: "Tokyo", tags: [], images: [], llm_interaction_id: "mock" },
+    { id: "ueno-park", name: "Ueno Park Cherry Blossoms", category: "Nature", description: "Best spot for hanami (cherry blossom viewing) in spring.", latitude: 35.7140, longitude: 139.7740, rating: 4.6, price_level: "Free", address: "Uenokoen, Taito City, Tokyo", city: "Tokyo", tags: [], images: [], llm_interaction_id: "mock" }
 ];

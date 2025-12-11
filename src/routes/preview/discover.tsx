@@ -114,7 +114,7 @@ export default function PreviewDiscoverPage() {
                                                     }}
                                                     size="sm"
                                                     // Mock functionality
-                                                    onClick={(e) => { e.preventDefault(); alert("Sign in to save favorites!"); }}
+                                                    onClick={(e: Event) => { e.preventDefault(); alert("Sign in to save favorites!"); }}
                                                 />
                                             </div>
                                         </div>

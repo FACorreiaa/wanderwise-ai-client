@@ -49,6 +49,7 @@ export default function LocationPermissionPrompt(props: LocationPermissionPrompt
         <button
           onClick={handleDismiss}
           class="absolute top-2 right-2 w-6 h-6 flex items-center justify-center text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+          aria-label="Close"
         >
           <X class="w-4 h-4" />
         </button>
