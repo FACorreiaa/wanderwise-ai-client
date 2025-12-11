@@ -1,4 +1,4 @@
-import { createSignal, Show, For } from "solid-js";
+import { createSignal, Show, For, lazy } from "solid-js";
 import { A, useNavigate } from "@solidjs/router";
 import {
   Send,
@@ -15,10 +15,11 @@ import {
   Bed,
   Star,
 } from "lucide-solid";
-import RealTimeStats from "~/components/features/Home/RealTimeStats";
-import MobileAppAnnouncement from "~/components/features/Home/MobileAppAnnouncement";
-import LocationPermissionPrompt from "~/components/LocationPermissionPrompt";
 import { useUserLocation } from "~/contexts/LocationContext";
+
+const RealTimeStats = lazy(() => import("~/components/features/Home/RealTimeStats"));
+const MobileAppAnnouncement = lazy(() => import("~/components/features/Home/MobileAppAnnouncement"));
+const LocationPermissionPrompt = lazy(() => import("~/components/LocationPermissionPrompt"));
 import { sendUnifiedChatMessageStreamFree, detectDomain } from "~/lib/api/llm";
 import {
   streamingService,

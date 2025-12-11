@@ -29,4 +29,6 @@ Thumbs.db
 .claude
 .wrangler
 .dev.vars*
-tmp
+
+# Wrangler / Vite PWA
+dev-dist
