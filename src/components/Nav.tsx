@@ -4,6 +4,7 @@ import { useLocation } from "@solidjs/router";
 import { A } from '@solidjs/router';
 import { Menu, X, User, Settings, LogOut, MessageCircle, Heart, List, MapPin, Clock, Compass, Bookmark } from "lucide-solid";
 import { createSignal, For, Show, onMount, onCleanup } from "solid-js";
+import { Portal } from "solid-js/web";
 import { ImageRoot, ImageFallback, Image } from "@/ui/image";
 import { useAuth } from "~/contexts/AuthContext";
 import PWAInstall from "~/components/PWAInstall";
@@ -229,132 +230,155 @@ export default function Nav() {
         </div>
       </div>
 
-      {/* Mobile Menu - Full Screen Overlay */}
       <Show when={isMenuOpen()}>
-        <div class="md:hidden fixed inset-0 z-50 bg-white/98 dark:bg-[#050915]/90 backdrop-blur-2xl border-t border-gray-300 dark:border-white/10 transition-colors">
-          <div class="flex flex-col h-full">
-            {/* Mobile Header */}
-            <div class="flex justify-between items-center px-4 py-4 border-b border-gray-300 dark:border-white/15">
-              <A href="/" class="flex items-center" onClick={() => setIsMenuOpen(false)}>
-                <div class="w-6 h-6 flex items-center justify-center">
-                  <ImageRoot>
-                    <Image src="/images/loci-abstract-symbol.svg" alt="Loci logo" class="w-full h-full object-contain" />
-                    <ImageFallback class="w-full h-full bg-blue-600 text-white rounded flex items-center justify-center text-sm font-bold">L</ImageFallback>
-                  </ImageRoot>
-                </div>
-                <span class="ml-2 text-lg font-bold text-gray-900 dark:text-white tracking-tight">Loci</span>
-                <Show when={isAuthenticated()}>
-                  <Badge variant="secondary" class="ml-1 bg-emerald-50 dark:bg-blue-900 text-emerald-800 dark:text-blue-300 border border-emerald-300 dark:border-blue-700 text-xs px-1.5 py-0.5">AI</Badge>
-                </Show>
-              </A>
-              <Button
-                variant="ghost"
-                size="sm"
-                class="p-2 text-gray-900 dark:text-white"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                <X class="w-5 h-5" />
-              </Button>
-            </div>
+        <Portal>
+          <div class="md:hidden fixed inset-0 z-[100] transition-all duration-300">
+            {/* Glassy Background Layer */}
+            <div class="absolute inset-0 bg-white/80 dark:bg-[#050915]/80 backdrop-blur-3xl" />
 
-            {/* Mobile Navigation Links */}
-            <div class="flex-1 px-4 py-6 space-y-1">
-              <Show when={!isLoading()}>
-                <Show
-                  when={isAuthenticated()}
-                  fallback={
-                    <For each={publicNavigationItems}>
-                      {(item) => (
-                        <A
-                          href={item.href}
-                          class="block px-4 py-3 text-lg font-semibold text-gray-900 dark:text-white bg-gray-100 dark:bg-white/5 rounded-xl transition-all border border-gray-300 dark:border-white/15 shadow-sm hover:shadow-md hover:translate-y-[-1px]"
-                          onClick={() => setIsMenuOpen(false)}
-                        >
-                          {item.name}
-                        </A>
-                      )}
-                    </For>
-                  }
+            <div class="relative flex flex-col h-full overflow-y-auto">
+              {/* Mobile Header */}
+              {/* Mobile Header */}
+              <div class="flex justify-between items-center px-4 sm:px-6 py-4 border-b border-gray-200/50 dark:border-white/10 bg-white/50 dark:bg-black/20 backdrop-blur-sm sticky top-0 z-10 h-14 sm:h-16">
+                <div class="flex items-center">
+                  <div class="w-6 h-6 sm:w-8 sm:h-8 flex items-center justify-center">
+                    <ImageRoot>
+                      <Image src="/images/loci-abstract-symbol.svg" alt="Loci logo" class="w-full h-full object-contain" />
+                      <ImageFallback class="w-full h-full bg-blue-600 text-white rounded flex items-center justify-center text-sm font-bold">L</ImageFallback>
+                    </ImageRoot>
+                  </div>
+                  <span class="ml-2 text-lg sm:text-xl font-bold text-gray-900 dark:text-white tracking-tight">Loci</span>
+                  <Show when={isAuthenticated()}>
+                    <Badge variant="secondary" class="ml-1 sm:ml-2 bg-emerald-50 dark:bg-emerald-400/20 text-emerald-800 dark:text-emerald-100 border border-emerald-300 dark:border-emerald-300/40 text-xs px-1.5 py-0.5 sm:px-2 sm:py-1">AI</Badge>
+                  </Show>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  class="md:hidden p-2 text-gray-900 dark:text-white hover:bg-black/5 dark:hover:bg-white/10 rounded-full"
+                  onClick={() => setIsMenuOpen(false)}
                 >
-                  <For each={authNavigationItems}>
-                    {(item) => {
-                      const IconComponent = item.icon;
-                      return (
-                        <A
-                          href={item.href}
-                          class="flex items-center gap-3 px-4 py-3 text-lg font-medium text-white bg-white/5 rounded-xl transition-all border border-white/15 shadow-[0_10px_30px_rgba(3,7,18,0.35)] hover:translate-y-[-1px]"
-                          onClick={() => setIsMenuOpen(false)}
-                        >
-                          <IconComponent class="w-5 h-5" />
-                          <div class="flex items-center gap-2">
-                            {item.name}
-                            <Show when={(item as any).experimental}>
-                              <Badge variant="secondary" class="bg-orange-100/20 text-orange-200 text-xs px-1.5 py-0.5">
-                                Experimental
-                              </Badge>
-                            </Show>
-                          </div>
-                        </A>
-                      );
-                    }}
-                  </For>
-                </Show>
-              </Show>
-            </div>
+                  <X class="w-6 h-6" />
+                </Button>
+              </div>
 
-            {/* Mobile Action Buttons */}
-            <Show when={!isLoading()}>
-              <Show
-                when={!isAuthenticated()}
-                fallback={
-                  <div class="px-4 py-6 space-y-3 border-t border-white/40 dark:border-slate-800/60">
-                    <div class="flex items-center gap-3 px-4 py-3">
-                      <div class="w-10 h-10 rounded-full bg-emerald-400 flex items-center justify-center text-slate-950 text-lg font-bold shadow-lg ring-2 ring-white/30">
-                        {user()?.username?.charAt(0).toUpperCase() || 'U'}
+              {/* Mobile Navigation Links - Clean List Style */}
+              <div class="flex-1 px-6 py-2">
+                <Show when={!isLoading()}>
+                  <div class="flex flex-col">
+                    {/* Public Items */}
+                    <Show when={!isAuthenticated()}>
+                      <For each={publicNavigationItems}>
+                        {(item) => (
+                          <A
+                            href={item.href}
+                            class="group flex items-center justify-between py-5 text-lg font-medium text-gray-900 dark:text-white border-b border-gray-200/50 dark:border-white/5 active:bg-black/5 dark:active:bg-white/5 transition-colors"
+                            onClick={() => setIsMenuOpen(false)}
+                          >
+                            {item.name}
+                            <span class="text-gray-400 dark:text-gray-600 group-hover:translate-x-1 transition-transform">→</span>
+                          </A>
+                        )}
+                      </For>
+                    </Show>
+
+                    {/* Authenticated Items */}
+                    <Show when={isAuthenticated()}>
+                      <For each={authNavigationItems}>
+                        {(item) => {
+                          const IconComponent = item.icon;
+                          return (
+                            <A
+                              href={item.href}
+                              class="group flex items-center justify-between py-5 text-lg font-medium text-gray-900 dark:text-white border-b border-gray-200/50 dark:border-white/5 active:bg-black/5 dark:active:bg-white/5 transition-colors"
+                              onClick={() => setIsMenuOpen(false)}
+                            >
+                              <div class="flex items-center gap-4">
+                                <span class="p-2 rounded-lg bg-gray-100 dark:bg-white/5 text-gray-700 dark:text-gray-300">
+                                  <IconComponent class="w-5 h-5" />
+                                </span>
+                                <div class="flex items-center gap-2">
+                                  {item.name}
+                                  <Show when={(item as any).experimental}>
+                                    <Badge variant="secondary" class="bg-orange-100 dark:bg-orange-900/40 text-orange-800 dark:text-orange-200 border border-orange-200 dark:border-orange-700/50 text-[10px] px-1.5 py-0.5 uppercase tracking-wider">
+                                      Beta
+                                    </Badge>
+                                  </Show>
+                                </div>
+                              </div>
+                              <span class="text-gray-400 dark:text-gray-600 group-hover:translate-x-1 transition-transform">→</span>
+                            </A>
+                          );
+                        }}
+                      </For>
+                    </Show>
+                  </div>
+                </Show>
+              </div>
+
+              {/* Mobile Footer / User Action Area */}
+              <Show when={!isLoading()}>
+                <div class="p-6 mt-auto bg-white/50 dark:bg-black/20 backdrop-blur-md border-t border-gray-200/50 dark:border-white/10">
+                  <Show
+                    when={!isAuthenticated()}
+                    fallback={
+                      <div class="space-y-6">
+                        {/* User Info */}
+                        <div class="flex items-center gap-4">
+                          <div class="w-12 h-12 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center text-white text-xl font-bold shadow-lg ring-2 ring-white/50 dark:ring-white/10">
+                            {user()?.username?.charAt(0).toUpperCase() || 'U'}
+                          </div>
+                          <div class="flex-1 min-w-0">
+                            <div class="font-bold text-lg text-gray-900 dark:text-white truncate">{user()?.username || 'User'}</div>
+                            <div class="text-sm text-gray-500 dark:text-gray-400 truncate">{user()?.email}</div>
+                          </div>
+                          <ThemeSelector />
+                        </div>
+
+                        {/* Actions Grid */}
+                        <div class="grid grid-cols-2 gap-3">
+                          <A href="/settings" class="w-full" onClick={() => setIsMenuOpen(false)}>
+                            <Button variant="outline" class="w-full justify-center h-12 text-base border-gray-200 dark:border-white/10 bg-white/50 dark:bg-white/5 text-gray-900 dark:text-white hover:bg-white/80 dark:hover:bg-white/10">
+                              Settings
+                            </Button>
+                          </A>
+                          <Button
+                            onClick={() => {
+                              setIsMenuOpen(false);
+                              handleLogout();
+                            }}
+                            variant="outline"
+                            class="w-full justify-center h-12 text-base text-red-600 dark:text-red-400 border-red-200 dark:border-red-900/30 bg-red-50/50 dark:bg-red-900/10 hover:bg-red-100 dark:hover:bg-red-900/20"
+                          >
+                            Sign Out
+                          </Button>
+                        </div>
                       </div>
-                      <div class="flex-1">
-                        <div class="font-medium text-white">{user()?.username || 'User'}</div>
-                        <div class="text-sm text-slate-300/80">{user()?.email || 'user@example.com'}</div>
+                    }
+                  >
+                    {/* Guest Actions */}
+                    <div class="space-y-4">
+                      <div class="flex justify-between items-center mb-4">
+                        <span class="text-sm font-medium text-gray-500 dark:text-gray-400">Appearance</span>
+                        <ThemeSelector />
                       </div>
-                      <ThemeSelector />
+                      <A href="/auth/signin" class="block" onClick={() => setIsMenuOpen(false)}>
+                        <Button variant="outline" class="w-full justify-center h-12 text-base font-semibold border-gray-200 dark:border-white/10 bg-white/50 dark:bg-white/5 text-gray-900 dark:text-white">
+                          Log In
+                        </Button>
+                      </A>
+                      <A href="/auth/signup" class="block" onClick={() => setIsMenuOpen(false)}>
+                        <Button class="w-full justify-center h-12 text-base font-bold bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-lg shadow-emerald-500/20">
+                          Get Started
+                        </Button>
+                      </A>
                     </div>
-                    <A href="/settings" class="block" onClick={() => setIsMenuOpen(false)}>
-                      <Button variant="outline" class="w-full justify-center py-3 text-base border-white/15 bg-white/5 text-white hover:border-emerald-200 hover:text-emerald-200">
-                        Settings
-                      </Button>
-                    </A>
-                    <Button
-                      onClick={() => {
-                        setIsMenuOpen(false);
-                        handleLogout();
-                      }}
-                      variant="outline"
-                      class="w-full justify-center py-3 text-base text-red-200 border-red-500/40 hover:bg-red-500/10"
-                    >
-                      Sign Out
-                    </Button>
-                  </div>
-                }
-              >
-                <div class="px-4 py-6 space-y-3 border-t border-white/40 dark:border-slate-800/60">
-                  <div class="flex justify-center mb-3">
-                    <ThemeSelector />
-                  </div>
-                  <A href="/auth/signin" class="block" onClick={() => setIsMenuOpen(false)}>
-                    <Button variant="outline" class="w-full justify-center py-3 text-base border-white/20 bg-white/10 text-white hover:border-emerald-200 hover:text-emerald-200">
-                      Log In
-                    </Button>
-                  </A>
-                  <A href="/auth/signup" class="block" onClick={() => setIsMenuOpen(false)}>
-                    <Button class="w-full justify-center py-3 text-base bg-emerald-400 hover:bg-emerald-300 text-slate-950 shadow-[0_14px_40px_rgba(52,211,153,0.35)]">
-                      Get Started
-                    </Button>
-                  </A>
+                  </Show>
                 </div>
               </Show>
-            </Show>
+            </div>
           </div>
-        </div>
+        </Portal>
       </Show>
     </nav>
   );
