@@ -35,3 +35,4 @@ tmp
 
 # Wrangler / Vite PWA
 dev-dist
+.vscode
