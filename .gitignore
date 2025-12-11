@@ -30,5 +30,8 @@ Thumbs.db
 .wrangler
 .dev.vars*
 
+# Temp
+tmp
+
 # Wrangler / Vite PWA
 dev-dist
