@@ -8,7 +8,7 @@ import {
     ListService,
     GetSavedListsRequestSchema,
     UnsaveListRequestSchema
-} from "@buf/loci_loci-proto.bufbuild_es/proto/list_pb.js";
+} from "@buf/loci_loci-proto.bufbuild_es/proto/loci/list/list_pb.js";
 import { create } from "@bufbuild/protobuf";
 import { transport } from "~/lib/connect-transport";
 import { authAPI, getAuthToken } from "~/lib/api";

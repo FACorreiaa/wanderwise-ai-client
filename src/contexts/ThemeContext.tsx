@@ -1,6 +1,6 @@
 import { createContext, useContext, createSignal, createEffect, onMount, JSX } from 'solid-js';
 
-type DesignTheme = 'default' | 'vt-news' | 'valuetainment';
+type DesignTheme = 'classic' | 'modern' | 'loci';
 type ColorTheme = 'light' | 'dark';
 
 interface ThemeContextType {
@@ -27,12 +27,12 @@ interface ThemeProviderProps {
 
 export const ThemeProvider = (props: ThemeProviderProps) => {
   const [isDark, setIsDark] = createSignal(false);
-  const [designTheme, setDesignThemeSignal] = createSignal<DesignTheme>('default');
+  const [designTheme, setDesignThemeSignal] = createSignal<DesignTheme>('loci');
 
   // Initialize theme from localStorage or system preference
   onMount(() => {
     const saved = localStorage.getItem('theme');
-    const savedDesignTheme = localStorage.getItem('designTheme') as DesignTheme || 'default';
+    const savedDesignTheme = localStorage.getItem('designTheme') as DesignTheme || 'loci';
     const systemPreference = window.matchMedia('(prefers-color-scheme: dark)').matches;
 
     // Sync state with what the blocking script likely did
@@ -83,7 +83,7 @@ export const ThemeProvider = (props: ThemeProviderProps) => {
     }
 
     // Apply design theme
-    if (designTheme() !== 'default') {
+    if (designTheme()) {
       html.setAttribute('data-theme', designTheme());
     }
   });

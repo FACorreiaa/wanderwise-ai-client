@@ -2,13 +2,13 @@
 import { createQuery, createMutation, useQueryClient } from '@tanstack/solid-query';
 import { createClient } from '@connectrpc/connect';
 import { create } from '@bufbuild/protobuf';
-import { TagsService } from '@buf/loci_loci-proto.bufbuild_es/proto/tags_pb.js';
+import { TagsService } from '@buf/loci_loci-proto.bufbuild_es/proto/loci/tags/tags_pb.js';
 import {
   GetTagsRequestSchema,
   CreateTagRequestSchema,
   UpdateTagRequestSchema,
   DeleteTagRequestSchema,
-} from '@buf/loci_loci-proto.bufbuild_es/proto/tags_pb.js';
+} from '@buf/loci_loci-proto.bufbuild_es/proto/loci/tags/tags_pb.js';
 import { queryKeys } from './shared';
 import { transport } from '../connect-transport';
 import type { PersonalTag } from './types';

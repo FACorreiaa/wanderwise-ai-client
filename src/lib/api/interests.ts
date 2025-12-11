@@ -2,12 +2,12 @@
 import { createQuery, createMutation, useQueryClient } from '@tanstack/solid-query';
 import { createClient } from '@connectrpc/connect';
 import { create } from '@bufbuild/protobuf';
-import { InterestService } from '@buf/loci_loci-proto.bufbuild_es/proto/interest_pb.js';
+import { InterestService } from '@buf/loci_loci-proto.bufbuild_es/proto/loci/interest/interest_pb.js';
 import {
   GetInterestsRequestSchema,
   CreateInterestRequestSchema,
   UpdateInterestRequestSchema,
-} from '@buf/loci_loci-proto.bufbuild_es/proto/interest_pb.js';
+} from '@buf/loci_loci-proto.bufbuild_es/proto/loci/interest/interest_pb.js';
 import { queryKeys } from './shared';
 import { getAuthToken } from '../auth/tokens';
 import { transport } from '../connect-transport';

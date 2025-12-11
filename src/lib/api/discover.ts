@@ -11,9 +11,9 @@ import {
   DiscoverResult as ProtoDiscoverResult,
   TrendingDiscovery as ProtoTrendingDiscovery,
   FeaturedCollection as ProtoFeaturedCollection,
-} from "@buf/loci_loci-proto.bufbuild_es/proto/discover_pb.js";
-import { PaginationRequestSchema } from "@buf/loci_loci-proto.bufbuild_es/proto/common_pb.js";
-import { ChatSession as ProtoChatSession } from "@buf/loci_loci-proto.bufbuild_es/proto/chat_pb.js";
+} from "@buf/loci_loci-proto.bufbuild_es/proto/loci/discover/discover_pb.js";
+import { PaginationRequestSchema } from "@buf/loci_loci-proto.bufbuild_es/proto/loci/common/common_pb.js";
+import { ChatSession as ProtoChatSession } from "@buf/loci_loci-proto.bufbuild_es/proto/loci/chat/chat_pb.js";
 import { transport } from "../connect-transport";
 import type {
   DiscoverPageData,

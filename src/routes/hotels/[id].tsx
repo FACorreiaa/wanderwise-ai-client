@@ -10,7 +10,7 @@ export default function HotelDetailPage() {
     const [isFavorite, setIsFavorite] = createSignal(false);
 
     // Use API hook to fetch hotel details
-    const hotelQuery = useHotelDetails(params.id);
+    const hotelQuery = useHotelDetails(params.id ?? '');
 
     const hotel = () => hotelQuery.data;
 

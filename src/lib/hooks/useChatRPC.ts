@@ -1,7 +1,7 @@
 import { createStore } from "solid-js/store";
 import { createClient } from "@connectrpc/connect";
 import { create } from "@bufbuild/protobuf";
-import { ChatService, ChatRequestSchema } from "@buf/loci_loci-proto.bufbuild_es/proto/chat_pb.js";
+import { ChatService, ChatRequestSchema } from "@buf/loci_loci-proto.bufbuild_es/proto/loci/chat/chat_pb.js";
 import { transport } from "../connect-transport";
 // import { type ChatContextType } from "../api/llm";
 import { DomainType } from "../api/types";

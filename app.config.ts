@@ -34,7 +34,7 @@ export default defineConfig({
     plugins: [
       //cloudflare(),
       ensureHtmlShell,
-      tailwindcss(),
+      tailwindcss() as any,
       VitePWA({
         registerType: "autoUpdate",
         workbox: {

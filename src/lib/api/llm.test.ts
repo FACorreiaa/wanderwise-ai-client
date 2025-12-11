@@ -6,7 +6,7 @@ import {
 } from './llm';
 
 // Mock the proto module since it may not be available in test environment
-vi.mock("@buf/loci_loci-proto.bufbuild_es/proto/chat_pb.js", () => ({
+vi.mock("@buf/loci_loci-proto.bufbuild_es/proto/locichat_pb.js", () => ({
     ChatDomainType: {
         GENERAL: 0,
         ACCOMMODATION: 1,

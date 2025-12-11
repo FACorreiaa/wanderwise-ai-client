@@ -1,6 +1,6 @@
 import { createQuery } from '@tanstack/solid-query';
 import { createClient } from "@connectrpc/connect";
-import { RecentsService, GetRecentInteractionsRequestSchema } from "@buf/loci_loci-proto.bufbuild_es/proto/recents_pb.js";
+import { RecentsService, GetRecentInteractionsRequestSchema } from "@buf/loci_loci-proto.bufbuild_es/proto/loci/recents/recents_pb.js";
 import { create } from "@bufbuild/protobuf";
 import { transport } from "../connect-transport";
 import { getAuthToken, authAPI } from "../api";

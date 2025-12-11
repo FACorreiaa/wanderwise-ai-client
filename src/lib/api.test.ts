@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { authAPI } from './api';
 // import { create } from '@bufbuild/protobuf';
-// import { LoginRequestSchema, ValidateSessionRequestSchema } from '@buf/loci_loci-proto.bufbuild_es/proto/auth_pb.js';
+// import { LoginRequestSchema, ValidateSessionRequestSchema } from '@buf/loci_loci-proto.bufbuild_es/proto/lociauth_pb.js';
 
 const { mockLogin, mockValidateSession } = vi.hoisted(() => {
     return {

@@ -2,7 +2,7 @@
 import { createQuery, createMutation, useQueryClient } from '@tanstack/solid-query';
 import { createClient } from '@connectrpc/connect';
 import { create } from '@bufbuild/protobuf';
-import { AuthService } from '@buf/loci_loci-proto.bufbuild_es/proto/auth_pb.js';
+import { AuthService } from '@buf/loci_loci-proto.bufbuild_es/proto/loci/auth/auth_pb.js';
 import {
   LoginRequestSchema,
   RegisterRequestSchema,
@@ -10,7 +10,7 @@ import {
   LogoutRequestSchema,
   RefreshTokenRequestSchema,
   ChangePasswordRequestSchema,
-} from '@buf/loci_loci-proto.bufbuild_es/proto/auth_pb.js';
+} from '@buf/loci_loci-proto.bufbuild_es/proto/loci/auth/auth_pb.js';
 import { clearAuthToken, getAuthToken, getRefreshToken, setAuthToken } from '../auth/tokens';
 import { queryKeys } from './shared';
 import { transport } from '../connect-transport';
