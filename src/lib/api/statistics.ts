@@ -8,8 +8,33 @@ import { StatisticsService } from "@buf/loci_loci-proto.bufbuild_es/proto/loci/s
 const API_BASE_URL =
   import.meta.env.VITE_CONNECT_BASE_URL || "http://localhost:8000";
 
-// Helper to get current user ID from session
+// Helper to parse JWT payload
+const parseJwt = (token: string): { user_id?: string } | null => {
+  try {
+    const payloadBase64 = token.split('.')[1];
+    if (!payloadBase64) return null;
+    return JSON.parse(atob(payloadBase64));
+  } catch (e) {
+    console.warn("Failed to parse JWT:", e);
+    return null;
+  }
+};
+
+// Helper to get current user ID from JWT token directly
+// This avoids the race condition where validateSession fails immediately after login
 const getCurrentUserId = async (): Promise<string | null> => {
+  const token = getAuthToken();
+  if (!token) {
+    return null;
+  }
+
+  // Parse user_id directly from JWT to avoid validateSession race condition
+  const payload = parseJwt(token);
+  if (payload?.user_id) {
+    return payload.user_id;
+  }
+
+  // Fallback: try validateSession if JWT parsing fails
   try {
     const session = await authAPI.validateSession();
     if (session.valid && session.user_id) {
@@ -119,9 +144,12 @@ export const getDetailedPOIStatistics = async (): Promise<DetailedPOIStatistics>
 };
 
 export const getLandingPageStatistics = async (): Promise<LandingPageUserStats> => {
+  console.log("📊 getLandingPageStatistics: Starting...");
   try {
     const token = getAuthToken();
+    console.log("📊 getLandingPageStatistics: Token available?", !!token);
     if (!token) {
+      console.log("📊 getLandingPageStatistics: No token, returning zeros");
       return {
         saved_places: 0,
         itineraries: 0,
@@ -132,8 +160,9 @@ export const getLandingPageStatistics = async (): Promise<LandingPageUserStats> 
 
     // Get user ID from session for the RPC request
     const userId = await getCurrentUserId();
+    console.log("📊 getLandingPageStatistics: User ID:", userId);
     if (!userId) {
-      console.warn("No user ID available for landing page statistics");
+      console.warn("📊 No user ID available for landing page statistics");
       return {
         saved_places: 0,
         itineraries: 0,
@@ -142,21 +171,23 @@ export const getLandingPageStatistics = async (): Promise<LandingPageUserStats> 
       };
     }
 
+    console.log("📊 getLandingPageStatistics: Making RPC call to GetLandingPageStatistics");
     const transport = createStatisticsTransport();
     const client = createClient(StatisticsService, transport);
     const response = await client.getLandingPageStatistics({
       userId: userId,
     });
 
+    console.log("📊 getLandingPageStatistics: Response received", response);
     const stats = response.statistics;
     return {
       saved_places: Number(stats?.newFavoritesThisWeek || 0),
       itineraries: Number(stats?.itinerariesCreatedThisMonth || 0),
-      cities_explored: 0, // Not directly available in response
+      cities_explored: Number(stats?.citiesExplored || 0),
       discoveries: Number(stats?.searchesThisWeek || 0),
     };
   } catch (error) {
-    console.error("Failed to fetch landing page statistics via RPC:", error);
+    console.error("📊 Failed to fetch landing page statistics via RPC:", error);
     return {
       saved_places: 0,
       itineraries: 0,
