@@ -1233,7 +1233,7 @@ export default function ChatPage() {
           <div class="relative">
             <button
               onClick={() => setShowProfileSelector(!showProfileSelector())}
-              class="w-full flex items-center gap-2 p-2 sm:p-3 bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm rounded-lg hover:bg-white/70 dark:hover:bg-slate-700/70 transition-all border border-gray-200/50 dark:border-white/10"
+              class="w-full flex items-center gap-2 p-2 sm:p-3 bg-white/70 dark:bg-slate-800/70 backdrop-blur-sm rounded-lg hover:bg-white/90 dark:hover:bg-slate-700/90 transition-all border border-gray-300 dark:border-gray-600"
             >
               <div class="w-6 h-6 sm:w-8 sm:h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-xs sm:text-sm">
                 🎒
@@ -1494,7 +1494,7 @@ export default function ChatPage() {
       {/* Main Chat Area - Mobile First */}
       <div class="flex-1 flex flex-col order-1 lg:order-2 relative z-10">
         {/* Chat Header - Mobile First */}
-        <div class="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-b border-gray-200/50 dark:border-white/10 p-3 sm:p-4 shadow-sm">
+        <div class="bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl border-b border-gray-300 dark:border-gray-700 p-3 sm:p-4 shadow-sm z-20">
           <div class="flex items-center justify-between">
             <div class="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
               <div class="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center flex-shrink-0">
@@ -1595,7 +1595,7 @@ export default function ChatPage() {
                   {(prompt) => (
                     <button
                       onClick={() => useQuickPrompt(prompt)}
-                      class="bg-white/70 dark:bg-slate-800/70 backdrop-blur-sm border border-gray-200/50 dark:border-white/10 rounded-xl hover:bg-white/90 dark:hover:bg-slate-700/90 hover:shadow-lg hover:shadow-blue-500/10 hover:border-blue-300/50 dark:hover:border-blue-500/30 transition-all duration-300 p-3 sm:p-4 text-left group"
+                      class="bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm border border-gray-300/70 dark:border-gray-600/70 rounded-xl hover:bg-white dark:hover:bg-slate-700 hover:shadow-lg hover:shadow-blue-500/10 hover:border-blue-400/50 dark:hover:border-blue-500/50 transition-all duration-300 p-3 sm:p-4 text-left group"
                     >
                       <div class="flex items-start gap-2 sm:gap-3">
                         <span class="text-xl sm:text-2xl flex-shrink-0">
@@ -1628,7 +1628,7 @@ export default function ChatPage() {
                   onInput={(e) => setCurrentMessage(e.target.value)}
                   onKeyPress={handleKeyPress}
                   placeholder="Ask me about destinations, activities, or let me create an itinerary for you..."
-                  class="w-full resize-none border border-gray-200/50 dark:border-white/10 bg-white/70 dark:bg-slate-800/70 backdrop-blur-sm text-gray-900 dark:text-white rounded-xl px-3 py-2 sm:px-4 sm:py-3 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-300 dark:focus:border-blue-500 focus:bg-white dark:focus:bg-slate-800 placeholder-gray-500 dark:placeholder-gray-400 text-sm sm:text-base transition-all"
+                  class="w-full resize-none border border-gray-300 dark:border-gray-600 bg-white/90 dark:bg-slate-800/90 backdrop-blur-sm text-gray-900 dark:text-white rounded-xl px-3 py-2 sm:px-4 sm:py-3 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-400 dark:focus:border-blue-500 focus:bg-white dark:focus:bg-slate-800 placeholder-gray-600 dark:placeholder-gray-400 text-sm sm:text-base transition-all shadow-sm"
                   rows="2"
                   disabled={isLoading()}
                 />
