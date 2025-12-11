@@ -3,8 +3,8 @@ import { createClient } from "@connectrpc/connect";
 import { create } from "@bufbuild/protobuf";
 import { ChatService, ChatRequestSchema } from "@buf/loci_loci-proto.bufbuild_es/proto/loci/chat/chat_pb.js";
 import { transport } from "../connect-transport";
-// import { type ChatContextType } from "../api/llm";
 import { DomainType } from "../api/types";
+import { getProgressForEventType } from "../utils/chatUtils";
 
 // Initialize client outside hook to avoid recreation
 const chatClient = createClient(ChatService, transport);
@@ -148,44 +148,28 @@ export function useChatRPC(options: UseChatRPCOptions = {}) {
     };
 
     const handleProgress = (type: string, data: any) => {
-        switch (type) {
-            case 'start':
-                setState({ currentStep: "Starting generation...", progress: 15 });
-                break;
-            case 'city_data':
-                setState({ currentStep: "Loading city information...", progress: 25 });
-                options.onProgress?.(data);
-                break;
-            case 'general_pois':
-                setState({ currentStep: "Finding points of interest...", progress: 50 });
-                options.onProgress?.(data);
-                break;
-            case 'itinerary':
-                setState({ currentStep: "Creating your itinerary...", progress: 75 });
-                options.onProgress?.(data);
-                break;
-            case 'hotels':
-                setState({ currentStep: "Finding accommodations...", progress: 60 });
-                options.onProgress?.(data);
-                break;
-            case 'restaurants':
-                setState({ currentStep: "Discovering restaurants...", progress: 65 });
-                options.onProgress?.(data);
-                break;
-            case 'activities':
-                setState({ currentStep: "Finding activities...", progress: 70 });
-                options.onProgress?.(data);
-                break;
-            case 'nearby':
-                console.log('[useChatRPC] nearby event received:', data);
-                console.log('[useChatRPC] nearby points_of_interest:', data?.points_of_interest);
-                setState({
-                    currentStep: "Finding places near you...",
-                    progress: 80,
-                    streamedData: data  // Update streamedData with nearby POIs
-                });
-                options.onProgress?.(data);
-                break;
+        // Use shared progress messages from chatUtils
+        const progressInfo = getProgressForEventType(type);
+
+        // Handle special cases
+        if (type === 'nearby') {
+            console.log('[useChatRPC] nearby event received:', data);
+            console.log('[useChatRPC] nearby points_of_interest:', data?.points_of_interest);
+            setState({
+                currentStep: progressInfo.message,
+                progress: progressInfo.progress,
+                streamedData: data  // Update streamedData with nearby POIs
+            });
+        } else {
+            setState({
+                currentStep: progressInfo.message,
+                progress: progressInfo.progress
+            });
+        }
+
+        // Notify callback for data-bearing events
+        if (data && type !== 'start') {
+            options.onProgress?.(data);
         }
     };
 

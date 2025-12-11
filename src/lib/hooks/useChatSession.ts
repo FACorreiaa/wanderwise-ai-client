@@ -7,7 +7,16 @@ import {
   updateStreamingData,
   markStreamingComplete,
 } from '~/lib/streaming-state';
-import type { POIDetailedInfo } from '../api/types';
+
+// Import shared utilities from centralized location
+import {
+  deriveDomainLists as deriveDomainListsUtil,
+  mergeUniqueById as mergeUniqueByIdUtil,
+  decodeEventData as decodeEventDataUtil,
+  normalizeItineraryData as normalizeItineraryDataUtil,
+  isIncrementalUpdate as isIncrementalUpdateUtil,
+  persistCompletedSession as persistCompletedSessionUtil,
+} from '~/lib/utils/chatUtils';
 
 export interface ChatMessage {
   type: 'user' | 'assistant' | 'error';
@@ -32,200 +41,14 @@ export interface UseChatSessionOptions {
   onNavigationData?: (navigation: any) => void; // Callback for navigation data
 }
 
-// Derive domain-specific lists from mixed POI payloads so Hotels/Restaurants/Activities pages can render them
-export const deriveDomainLists = (data: any) => {
-  const points: POIDetailedInfo[] = [
-    ...(data?.points_of_interest || data?.pointsOfInterest || []),
-    ...(data?.itinerary_response?.points_of_interest || data?.itineraryResponse?.pointsOfInterest || []),
-  ].filter(Boolean);
+// Re-export utilities for backward compatibility with existing imports
+export const deriveDomainLists = deriveDomainListsUtil;
+const mergeUniqueById = mergeUniqueByIdUtil;
+const decodeEventData = decodeEventDataUtil;
+const normalizeItineraryData = normalizeItineraryDataUtil;
+const isIncrementalUpdate = isIncrementalUpdateUtil;
+const persistCompletedSession = persistCompletedSessionUtil;
 
-  const isHotel = (poi: POIDetailedInfo) => {
-    const cat = (poi.category || '').toLowerCase();
-    return (
-      cat.includes('hotel') ||
-      cat.includes('hostel') ||
-      cat.includes('lodg') || // lodge/lodging
-      cat.includes('resort') ||
-      cat.includes('bnb') ||
-      cat.includes('inn') ||
-      cat.includes('accommodation') ||
-      cat.includes('guesthouse') ||
-      cat.includes('guest house') ||
-      cat.includes('stay') ||
-      cat.includes('sleep') ||
-      cat.includes('room') ||
-      cat.includes('booking') ||
-      cat.includes('bookings')
-    );
-  };
-
-  const isRestaurant = (poi: POIDetailedInfo) =>
-    (poi.category || '').toLowerCase().includes('restaurant') ||
-    Boolean((poi as any).cuisine_type || (poi as any).cuisineType);
-
-  const hotels = points.filter(isHotel);
-  const restaurants = points.filter(isRestaurant);
-  const activities = points.filter((poi) => !isHotel(poi) && !isRestaurant(poi));
-
-  return { hotels, restaurants, activities };
-};
-
-const mergeUniqueById = (prev: any[] = [], next: any[] = []) => {
-  const map = new Map<string, any>();
-  const keyFor = (item: any) => {
-    const placeholderId = item?.id === '00000000-0000-0000-0000-000000000000';
-
-    // If it's not a placeholder ID and looks like a real UUID, use it
-    if (!placeholderId && item?.id) {
-      const isRealUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(item.id);
-      if (isRealUUID && item.id !== '00000000-0000-0000-0000-000000000000') {
-        return item.id;
-      }
-      // If it's a synthetic ID like "casa-guedes-porto", fall through to use name
-    }
-
-    // Use normalized name as the key for placeholder IDs and synthetic IDs
-    // Normalize: lowercase, remove special chars, trim whitespace
-    const name = item?.name || '';
-    const normalizedName = name.toLowerCase().replace(/[^a-z0-9]/g, '').trim();
-    return normalizedName || item?.llm_interaction_id || Math.random().toString(36).slice(2);
-  };
-
-  prev.forEach((item) => map.set(keyFor(item), item));
-  // Newer data overwrites older data with the same key
-  next.forEach((item) => map.set(keyFor(item), item));
-  return Array.from(map.values());
-};
-
-// Helper to decode base64 event data from protobuf bytes field
-const decodeEventData = (data: any): any => {
-  if (!data) return null;
-
-  // If it's already an object, return as-is
-  if (typeof data === 'object') return data;
-
-  // If it's a base64 string, decode it
-  if (typeof data === 'string') {
-    try {
-      const decoded = atob(data);
-      return JSON.parse(decoded);
-    } catch (e) {
-      console.warn('Failed to decode base64 event data:', e);
-      return null;
-    }
-  }
-
-  return null;
-};
-
-// Helper to normalize camelCase API responses to snake_case format
-// This is needed because the server may return data in camelCase format
-const normalizeItineraryData = (data: any): any => {
-  if (!data) return null;
-
-  // Detect if this is a ContinueChat response (has updatedItinerary wrapper)
-  // vs a full StreamChat response (direct data without wrapper)
-  const isContinueChatResponse = Boolean(data.updatedItinerary);
-
-  // Handle updatedItinerary wrapper (from ContinueChat response)
-  let itinerarySource = data.updatedItinerary || data;
-
-  // Handle case where server wraps everything in itinerary_response (snake_case)
-  // This happens in some StreamChat responses
-  if (itinerarySource.itinerary_response &&
-    (itinerarySource.itinerary_response.general_city_data ||
-      itinerarySource.itinerary_response.points_of_interest)) {
-    itinerarySource = itinerarySource.itinerary_response;
-  }
-
-  const normalized: any = {};
-
-  // Normalize general_city_data
-  if (itinerarySource.generalCityData) {
-    normalized.general_city_data = itinerarySource.generalCityData;
-  } else if (itinerarySource.general_city_data) {
-    normalized.general_city_data = itinerarySource.general_city_data;
-  }
-
-  // Normalize itinerary_response
-  if (itinerarySource.itineraryResponse) {
-    const ir = itinerarySource.itineraryResponse;
-    normalized.itinerary_response = {
-      itinerary_name: ir.itineraryName || ir.itinerary_name,
-      overall_description: ir.overallDescription || ir.overall_description,
-      points_of_interest: ir.pointsOfInterest || ir.points_of_interest || [],
-    };
-  } else if (itinerarySource.itinerary_response) {
-    normalized.itinerary_response = itinerarySource.itinerary_response;
-  }
-
-  // Normalize points_of_interest (general POIs, separate from itinerary)
-  // For ContinueChat responses: Do NOT add POIs to the general list 
-  //   (they belong only in itinerary_response.points_of_interest)
-  // For full StreamChat responses: DO include general POIs
-  if (!isContinueChatResponse) {
-    // Full response - include general points of interest
-    if (itinerarySource.pointsOfInterest) {
-      normalized.points_of_interest = itinerarySource.pointsOfInterest;
-    } else if (itinerarySource.points_of_interest) {
-      normalized.points_of_interest = itinerarySource.points_of_interest;
-    }
-  }
-  // For ContinueChat (isContinueChatResponse === true): 
-  // Leave points_of_interest undefined - caller will preserve existing POIs
-
-  // Copy session info
-  normalized.session_id = data.sessionId || data.session_id || itinerarySource.sessionId || itinerarySource.session_id;
-
-  // Preserve any other fields from the original data
-  if (data.hotels) normalized.hotels = data.hotels;
-  if (data.restaurants) normalized.restaurants = data.restaurants;
-  if (data.activities) normalized.activities = data.activities;
-
-  return normalized;
-};
-
-// Detect if this is an incremental update (adding a single POI to itinerary)
-// vs a full response (initial query or full regeneration)
-const isIncrementalUpdate = (data: any, prevData: any): boolean => {
-  if (!data) return false;
-
-  // If this is a ContinueChat response, it's likely an incremental update
-  // The key indicator is: has itinerary_response but preserving existing structure
-  const hasItineraryResponse = Boolean(data.itinerary_response);
-
-  // Check if prev data exists (meaning this is a follow-up)
-  const hasExistingData = Boolean(prevData?.itinerary_response || prevData?.general_city_data);
-
-  // An incremental update typically only adds POIs without changing general city data significantly
-  // We consider it incremental if:
-  // 1. We have existing data AND
-  // 2. We have an itinerary_response update
-  return hasExistingData && hasItineraryResponse;
-};
-
-const persistCompletedSession = (sessionIdValue: string | null, data: any) => {
-  if (!data) return;
-
-  const resolvedSessionId =
-    sessionIdValue ||
-    data?.session_id ||
-    data?.sessionId ||
-    data?.itinerary_response?.session_id ||
-    data?.itineraryResponse?.sessionId;
-
-  if (!resolvedSessionId) return;
-
-  const wrapper = {
-    sessionId: resolvedSessionId,
-    data,
-    timestamp: new Date().toISOString(),
-  };
-
-  sessionStorage.setItem('completedStreamingSession', JSON.stringify(wrapper));
-  // Store a data-only payload for deep links expecting direct domain data
-  sessionStorage.setItem(`session_${resolvedSessionId}`, JSON.stringify(data));
-};
 
 export function useChatSession(options: UseChatSessionOptions = {}) {
   const auth = useAuth();
