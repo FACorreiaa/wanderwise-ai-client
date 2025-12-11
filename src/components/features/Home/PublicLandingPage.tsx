@@ -35,35 +35,35 @@ const previewCards = [
     title: "Itinerary Lab",
     description: "Map-first previews that respect your timebox and mood.",
     icon: Compass,
-    href: "/itinerary",
+    href: "/preview/itinerary",
     accent: "from-cyan-400/80 to-blue-600/70",
   },
   {
     title: "Restaurants",
     description: "Taste-aware picks you can sort by vibe, diet, or budget.",
     icon: Utensils,
-    href: "/restaurants",
+    href: "/preview/restaurants",
     accent: "from-amber-300/80 to-orange-500/70",
   },
   {
     title: "Activities",
     description: "Workshops, trails, and tickets that match your pace.",
     icon: Sparkles,
-    href: "/activities",
+    href: "/preview/activities",
     accent: "from-emerald-300/70 to-teal-500/70",
   },
   {
     title: "Hotels",
     description: "Sleep, soak, or sprint — filtered for your rituals.",
     icon: Bed,
-    href: "/hotels",
+    href: "/preview/hotels",
     accent: "from-indigo-300/80 to-slate-600/70",
   },
   {
     title: "Discover",
     description: "Search any city. Trends stay gated until you register.",
     icon: MapPin,
-    href: "/discover",
+    href: "/preview/discover",
     accent: "from-fuchsia-300/70 to-purple-600/70",
   },
 ];
@@ -230,10 +230,10 @@ export default function PublicLandingPage() {
               </p>
               <div class="flex flex-wrap gap-3">
                 <button
-                  onClick={() => prefillAndSearch("48 hours in Kyoto with coffee and design stops")}
+                  onClick={() => navigate("/preview/discover")}
                   class="inline-flex items-center gap-2 px-5 py-3 rounded-xl font-semibold bg-gradient-to-r from-cyan-600 to-blue-600 dark:bg-cyan-500 text-white dark:text-slate-950 hover:from-cyan-700 hover:to-blue-700 dark:hover:bg-cyan-400 transition-all shadow-lg"
                 >
-                  Preview: 48h in Kyoto
+                  Preview: 48h in Tokyo
                   <ArrowRight class="w-4 h-4" />
                 </button>
                 <button
@@ -347,24 +347,24 @@ export default function PublicLandingPage() {
                 </div>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <button
-                    onClick={() => prefillAndSearch("Hidden ateliers in Paris for a rainy afternoon")}
+                    onClick={() => navigate("/preview/discover")}
                     class="glass-panel rounded-xl px-4 py-3 text-left hover:bg-gray-100 dark:hover:bg-white/10 transition-colors"
                   >
                     <div class="flex items-center gap-2 text-sm text-emerald-700 dark:text-emerald-100 font-medium">
                       <Sparkles class="w-4 h-4" />
                       Quick Example
                     </div>
-                    <p class="text-gray-900 dark:text-white font-semibold">Paris ateliers, rainy day</p>
+                    <p class="text-gray-900 dark:text-white font-semibold">Tokyo: Cyberpunk & Shrines</p>
                   </button>
                   <button
-                    onClick={() => prefillAndSearch("Street food in Mexico City with live music nearby")}
+                    onClick={() => navigate("/preview/discover")}
                     class="glass-panel rounded-xl px-4 py-3 text-left hover:bg-gray-100 dark:hover:bg-white/10 transition-colors"
                   >
                     <div class="flex items-center gap-2 text-sm text-emerald-700 dark:text-emerald-100 font-medium">
                       <Sparkles class="w-4 h-4" />
                       Quick Example
                     </div>
-                    <p class="text-gray-900 dark:text-white font-semibold">CDMX street food + music</p>
+                    <p class="text-gray-900 dark:text-white font-semibold">Tokyo: Best Sushi Spots</p>
                   </button>
                 </div>
                 <Show when={isLoading()}>
