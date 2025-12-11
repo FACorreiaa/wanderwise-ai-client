@@ -682,16 +682,37 @@ export default function ChatPage() {
             onItemClick={(activity: any) => handleItemClick(activity, "activity")}
           />
         </Show>
+        {/* Render itinerary - either from itinerary_response or points_of_interest, but NOT both */}
         {(() => {
-          const itineraryPOIs =
-            streamingData.points_of_interest?.length
-              ? streamingData.points_of_interest
-              : (streamingData as any).itinerary_response?.points_of_interest || [];
+          // Check if we have an itinerary response with its own POIs
+          const hasItineraryResponse = Boolean((streamingData as any).itinerary_response);
+          const itineraryResponsePOIs = (streamingData as any).itinerary_response?.points_of_interest || [];
+
+          // Check for standalone points_of_interest (not from itinerary_response)
+          const standalonePOIs = streamingData.points_of_interest || [];
+
+          // Use itinerary_response POIs if available, otherwise use standalone POIs
+          // This prevents duplicate rendering
+          const poisToRender = itineraryResponsePOIs.length > 0 ? itineraryResponsePOIs : standalonePOIs;
+
+          // Only render if we have POIs and no domain-specific results (hotels, restaurants, activities)
+          // Domain-specific results are rendered by their own components above
+          const hasDomainSpecificResults = (
+            (streamingData.hotels && streamingData.hotels.length > 0) ||
+            (streamingData.restaurants && streamingData.restaurants.length > 0) ||
+            (streamingData.activities && streamingData.activities.length > 0)
+          );
+
+          // Render itinerary if we have POIs from itinerary_response, 
+          // OR if we have standalone POIs and no domain-specific results
+          const shouldRenderItinerary = itineraryResponsePOIs.length > 0 ||
+            (standalonePOIs.length > 0 && !hasDomainSpecificResults);
+
           return (
-            <Show when={itineraryPOIs.length > 0}>
+            <Show when={shouldRenderItinerary}>
               <ItineraryResults
-                pois={itineraryPOIs}
-                itinerary={(streamingData as any).itinerary_response}
+                pois={poisToRender}
+                itinerary={hasItineraryResponse ? (streamingData as any).itinerary_response : undefined}
                 compact={actualCompact}
                 showToggle={false}
                 initialLimit={5}
@@ -701,29 +722,6 @@ export default function ChatPage() {
             </Show>
           );
         })()}
-
-        {/* Render generated itinerary if strict structure exists */}
-        <Show when={(streamingData as any).itinerary_response}>
-          <ItineraryResults
-            itinerary={(streamingData as any).itinerary_response}
-            compact={actualCompact}
-            showToggle={false}
-            initialLimit={5}
-            limit={actualCompact ? 5 : undefined}
-            onItemClick={(poi: any) => handleItemClick(poi, "poi")}
-          />
-        </Show>
-        {/* Fallback visualizer for generic points_of_interest if no itinerary response */}
-        <Show when={!(streamingData as any).itinerary_response && streamingData.points_of_interest && streamingData.points_of_interest.length > 0 && !streamingData.hotels && !streamingData.restaurants && !streamingData.activities}>
-          <ItineraryResults
-            pois={streamingData.points_of_interest}
-            compact={actualCompact}
-            showToggle={false}
-            initialLimit={5}
-            limit={actualCompact ? 5 : undefined}
-            onItemClick={(poi: any) => handleItemClick(poi, "poi")}
-          />
-        </Show>
       </div>
     );
   };
