@@ -23,11 +23,13 @@ export default function InterestsComponent(props: InterestsUIProps) {
   const [newInterest, setNewInterest] = createSignal('');
   const [newInterestDescription, setNewInterestDescription] = createSignal('');
   const [showAddInterestForm, setShowAddInterestForm] = createSignal(false);
+  const [newInterestError, setNewInterestError] = createSignal('');
 
   // Edit state
   const [editingInterest, setEditingInterest] = createSignal<Interest | null>(null);
   const [editInterestName, setEditInterestName] = createSignal('');
   const [editInterestDescription, setEditInterestDescription] = createSignal('');
+  const [editInterestError, setEditInterestError] = createSignal('');
 
   // Mobile UX: Track which interest is actively selected for actions
   const [activeInterestForActions, setActiveInterestForActions] = createSignal<string | null>(null);
@@ -42,19 +44,29 @@ export default function InterestsComponent(props: InterestsUIProps) {
     const name = newInterest().trim();
     const description = newInterestDescription().trim();
 
-    if (name) {
-      try {
-        await props.onCreateInterest({
-          name,
-          description,
-          active: true
-        });
-        setNewInterest('');
-        setNewInterestDescription('');
-        setShowAddInterestForm(false);
-      } catch (error) {
-        console.error('Failed to create interest:', error);
-      }
+    // Validate on submit
+    if (!name) {
+      setNewInterestError('Interest name is required');
+      return;
+    }
+    if (name.length < 2) {
+      setNewInterestError('Interest name must be at least 2 characters');
+      return;
+    }
+    setNewInterestError('');
+
+    try {
+      await props.onCreateInterest({
+        name,
+        description,
+        active: true
+      });
+      setNewInterest('');
+      setNewInterestDescription('');
+      setShowAddInterestForm(false);
+    } catch (error) {
+      console.error('Failed to create interest:', error);
+      setNewInterestError('Failed to create interest. Please try again.');
     }
   };
 
@@ -71,7 +83,18 @@ export default function InterestsComponent(props: InterestsUIProps) {
     const name = editInterestName().trim();
     const description = editInterestDescription().trim();
 
-    if (interest && name) {
+    // Validate on submit
+    if (!name) {
+      setEditInterestError('Interest name is required');
+      return;
+    }
+    if (name.length < 2) {
+      setEditInterestError('Interest name must be at least 2 characters');
+      return;
+    }
+    setEditInterestError('');
+
+    if (interest) {
       try {
         await props.onUpdateInterest({
           id: interest.id,
@@ -81,8 +104,10 @@ export default function InterestsComponent(props: InterestsUIProps) {
         setEditingInterest(null);
         setEditInterestName('');
         setEditInterestDescription('');
+        setEditInterestError('');
       } catch (error) {
         console.error('Failed to update interest:', error);
+        setEditInterestError('Failed to update interest. Please try again.');
       }
     }
   };
@@ -166,6 +191,7 @@ export default function InterestsComponent(props: InterestsUIProps) {
                   setShowAddInterestForm(false);
                   setNewInterest('');
                   setNewInterestDescription('');
+                  setNewInterestError('');
                 }}
                 class="px-3 py-1.5 text-sm text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-gray-100 rounded-lg border border-gray-200 dark:border-gray-700"
               >
@@ -185,16 +211,27 @@ export default function InterestsComponent(props: InterestsUIProps) {
           <Show when={showAddInterestForm()}>
             <div class="space-y-3 rounded-2xl border border-purple-100 dark:border-purple-700/40 bg-purple-50/60 dark:bg-purple-900/20 p-4">
               <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <input
-                  type="text"
-                  value={newInterest()}
-                  onInput={(e) => setNewInterest(e.target.value)}
-                  placeholder="Interest name..."
-                  class="px-3 py-2.5 border border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-                />
+                <div class="space-y-1">
+                  <input
+                    type="text"
+                    value={newInterest()}
+                    onInput={(e) => {
+                      setNewInterest(e.target.value);
+                      if (newInterestError()) setNewInterestError('');
+                    }}
+                    placeholder="Interest name..."
+                    class={`w-full px-3 py-2.5 border rounded-xl focus:ring-2 focus:border-transparent text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white transition-colors ${newInterestError()
+                      ? 'border-red-500 focus:ring-red-500'
+                      : 'border-gray-200 dark:border-gray-600 focus:ring-purple-500'
+                      }`}
+                  />
+                  <Show when={newInterestError()}>
+                    <p class="text-sm text-red-500 dark:text-red-400">{newInterestError()}</p>
+                  </Show>
+                </div>
                 <button
                   onClick={handleCreateInterest}
-                  disabled={!newInterest().trim() || props.isCreating}
+                  disabled={props.isCreating}
                   class="px-4 py-2.5 bg-gradient-to-r from-purple-500 to-indigo-500 hover:brightness-105 text-white rounded-xl disabled:opacity-50 disabled:cursor-not-allowed text-sm font-semibold shadow-sm"
                 >
                   {props.isCreating ? 'Adding...' : 'Add'}
@@ -324,13 +361,24 @@ export default function InterestsComponent(props: InterestsUIProps) {
                 {/* Edit Form */}
                 <div class="p-4 bg-gray-50 dark:bg-gray-700 rounded-2xl border-2 border-gray-300 dark:border-gray-600 shadow-inner">
                   <div class="space-y-3">
-                    <input
-                      type="text"
-                      value={editInterestName()}
-                      onInput={(e) => setEditInterestName(e.target.value)}
-                      placeholder="Interest name..."
-                      class="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-xl text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-                    />
+                    <div class="space-y-1">
+                      <input
+                        type="text"
+                        value={editInterestName()}
+                        onInput={(e) => {
+                          setEditInterestName(e.target.value);
+                          if (editInterestError()) setEditInterestError('');
+                        }}
+                        placeholder="Interest name..."
+                        class={`w-full px-3 py-2.5 border rounded-xl text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white transition-colors ${editInterestError()
+                          ? 'border-red-500 focus:ring-red-500'
+                          : 'border-gray-300 dark:border-gray-600'
+                          }`}
+                      />
+                      <Show when={editInterestError()}>
+                        <p class="text-sm text-red-500 dark:text-red-400">{editInterestError()}</p>
+                      </Show>
+                    </div>
                     <textarea
                       value={editInterestDescription()}
                       onInput={(e) => setEditInterestDescription(e.target.value)}
@@ -395,6 +443,6 @@ export default function InterestsComponent(props: InterestsUIProps) {
           </div>
         </Show>
       </div>
-    </div>
+    </div >
   );
 }

@@ -1,4 +1,4 @@
-import { cn } from "../cn";
+import { cn } from "~/lib/utils";
 import type { ButtonRootProps } from "@kobalte/core/button";
 import { Button as ButtonPrimitive } from "@kobalte/core/button";
 import type { PolymorphicProps } from "@kobalte/core/polymorphic";
@@ -8,20 +8,20 @@ import type { ValidComponent } from "solid-js";
 import { splitProps } from "solid-js";
 
 export const buttonVariants = cva(
-	"inline-flex items-center justify-center rounded-lg text-sm font-semibold transition-all backdrop-blur focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-50",
+	"inline-flex items-center justify-center rounded-lg text-sm font-semibold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-50",
 	{
 		variants: {
 			variant: {
 				default:
-					"bg-[#0c7df2] text-white shadow-[0_12px_32px_rgba(12,125,242,0.25)] hover:bg-[#0a6ed6] border border-white/30 dark:border-slate-800/60",
+					"bg-primary text-primary-foreground shadow hover:bg-primary/90",
 				destructive:
 					"bg-destructive text-destructive-foreground shadow-sm hover:bg-destructive/90",
 				outline:
-					"border border-slate-200/80 dark:border-slate-800/70 bg-white/60 dark:bg-slate-950/40 shadow-sm hover:border-sky-300 hover:text-sky-700 dark:hover:text-sky-200",
+					"border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground",
 				secondary:
-					"bg-secondary/70 text-secondary-foreground shadow-sm hover:bg-secondary/90",
-				ghost: "hover:bg-white/60 dark:hover:bg-slate-900/60 hover:text-sky-600 dark:hover:text-sky-300",
-				link: "text-cyan-600 dark:text-cyan-300 underline-offset-4 hover:underline",
+					"bg-secondary text-secondary-foreground shadow-sm hover:bg-secondary/80",
+				ghost: "hover:bg-accent hover:text-accent-foreground",
+				link: "text-primary underline-offset-4 hover:underline",
 			},
 			size: {
 				default: "h-9 px-4 py-2",

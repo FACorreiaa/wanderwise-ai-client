@@ -24,12 +24,14 @@ export default function TagsComponent(props: TagsUIProps) {
   const [newTagDescription, setNewTagDescription] = createSignal('');
   const [newTagType, setNewTagType] = createSignal('');
   const [showAddTagForm, setShowAddTagForm] = createSignal(false);
+  const [newTagErrors, setNewTagErrors] = createSignal<{ name?: string; type?: string; description?: string }>({});
 
   // Edit state
   const [editingTag, setEditingTag] = createSignal<PersonalTag | null>(null);
   const [editTagName, setEditTagName] = createSignal('');
   const [editTagDescription, setEditTagDescription] = createSignal('');
   const [editTagType, setEditTagType] = createSignal('');
+  const [editTagErrors, setEditTagErrors] = createSignal<{ name?: string; type?: string; description?: string }>({});
 
   // Mobile UX: Track which tag is actively selected for actions
   const [activeTagForActions, setActiveTagForActions] = createSignal<string | null>(null);
@@ -43,16 +45,28 @@ export default function TagsComponent(props: TagsUIProps) {
     const description = newTagDescription().trim();
     const tag_type = newTagType().trim();
 
-    if (name && description && tag_type) {
-      try {
-        await props.onCreateTag({ name, description, tag_type });
-        setNewTagName('');
-        setNewTagDescription('');
-        setNewTagType('');
-        setShowAddTagForm(false);
-      } catch (error) {
-        console.error('Failed to create tag:', error);
-      }
+    // Validate on submit
+    const errors: { name?: string; type?: string; description?: string } = {};
+    if (!name) errors.name = 'Tag name is required';
+    else if (name.length < 2) errors.name = 'Tag name must be at least 2 characters';
+    if (!tag_type) errors.type = 'Tag type is required';
+    if (!description) errors.description = 'Description is required';
+
+    if (Object.keys(errors).length > 0) {
+      setNewTagErrors(errors);
+      return;
+    }
+    setNewTagErrors({});
+
+    try {
+      await props.onCreateTag({ name, description, tag_type });
+      setNewTagName('');
+      setNewTagDescription('');
+      setNewTagType('');
+      setShowAddTagForm(false);
+    } catch (error) {
+      console.error('Failed to create tag:', error);
+      setNewTagErrors({ name: 'Failed to create tag. Please try again.' });
     }
   };
 
@@ -71,7 +85,20 @@ export default function TagsComponent(props: TagsUIProps) {
     const description = editTagDescription().trim();
     const tag_type = editTagType().trim();
 
-    if (tag && name && description && tag_type) {
+    // Validate on submit
+    const errors: { name?: string; type?: string; description?: string } = {};
+    if (!name) errors.name = 'Tag name is required';
+    else if (name.length < 2) errors.name = 'Tag name must be at least 2 characters';
+    if (!tag_type) errors.type = 'Tag type is required';
+    if (!description) errors.description = 'Description is required';
+
+    if (Object.keys(errors).length > 0) {
+      setEditTagErrors(errors);
+      return;
+    }
+    setEditTagErrors({});
+
+    if (tag) {
       try {
         await props.onUpdateTag({
           id: tag.id,
@@ -85,6 +112,7 @@ export default function TagsComponent(props: TagsUIProps) {
         setEditTagType('');
       } catch (error) {
         console.error('Failed to update tag:', error);
+        setEditTagErrors({ name: 'Failed to update tag. Please try again.' });
       }
     }
   };
@@ -170,6 +198,7 @@ export default function TagsComponent(props: TagsUIProps) {
                   setNewTagName('');
                   setNewTagDescription('');
                   setNewTagType('');
+                  setNewTagErrors({});
                 }}
                 class="px-3 py-1.5 text-sm text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-gray-100 rounded-lg border border-gray-200 dark:border-gray-700"
               >
@@ -189,35 +218,62 @@ export default function TagsComponent(props: TagsUIProps) {
           <Show when={showAddTagForm()}>
             <div class="space-y-3 rounded-2xl border border-emerald-100 dark:border-emerald-700/40 bg-emerald-50/60 dark:bg-emerald-900/20 p-4">
               <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-                <input
-                  type="text"
-                  value={newTagName()}
-                  onInput={(e) => setNewTagName(e.target.value)}
-                  placeholder="Tag name..."
-                  class="px-3 py-2.5 border border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-sm bg-white dark:bg-gray-800"
-                />
-                <input
-                  type="text"
-                  value={newTagType()}
-                  onInput={(e) => setNewTagType(e.target.value)}
-                  placeholder="Tag type (e.g., atmosphere, cuisine)..."
-                  class="px-3 py-2.5 border border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-sm bg-white dark:bg-gray-800"
-                />
+                <div class="space-y-1">
+                  <input
+                    type="text"
+                    value={newTagName()}
+                    onInput={(e) => {
+                      setNewTagName(e.target.value);
+                      if (newTagErrors().name) setNewTagErrors({ ...newTagErrors(), name: undefined });
+                    }}
+                    placeholder="Tag name..."
+                    class={`w-full px-3 py-2.5 border rounded-xl focus:ring-2 focus:border-transparent text-sm bg-white dark:bg-gray-800 transition-colors ${newTagErrors().name ? 'border-red-500 focus:ring-red-500' : 'border-gray-200 dark:border-gray-600 focus:ring-emerald-500'
+                      }`}
+                  />
+                  <Show when={newTagErrors().name}>
+                    <p class="text-xs text-red-500 dark:text-red-400">{newTagErrors().name}</p>
+                  </Show>
+                </div>
+                <div class="space-y-1">
+                  <input
+                    type="text"
+                    value={newTagType()}
+                    onInput={(e) => {
+                      setNewTagType(e.target.value);
+                      if (newTagErrors().type) setNewTagErrors({ ...newTagErrors(), type: undefined });
+                    }}
+                    placeholder="Tag type (e.g., atmosphere, cuisine)..."
+                    class={`w-full px-3 py-2.5 border rounded-xl focus:ring-2 focus:border-transparent text-sm bg-white dark:bg-gray-800 transition-colors ${newTagErrors().type ? 'border-red-500 focus:ring-red-500' : 'border-gray-200 dark:border-gray-600 focus:ring-emerald-500'
+                      }`}
+                  />
+                  <Show when={newTagErrors().type}>
+                    <p class="text-xs text-red-500 dark:text-red-400">{newTagErrors().type}</p>
+                  </Show>
+                </div>
                 <button
                   onClick={handleCreateTag}
-                  disabled={!newTagName().trim() || !newTagDescription().trim() || !newTagType().trim() || props.isCreating}
+                  disabled={props.isCreating}
                   class="px-4 py-2.5 bg-gradient-to-r from-emerald-500 to-green-600 text-white rounded-xl hover:brightness-105 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-semibold shadow-sm"
                 >
                   {props.isCreating ? 'Adding...' : 'Add'}
                 </button>
               </div>
-              <textarea
-                value={newTagDescription()}
-                onInput={(e) => setNewTagDescription(e.target.value)}
-                placeholder="Tag description..."
-                rows={2}
-                class="w-full px-3 py-2.5 border border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-sm bg-white dark:bg-gray-800"
-              />
+              <div class="space-y-1">
+                <textarea
+                  value={newTagDescription()}
+                  onInput={(e) => {
+                    setNewTagDescription(e.target.value);
+                    if (newTagErrors().description) setNewTagErrors({ ...newTagErrors(), description: undefined });
+                  }}
+                  placeholder="Tag description..."
+                  rows={2}
+                  class={`w-full px-3 py-2.5 border rounded-xl focus:ring-2 focus:border-transparent text-sm bg-white dark:bg-gray-800 transition-colors ${newTagErrors().description ? 'border-red-500 focus:ring-red-500' : 'border-gray-200 dark:border-gray-600 focus:ring-emerald-500'
+                    }`}
+                />
+                <Show when={newTagErrors().description}>
+                  <p class="text-xs text-red-500 dark:text-red-400">{newTagErrors().description}</p>
+                </Show>
+              </div>
             </div>
           </Show>
         </div>

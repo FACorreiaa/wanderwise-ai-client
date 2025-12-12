@@ -12,25 +12,45 @@ export default function WaitlistModal(props: WaitlistModalProps) {
   const [email, setEmail] = createSignal('');
   const [isSubmitting, setIsSubmitting] = createSignal(false);
   const [isSubmitted, setIsSubmitted] = createSignal(false);
+  const [emailError, setEmailError] = createSignal('');
+
+  const validateEmail = (email: string): boolean => {
+    if (!email.trim()) {
+      setEmailError('Email is required');
+      return false;
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      setEmailError('Please enter a valid email address');
+      return false;
+    }
+    setEmailError('');
+    return true;
+  };
 
   const handleSubmit = async (e: Event) => {
     e.preventDefault();
-    if (!email().trim()) return;
+
+    if (!validateEmail(email())) {
+      return;
+    }
 
     setIsSubmitting(true);
-    
+
     try {
       // Simulate API call - replace with actual waitlist API
       await new Promise(resolve => setTimeout(resolve, 1000));
-      
+
       setIsSubmitted(true);
       setTimeout(() => {
         setIsSubmitted(false);
         setEmail('');
+        setEmailError('');
         props.onClose();
       }, 2000);
     } catch (error) {
       console.error('Failed to join waitlist:', error);
+      setEmailError('Failed to join waitlist. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
@@ -44,7 +64,7 @@ export default function WaitlistModal(props: WaitlistModalProps) {
 
   return (
     <Show when={props.isOpen()}>
-      <div 
+      <div
         class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/70 backdrop-blur-2xl"
         onClick={handleBackdropClick}
       >
@@ -57,7 +77,7 @@ export default function WaitlistModal(props: WaitlistModalProps) {
             >
               <X class="w-4 h-4 text-slate-500 dark:text-slate-300" />
             </button>
-            
+
             <div class="flex items-center gap-3 mb-2">
               <div class="w-10 h-10 bg-[#0c7df2] rounded-lg flex items-center justify-center shadow-[0_12px_32px_rgba(12,125,242,0.22)] ring-2 ring-white/60 dark:ring-slate-800">
                 <Smartphone class="w-5 h-5 text-white" />
@@ -66,7 +86,7 @@ export default function WaitlistModal(props: WaitlistModalProps) {
                 Join the Waitlist
               </CardTitle>
             </div>
-            
+
             <p class="text-slate-600 dark:text-slate-200 text-sm">
               Be the first to know when our mobile apps launch. We'll send you an exclusive early access invitation.
             </p>
@@ -88,30 +108,38 @@ export default function WaitlistModal(props: WaitlistModalProps) {
             }>
               <form onSubmit={handleSubmit} class="space-y-4">
                 <div class="space-y-2">
-                  <label 
-                    for="waitlist-email" 
+                  <label
+                    for="waitlist-email"
                     class="block text-sm font-semibold text-slate-700 dark:text-slate-200"
                   >
                     Email Address
                   </label>
                   <div class="relative">
-                    <Mail class="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-4 h-4" />
+                    <Mail class={`absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 ${emailError() ? 'text-red-500' : 'text-slate-400'}`} />
                     <input
                       id="waitlist-email"
                       type="email"
                       value={email()}
-                      onInput={(e) => setEmail(e.target.value)}
+                      onInput={(e) => {
+                        setEmail(e.target.value);
+                        if (emailError()) setEmailError('');
+                      }}
                       placeholder="your@email.com"
-                      required
-                      class="w-full pl-10 pr-4 py-3 border border-white/50 dark:border-slate-800/70 rounded-lg focus:ring-2 focus:ring-cyan-400 focus:border-transparent bg-white/60 dark:bg-slate-900/60 text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400 backdrop-blur"
+                      class={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:border-transparent bg-white/60 dark:bg-slate-900/60 text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400 backdrop-blur transition-colors ${emailError()
+                          ? 'border-red-500 focus:ring-red-500'
+                          : 'border-white/50 dark:border-slate-800/70 focus:ring-cyan-400'
+                        }`}
                     />
                   </div>
+                  <Show when={emailError()}>
+                    <p class="text-sm text-red-500 dark:text-red-400">{emailError()}</p>
+                  </Show>
                 </div>
 
                 <div class="space-y-3">
                   <Button
                     type="submit"
-                    disabled={isSubmitting() || !email().trim()}
+                    disabled={isSubmitting()}
                     class="w-full text-white font-semibold py-3 px-4 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
                   >
                     {isSubmitting() ? (
@@ -138,3 +166,4 @@ export default function WaitlistModal(props: WaitlistModalProps) {
     </Show>
   );
 }
+

@@ -12,9 +12,30 @@ const ForgotPassword: Component = () => {
     const [email, setEmail] = createSignal('');
     const [isLoading, setIsLoading] = createSignal(false);
     const [emailSent, setEmailSent] = createSignal(false);
+    const [emailError, setEmailError] = createSignal('');
+
+    const validateEmail = (email: string): boolean => {
+        if (!email.trim()) {
+            setEmailError('Email is required');
+            return false;
+        }
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+            setEmailError('Please enter a valid email address');
+            return false;
+        }
+        setEmailError('');
+        return true;
+    };
 
     const handleSubmit = async (e: Event) => {
         e.preventDefault();
+
+        // Validate on submit
+        if (!validateEmail(email())) {
+            return;
+        }
+
         setIsLoading(true);
         await new Promise(resolve => setTimeout(resolve, 1000));
         setIsLoading(false);
@@ -24,10 +45,12 @@ const ForgotPassword: Component = () => {
     const handleBackToSignIn = () => {
         navigate('/auth/signin');
     };
+
     const labelClass = isDark() ? "text-white" : "text-slate-900";
     const inputClass = isDark()
         ? "w-full px-4 py-3 rounded-lg border border-white/20 bg-white/10 text-white placeholder:text-slate-300/70 focus:ring-2 focus:ring-emerald-300 focus:border-transparent transition-all backdrop-blur"
         : "w-full px-4 py-3 rounded-lg border border-slate-200 bg-white text-slate-900 placeholder:text-slate-500 focus:ring-2 focus:ring-emerald-400 focus:border-transparent transition-all";
+    const inputErrorClass = "!border-red-500 !ring-red-500 focus:!ring-red-500 focus:!border-red-500";
     const helperClass = isDark() ? "text-slate-200/85" : "text-slate-700";
     const linkClass = isDark() ? "text-emerald-200 hover:text-emerald-100" : "text-emerald-700 hover:text-emerald-600";
 
@@ -77,11 +100,16 @@ const ForgotPassword: Component = () => {
                                 type="email"
                                 placeholder="Enter your email"
                                 value={email()}
-                                onInput={(e) => setEmail(e.currentTarget.value)}
-                                class={inputClass}
-                                required
+                                onInput={(e) => {
+                                    setEmail(e.currentTarget.value);
+                                    if (emailError()) setEmailError(''); // Clear error on input
+                                }}
+                                class={`${inputClass} ${emailError() ? inputErrorClass : ''}`}
                             />
                         </TextFieldRoot>
+                        <Show when={emailError()}>
+                            <p class="mt-1.5 text-sm text-red-500 dark:text-red-400">{emailError()}</p>
+                        </Show>
                     </div>
 
                     <Button
@@ -98,3 +126,4 @@ const ForgotPassword: Component = () => {
 };
 
 export default ForgotPassword;
+

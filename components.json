@@ -10,7 +10,8 @@
     "prefix": ""
   },
   "alias": {
-    "component": "src",
-    "cn": "../cn"
+    "cn": "~/lib/utils",
+    "component": "~/ui",
+    "ui": "~/ui"
   }
 }

@@ -1,4 +1,4 @@
-import { cn } from "../cn";
+import { cn } from "~/lib/utils";
 import type { PolymorphicProps } from "@kobalte/core/polymorphic";
 import type {
 	TextFieldDescriptionProps,
@@ -120,7 +120,14 @@ export const TextField = <T extends ValidComponent = "input">(
 	return (
 		<TextFieldPrimitive.Input
 			class={cn(
-				"flex h-10 w-full rounded-lg border border-white/50 dark:border-slate-800/70 bg-white/40 dark:bg-slate-900/40 px-3 py-2 text-sm shadow-sm backdrop-blur transition-shadow file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-[1.5px] focus-visible:ring-cyan-400 disabled:cursor-not-allowed disabled:opacity-50",
+				"flex h-10 w-full rounded-lg px-3 py-2 text-sm transition-shadow",
+				// Theme-aware styling
+				"border border-input bg-background text-foreground",
+				"shadow-sm",
+				"placeholder:text-muted-foreground",
+				"focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+				"disabled:cursor-not-allowed disabled:opacity-50",
+				"file:border-0 file:bg-transparent file:text-sm file:font-medium",
 				local.class,
 			)}
 			{...rest}

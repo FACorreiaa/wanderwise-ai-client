@@ -110,6 +110,8 @@ export default function PublicLandingPage() {
   const [email, setEmail] = createSignal("");
   const [emailSubmitted, setEmailSubmitted] = createSignal(false);
   const [isLoading, setIsLoading] = createSignal(false);
+  const [emailError, setEmailError] = createSignal("");
+  const [searchError, setSearchError] = createSignal("");
   const { userLocation } = useUserLocation();
 
   const handleGetStarted = () => {
@@ -118,7 +120,17 @@ export default function PublicLandingPage() {
 
   const handleEmailSubmit = (event: Event) => {
     event.preventDefault();
-    if (!email().trim()) return;
+    const emailValue = email().trim();
+    if (!emailValue) {
+      setEmailError("Email is required");
+      return;
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(emailValue)) {
+      setEmailError("Please enter a valid email address");
+      return;
+    }
+    setEmailError("");
     setEmailSubmitted(true);
     setEmail("");
     setTimeout(() => setEmailSubmitted(false), 3200);
@@ -126,7 +138,12 @@ export default function PublicLandingPage() {
 
   const handleSearchClick = async () => {
     const message = currentMessage().trim();
-    if (!message || isLoading()) return;
+    if (!message) {
+      setSearchError("Please enter a search query");
+      return;
+    }
+    if (isLoading()) return;
+    setSearchError("");
 
     setIsLoading(true);
 
@@ -279,25 +296,35 @@ export default function PublicLandingPage() {
                     </p>
                   </div>
                 </div>
-                <div class="flex flex-col sm:flex-row gap-3">
-                  <label class="sr-only" for="beta-email">
-                    Email for product updates
-                  </label>
-                  <input
-                    id="beta-email"
-                    type="email"
-                    required
-                    value={email()}
-                    onInput={(e) => setEmail(e.currentTarget.value)}
-                    class="flex-1 px-4 py-3 rounded-xl bg-white dark:bg-white/10 border-2 border-gray-300 dark:border-white/20 text-gray-900 dark:text-white placeholder:text-gray-500 dark:placeholder:text-slate-300/70 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-                    placeholder="you@travelersclub.com"
-                  />
-                  <button
-                    type="submit"
-                    class="px-5 py-3 rounded-xl font-semibold bg-gradient-to-r from-emerald-600 to-teal-600 dark:bg-emerald-400 text-white dark:text-slate-950 hover:from-emerald-700 hover:to-teal-700 dark:hover:bg-emerald-300 transition-all shadow-lg"
-                  >
-                    Join updates
-                  </button>
+                <div class="flex flex-col gap-2">
+                  <div class="flex flex-col sm:flex-row gap-3">
+                    <label class="sr-only" for="beta-email">
+                      Email for product updates
+                    </label>
+                    <input
+                      id="beta-email"
+                      type="email"
+                      value={email()}
+                      onInput={(e) => {
+                        setEmail(e.currentTarget.value);
+                        if (emailError()) setEmailError("");
+                      }}
+                      class={`flex-1 px-4 py-3 rounded-xl bg-white dark:bg-white/10 border-2 text-gray-900 dark:text-white placeholder:text-gray-500 dark:placeholder:text-slate-300/70 focus:outline-none focus:ring-2 transition-colors ${emailError()
+                        ? "border-red-500 focus:ring-red-500"
+                        : "border-gray-300 dark:border-white/20 focus:ring-emerald-500 focus:border-emerald-500"
+                        }`}
+                      placeholder="you@travelersclub.com"
+                    />
+                    <button
+                      type="submit"
+                      class="px-5 py-3 rounded-xl font-semibold bg-gradient-to-r from-emerald-600 to-teal-600 dark:bg-emerald-400 text-white dark:text-slate-950 hover:from-emerald-700 hover:to-teal-700 dark:hover:bg-emerald-300 transition-all shadow-lg"
+                    >
+                      Join updates
+                    </button>
+                  </div>
+                  <Show when={emailError()}>
+                    <p class="text-sm text-red-500 dark:text-red-400">{emailError()}</p>
+                  </Show>
                 </div>
                 <Show when={emailSubmitted()}>
                   <p class="text-sm text-emerald-700 dark:text-emerald-200 font-medium">
@@ -317,35 +344,44 @@ export default function PublicLandingPage() {
                     Live Demo
                   </span>
                 </div>
-                <div class="flex items-end gap-3">
-                  <textarea
-                    value={currentMessage()}
-                    onInput={(e) => setCurrentMessage(e.target.value)}
-                    placeholder={'"Best vinyl bars near Barcelona" or "Quiet art walks in Copenhagen"'}
-                    class="w-full h-14 px-0 py-0 border-none resize-none focus:outline-none focus:ring-0 bg-transparent text-gray-900 dark:text-white placeholder:text-gray-600 dark:placeholder:text-slate-300/70"
-                    rows="2"
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" && !e.shiftKey) {
-                        e.preventDefault();
-                        handleSearchClick();
-                      }
-                    }}
-                  />
-                  <button
-                    onClick={handleSearchClick}
-                    disabled={isLoading() || !currentMessage().trim()}
-                    aria-label="Search"
-                    class="px-5 py-3 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 dark:bg-cyan-500 dark:hover:bg-cyan-400 disabled:bg-gray-400 dark:disabled:bg-slate-500/60 disabled:cursor-not-allowed text-white dark:text-slate-950 rounded-xl font-semibold transition-all flex items-center gap-2 shadow-lg"
-                  >
-                    <Show when={isLoading()} fallback={<Send class="w-4 h-4" />}>
-                      <Loader2 class="w-4 h-4 animate-spin" />
-                    </Show>
-                    <span class="hidden sm:inline">
-                      <Show when={isLoading()} fallback="Run">
-                        Working...
+                <div class="flex flex-col gap-2">
+                  <div class="flex items-end gap-3">
+                    <textarea
+                      value={currentMessage()}
+                      onInput={(e) => {
+                        setCurrentMessage(e.target.value);
+                        if (searchError()) setSearchError("");
+                      }}
+                      placeholder={'"Best vinyl bars near Barcelona" or "Quiet art walks in Copenhagen"'}
+                      class={`w-full h-14 px-0 py-0 border-none resize-none focus:outline-none focus:ring-0 bg-transparent text-gray-900 dark:text-white placeholder:text-gray-600 dark:placeholder:text-slate-300/70 ${searchError() ? "border-b-2 border-red-500" : ""
+                        }`}
+                      rows="2"
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && !e.shiftKey) {
+                          e.preventDefault();
+                          handleSearchClick();
+                        }
+                      }}
+                    />
+                    <button
+                      onClick={handleSearchClick}
+                      disabled={isLoading()}
+                      aria-label="Search"
+                      class="px-5 py-3 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 dark:bg-cyan-500 dark:hover:bg-cyan-400 disabled:bg-gray-400 dark:disabled:bg-slate-500/60 disabled:cursor-not-allowed text-white dark:text-slate-950 rounded-xl font-semibold transition-all flex items-center gap-2 shadow-lg"
+                    >
+                      <Show when={isLoading()} fallback={<Send class="w-4 h-4" />}>
+                        <Loader2 class="w-4 h-4 animate-spin" />
                       </Show>
-                    </span>
-                  </button>
+                      <span class="hidden sm:inline">
+                        <Show when={isLoading()} fallback="Run">
+                          Working...
+                        </Show>
+                      </span>
+                    </button>
+                  </div>
+                  <Show when={searchError()}>
+                    <p class="text-sm text-red-500 dark:text-red-400">{searchError()}</p>
+                  </Show>
                 </div>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <button

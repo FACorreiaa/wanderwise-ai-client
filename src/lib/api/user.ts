@@ -141,22 +141,53 @@ export const useUpdateProfileMutation = () => {
 
   return useMutation(() => ({
     mutationFn: async (params: UpdateUserProfileParams): Promise<{ success: boolean; message?: string }> => {
-      const updateParams = create(UpdateProfileParamsSchema, {
-        username: params.username,
-        email: params.email,
-        displayName: params.displayName,
-        profileImageUrl: params.profileImageUrl,
-        firstname: params.firstname,
-        lastname: params.lastname,
-        phoneNumber: params.phoneNumber,
-        age: params.age !== undefined ? params.age : undefined,
-        city: params.city,
-        country: params.country,
-        aboutYou: params.aboutYou,
-        location: params.location,
-        interests: params.interests ?? [],
-        badges: params.badges ?? [],
-      });
+      // Only include fields that have non-empty values to avoid validation errors
+      const updateParamsData: Record<string, unknown> = {};
+
+      if (params.username !== undefined && params.username !== '') {
+        updateParamsData.username = params.username;
+      }
+      if (params.email !== undefined && params.email !== '') {
+        updateParamsData.email = params.email;
+      }
+      if (params.displayName !== undefined && params.displayName !== '') {
+        updateParamsData.displayName = params.displayName;
+      }
+      if (params.profileImageUrl !== undefined && params.profileImageUrl !== '') {
+        updateParamsData.profileImageUrl = params.profileImageUrl;
+      }
+      if (params.firstname !== undefined && params.firstname !== '') {
+        updateParamsData.firstname = params.firstname;
+      }
+      if (params.lastname !== undefined && params.lastname !== '') {
+        updateParamsData.lastname = params.lastname;
+      }
+      if (params.phoneNumber !== undefined && params.phoneNumber !== '') {
+        updateParamsData.phoneNumber = params.phoneNumber;
+      }
+      if (params.age !== undefined) {
+        updateParamsData.age = params.age;
+      }
+      if (params.city !== undefined && params.city !== '') {
+        updateParamsData.city = params.city;
+      }
+      if (params.country !== undefined && params.country !== '') {
+        updateParamsData.country = params.country;
+      }
+      if (params.aboutYou !== undefined && params.aboutYou !== '') {
+        updateParamsData.aboutYou = params.aboutYou;
+      }
+      if (params.location !== undefined && params.location !== '') {
+        updateParamsData.location = params.location;
+      }
+      if (params.interests !== undefined && params.interests.length > 0) {
+        updateParamsData.interests = params.interests;
+      }
+      if (params.badges !== undefined && params.badges.length > 0) {
+        updateParamsData.badges = params.badges;
+      }
+
+      const updateParams = create(UpdateProfileParamsSchema, updateParamsData);
 
       const request = create(UpdateUserProfileRequestSchema, {
         params: updateParams,

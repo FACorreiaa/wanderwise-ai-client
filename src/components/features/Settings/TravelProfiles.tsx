@@ -28,6 +28,7 @@ export default function TravelProfiles(props: TravelProfilesProps) {
   const [editingProfile, setEditingProfile] = createSignal<string | null>(null);
   const [isCreating, setIsCreating] = createSignal(false);
   const [activeSection, setActiveSection] = createSignal<string>('basic');
+  const [profileNameError, setProfileNameError] = createSignal('');
 
   const [formData, setFormData] = createSignal<TravelProfileFormData>({
     profile_name: '',
@@ -241,6 +242,20 @@ export default function TravelProfiles(props: TravelProfilesProps) {
   };
 
   const saveProfile = async () => {
+    // Validate profile name on submit
+    const name = formData().profile_name.trim();
+    if (!name) {
+      setProfileNameError('Profile name is required');
+      setActiveSection('basic'); // Go to basic section to show error
+      return;
+    }
+    if (name.length < 2) {
+      setProfileNameError('Profile name must be at least 2 characters');
+      setActiveSection('basic');
+      return;
+    }
+    setProfileNameError('');
+
     try {
       const data = formData();
 
@@ -338,10 +353,19 @@ export default function TravelProfiles(props: TravelProfilesProps) {
           <input
             type="text"
             value={formData().profile_name}
-            onInput={(e) => updateField('profile_name', e.target.value)}
-            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            onInput={(e) => {
+              updateField('profile_name', e.target.value);
+              if (profileNameError()) setProfileNameError('');
+            }}
+            class={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:border-transparent transition-colors ${profileNameError()
+                ? 'border-red-500 focus:ring-red-500'
+                : 'border-gray-300 focus:ring-blue-500'
+              }`}
             placeholder="e.g., Solo Explorer"
           />
+          <Show when={profileNameError()}>
+            <p class="mt-1 text-sm text-red-500 dark:text-red-400">{profileNameError()}</p>
+          </Show>
         </div>
         <div>
           <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Search Radius (km)</label>
