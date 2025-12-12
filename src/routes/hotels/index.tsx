@@ -1,9 +1,9 @@
-import { createSignal, createMemo, Show, onMount } from "solid-js";
+import { createSignal, createMemo, Show, onMount, lazy, Suspense } from "solid-js";
 import { useSearchParams } from "@solidjs/router";
 import { useChatRPC } from "~/lib/hooks/useChatRPC";
 import { POIDetailedInfo } from "~/lib/api/types";
 import HotelResults from "~/components/results/HotelResults";
-import MapComponent from "~/components/features/Map/Map";
+const MapComponent = lazy(() => import("~/components/features/Map/Map"));
 import SplitView from "@/components/layout/SplitView";
 import { CityInfoHeader } from "@/components/ui/CityInfoHeader";
 import { ActionToolbar } from "@/components/ui/ActionToolbar";

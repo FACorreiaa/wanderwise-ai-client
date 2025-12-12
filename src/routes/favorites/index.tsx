@@ -15,6 +15,8 @@ import {
 } from "lucide-solid";
 import { useFavorites, useRemoveFromFavoritesMutation } from "~/lib/api/pois";
 import type { POIDetailedInfo } from "~/lib/api/types";
+import { Button } from "~/ui/button";
+import { TextField, TextFieldRoot } from "~/ui/textfield";
 
 export default function FavoritesPage() {
   const [viewMode, setViewMode] = createSignal("grid"); // 'grid', 'list'
@@ -381,14 +383,14 @@ export default function FavoritesPage() {
               </p>
             </div>
             <div class="flex items-center gap-3">
-              <button class="cb-button cb-button-secondary px-4 py-2 flex items-center gap-2">
+              <Button variant="outline" class="gap-2">
                 <Download class="w-4 h-4" />
                 Export
-              </button>
-              <button class="cb-button cb-button-primary px-4 py-2 flex items-center gap-2">
+              </Button>
+              <Button class="gap-2">
                 <Plus class="w-4 h-4" />
                 Add Place
-              </button>
+              </Button>
             </div>
           </div>
         </div>
@@ -400,14 +402,16 @@ export default function FavoritesPage() {
           <div class="flex flex-col lg:flex-row lg:items-center gap-4">
             {/* Search */}
             <div class="relative flex-1 max-w-md">
-              <Search class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-slate-500 w-4 h-4" />
-              <input
-                type="text"
-                placeholder="Search favorites..."
-                value={searchQuery()}
-                onInput={(e) => setSearchQuery(e.target.value)}
-                class="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-slate-500 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
+              <Search class="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4 z-10" />
+              <TextFieldRoot class="w-full">
+                <TextField
+                  type="text"
+                  placeholder="Search favorites..."
+                  value={searchQuery()}
+                  onInput={(e) => setSearchQuery(e.currentTarget.value)}
+                  class="pl-10"
+                />
+              </TextFieldRoot>
             </div>
 
             {/* Category filter */}
@@ -515,9 +519,9 @@ export default function FavoritesPage() {
                   ? "Try adjusting your search or filters"
                   : "Start exploring and save places you love!"}
               </p>
-              <button class="cb-button cb-button-primary px-6 py-2">
+              <Button>
                 Discover Places
-              </button>
+              </Button>
             </div>
           }
         >

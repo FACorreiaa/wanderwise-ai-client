@@ -1,8 +1,8 @@
-import { createSignal, createMemo, Show, onMount, For } from "solid-js";
+import { createSignal, createMemo, Show, onMount, For, lazy, Suspense } from "solid-js";
 import { MapPin, Navigation, Loader2, AlertCircle, ChevronDown } from "lucide-solid";
 import { useChatRPC } from "~/lib/hooks/useChatRPC";
 import { POIDetailedInfo } from "~/lib/api/types";
-import MapComponent from "~/components/features/Map/Map";
+const MapComponent = lazy(() => import("~/components/features/Map/Map"));
 import SplitView from "@/components/layout/SplitView";
 import { ActionToolbar } from "@/components/ui/ActionToolbar";
 import FloatingChat from "~/components/features/Chat/FloatingChat";
@@ -10,6 +10,7 @@ import { Skeleton } from "~/ui/skeleton";
 import { Card, CardContent, CardHeader, CardTitle } from "~/ui/card";
 import { Badge } from "~/ui/badge";
 import FavoriteButton from "~/components/shared/FavoriteButton";
+import { Button } from "~/ui/button";
 
 // Distance options in kilometers
 const DISTANCE_OPTIONS = [
@@ -280,13 +281,13 @@ export default function NearmePage() {
                             </Show>
                         </div>
                         <Show when={!userLocation() && !isLoadingLocation()}>
-                            <button
+                            <Button
                                 onClick={requestLocation}
-                                class="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+                                class="gap-2"
                             >
                                 <Navigation class="w-4 h-4" />
                                 Get My Location
-                            </button>
+                            </Button>
                         </Show>
                     </div>
                 </div>

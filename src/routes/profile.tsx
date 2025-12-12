@@ -4,6 +4,10 @@ import { useAuth } from '~/contexts/AuthContext';
 import { useUpdateProfileMutation, useUserProfileQuery, useUploadAvatarMutation } from '~/lib/api/user';
 import { ProcessedProfileData, UserProfileResponse } from '~/lib/api/types';
 import { ProtectedRoute } from '~/contexts/AuthContext';
+import { Button } from '~/ui/button';
+import { Label } from '~/ui/label';
+import { TextField, TextFieldRoot } from '~/ui/textfield';
+import { TextArea } from '~/ui/textarea';
 
 function ProfilePageContent() {
     const { user } = useAuth();
@@ -320,9 +324,9 @@ function ProfilePageContent() {
                                     </Show>
                                 </div>
                             </div>
-                            <button class="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium text-sm">
+                            <Button variant="link">
                                 View →
-                            </button>
+                            </Button>
                         </div>
                     </div>
                 )}
@@ -347,12 +351,12 @@ function ProfilePageContent() {
                         <div class="text-sm text-gray-500 dark:text-gray-400 mb-4">
                             Status: {(profileQuery.error as any)?.status || 'Unknown'}
                         </div>
-                        <button
+                        <Button
                             onClick={() => profileQuery.refetch()}
-                            class="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                            class="mt-4"
                         >
                             Retry
-                        </button>
+                        </Button>
                     </div>
                 </div>
             </Match>
@@ -363,12 +367,13 @@ function ProfilePageContent() {
                         <div class="fixed top-4 left-4 right-4 sm:left-auto sm:right-4 sm:w-96 z-50 p-4 rounded-lg shadow-lg border bg-yellow-50 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200 border-yellow-200 dark:border-yellow-700 animate-in slide-in-from-top-2 duration-300">
                             <div class="flex items-center justify-between">
                                 <span class="text-sm font-medium">Profile API unavailable - showing basic info</span>
-                                <button
+                                <Button
+                                    variant="link"
                                     onClick={() => profileQuery.refetch()}
-                                    class="ml-2 text-yellow-600 hover:text-yellow-700 dark:hover:text-yellow-300 text-sm underline"
+                                    class="ml-2 text-sm"
                                 >
                                     Retry
-                                </button>
+                                </Button>
                             </div>
                         </div>
                     </Show>
@@ -381,12 +386,14 @@ function ProfilePageContent() {
                             } animate-in slide-in-from-top-2 duration-300`}>
                             <div class="flex items-center justify-between">
                                 <span class="text-sm font-medium">{notification()?.message}</span>
-                                <button
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
                                     onClick={() => setNotification(null)}
-                                    class="ml-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                                    class="ml-2"
                                 >
                                     <X class="w-4 h-4" />
-                                </button>
+                                </Button>
                             </div>
                         </div>
                     </Show>
@@ -401,15 +408,17 @@ function ProfilePageContent() {
                                         <div class="w-24 h-24 rounded-full bg-[#0c7df2] flex items-center justify-center text-white text-2xl font-bold shadow-lg ring-2 ring-white/60 dark:ring-slate-800">
                                             {profileData()?.username?.charAt(0)?.toUpperCase() || 'T'}
                                         </div>
-                                        <button
+                                        <Button
+                                            variant="outline"
+                                            size="icon"
                                             onClick={handleAvatarClick}
                                             disabled={uploadAvatarMutation.isPending}
-                                            class="absolute -bottom-1 -right-1 bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-600 rounded-full p-2 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50"
+                                            class="absolute -bottom-1 -right-1 rounded-full"
                                         >
-                                            <Show when={!uploadAvatarMutation.isPending} fallback={<div class="w-4 h-4 rounded-full border-2 border-blue-600 border-t-transparent animate-spin" />}>
-                                                <Camera class="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                                            <Show when={!uploadAvatarMutation.isPending} fallback={<div class="w-4 h-4 rounded-full border-2 border-primary border-t-transparent animate-spin" />}>
+                                                <Camera class="w-4 h-4" />
                                             </Show>
-                                        </button>
+                                        </Button>
                                         <input
                                             type="file"
                                             ref={fileInputRef}
@@ -502,13 +511,13 @@ function ProfilePageContent() {
                                                     <p class="text-gray-700 dark:text-gray-300 mt-3">{profileData()?.bio}</p>
                                                 </Show>
                                             </div>
-                                            <button
+                                            <Button
                                                 onClick={startEditing}
-                                                class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2"
+                                                class="gap-2"
                                             >
                                                 <Edit3 class="w-4 h-4" />
                                                 Edit Profile
-                                            </button>
+                                            </Button>
                                         </div>
                                     </Show>
                                 </div>

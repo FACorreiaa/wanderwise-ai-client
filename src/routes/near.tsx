@@ -1,11 +1,20 @@
-import { createSignal, For, Show, createEffect, onMount } from 'solid-js';
-import { useLocation } from '@solidjs/router';
-import { Search, Filter, MapPin, Star, Clock, Wifi, Grid, SortAsc, SortDesc, X, Compass, Map, Share2, Eye, TriangleAlert } from 'lucide-solid';
+import { createSignal, createEffect, Show, For, onMount, onCleanup, createMemo, lazy, Suspense } from 'solid-js';
+import { useLocation, useNavigate, A } from '@solidjs/router';
+import { Title, Meta } from '@solidjs/meta';
+import {
+    Search, MapPin, Navigation, Sparkles, Loader2, Star, Clock,
+    ChevronDown, ExternalLink, Coffee, Utensils, Camera, Hotel, Compass,
+    Heart, Share2, Bookmark, RefreshCw, Filter, SortAsc, SortDesc, Grid,
+    X, Eye, Wifi, TriangleAlert, Map as MapIcon
+} from 'lucide-solid';
+const MapComponent = lazy(() => import('~/components/features/Map/Map'));
 import { useNearbyPOIs, useFavorites, useAddToFavoritesMutation, useRemoveFromFavoritesMutation } from '~/lib/api/pois';
 import type { ActivitiesResponse, POIDetailedInfo } from '~/lib/api/types';
-import { useUserLocation } from '@/contexts/LocationContext';
-import MapComponent from '~/components/features/Map/Map';
+import { useUserLocation } from '~/contexts/LocationContext';
 import { TypingAnimation } from '~/components/TypingAnimation';
+import { Button } from '~/ui/button';
+import { TextField, TextFieldRoot } from '~/ui/textfield';
+import { Label } from '~/ui/label';
 
 export default function DiscoverPage() {
     const [searchQuery, setSearchQuery] = createSignal('');
@@ -108,7 +117,7 @@ export default function DiscoverPage() {
     const isFavorite = (poiId: string) => {
         const favs = (favoritesQuery.data as any[]) || [];
         const isInFavorites = favs.some(poi => poi.id === poiId);
-        console.log(`🔍 isFavorite(${poiId}):`, isInFavorites, 'Favs:', favs);
+        console.log(`🔍 isFavorite(${poiId}): `, isInFavorites, 'Favs:', favs);
         return isInFavorites;
     };
 
@@ -205,9 +214,9 @@ export default function DiscoverPage() {
     //         console.log('🗑️ Removing from favorites...');
     //         removeFromFavoritesMutation.mutate(poiId, {
     //             onSuccess: () => {
-    //                 console.log(`✨ Removed ${poiName} from favorites`);
+    //                 console.log(`✨ Removed ${ poiName } from favorites`);
     //                 // Add a brief visual effect
-    //                 const button = document.querySelector(`[data-poi-id="${poiId}"]`);
+    //                 const button = document.querySelector(`[data - poi - id= "${poiId}"]`);
     //                 if (button) {
     //                     button.classList.add('animate-pulse');
     //                     setTimeout(() => button.classList.remove('animate-pulse'), 500);
@@ -225,9 +234,9 @@ export default function DiscoverPage() {
     //         }
     //         addToFavoritesMutation.mutate({ poiId, poiData: poi }, {
     //             onSuccess: () => {
-    //                 console.log(`⭐ Added ${poiName} to favorites`);
+    //                 console.log(`⭐ Added ${ poiName } to favorites`);
     //                 // Add a brief visual effect
-    //                 const button = document.querySelector(`[data-poi-id="${poiId}"]`);
+    //                 const button = document.querySelector(`[data - poi - id= "${poiId}"]`);
     //                 if (button) {
     //                     button.classList.add('animate-bounce');
     //                     setTimeout(() => button.classList.remove('animate-bounce'), 600);
@@ -253,7 +262,7 @@ export default function DiscoverPage() {
     const handleItemClick = (poi: POIDetailedInfo) => {
         console.log('Viewing details for:', poi.name);
         // Navigate to POI details page or open modal
-        // navigate(`/poi/${poi.id}`);
+        // navigate(`/ poi / ${ poi.id } `);
     };
 
     // Handle sharing a POI
@@ -261,12 +270,12 @@ export default function DiscoverPage() {
         if (navigator.share) {
             navigator.share({
                 title: poi.name,
-                text: `Check out ${poi.name} - ${poi.description}`,
-                url: window.location.href + `?poi=${poi.id}`
+                text: `Check out ${poi.name} - ${poi.description} `,
+                url: window.location.href + `? poi = ${poi.id} `
             }).catch(err => console.log('Error sharing:', err));
         } else {
             // Fallback to clipboard
-            const shareText = `Check out ${poi.name}: ${poi.description}`;
+            const shareText = `Check out ${poi.name}: ${poi.description} `;
             navigator.clipboard.writeText(shareText)
                 .then(() => {
                     // Show notification
@@ -343,14 +352,14 @@ export default function DiscoverPage() {
                             onClick={() => toggleFavorite(poi.id, poi)}
                             disabled={addToFavoritesMutation.isPending || removeFromFavoritesMutation.isPending}
                             data-poi-id={poi.id}
-                            class={`p-2 rounded-lg ${isFavorite(poi.id) ? 'text-yellow-600' : 'text-gray-400'} ...`}
+                            class={`p - 2 rounded - lg ${isFavorite(poi.id) ? 'text-yellow-600' : 'text-gray-400'} ...`}
                             title={isFavorite(poi.id) ? 'Remove from favorites' : 'Add to favorites'}
                         >
                             <Show
                                 when={!(addToFavoritesMutation.isPending || removeFromFavoritesMutation.isPending)}
                                 fallback={<div class="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />}
                             >
-                                <Star class={`w-4 h-4 ${isFavorite(poi.id) ? 'fill-current' : ''}`} />
+                                <Star class={`w - 4 h - 4 ${isFavorite(poi.id) ? 'fill-current' : ''} `} />
                             </Show>
                         </button>
                         <button
@@ -378,13 +387,13 @@ export default function DiscoverPage() {
                     <div class="flex-1 min-w-0">
                         <h3 class="font-semibold text-gray-900 dark:text-white text-base mb-1 truncate">{poi.name}</h3>
                         <div class="flex flex-wrap items-center gap-2 mb-1">
-                            <span class={`px-2 py-0.5 rounded-full text-xs font-medium ${getCategoryColor(poi.category)}`}>
+                            <span class={`px - 2 py - 0.5 rounded - full text - xs font - medium ${getCategoryColor(poi.category)} `}>
                                 {poi.category}
                             </span>
                             <Show when={poi.priority && getPopularityInfo(poi.priority)}>
                                 {(() => {
                                     const popularityInfo = getPopularityInfo(poi.priority!);
-                                    return <Show when={popularityInfo}><span class={`px-2 py-0.5 rounded-full text-xs font-medium ${popularityInfo!.color}`}>
+                                    return <Show when={popularityInfo}><span class={`px - 2 py - 0.5 rounded - full text - xs font - medium ${popularityInfo!.color} `}>
                                         <span class="mr-1">{popularityInfo!.icon}</span>
                                         {popularityInfo!.label}
                                     </span></Show>;
@@ -398,7 +407,7 @@ export default function DiscoverPage() {
                         </div>
                         <p class="text-sm text-gray-600 dark:text-gray-400">{poi.city}</p>
                     </div>
-                    <span class={`px-2 py-1 rounded-full text-xs font-medium ${getPriceColor(poi.price_level)}`}>
+                    <span class={`px - 2 py - 1 rounded - full text - xs font - medium ${getPriceColor(poi.price_level)} `}>
                         {poi.price_level}
                     </span>
                 </div>
@@ -472,13 +481,13 @@ export default function DiscoverPage() {
                         <div class="flex-1 min-w-0">
                             <h3 class="font-semibold text-gray-900 dark:text-white text-lg">{poi.name}</h3>
                             <div class="flex flex-wrap items-center gap-2 mb-1">
-                                <span class={`px-2 py-0.5 rounded-full text-xs font-medium ${getCategoryColor(poi.category)}`}>
+                                <span class={`px - 2 py - 0.5 rounded - full text - xs font - medium ${getCategoryColor(poi.category)} `}>
                                     {poi.category}
                                 </span>
                                 <Show when={poi.priority && getPopularityInfo(poi.priority)}>
                                     {(() => {
                                         const popularityInfo = getPopularityInfo(poi.priority!);
-                                        return <Show when={popularityInfo}><span class={`px-2 py-0.5 rounded-full text-xs font-medium ${popularityInfo!.color}`}>
+                                        return <Show when={popularityInfo}><span class={`px - 2 py - 0.5 rounded - full text - xs font - medium ${popularityInfo!.color} `}>
                                             <span class="mr-1">{popularityInfo!.icon}</span>
                                             {popularityInfo!.label}
                                         </span></Show>;
@@ -498,7 +507,7 @@ export default function DiscoverPage() {
                                 <span class="text-sm font-medium text-gray-900 dark:text-white">{poi.rating || 0}</span>
                                 <span class="text-sm text-gray-600 dark:text-gray-400">({poi.reviewCount || 0})</span>
                             </div>
-                            <span class={`px-2 py-1 rounded-full text-xs font-medium ${getPriceColor(poi.price_level)}`}>
+                            <span class={`px - 2 py - 1 rounded - full text - xs font - medium ${getPriceColor(poi.price_level)} `}>
                                 {poi.price_level}
                             </span>
                         </div>
@@ -520,14 +529,14 @@ export default function DiscoverPage() {
                                 onClick={() => toggleFavorite(poi.id, poi)}
                                 disabled={addToFavoritesMutation.isPending || removeFromFavoritesMutation.isPending}
                                 data-poi-id={poi.id}
-                                class={`p-2 rounded-lg ${isFavorite(poi.id) ? 'text-yellow-600 dark:text-yellow-400' : 'text-gray-400'} hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed`}
+                                class={`p - 2 rounded - lg ${isFavorite(poi.id) ? 'text-yellow-600 dark:text-yellow-400' : 'text-gray-400'} hover: bg - gray - 100 dark: hover: bg - gray - 700 disabled: opacity - 50 disabled: cursor - not - allowed`}
                                 title={isFavorite(poi.id) ? 'Remove from favorites' : 'Add to favorites'}
                             >
                                 <Show
                                     when={!(addToFavoritesMutation.isPending || removeFromFavoritesMutation.isPending)}
                                     fallback={<div class="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />}
                                 >
-                                    <Star class={`w-4 h-4 ${isFavorite(poi.id) ? 'fill-current' : ''}`} />
+                                    <Star class={`w - 4 h - 4 ${isFavorite(poi.id) ? 'fill-current' : ''} `} />
                                 </Show>
                             </button>
                             <button
@@ -569,12 +578,13 @@ export default function DiscoverPage() {
                                     Generated from your chat: "{(location.state as any)?.originalMessage || 'Activity search'}"
                                 </p>
                             </div>
-                            <button
+                            <Button
+                                variant="ghost"
+                                size="icon"
                                 onClick={() => setFromChat(false)}
-                                class="p-1 text-emerald-700 hover:text-emerald-800 dark:text-emerald-200 dark:hover:text-emerald-100"
                             >
                                 <X class="w-4 h-4" />
-                            </button>
+                            </Button>
                         </div>
                     </div>
                 </div>
@@ -647,30 +657,33 @@ export default function DiscoverPage() {
                         <div class="flex flex-col sm:flex-row sm:items-center gap-4">
                             {/* Search */}
                             <div class="relative flex-1 max-w-md">
-                                <Search class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                                <input
-                                    type="text"
-                                    placeholder="Search places..."
-                                    value={searchQuery()}
-                                    onInput={(e) => setSearchQuery(e.target.value)}
-                                    class="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                />
+                                <Search class="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4 z-10" />
+                                <TextFieldRoot class="w-full">
+                                    <TextField
+                                        type="text"
+                                        placeholder="Search places..."
+                                        value={searchQuery()}
+                                        onInput={(e) => setSearchQuery(e.currentTarget.value)}
+                                        class="pl-10"
+                                    />
+                                </TextFieldRoot>
                             </div>
 
                             {/* Mobile controls toggle */}
                             <div class="flex items-center gap-2 sm:hidden">
-                                <button
+                                <Button
+                                    variant="outline"
                                     onClick={() => setShowFilters(!showFilters())}
-                                    class="flex items-center gap-2 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-600"
+                                    class="gap-2"
                                 >
                                     <Filter class="w-4 h-4" />
                                     Controls
-                                </button>
+                                </Button>
                             </div>
                         </div>
 
                         {/* Controls - Always visible on desktop, collapsible on mobile */}
-                        <div class={`${showFilters() ? 'block' : 'hidden'} sm:block`}>
+                        <div class={`${showFilters() ? 'block' : 'hidden'} sm: block`}>
                             <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                                 {/* Left side: Primary controls */}
                                 <div class="flex flex-wrap items-center gap-4">
@@ -695,12 +708,12 @@ export default function DiscoverPage() {
                                     <div class="flex items-center gap-2">
                                         <button
                                             onClick={() => setShowOnlyFavorites(!showOnlyFavorites())}
-                                            class={`flex items-center gap-2 px-3 py-2 border rounded-lg text-sm transition-colors ${showOnlyFavorites()
+                                            class={`flex items - center gap - 2 px - 3 py - 2 border rounded - lg text - sm transition - colors ${showOnlyFavorites()
                                                 ? 'bg-yellow-50 border-yellow-300 text-yellow-700 dark:bg-yellow-900/20 dark:border-yellow-700 dark:text-yellow-300'
                                                 : 'border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
-                                                }`}
+                                                } `}
                                         >
-                                            <Star class={`w-4 h-4 ${showOnlyFavorites() ? 'fill-current' : ''}`} />
+                                            <Star class={`w - 4 h - 4 ${showOnlyFavorites() ? 'fill-current' : ''} `} />
                                             <span class="hidden sm:inline">
                                                 {showOnlyFavorites() ? 'Show All' : 'Favorites Only'}
                                             </span>
@@ -726,7 +739,7 @@ export default function DiscoverPage() {
                                             <button
                                                 onClick={() => setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc')}
                                                 class="p-2 border border-l-0 border-gray-300 dark:border-gray-600 rounded-r-lg hover:bg-gray-50 dark:hover:bg-gray-700 bg-white dark:bg-gray-700 transition-colors"
-                                                title={`Sort ${sortOrder() === 'asc' ? 'Descending' : 'Ascending'}`}
+                                                title={`Sort ${sortOrder() === 'asc' ? 'Descending' : 'Ascending'} `}
                                             >
                                                 {sortOrder() === 'asc' ? <SortAsc class="w-4 h-4 text-gray-600 dark:text-gray-400" /> : <SortDesc class="w-4 h-4 text-gray-600 dark:text-gray-400" />}
                                             </button>
@@ -742,27 +755,27 @@ export default function DiscoverPage() {
                                     <div class="flex items-center border border-gray-300 dark:border-gray-600 rounded-lg p-1 bg-white dark:bg-gray-700">
                                         <button
                                             onClick={() => setViewMode('map-cards')}
-                                            class={`p-2 rounded transition-colors ${viewMode() === 'map-cards' ? 'bg-blue-600 text-white' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-600'}`}
+                                            class={`p - 2 rounded transition - colors ${viewMode() === 'map-cards' ? 'bg-blue-600 text-white' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-600'} `}
                                             title="Split view: Map + Cards"
                                         >
                                             <div class="flex items-center gap-1">
-                                                <Map class="w-3 h-3" />
+                                                <MapIcon class="w-3 h-3" />
                                                 <Grid class="w-3 h-3" />
                                             </div>
                                         </button>
                                         <button
                                             onClick={() => setViewMode('cards')}
-                                            class={`p-2 rounded transition-colors ${viewMode() === 'cards' ? 'bg-blue-600 text-white' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-600'}`}
+                                            class={`p - 2 rounded transition - colors ${viewMode() === 'cards' ? 'bg-blue-600 text-white' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-600'} `}
                                             title="Show only cards"
                                         >
                                             <Grid class="w-4 h-4" />
                                         </button>
                                         <button
                                             onClick={() => setViewMode('map')}
-                                            class={`p-2 rounded transition-colors ${viewMode() === 'map' ? 'bg-blue-600 text-white' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-600'}`}
+                                            class={`p - 2 rounded transition - colors ${viewMode() === 'map' ? 'bg-blue-600 text-white' : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-600'} `}
                                             title="Show only map"
                                         >
-                                            <Map class="w-4 h-4" />
+                                            <MapIcon class="w-4 h-4" />
                                         </button>
                                     </div>
                                 </div>

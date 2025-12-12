@@ -1,5 +1,6 @@
 import { createSignal, For } from 'solid-js';
 import { BarChart3, Users, MapPin, MessageCircle, Star, Settings, AlertTriangle, Download, RefreshCw } from 'lucide-solid';
+import { Button } from '~/ui/button';
 
 export default function AdminDashboard() {
     const [activeTab, setActiveTab] = createSignal('overview');
@@ -368,12 +369,12 @@ export default function AdminDashboard() {
                                             </div>
                                         </div>
                                         <div class="flex items-center gap-2 ml-4">
-                                            <button class="cb-button cb-button-secondary px-3 py-1 text-sm">
+                                            <Button variant="outline" size="sm">
                                                 Investigate
-                                            </button>
-                                            <button class="cb-button bg-red-600 text-white hover:bg-red-700 px-3 py-1 text-sm">
+                                            </Button>
+                                            <Button variant="destructive" size="sm">
                                                 Take Action
-                                            </button>
+                                            </Button>
                                         </div>
                                     </div>
                                 </div>
@@ -426,18 +427,19 @@ export default function AdminDashboard() {
                                     {(range) => <option value={range.value}>{range.label}</option>}
                                 </For>
                             </select>
-                            <button
+                            <Button
                                 onClick={refreshData}
                                 disabled={refreshing()}
-                                class="cb-button cb-button-secondary px-3 py-2 flex items-center gap-2 disabled:opacity-50"
+                                variant="outline"
+                                class="gap-2"
                             >
                                 <RefreshCw class={`w-4 h-4 ${refreshing() ? 'animate-spin' : ''}`} />
                                 Refresh
-                            </button>
-                            <button class="cb-button cb-button-primary px-4 py-2 flex items-center gap-2">
+                            </Button>
+                            <Button class="gap-2">
                                 <Download class="w-4 h-4" />
                                 Export Data
-                            </button>
+                            </Button>
                         </div>
                     </div>
                 </div>

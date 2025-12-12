@@ -15,6 +15,10 @@ import { useAuth } from '~/contexts/AuthContext';
 import { useTheme } from '~/contexts/ThemeContext';
 import { useUserLocation } from '~/contexts/LocationContext';
 import { useDefaultSearchProfile, useSearchProfiles, useSetDefaultProfileMutation } from '~/lib/api/profiles';
+import { Button } from '~/ui/button';
+import { Label } from '~/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '~/ui/select';
+import { Checkbox, CheckboxControl } from '~/ui/checkbox';
 
 interface QuickSettingsModalProps {
   isOpen: boolean;
@@ -97,19 +101,20 @@ export default function QuickSettingsModal(props: QuickSettingsModalProps) {
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
-          <div class="flex items-center justify-between p-4 sm:p-6 border-b border-gray-200 dark:border-gray-700">
+          <div class="flex items-center justify-between p-4 sm:p-6 border-b border-border">
             <div class="flex items-center gap-3">
-              <div class="w-8 h-8 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
-                <Settings class="w-4 h-4 text-blue-600 dark:text-blue-400" />
+              <div class="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
+                <Settings class="w-4 h-4 text-primary" />
               </div>
-              <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Quick Settings</h2>
+              <h2 class="text-lg font-semibold text-foreground">Quick Settings</h2>
             </div>
-            <button
+            <Button
+              variant="ghost"
+              size="icon"
               onClick={props.onClose}
-              class="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
             >
-              <X class="w-5 h-5 text-gray-500 dark:text-gray-400" />
-            </button>
+              <X class="w-5 h-5" />
+            </Button>
           </div>
 
           {/* Content */}
@@ -118,10 +123,8 @@ export default function QuickSettingsModal(props: QuickSettingsModalProps) {
             {/* Active Travel Profile */}
             <div class="space-y-3">
               <div class="flex items-center gap-2">
-                <User class="w-4 h-4 text-gray-500 dark:text-gray-400" />
-                <label class="text-sm font-medium text-gray-900 dark:text-white">
-                  Active Travel Profile
-                </label>
+                <User class="w-4 h-4 text-muted-foreground" />
+                <Label>Active Travel Profile</Label>
               </div>
               <Show
                 when={!profilesQuery.isLoading && profiles.length > 0}
@@ -156,12 +159,10 @@ export default function QuickSettingsModal(props: QuickSettingsModalProps) {
             {/* Location Settings */}
             <div class="space-y-3">
               <div class="flex items-center gap-2">
-                <MapPin class="w-4 h-4 text-gray-500 dark:text-gray-400" />
-                <label class="text-sm font-medium text-gray-900 dark:text-white">
-                  Current Location
-                </label>
+                <MapPin class="w-4 h-4 text-muted-foreground" />
+                <Label>Current Location</Label>
               </div>
-              <div class="p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+              <div class="p-3 bg-muted/50 rounded-lg">
                 <Show
                   when={currentLocation}
                   fallback={
@@ -177,10 +178,10 @@ export default function QuickSettingsModal(props: QuickSettingsModalProps) {
                     Used for nearby recommendations
                   </p>
                 </Show>
-                <button
+                <Button
                   onClick={handleLocationUpdate}
                   disabled={isUpdatingLocation()}
-                  class="w-full flex items-center justify-center gap-2 p-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white rounded-lg text-sm font-medium transition-colors disabled:cursor-not-allowed"
+                  class="w-full"
                 >
                   <Show
                     when={!isUpdatingLocation()}
@@ -192,17 +193,15 @@ export default function QuickSettingsModal(props: QuickSettingsModalProps) {
                     locationStatus() === 'success' ? 'Updated!' :
                       locationStatus() === 'error' ? 'Failed' :
                         currentLocation ? 'Update Location' : 'Enable Location'}
-                </button>
+                </Button>
               </div>
             </div>
 
             {/* Theme Selection */}
             <div class="space-y-3">
               <div class="flex items-center gap-2">
-                <Palette class="w-4 h-4 text-gray-500 dark:text-gray-400" />
-                <label class="text-sm font-medium text-gray-900 dark:text-white">
-                  Theme
-                </label>
+                <Palette class="w-4 h-4 text-muted-foreground" />
+                <Label>Theme</Label>
               </div>
               <div class="grid grid-cols-2 gap-2">
                 <For each={themeOptions}>
@@ -210,16 +209,14 @@ export default function QuickSettingsModal(props: QuickSettingsModalProps) {
                     const Icon = option.icon;
                     const isActive = (option.value === 'dark' && isDark()) || (option.value === 'light' && !isDark());
                     return (
-                      <button
+                      <Button
+                        variant={isActive ? 'default' : 'outline'}
                         onClick={() => setTheme(option.value as 'light' | 'dark')}
-                        class={`p-3 rounded-lg border transition-all ${isActive
-                          ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400'
-                          : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 text-gray-600 dark:text-gray-400'
-                          }`}
+                        class="flex-col h-auto py-3"
                       >
-                        <Icon class="w-4 h-4 mx-auto mb-1" />
-                        <div class="text-xs font-medium">{option.label}</div>
-                      </button>
+                        <Icon class="w-4 h-4 mb-1" />
+                        <span class="text-xs font-medium">{option.label}</span>
+                      </Button>
                     );
                   }}
                 </For>
@@ -229,52 +226,48 @@ export default function QuickSettingsModal(props: QuickSettingsModalProps) {
             {/* Notifications */}
             <div class="space-y-3">
               <div class="flex items-center gap-2">
-                <Bell class="w-4 h-4 text-gray-500 dark:text-gray-400" />
-                <label class="text-sm font-medium text-gray-900 dark:text-white">
-                  Notifications
-                </label>
+                <Bell class="w-4 h-4 text-muted-foreground" />
+                <Label>Notifications</Label>
               </div>
               <div class="space-y-2">
-                <label class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg cursor-pointer">
-                  <span class="text-sm text-gray-700 dark:text-gray-300">New recommendations</span>
-                  <input
-                    type="checkbox"
-                    class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 dark:bg-gray-700 dark:border-gray-600"
-                    checked
-                  />
-                </label>
-                <label class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg cursor-pointer">
-                  <span class="text-sm text-gray-700 dark:text-gray-300">Trip reminders</span>
-                  <input
-                    type="checkbox"
-                    class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 dark:bg-gray-700 dark:border-gray-600"
-                    checked
-                  />
-                </label>
+                <div class="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                  <span class="text-sm text-foreground">New recommendations</span>
+                  <Checkbox defaultChecked>
+                    <CheckboxControl />
+                  </Checkbox>
+                </div>
+                <div class="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                  <span class="text-sm text-foreground">Trip reminders</span>
+                  <Checkbox defaultChecked>
+                    <CheckboxControl />
+                  </Checkbox>
+                </div>
               </div>
             </div>
           </div>
 
           {/* Footer */}
-          <div class="p-4 sm:p-6 border-t border-gray-200 dark:border-gray-700 space-y-3">
-            <button
+          <div class="p-4 sm:p-6 border-t border-border space-y-3">
+            <Button
+              variant="secondary"
               onClick={handleOpenFullSettings}
-              class="w-full p-3 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg font-medium text-sm transition-colors flex items-center justify-center gap-2"
+              class="w-full gap-2"
             >
               <Settings class="w-4 h-4" />
               Open Full Settings
-            </button>
+            </Button>
             <div class="text-center">
-              <button
+              <Button
+                variant="ghost"
                 onClick={props.onClose}
-                class="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
+                class="text-sm text-muted-foreground"
               >
                 Close
-              </button>
+              </Button>
             </div>
           </div>
         </div>
       </div>
-    </Show>
+    </Show >
   );
 }

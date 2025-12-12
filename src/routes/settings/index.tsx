@@ -5,9 +5,13 @@ import { useTags, useCreateTagMutation, useUpdateTagMutation, useDeleteTagMutati
 import { useInterests, useCreateInterestMutation, useUpdateInterestMutation, useDeleteInterestMutation, useToggleInterestActiveMutation } from '../../lib/api/interests';
 import { ProcessedProfileData, UserProfileResponse } from '~/lib/api/types';
 import { useAuth } from '~/contexts/AuthContext';
-import TagsComponent from '@/components/features/Settings/Tags';
-import InterestsComponent from '@/components/features/Settings/Interests';
-import TravelProfiles from '@/components/features/Settings/TravelProfiles';
+import TagsComponent from '~/components/features/Settings/Tags';
+import InterestsComponent from '~/components/features/Settings/Interests';
+import TravelProfiles from '~/components/features/Settings/TravelProfiles';
+import { Button } from '~/ui/button';
+import { Label } from '~/ui/label';
+import { TextField, TextFieldRoot } from '~/ui/textfield';
+import { TextArea } from '~/ui/textarea';
 
 export default function SettingsPage() {
     const { user } = useAuth();
@@ -289,14 +293,14 @@ export default function SettingsPage() {
                                     <h3 class="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white">Personal Information</h3>
                                     <p class="text-sm text-gray-500 dark:text-gray-400">Keep your profile details sharp so teammates and the AI know who you are.</p>
                                 </div>
-                                <button
+                                <Button
                                     onClick={saveProfile}
                                     disabled={updateProfileMutation.isPending}
-                                    class="inline-flex items-center gap-2 rounded-xl px-4 py-2 bg-gradient-to-r from-[#0c7df2] to-[#0a6ed6] text-white text-sm font-semibold shadow-[0_12px_32px_rgba(12,125,242,0.25)] hover:translate-y-[-1px] transition-all disabled:opacity-60"
+                                    class="gap-2"
                                 >
                                     <Save class="w-4 h-4" />
                                     {updateProfileMutation.isPending ? 'Saving...' : 'Save changes'}
-                                </button>
+                                </Button>
                             </div>
 
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
@@ -610,12 +614,14 @@ export default function SettingsPage() {
                     } animate-in slide-in-from-top-2 duration-300`}>
                     <div class="flex items-center justify-between">
                         <span class="text-sm font-medium">{notification()?.message}</span>
-                        <button
+                        <Button
+                            variant="ghost"
+                            size="icon"
                             onClick={() => setNotification(null)}
-                            class="ml-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                            class="ml-2"
                         >
                             <X class="w-4 h-4" />
-                        </button>
+                        </Button>
                     </div>
                 </div>
             </Show>

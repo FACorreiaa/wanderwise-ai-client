@@ -1,4 +1,4 @@
-import { Show, createSignal, createEffect, For } from "solid-js";
+import { Show, createSignal, createEffect, For, lazy, Suspense } from "solid-js";
 import {
   X,
   Star,
@@ -15,7 +15,7 @@ import {
   Coffee,
   Utensils,
 } from "lucide-solid";
-import MapComponent from "~/components/features/Map/Map";
+const MapComponent = lazy(() => import("~/components/features/Map/Map"));
 
 // Union type for all possible item types
 type DetailedItem = {

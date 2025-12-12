@@ -1,5 +1,6 @@
 import { A } from "@solidjs/router";
 import { AlertTriangle, Home, Compass, RefreshCw } from 'lucide-solid';
+import { Button } from "~/ui/button";
 
 export default function ServerError() {
   const handleRefresh = () => {
@@ -32,20 +33,22 @@ export default function ServerError() {
 
         {/* Action Buttons */}
         <div class="space-y-3 sm:space-y-0 sm:space-x-4 sm:flex sm:justify-center">
-          <button
+          <Button
             onClick={handleRefresh}
-            class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors font-medium shadow-[0_14px_32px_rgba(249,115,22,0.25)] border border-white/30 dark:border-slate-800/60"
+            class="w-full sm:w-auto gap-2"
           >
             <RefreshCw class="w-4 h-4" />
             Try Again
-          </button>
-          <A
+          </Button>
+          <Button
+            variant="outline"
+            as={A}
             href="/"
-            class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 bg-white/70 dark:bg-slate-900/60 text-slate-900 dark:text-white rounded-lg hover:bg-white/90 dark:hover:bg-slate-800/80 transition-colors font-medium border border-white/40 dark:border-slate-800/70"
+            class="w-full sm:w-auto gap-2"
           >
             <Home class="w-4 h-4" />
             Back to Home
-          </A>
+          </Button>
         </div>
 
         {/* Quick Navigation */}

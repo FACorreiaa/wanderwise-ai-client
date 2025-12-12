@@ -1,7 +1,9 @@
-import { createSignal, For, Show } from 'solid-js';
+import { createSignal, For, Show, lazy, Suspense } from 'solid-js';
 import { Star, Search, MapPin, Plus, SortAsc, SortDesc } from 'lucide-solid';
 import ReviewCard from '~/components/ReviewCard';
-import ReviewForm from '~/components/ReviewForm';
+const ReviewForm = lazy(() => import('~/components/ReviewForm'));
+import { Button } from '~/ui/button';
+import { TextField, TextFieldRoot } from '~/ui/textfield';
 
 interface Place {
     id: string;
@@ -320,16 +322,16 @@ export default function ReviewsPage() {
                                         </p>
                                     </div>
                                 </div>
-                                <button
+                                <Button
                                     onClick={() => {
                                         setSelectedPlace(place);
                                         setShowReviewForm(true);
                                     }}
-                                    class="cb-button cb-button-primary px-4 py-2 flex items-center gap-2"
+                                    class="gap-2"
                                 >
                                     <Plus class="w-4 h-4" />
                                     Write Review
-                                </button>
+                                </Button>
                             </div>
                         </div>
                     )}
@@ -348,13 +350,13 @@ export default function ReviewsPage() {
                             <h1 class="text-2xl font-bold text-gray-900">Reviews</h1>
                             <p class="text-gray-600 mt-1">Read and share travel experiences</p>
                         </div>
-                        <button
+                        <Button
                             onClick={() => setShowReviewForm(true)}
-                            class="cb-button cb-button-primary px-4 py-2 flex items-center gap-2"
+                            class="gap-2"
                         >
                             <Plus class="w-4 h-4" />
                             Write Review
-                        </button>
+                        </Button>
                     </div>
                 </div>
             </div>
@@ -387,14 +389,16 @@ export default function ReviewsPage() {
                         <div class="flex flex-col lg:flex-row lg:items-center gap-4">
                             {/* Search */}
                             <div class="relative flex-1 max-w-md">
-                                <Search class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                                <input
-                                    type="text"
-                                    placeholder="Search reviews..."
-                                    value={searchQuery()}
-                                    onInput={(e) => setSearchQuery(e.target.value)}
-                                    class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                />
+                                <Search class="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4 z-10" />
+                                <TextFieldRoot class="w-full">
+                                    <TextField
+                                        type="text"
+                                        placeholder="Search reviews..."
+                                        value={searchQuery()}
+                                        onInput={(e) => setSearchQuery(e.currentTarget.value)}
+                                        class="pl-10"
+                                    />
+                                </TextFieldRoot>
                             </div>
 
                             {/* Rating filter */}
@@ -468,12 +472,11 @@ export default function ReviewsPage() {
                                     }
                                 </p>
                                 <Show when={activeTab() === 'my-reviews'}>
-                                    <button
+                                    <Button
                                         onClick={() => setShowReviewForm(true)}
-                                        class="cb-button cb-button-primary px-6 py-2"
                                     >
                                         Write Your First Review
-                                    </button>
+                                    </Button>
                                 </Show>
                             </div>
                         }

@@ -1,7 +1,9 @@
 import { createSignal, Show } from 'solid-js';
 import { X, Mail, Smartphone, CheckCircle } from 'lucide-solid';
-import { Button } from '@/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/ui/card';
+import { Button } from '~/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '~/ui/card';
+import { TextField, TextFieldRoot } from '~/ui/textfield';
+import { Label } from '~/ui/label';
 
 interface WaitlistModalProps {
   isOpen: () => boolean;
@@ -65,29 +67,31 @@ export default function WaitlistModal(props: WaitlistModalProps) {
   return (
     <Show when={props.isOpen()}>
       <div
-        class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/70 backdrop-blur-2xl"
+        class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm"
         onClick={handleBackdropClick}
       >
-        <Card class="w-full max-w-md shadow-2xl animate-in zoom-in-95 duration-200 glass-panel gradient-border">
+        <Card class="w-full max-w-md shadow-2xl animate-in zoom-in-95 duration-200">
           <CardHeader class="relative pb-4">
-            <button
+            <Button
+              variant="ghost"
+              size="icon"
               onClick={props.onClose}
-              class="absolute right-4 top-4 p-1 rounded-full hover:bg-white/60 dark:hover:bg-slate-800/70 transition-colors border border-transparent hover:border-white/40 dark:hover:border-slate-700"
+              class="absolute right-4 top-4"
               aria-label="Close modal"
             >
-              <X class="w-4 h-4 text-slate-500 dark:text-slate-300" />
-            </button>
+              <X class="w-4 h-4" />
+            </Button>
 
             <div class="flex items-center gap-3 mb-2">
-              <div class="w-10 h-10 bg-[#0c7df2] rounded-lg flex items-center justify-center shadow-[0_12px_32px_rgba(12,125,242,0.22)] ring-2 ring-white/60 dark:ring-slate-800">
-                <Smartphone class="w-5 h-5 text-white" />
+              <div class="w-10 h-10 bg-primary rounded-lg flex items-center justify-center shadow-lg">
+                <Smartphone class="w-5 h-5 text-primary-foreground" />
               </div>
-              <CardTitle class="text-xl font-bold text-slate-900 dark:text-white tracking-tight">
+              <CardTitle class="text-xl font-bold">
                 Join the Waitlist
               </CardTitle>
             </div>
 
-            <p class="text-slate-600 dark:text-slate-200 text-sm">
+            <p class="text-muted-foreground text-sm">
               Be the first to know when our mobile apps launch. We'll send you an exclusive early access invitation.
             </p>
           </CardHeader>
@@ -95,56 +99,50 @@ export default function WaitlistModal(props: WaitlistModalProps) {
           <CardContent class="pt-0">
             <Show when={!isSubmitted()} fallback={
               <div class="text-center py-6">
-                <div class="w-16 h-16 bg-emerald-100 dark:bg-emerald-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <CheckCircle class="w-8 h-8 text-emerald-600 dark:text-emerald-400" />
+                <div class="w-16 h-16 bg-accent rounded-full flex items-center justify-center mx-auto mb-4">
+                  <CheckCircle class="w-8 h-8 text-accent-foreground" />
                 </div>
-                <h3 class="text-lg font-semibold text-slate-900 dark:text-white mb-2">
+                <h3 class="text-lg font-semibold text-foreground mb-2">
                   You're on the list!
                 </h3>
-                <p class="text-slate-600 dark:text-slate-200 text-sm">
+                <p class="text-muted-foreground text-sm">
                   Thanks for joining! We'll notify you as soon as the apps are ready.
                 </p>
               </div>
             }>
               <form onSubmit={handleSubmit} class="space-y-4">
-                <div class="space-y-2">
-                  <label
-                    for="waitlist-email"
-                    class="block text-sm font-semibold text-slate-700 dark:text-slate-200"
-                  >
+                <TextFieldRoot validationState={emailError() ? 'invalid' : 'valid'}>
+                  <Label for="waitlist-email" class="block mb-2">
                     Email Address
-                  </label>
+                  </Label>
                   <div class="relative">
-                    <Mail class={`absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 ${emailError() ? 'text-red-500' : 'text-slate-400'}`} />
-                    <input
+                    <Mail class={`absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 ${emailError() ? 'text-destructive' : 'text-muted-foreground'}`} />
+                    <TextField
                       id="waitlist-email"
                       type="email"
                       value={email()}
                       onInput={(e) => {
-                        setEmail(e.target.value);
+                        setEmail(e.currentTarget.value);
                         if (emailError()) setEmailError('');
                       }}
                       placeholder="your@email.com"
-                      class={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:border-transparent bg-white/60 dark:bg-slate-900/60 text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400 backdrop-blur transition-colors ${emailError()
-                          ? 'border-red-500 focus:ring-red-500'
-                          : 'border-white/50 dark:border-slate-800/70 focus:ring-cyan-400'
-                        }`}
+                      class={`pl-10 ${emailError() ? 'border-destructive focus-visible:ring-destructive' : ''}`}
                     />
                   </div>
                   <Show when={emailError()}>
-                    <p class="text-sm text-red-500 dark:text-red-400">{emailError()}</p>
+                    <p class="text-sm text-destructive mt-1">{emailError()}</p>
                   </Show>
-                </div>
+                </TextFieldRoot>
 
                 <div class="space-y-3">
                   <Button
                     type="submit"
                     disabled={isSubmitting()}
-                    class="w-full text-white font-semibold py-3 px-4 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+                    class="w-full"
                   >
                     {isSubmitting() ? (
                       <div class="flex items-center justify-center gap-2">
-                        <div class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        <div class="w-4 h-4 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" />
                         Joining...
                       </div>
                     ) : (
@@ -153,7 +151,7 @@ export default function WaitlistModal(props: WaitlistModalProps) {
                   </Button>
 
                   <div class="text-center">
-                    <p class="text-xs text-slate-500 dark:text-slate-400">
+                    <p class="text-xs text-muted-foreground">
                       We respect your privacy. No spam, just updates about our mobile apps.
                     </p>
                   </div>
@@ -166,4 +164,3 @@ export default function WaitlistModal(props: WaitlistModalProps) {
     </Show>
   );
 }
-

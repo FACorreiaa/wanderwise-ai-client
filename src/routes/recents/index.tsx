@@ -3,6 +3,8 @@ import { A, useNavigate } from '@solidjs/router';
 import { Search, MapPin, Clock, Star, Filter, Grid, List, TrendingUp, Sparkles, ChevronRight, RotateCcw, SortAsc, SortDesc, Bookmark } from 'lucide-solid';
 import { useRecentInteractions } from '~/lib/api/recents';
 import type { CityInteractions } from '~/lib/api/types';
+import { Button } from '~/ui/button';
+import { TextField, TextFieldRoot } from '~/ui/textfield';
 
 export default function RecentsPage() {
   const [searchQuery, setSearchQuery] = createSignal('');
@@ -314,25 +316,28 @@ export default function RecentsPage() {
             <div class="flex flex-col sm:flex-row sm:items-center gap-4">
               {/* Search */}
               <div class="relative flex-1 max-w-md">
-                <Search class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                <input
-                  type="text"
-                  placeholder="Search cities..."
-                  value={searchQuery()}
-                  onInput={(e) => setSearchQuery(e.target.value)}
-                  class="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
+                <Search class="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4 z-10" />
+                <TextFieldRoot class="w-full">
+                  <TextField
+                    type="text"
+                    placeholder="Search cities..."
+                    value={searchQuery()}
+                    onInput={(e) => setSearchQuery(e.currentTarget.value)}
+                    class="pl-10"
+                  />
+                </TextFieldRoot>
               </div>
 
               {/* Mobile controls toggle */}
               <div class="flex items-center gap-2 sm:hidden">
-                <button
+                <Button
+                  variant="outline"
                   onClick={() => setShowFilters(!showFilters())}
-                  class="flex items-center gap-2 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-600"
+                  class="gap-2"
                 >
                   <Filter class="w-4 h-4" />
                   Filters
-                </button>
+                </Button>
               </div>
             </div>
 
@@ -429,12 +434,11 @@ export default function RecentsPage() {
             </div>
             <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">Unable to load recent activity</h3>
             <p class="text-gray-600 dark:text-gray-400 mb-4">Please try again later</p>
-            <button
+            <Button
               onClick={() => recentsQuery.refetch()}
-              class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
             >
               Try Again
-            </button>
+            </Button>
           </div>
         </Show>
 

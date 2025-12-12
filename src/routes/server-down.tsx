@@ -1,6 +1,7 @@
 import { A } from "@solidjs/router";
 import { Component, createSignal, onMount } from "solid-js";
 import { ServerCrash, RefreshCw, Home, Wifi, AlertTriangle, Compass } from 'lucide-solid';
+import { Button } from "~/ui/button";
 
 const ServerDownPage: Component = () => {
   const [isRetrying, setIsRetrying] = createSignal(false);
@@ -9,14 +10,14 @@ const ServerDownPage: Component = () => {
   const handleRetry = async () => {
     setIsRetrying(true);
     setLastAttempt(new Date());
-    
+
     try {
       // Test connection to the server
-      const response = await fetch('/api/v1/health', { 
+      const response = await fetch('/api/v1/health', {
         method: 'GET',
         signal: AbortSignal.timeout(5000) // 5 second timeout
       });
-      
+
       if (response.ok) {
         // Server is back up, reload the page
         window.location.reload();
@@ -63,7 +64,7 @@ const ServerDownPage: Component = () => {
           Connection Refused
         </h2>
         <p class="text-gray-600 dark:text-gray-400 mb-8 leading-relaxed">
-          We can't reach our travel servers right now. This could be due to server maintenance, 
+          We can't reach our travel servers right now. This could be due to server maintenance,
           network issues, or the server being temporarily down.
         </p>
 
@@ -93,21 +94,23 @@ const ServerDownPage: Component = () => {
 
         {/* Action Buttons */}
         <div class="space-y-3 sm:space-y-0 sm:space-x-4 sm:flex sm:justify-center mb-8">
-          <button 
+          <Button
             onClick={handleRetry}
             disabled={isRetrying()}
-            class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 bg-orange-500 disabled:bg-orange-300 text-white rounded-lg hover:bg-orange-600 disabled:hover:bg-orange-300 transition-colors font-medium disabled:cursor-not-allowed shadow-[0_14px_32px_rgba(249,115,22,0.25)] border border-white/30 dark:border-slate-800/60"
+            class="w-full sm:w-auto gap-2"
           >
             <RefreshCw class={`w-4 h-4 ${isRetrying() ? 'animate-spin' : ''}`} />
             {isRetrying() ? 'Checking...' : 'Try Again'}
-          </button>
-          <A 
-            href="/" 
-            class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 bg-white/70 dark:bg-slate-900/60 text-gray-900 dark:text-white rounded-lg hover:bg-white/90 dark:hover:bg-slate-800/80 transition-colors font-medium border border-white/40 dark:border-slate-800/70"
+          </Button>
+          <Button
+            variant="outline"
+            as={A}
+            href="/"
+            class="w-full sm:w-auto gap-2"
           >
             <Home class="w-4 h-4" />
             Back to Home
-          </A>
+          </Button>
         </div>
 
         {/* Offline Features */}
@@ -141,20 +144,20 @@ const ServerDownPage: Component = () => {
             Try these offline-friendly features:
           </p>
           <div class="flex flex-wrap justify-center gap-3">
-            <A 
-              href="/favorites" 
+            <A
+              href="/favorites"
               class="inline-flex items-center gap-1 px-3 py-2 text-xs bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-full border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
             >
               ❤️ Favorites
             </A>
-            <A 
-              href="/lists" 
+            <A
+              href="/lists"
               class="inline-flex items-center gap-1 px-3 py-2 text-xs bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-full border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
             >
               📝 Lists
             </A>
-            <A 
-              href="/profile" 
+            <A
+              href="/profile"
               class="inline-flex items-center gap-1 px-3 py-2 text-xs bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-full border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
             >
               👤 Profile
@@ -169,7 +172,7 @@ const ServerDownPage: Component = () => {
             <span class="text-sm font-medium text-orange-900 dark:text-orange-100">Travel Tip</span>
           </div>
           <p class="text-xs text-slate-700 dark:text-slate-200">
-            Server downtime is like weather delays - they happen! Use this time to review your saved places 
+            Server downtime is like weather delays - they happen! Use this time to review your saved places
             or plan your next adventure. We'll be back online soon! ✈️
           </p>
         </div>

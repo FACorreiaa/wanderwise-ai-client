@@ -1,4 +1,4 @@
-import { createSignal, For, Show, onMount } from "solid-js";
+import { createSignal, For, Show, onMount, lazy, Suspense } from "solid-js";
 import {
   MessageCircle,
   Send,
@@ -33,11 +33,12 @@ import HotelResults from "~/components/results/HotelResults";
 import RestaurantResults from "~/components/results/RestaurantResults";
 import ActivityResults from "~/components/results/ActivityResults";
 import ItineraryResults from "~/components/results/ItineraryResults";
-import DetailedItemModal from "~/components/DetailedItemModal";
+const DetailedItemModal = lazy(() => import("~/components/DetailedItemModal"));
 import { useQuery, useQueryClient } from "@tanstack/solid-query";
 import { useDefaultSearchProfile } from "~/lib/api/profiles";
 import { TypingAnimation } from "~/components/TypingAnimation";
 import { API_BASE_URL } from "~/lib/api/shared";
+import { Button } from "~/ui/button";
 
 export default function ChatPage() {
   const queryClient = useQueryClient();
@@ -1218,13 +1219,13 @@ export default function ChatPage() {
             <h2 class="text-base sm:text-lg font-semibold text-gray-900 dark:text-white">
               AI Assistant
             </h2>
-            <button
+            <Button
               onClick={newChat}
-              class="cb-button cb-button-primary p-2 text-sm"
+              size="icon"
               title="New chat"
             >
               <Plus class="w-4 h-4" />
-            </button>
+            </Button>
           </div>
 
           {/* Profile Selector - Mobile First */}
@@ -1631,14 +1632,14 @@ export default function ChatPage() {
                   disabled={isLoading()}
                 />
               </div>
-              <button
+              <Button
                 onClick={sendMessage}
                 disabled={!currentMessage().trim() || isLoading()}
-                class="cb-button cb-button-primary px-3 py-2 sm:px-4 sm:py-3 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1 sm:gap-2 text-sm sm:text-base"
+                class="gap-2"
               >
                 <Send class="w-4 h-4" />
                 <span class="hidden sm:inline">Send</span>
-              </button>
+              </Button>
             </div>
             <p class="text-xs text-gray-500 dark:text-gray-400 mt-2 text-center">
               Press Enter to send, Shift+Enter for new line

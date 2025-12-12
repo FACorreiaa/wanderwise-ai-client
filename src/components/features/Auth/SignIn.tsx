@@ -1,6 +1,8 @@
 // SignIn.tsx
-import { Button } from "@/ui/button";
-import { TextField, TextFieldRoot } from "@/ui/textfield";
+import { Button } from "~/ui/button";
+import { TextField, TextFieldRoot } from "~/ui/textfield";
+import { Label } from "~/ui/label";
+import { Checkbox, CheckboxControl } from "~/ui/checkbox";
 import { A } from "@solidjs/router";
 import { Component, createSignal, Show } from "solid-js";
 import { VsEye, VsEyeClosed } from "solid-icons/vs";
@@ -127,9 +129,9 @@ const SignIn: Component = () => {
                     </div>
                 </Show>
                 <div>
-                    <label class={`block text-xs sm:text-sm font-semibold mb-1 sm:mb-2 ${labelClass()}`}>
+                    <Label class={`block text-xs sm:text-sm font-semibold mb-1 sm:mb-2 ${labelClass()}`}>
                         Email address
-                    </label>
+                    </Label>
                     <TextFieldRoot>
                         <TextField
                             type="email"
@@ -150,9 +152,9 @@ const SignIn: Component = () => {
                 </div>
 
                 <div>
-                    <label class={`block text-xs sm:text-sm font-semibold mb-1 sm:mb-2 ${labelClass()}`}>
+                    <Label class={`block text-xs sm:text-sm font-semibold mb-1 sm:mb-2 ${labelClass()}`}>
                         Password
-                    </label>
+                    </Label>
                     <div class="relative">
                         <TextFieldRoot>
                             <TextField
@@ -171,26 +173,27 @@ const SignIn: Component = () => {
                                 required
                             />
                         </TextFieldRoot>
-                        <button
+                        <Button
+                            variant="ghost"
+                            size="icon"
                             type="button"
                             onClick={() => setShowPassword(!showPassword())}
-                            class={`absolute right-2 sm:right-3 top-1/2 -translate-y-1/2 ${isDark() ? 'text-slate-400 hover:text-emerald-200' : 'text-slate-500 hover:text-emerald-600'}`}
+                            class={`absolute right-2 sm:right-3 top-1/2 -translate-y-1/2 h-8 w-8 ${isDark() ? 'text-muted-foreground hover:text-primary' : 'text-muted-foreground hover:text-primary'}`}
                         >
                             {showPassword() ? <VsEyeClosed class="w-4 h-4 sm:w-5 sm:h-5" /> : <VsEye class="w-4 h-4 sm:w-5 sm:h-5" />}
-                        </button>
+                        </Button>
                     </div>
                 </div>
 
                 <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-0 text-xs sm:text-sm">
-                    <label class="flex items-center gap-2 cursor-pointer">
-                        <input
-                            type="checkbox"
-                            class={`rounded ${isDark() ? 'border-slate-300 bg-white/20' : 'border-slate-300 bg-white'}`}
-                            checked={formData().rememberMe ?? true}
-                            onInput={(e) => setFormData(prev => ({ ...prev, rememberMe: e.currentTarget.checked }))}
-                        />
+                    <Checkbox
+                        checked={formData().rememberMe ?? true}
+                        onChange={(checked) => setFormData(prev => ({ ...prev, rememberMe: checked }))}
+                        class="flex items-center gap-2"
+                    >
+                        <CheckboxControl />
                         <span class={helperTextClass()}>Remember me</span>
-                    </label>
+                    </Checkbox>
                     <A href="/auth/forgot-password" class={`${linkClass()} underline-offset-4`}>
                         Forgot password?
                     </A>

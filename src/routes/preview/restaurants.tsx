@@ -1,7 +1,7 @@
-import { createMemo, Show } from "solid-js";
+import { createMemo, Show, lazy, Suspense } from "solid-js";
 import { TOKYO_RESTAURANTS, TOKYO_CITY_DATA } from "~/data/preview-data";
 import RestaurantResults from "~/components/results/RestaurantResults";
-import MapComponent from "~/components/features/Map/Map";
+const MapComponent = lazy(() => import("~/components/features/Map/Map"));
 import SplitView from "~/components/layout/SplitView";
 import { CityInfoHeader } from "~/components/ui/CityInfoHeader";
 import { ActionToolbar } from "~/components/ui/ActionToolbar";

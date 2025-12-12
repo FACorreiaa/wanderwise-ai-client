@@ -16,6 +16,11 @@ import {
   Star,
 } from "lucide-solid";
 import { useUserLocation } from "~/contexts/LocationContext";
+import { Button } from "~/ui/button";
+import { TextField, TextFieldRoot } from "~/ui/textfield";
+import { TextArea } from "~/ui/textarea";
+import { Label } from "~/ui/label";
+import { handleLinkPreload } from "~/lib/preload";
 
 const RealTimeStats = lazy(() => import("~/components/features/Home/RealTimeStats"));
 const MobileAppAnnouncement = lazy(() => import("~/components/features/Home/MobileAppAnnouncement"));
@@ -247,19 +252,20 @@ export default function PublicLandingPage() {
                 that feel handpicked.
               </p>
               <div class="flex flex-wrap gap-3">
-                <button
+                <Button
                   onClick={() => navigate("/preview/discover")}
-                  class="inline-flex items-center gap-2 px-5 py-3 rounded-xl font-semibold bg-gradient-to-r from-cyan-600 to-blue-600 dark:bg-cyan-500 text-white dark:text-slate-950 hover:from-cyan-700 hover:to-blue-700 dark:hover:bg-cyan-400 transition-all shadow-lg"
+                  class="gap-2"
                 >
                   Preview: 48h in Tokyo
                   <ArrowRight class="w-4 h-4" />
-                </button>
-                <button
+                </Button>
+                <Button
+                  variant="outline"
                   onClick={handleGetStarted}
-                  class="inline-flex items-center gap-2 px-5 py-3 rounded-xl font-semibold border border-gray-300 dark:border-white/30 text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-white/10 transition-all"
+                  class="gap-2"
                 >
                   Create my account
-                </button>
+                </Button>
               </div>
               <div class="grid grid-cols-2 gap-4 text-sm">
                 <div class="glass-panel gradient-border rounded-2xl p-4">
@@ -298,29 +304,25 @@ export default function PublicLandingPage() {
                 </div>
                 <div class="flex flex-col gap-2">
                   <div class="flex flex-col sm:flex-row gap-3">
-                    <label class="sr-only" for="beta-email">
+                    <Label class="sr-only" for="beta-email">
                       Email for product updates
-                    </label>
-                    <input
-                      id="beta-email"
-                      type="email"
-                      value={email()}
-                      onInput={(e) => {
-                        setEmail(e.currentTarget.value);
-                        if (emailError()) setEmailError("");
-                      }}
-                      class={`flex-1 px-4 py-3 rounded-xl bg-white dark:bg-white/10 border-2 text-gray-900 dark:text-white placeholder:text-gray-500 dark:placeholder:text-slate-300/70 focus:outline-none focus:ring-2 transition-colors ${emailError()
-                        ? "border-red-500 focus:ring-red-500"
-                        : "border-gray-300 dark:border-white/20 focus:ring-emerald-500 focus:border-emerald-500"
-                        }`}
-                      placeholder="you@travelersclub.com"
-                    />
-                    <button
-                      type="submit"
-                      class="px-5 py-3 rounded-xl font-semibold bg-gradient-to-r from-emerald-600 to-teal-600 dark:bg-emerald-400 text-white dark:text-slate-950 hover:from-emerald-700 hover:to-teal-700 dark:hover:bg-emerald-300 transition-all shadow-lg"
-                    >
+                    </Label>
+                    <TextFieldRoot class="flex-1">
+                      <TextField
+                        id="beta-email"
+                        type="email"
+                        value={email()}
+                        onInput={(e) => {
+                          setEmail(e.currentTarget.value);
+                          if (emailError()) setEmailError("");
+                        }}
+                        class={emailError() ? "border-destructive focus-visible:ring-destructive" : ""}
+                        placeholder="you@travelersclub.com"
+                      />
+                    </TextFieldRoot>
+                    <Button type="submit">
                       Join updates
-                    </button>
+                    </Button>
                   </div>
                   <Show when={emailError()}>
                     <p class="text-sm text-red-500 dark:text-red-400">{emailError()}</p>
@@ -346,28 +348,28 @@ export default function PublicLandingPage() {
                 </div>
                 <div class="flex flex-col gap-2">
                   <div class="flex items-end gap-3">
-                    <textarea
-                      value={currentMessage()}
-                      onInput={(e) => {
-                        setCurrentMessage(e.target.value);
-                        if (searchError()) setSearchError("");
-                      }}
-                      placeholder={'"Best vinyl bars near Barcelona" or "Quiet art walks in Copenhagen"'}
-                      class={`w-full h-14 px-0 py-0 border-none resize-none focus:outline-none focus:ring-0 bg-transparent text-gray-900 dark:text-white placeholder:text-gray-600 dark:placeholder:text-slate-300/70 ${searchError() ? "border-b-2 border-red-500" : ""
-                        }`}
-                      rows="2"
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter" && !e.shiftKey) {
-                          e.preventDefault();
-                          handleSearchClick();
-                        }
-                      }}
-                    />
-                    <button
+                    <TextFieldRoot class="flex-1">
+                      <TextArea
+                        value={currentMessage()}
+                        onInput={(e) => {
+                          setCurrentMessage(e.currentTarget.value);
+                          if (searchError()) setSearchError("");
+                        }}
+                        placeholder={'"Best vinyl bars near Barcelona" or "Quiet art walks in Copenhagen"'}
+                        class={`min-h-[56px] border-none bg-transparent ${searchError() ? "border-b-2 border-destructive" : ""}`}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" && !e.shiftKey) {
+                            e.preventDefault();
+                            handleSearchClick();
+                          }
+                        }}
+                      />
+                    </TextFieldRoot>
+                    <Button
                       onClick={handleSearchClick}
                       disabled={isLoading()}
                       aria-label="Search"
-                      class="px-5 py-3 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 dark:bg-cyan-500 dark:hover:bg-cyan-400 disabled:bg-gray-400 dark:disabled:bg-slate-500/60 disabled:cursor-not-allowed text-white dark:text-slate-950 rounded-xl font-semibold transition-all flex items-center gap-2 shadow-lg"
+                      class="gap-2"
                     >
                       <Show when={isLoading()} fallback={<Send class="w-4 h-4" />}>
                         <Loader2 class="w-4 h-4 animate-spin" />
@@ -377,33 +379,35 @@ export default function PublicLandingPage() {
                           Working...
                         </Show>
                       </span>
-                    </button>
+                    </Button>
                   </div>
                   <Show when={searchError()}>
                     <p class="text-sm text-red-500 dark:text-red-400">{searchError()}</p>
                   </Show>
                 </div>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <button
+                  <Button
+                    variant="ghost"
                     onClick={() => navigate("/preview/discover")}
-                    class="glass-panel rounded-xl px-4 py-3 text-left hover:bg-gray-100 dark:hover:bg-white/10 transition-colors"
+                    class="glass-panel rounded-xl px-4 py-3 h-auto text-left justify-start flex-col items-start"
                   >
-                    <div class="flex items-center gap-2 text-sm text-emerald-700 dark:text-emerald-100 font-medium">
+                    <div class="flex items-center gap-2 text-sm text-accent font-medium">
                       <Sparkles class="w-4 h-4" />
                       Quick Example
                     </div>
-                    <p class="text-gray-900 dark:text-white font-semibold">Tokyo: Cyberpunk & Shrines</p>
-                  </button>
-                  <button
+                    <p class="text-foreground font-semibold">Tokyo: Cyberpunk & Shrines</p>
+                  </Button>
+                  <Button
+                    variant="ghost"
                     onClick={() => navigate("/preview/discover")}
-                    class="glass-panel rounded-xl px-4 py-3 text-left hover:bg-gray-100 dark:hover:bg-white/10 transition-colors"
+                    class="glass-panel rounded-xl px-4 py-3 h-auto text-left justify-start flex-col items-start"
                   >
-                    <div class="flex items-center gap-2 text-sm text-emerald-700 dark:text-emerald-100 font-medium">
+                    <div class="flex items-center gap-2 text-sm text-accent font-medium">
                       <Sparkles class="w-4 h-4" />
                       Quick Example
                     </div>
-                    <p class="text-gray-900 dark:text-white font-semibold">Tokyo: Best Sushi Spots</p>
-                  </button>
+                    <p class="text-foreground font-semibold">Tokyo: Best Sushi Spots</p>
+                  </Button>
                 </div>
                 <Show when={isLoading()}>
                   <div class="flex items-center gap-3 text-gray-700 dark:text-slate-100">
@@ -423,6 +427,7 @@ export default function PublicLandingPage() {
             <For each={previewCards}>{(card) => (
               <A
                 href={card.href}
+                onMouseEnter={() => handleLinkPreload(card.href)}
                 class="group relative overflow-hidden rounded-2xl border border-gray-200 dark:border-white/10 bg-white/90 dark:bg-white/5 backdrop-blur-xl p-5 shadow-xl dark:shadow-[0_20px_80px_rgba(3,7,18,0.45)] hover:-translate-y-1 transition-all"
               >
                 <div class={`absolute inset-0 bg-gradient-to-br ${card.accent} opacity-20 dark:opacity-40`} aria-hidden="true" />
@@ -506,14 +511,14 @@ export default function PublicLandingPage() {
               </div>
             </div>
             <div class="flex flex-col gap-3">
-              <button
+              <Button
                 onClick={handleGetStarted}
-                class="w-full inline-flex justify-center items-center gap-2 px-5 py-3 rounded-xl font-semibold bg-gradient-to-r from-gray-900 to-gray-800 dark:bg-white text-white dark:text-slate-950 hover:from-gray-800 hover:to-gray-700 dark:hover:bg-emerald-100 transition-all shadow-lg"
+                class="w-full gap-2"
               >
                 Register to unlock chat
                 <ArrowRight class="w-4 h-4" />
-              </button>
-              <p class="text-xs text-gray-600 dark:text-slate-200/70 text-center">
+              </Button>
+              <p class="text-xs text-muted-foreground text-center">
                 Risk-free beta · cancel anytime
               </p>
             </div>

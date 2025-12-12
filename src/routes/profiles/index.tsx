@@ -1,5 +1,9 @@
 import { createSignal, For, Show } from 'solid-js';
 import { User, Plus, Edit3, Trash2, Copy, X } from 'lucide-solid';
+import { Button } from '~/ui/button';
+import { Label } from '~/ui/label';
+import { TextField, TextFieldRoot } from '~/ui/textfield';
+import { TextArea } from '~/ui/textarea';
 
 interface ProfileStats {
     placesVisited: number;
@@ -397,9 +401,9 @@ export default function ProfilesPage() {
                                 Set as Default
                             </button>
                         )}
-                        <button class="cb-button cb-button-primary px-3 py-1 text-xs">
+                        <Button size="sm">
                             Use Profile
-                        </button>
+                        </Button>
                     </div>
                 </div>
             </div>
@@ -626,13 +630,13 @@ export default function ProfilesPage() {
                             <h1 class="text-2xl font-bold text-gray-900">Travel Profiles</h1>
                             <p class="text-gray-600 mt-1">Manage your personalized travel preferences</p>
                         </div>
-                        <button
+                        <Button
                             onClick={() => setShowCreateModal(true)}
-                            class="cb-button cb-button-primary px-4 py-2 flex items-center gap-2"
+                            class="gap-2"
                         >
                             <Plus class="w-4 h-4" />
                             Create Profile
-                        </button>
+                        </Button>
                     </div>
                 </div>
             </div>
@@ -648,12 +652,11 @@ export default function ProfilesPage() {
                             <p class="text-gray-600 mb-4">
                                 Create your first travel profile to get personalized recommendations
                             </p>
-                            <button
+                            <Button
                                 onClick={() => setShowCreateModal(true)}
-                                class="cb-button cb-button-primary px-6 py-2"
                             >
                                 Create Your First Profile
-                            </button>
+                            </Button>
                         </div>
                     }
                 >
@@ -684,19 +687,18 @@ export default function ProfilesPage() {
                             {renderProfileForm()}
                         </div>
                         <div class="p-6 border-t border-gray-200 flex items-center justify-end gap-3">
-                            <button
+                            <Button
+                                variant="outline"
                                 onClick={() => setShowCreateModal(false)}
-                                class="cb-button cb-button-secondary px-4 py-2"
                             >
                                 Cancel
-                            </button>
-                            <button
+                            </Button>
+                            <Button
                                 onClick={createProfile}
                                 disabled={!profileForm().name.trim()}
-                                class="cb-button cb-button-primary px-4 py-2 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 Create Profile
-                            </button>
+                            </Button>
                         </div>
                     </div>
                 </div>
@@ -721,19 +723,18 @@ export default function ProfilesPage() {
                             {renderProfileForm()}
                         </div>
                         <div class="p-6 border-t border-gray-200 flex items-center justify-end gap-3">
-                            <button
+                            <Button
+                                variant="outline"
                                 onClick={() => setShowEditModal(false)}
-                                class="cb-button cb-button-secondary px-4 py-2"
                             >
                                 Cancel
-                            </button>
-                            <button
+                            </Button>
+                            <Button
                                 onClick={updateProfile}
                                 disabled={!profileForm().name.trim()}
-                                class="cb-button cb-button-primary px-4 py-2 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 Save Changes
-                            </button>
+                            </Button>
                         </div>
                     </div>
                 </div>

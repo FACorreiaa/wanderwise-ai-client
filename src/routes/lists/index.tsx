@@ -12,6 +12,10 @@ import {
     useDeleteListMutation,
     type CreateListData
 } from '~/lib/api/lists';
+import { Button } from '~/ui/button';
+import { Label } from '~/ui/label';
+import { TextField, TextFieldRoot } from '~/ui/textfield';
+import { TextArea } from '~/ui/textarea';
 
 export default function ListsPage() {
     // State
@@ -144,13 +148,14 @@ export default function ListsPage() {
                                         </p>
                                     </div>
                                 </div>
-                                <button
+                                <Button
                                     onClick={openCreateModal}
-                                    class="flex items-center gap-2 px-5 py-2.5 bg-white/20 hover:bg-white/30 rounded-xl text-white font-semibold transition-all border border-white/30 shadow-lg"
+                                    variant="secondary"
+                                    class="gap-2"
                                 >
                                     <Plus class="w-5 h-5" />
                                     New List
-                                </button>
+                                </Button>
                             </div>
 
                             {/* Quick Links */}
@@ -226,13 +231,13 @@ export default function ListsPage() {
                             <p class="text-gray-600 dark:text-gray-400 mb-6 max-w-md mx-auto">
                                 Create your first list to start organizing your favorite places and travel plans.
                             </p>
-                            <button
+                            <Button
                                 onClick={openCreateModal}
-                                class="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl font-semibold hover:from-purple-700 hover:to-pink-700 transition-all shadow-lg"
+                                class="gap-2"
                             >
                                 <Plus class="w-5 h-5" />
                                 Create Your First List
-                            </button>
+                            </Button>
                         </div>
                     </Show>
 
@@ -409,17 +414,16 @@ export default function ListsPage() {
                                 </div>
 
                                 <div class="flex justify-end gap-3 pt-4">
-                                    <button
+                                    <Button
                                         type="button"
+                                        variant="ghost"
                                         onClick={closeModal}
-                                        class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
                                     >
                                         Cancel
-                                    </button>
-                                    <button
+                                    </Button>
+                                    <Button
                                         type="submit"
                                         disabled={createMutation.isPending || updateMutation.isPending}
-                                        class="px-5 py-2 text-sm font-semibold bg-gradient-to-r from-blue-600 to-cyan-600 text-white rounded-lg hover:from-blue-700 hover:to-cyan-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                                     >
                                         {createMutation.isPending || updateMutation.isPending ? (
                                             <span class="flex items-center gap-2">
@@ -427,7 +431,7 @@ export default function ListsPage() {
                                                 Saving...
                                             </span>
                                         ) : editingList() ? 'Save Changes' : 'Create List'}
-                                    </button>
+                                    </Button>
                                 </div>
                             </form>
                         </div>

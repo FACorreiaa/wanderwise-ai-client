@@ -7,6 +7,8 @@ import { useAuth } from '~/contexts/AuthContext';
 import RegisterBanner from '~/components/ui/RegisterBanner';
 import { sendUnifiedChatMessageStream } from '~/lib/api/llm';
 import FavoriteButton from '~/components/shared/FavoriteButton';
+import { Button } from '~/ui/button';
+import { TextField, TextFieldRoot } from '~/ui/textfield';
 
 export default function DiscoverPage() {
     const { isAuthenticated } = useAuth();
@@ -485,14 +487,14 @@ export default function DiscoverPage() {
                                                 onInput={(e) => setSearchLocation(e.currentTarget.value)}
                                                 class="px-4 py-3 rounded-xl border-2 border-gray-300/80 dark:border-slate-800/70 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white/95 dark:bg-slate-900/60 text-gray-900 dark:text-white placeholder-gray-600 dark:placeholder-gray-500 w-40 md:w-48 backdrop-blur transition-all"
                                             />
-                                            <button
+                                            <Button
                                                 type="submit"
                                                 disabled={!searchQuery().trim()}
-                                                class="px-6 py-3 text-white rounded-xl bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 dark:bg-[#0c7df2] dark:hover:bg-[#0a6ed6] transition-all font-semibold flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed shadow-[0_14px_32px_rgba(12,125,242,0.30)] border border-white/30 dark:border-slate-800/60"
+                                                class="gap-2"
                                             >
-                                                <Search class="w-5 h-5 mr-2" />
+                                                <Search class="w-5 h-5" />
                                                 Search
-                                            </button>
+                                            </Button>
                                         </div>
                                     </div>
                                 </form>

@@ -9,6 +9,7 @@ import { ImageRoot, ImageFallback, Image } from "@/ui/image";
 import { useAuth } from "~/contexts/AuthContext";
 import PWAInstall from "~/components/PWAInstall";
 import ThemeSelector from "~/components/ThemeSelector";
+import { handleLinkPreload } from "~/lib/preload";
 
 // Public navigation items (for non-authenticated users)
 const publicNavigationItems = [
@@ -121,6 +122,7 @@ export default function Nav() {
                     return (
                       <A
                         href={item.href}
+                        onMouseEnter={() => handleLinkPreload(item.href)}
                         class={`flex items-center gap-2 px-3 py-2 rounded-xl font-medium transition-all text-sm border ${location.pathname === item.href
                           ? 'bg-blue-100 dark:bg-white/10 text-gray-900 dark:text-white border-blue-300 dark:border-white/20 shadow-lg'
                           : 'text-gray-700 dark:text-slate-200 hover:text-blue-700 dark:hover:text-emerald-200 hover:bg-gray-100 dark:hover:bg-white/5 border-transparent hover:border-blue-300 dark:hover:border-emerald-200/40'
@@ -290,6 +292,7 @@ export default function Nav() {
                           return (
                             <A
                               href={item.href}
+                              onTouchStart={() => handleLinkPreload(item.href)}
                               class="group flex items-center justify-between py-5 text-lg font-medium text-gray-900 dark:text-white border-b border-gray-200/50 dark:border-white/5 active:bg-black/5 dark:active:bg-white/5 transition-colors"
                               onClick={() => setIsMenuOpen(false)}
                             >

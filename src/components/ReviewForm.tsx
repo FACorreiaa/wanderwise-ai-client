@@ -1,7 +1,10 @@
 import { createSignal, Show, For } from 'solid-js';
 import { Star, Camera, X, Calendar } from 'lucide-solid';
 import type { PhotoUploadEvent } from '../lib/api/types';
-// import type { UploadedPhoto } from '~/lib/api/types';
+import { Button } from '~/ui/button';
+import { TextField, TextFieldRoot } from '~/ui/textfield';
+import { TextArea } from '~/ui/textarea';
+import { Label } from '~/ui/label';
 
 interface ReviewData {
     rating: number;
@@ -9,15 +12,14 @@ interface ReviewData {
     content: string;
     visitDate: string;
     travelType: string;
-    photos: File[]; // Changed from UploadedPhoto[]
+    photos: File[];
     poiId?: string;
 }
 
-// Internal type for managing photos in the form, distinct from the API's UploadedPhoto if needed
 interface FormPhoto {
     id: string;
     file: File;
-    url: string; // Using url for preview
+    url: string;
 }
 
 interface ReviewFormProps {
@@ -35,7 +37,7 @@ export default function ReviewForm(props: ReviewFormProps) {
     const [content, setContent] = createSignal('');
     const [visitDate, setVisitDate] = createSignal('');
     const [travelType, setTravelType] = createSignal('');
-    const [photos, setPhotos] = createSignal<FormPhoto[]>([]); // Using internal FormPhoto type
+    const [photos, setPhotos] = createSignal<FormPhoto[]>([]);
     const [isSubmitting, setIsSubmitting] = createSignal(false);
     const [errors, setErrors] = createSignal<{ rating?: string; content?: string }>({});
 
@@ -53,26 +55,27 @@ export default function ReviewForm(props: ReviewFormProps) {
             const filled = starValue <= (hoverRating() || rating());
 
             return (
-                <button
+                <Button
+                    variant="ghost"
+                    size="icon"
                     type="button"
                     onClick={() => setRating(starValue)}
                     onMouseEnter={() => setHoverRating(starValue)}
                     onMouseLeave={() => setHoverRating(0)}
-                    class={`p - 1 transition - colors ${filled ? 'text-yellow-500' : 'text-gray-300 hover:text-yellow-400'} `}
+                    class={filled ? 'text-yellow-500' : 'text-muted-foreground hover:text-yellow-400'}
                 >
-                    <Star class={`w - 8 h - 8 ${filled ? 'fill-current' : ''} `} />
-                </button>
+                    <Star class={`w-8 h-8 ${filled ? 'fill-current' : ''}`} />
+                </Button>
             );
         });
     };
 
     const handlePhotoUpload = (event: PhotoUploadEvent) => {
         const files = event.target.files ? Array.from(event.target.files) : [];
-        // In a real app, you would upload these files
         const newPhotos: FormPhoto[] = files.map((file, index) => ({
-            id: `photo - ${Date.now()} -${index} `,
+            id: `photo-${Date.now()}-${index}`,
             file,
-            url: URL.createObjectURL(file) // Using url as preview
+            url: URL.createObjectURL(file)
         }));
         setPhotos(prev => [...prev, ...newPhotos]);
     };
@@ -84,7 +87,6 @@ export default function ReviewForm(props: ReviewFormProps) {
     const handleSubmit = async (e: SubmitEvent) => {
         e.preventDefault();
 
-        // Validate on submit
         const validationErrors: { rating?: string; content?: string } = {};
         if (!rating()) {
             validationErrors.rating = 'Please select a rating';
@@ -111,7 +113,7 @@ export default function ReviewForm(props: ReviewFormProps) {
                 content: content().trim(),
                 visitDate: visitDate(),
                 travelType: travelType(),
-                photos: photos().map(photo => photo.file) // Assigning File[] to ReviewData
+                photos: photos().map(photo => photo.file)
             };
 
             await props.onSubmit(reviewDataDictionary);
@@ -148,23 +150,24 @@ export default function ReviewForm(props: ReviewFormProps) {
 
     return (
         <Show when={props.isOpen}>
-            <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-                <div class="bg-white dark:bg-gray-800 rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div class="fixed inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+                <div class="bg-popover text-popover-foreground rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto border border-border shadow-lg">
                     {/* Header */}
-                    <div class="p-6 border-b border-gray-200 dark:border-gray-700">
+                    <div class="p-6 border-b border-border">
                         <div class="flex items-center justify-between">
                             <div>
-                                <h2 class="text-xl font-semibold text-gray-900 dark:text-white">Write a Review</h2>
+                                <h2 class="text-xl font-semibold text-foreground">Write a Review</h2>
                                 <Show when={props.poiName}>
-                                    <p class="text-sm text-gray-600 dark:text-gray-300 mt-1">for {props.poiName}</p>
+                                    <p class="text-sm text-muted-foreground mt-1">for {props.poiName}</p>
                                 </Show>
                             </div>
-                            <button
+                            <Button
+                                variant="ghost"
+                                size="icon"
                                 onClick={props.onCancel}
-                                class="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors">
-
+                            >
                                 <X class="w-5 h-5" />
-                            </button>
+                            </Button>
                         </div>
                     </div>
 
@@ -172,89 +175,74 @@ export default function ReviewForm(props: ReviewFormProps) {
                     <form onSubmit={handleSubmit} class="p-6 space-y-6">
                         {/* Rating */}
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-                                Overall Rating *
-                            </label>
+                            <Label class="block mb-3">Overall Rating *</Label>
                             <div class="flex items-center gap-2">
-                                <div class={`flex p-1 rounded-lg ${errors().rating ? 'ring-2 ring-red-500' : ''}`}>
+                                <div class={`flex p-1 rounded-lg ${errors().rating ? 'ring-2 ring-destructive' : ''}`}>
                                     {renderStars()}
                                 </div>
                                 <Show when={rating() > 0}>
-                                    <span class="text-lg font-medium text-gray-900 dark:text-white ml-2">
+                                    <span class="text-lg font-medium text-foreground ml-2">
                                         {getRatingLabel(rating())}
                                     </span>
                                 </Show>
                             </div>
                             <Show when={errors().rating}>
-                                <p class="mt-1 text-sm text-red-500 dark:text-red-400">{errors().rating}</p>
+                                <p class="mt-1 text-sm text-destructive">{errors().rating}</p>
                             </Show>
                         </div>
 
                         {/* Title */}
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                Review Title
-                            </label>
-                            <input
+                        <TextFieldRoot>
+                            <Label class="block mb-2">Review Title</Label>
+                            <TextField
                                 type="text"
                                 value={title()}
-                                onInput={(e) => setTitle(e.target.value)}
+                                onInput={(e) => setTitle(e.currentTarget.value)}
                                 placeholder="Summarize your experience"
-                                class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                                 maxLength={100}
                             />
-                            <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">{title().length}/100 characters</p>
-                        </div>
+                            <p class="text-xs text-muted-foreground mt-1">{title().length}/100 characters</p>
+                        </TextFieldRoot>
 
                         {/* Content */}
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                Your Review *
-                            </label>
-                            <textarea
+                        <TextFieldRoot validationState={errors().content ? 'invalid' : 'valid'}>
+                            <Label class="block mb-2">Your Review *</Label>
+                            <TextArea
                                 value={content()}
                                 onInput={(e) => {
-                                    setContent(e.target.value);
+                                    setContent(e.currentTarget.value);
                                     if (errors().content) setErrors({ ...errors(), content: undefined });
                                 }}
                                 placeholder="Share your experience, tips, and what made this place special..."
-                                rows={5}
-                                class={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:border-transparent resize-none bg-white dark:bg-gray-700 text-gray-900 dark:text-white transition-colors ${errors().content
-                                        ? 'border-red-500 focus:ring-red-500'
-                                        : 'border-gray-300 dark:border-gray-600 focus:ring-blue-500'
-                                    }`}
+                                class={`min-h-[120px] ${errors().content ? 'border-destructive focus-visible:ring-destructive' : ''}`}
                                 maxLength={1000}
                             />
                             <div class="flex justify-between mt-1">
                                 <Show when={errors().content} fallback={<span></span>}>
-                                    <p class="text-sm text-red-500 dark:text-red-400">{errors().content}</p>
+                                    <p class="text-sm text-destructive">{errors().content}</p>
                                 </Show>
-                                <p class="text-xs text-gray-500 dark:text-gray-400">{content().length}/1000 characters</p>
+                                <p class="text-xs text-muted-foreground">{content().length}/1000 characters</p>
                             </div>
-                        </div>
+                        </TextFieldRoot>
 
                         {/* Visit Date */}
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                When did you visit?
-                            </label>
+                        <TextFieldRoot>
+                            <Label class="block mb-2">When did you visit?</Label>
                             <div class="relative">
-                                <Calendar class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 w-4 h-4" />
-                                <input
+                                <Calendar class="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+                                <TextField
                                     type="date"
                                     value={visitDate()}
-                                    onInput={(e) => setVisitDate(e.target.value)}
-                                    class="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                                    onInput={(e) => setVisitDate(e.currentTarget.value)}
+                                    class="pl-10"
                                     max={new Date().toISOString().split('T')[0]}
                                 />
                             </div>
-                        </div>
+                        </TextFieldRoot>
 
                         {/* Travel Type */}
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-                                Type of Travel
-                            </label>
+                            <Label class="block mb-3">Type of Travel</Label>
                             <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
                                 <For each={travelTypes}>
                                     {(type) => (
@@ -267,12 +255,12 @@ export default function ReviewForm(props: ReviewFormProps) {
                                                 onChange={() => setTravelType(type.id)}
                                                 class="sr-only"
                                             />
-                                            <div class={`p - 3 border - 2 rounded - lg transition - all text - center ${travelType() === type.id
-                                                ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
-                                                : 'border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500'
-                                                } `}>
+                                            <div class={`p-3 border-2 rounded-lg transition-all text-center ${travelType() === type.id
+                                                ? 'border-primary bg-primary/10'
+                                                : 'border-border hover:border-muted-foreground'
+                                                }`}>
                                                 <div class="text-xl mb-1">{type.icon}</div>
-                                                <div class="text-sm font-medium text-gray-900 dark:text-white">{type.label}</div>
+                                                <div class="text-sm font-medium text-foreground">{type.label}</div>
                                             </div>
                                         </label>
                                     )}
@@ -282,12 +270,10 @@ export default function ReviewForm(props: ReviewFormProps) {
 
                         {/* Photos */}
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-                                Add Photos (Optional)
-                            </label>
+                            <Label class="block mb-3">Add Photos (Optional)</Label>
 
                             {/* Photo Upload */}
-                            <div class="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6 text-center hover:border-gray-400 dark:hover:border-gray-500 transition-colors">
+                            <div class="border-2 border-dashed border-border rounded-lg p-6 text-center hover:border-muted-foreground transition-colors">
                                 <input
                                     type="file"
                                     multiple
@@ -297,11 +283,11 @@ export default function ReviewForm(props: ReviewFormProps) {
                                     id="photo-upload"
                                 />
                                 <label for="photo-upload" class="cursor-pointer">
-                                    <Camera class="w-8 h-8 text-gray-400 dark:text-gray-500 mx-auto mb-2" />
-                                    <p class="text-sm text-gray-600 dark:text-gray-300">
-                                        <span class="text-blue-600 dark:text-blue-400 font-medium">Click to upload</span> or drag and drop
+                                    <Camera class="w-8 h-8 text-muted-foreground mx-auto mb-2" />
+                                    <p class="text-sm text-muted-foreground">
+                                        <span class="text-primary font-medium">Click to upload</span> or drag and drop
                                     </p>
-                                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">PNG, JPG up to 10MB each</p>
+                                    <p class="text-xs text-muted-foreground mt-1">PNG, JPG up to 10MB each</p>
                                 </label>
                             </div>
 
@@ -316,13 +302,15 @@ export default function ReviewForm(props: ReviewFormProps) {
                                                     alt="Review photo"
                                                     class="w-full aspect-square object-cover rounded-lg"
                                                 />
-                                                <button
+                                                <Button
+                                                    variant="destructive"
+                                                    size="icon"
                                                     type="button"
                                                     onClick={() => removePhoto(photo.id)}
-                                                    class="absolute top-2 right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                                                    class="absolute top-2 right-2 w-6 h-6 opacity-0 group-hover:opacity-100 transition-opacity"
                                                 >
                                                     <X class="w-4 h-4" />
-                                                </button>
+                                                </Button>
                                             </div>
                                         )}
                                     </For>
@@ -332,34 +320,34 @@ export default function ReviewForm(props: ReviewFormProps) {
                     </form>
 
                     {/* Footer */}
-                    <div class="p-6 border-t border-gray-200 dark:border-gray-700 flex items-center justify-between">
-                        <p class="text-xs text-gray-500 dark:text-gray-400">
+                    <div class="p-6 border-t border-border flex items-center justify-between">
+                        <p class="text-xs text-muted-foreground">
                             Your review will be public and help other travelers
                         </p>
 
                         <div class="flex items-center gap-3">
-                            <button
+                            <Button
+                                variant="secondary"
                                 type="button"
                                 onClick={props.onCancel}
-                                class="px-4 py-2 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-600 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700"
                                 disabled={isSubmitting()}
                             >
                                 Cancel
-                            </button>
-                            <button
+                            </Button>
+                            <Button
                                 type="submit"
                                 disabled={!rating() || !content().trim() || isSubmitting()}
-                                class="px-4 py-2 bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                                onClick={(e) => handleSubmit(e as unknown as SubmitEvent)}
                             >
                                 {isSubmitting() ? (
                                     <>
-                                        <div class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                        <div class="w-4 h-4 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" />
                                         Submitting...
                                     </>
                                 ) : (
                                     'Submit Review'
                                 )}
-                            </button>
+                            </Button>
                         </div>
                     </div>
                 </div>
