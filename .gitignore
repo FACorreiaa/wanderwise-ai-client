@@ -9,7 +9,6 @@ app.config.timestamp_*.js
 # Environment
 .env
 .env*.local
-
 # dependencies
 /node_modules
 
@@ -35,4 +34,3 @@ tmp
 
 # Wrangler / Vite PWA
 dev-dist
-.vscode
