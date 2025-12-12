@@ -71,12 +71,19 @@ export const useUpdateInterestMutation = () => {
       description?: string;
       active?: boolean
     }) => {
-      const request = create(UpdateInterestRequestSchema, {
-        interestId: id,
-        name: name ?? '',
-        description,
-        active: active ?? true,
-      });
+      // Only include fields that are being updated
+      const requestData: {
+        interestId: string;
+        name?: string;
+        description?: string;
+        active?: boolean;
+      } = { interestId: id };
+
+      if (name !== undefined) requestData.name = name;
+      if (description !== undefined) requestData.description = description;
+      if (active !== undefined) requestData.active = active;
+
+      const request = create(UpdateInterestRequestSchema, requestData);
 
       const response = await interestClient.updateInterest(request);
       return { success: response.success, message: response.message };
@@ -92,9 +99,9 @@ export const useToggleInterestActiveMutation = () => {
 
   return createMutation(() => ({
     mutationFn: async ({ id, active }: { id: string; active: boolean }) => {
+      // Only send interestId and active - omit name/description
       const request = create(UpdateInterestRequestSchema, {
         interestId: id,
-        name: '', // Required by proto but not changing
         active,
       });
 
@@ -116,7 +123,6 @@ export const useDeleteInterestMutation = () => {
       // For now, toggle to inactive since proto doesn't have delete
       const request = create(UpdateInterestRequestSchema, {
         interestId,
-        name: '',
         active: false,
       });
 

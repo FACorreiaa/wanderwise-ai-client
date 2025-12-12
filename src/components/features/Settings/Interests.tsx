@@ -1,5 +1,6 @@
 import { createSignal, For, Show } from 'solid-js';
 import { Plus, X, Save, Heart } from 'lucide-solid';
+import { Switch } from '@/ui/switch';
 import type { Interest } from '~/lib/api/types';
 
 interface InterestsUIProps {
@@ -229,17 +230,11 @@ export default function InterestsComponent(props: InterestsUIProps) {
                       <div class="space-y-1">
                         <div class="flex items-center gap-2">
                           <h4 class="font-semibold text-gray-900 dark:text-white">{interest.name}</h4>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              props.onToggleActive(interest);
-                            }}
+                          <Switch
+                            checked={interest.active ?? false}
+                            onChange={() => props.onToggleActive(interest)}
                             disabled={props.isToggling}
-                            class={`w-10 h-6 rounded-full relative transition-colors duration-200 border ${props.isToggling ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'} ${(interest.active ?? false) ? 'bg-purple-500/90 border-purple-500' : 'bg-gray-200 border-gray-200'}`}
-                            title={`${(interest.active ?? false) ? 'Deactivate' : 'Activate'} interest`}
-                          >
-                            <div class={`w-4 h-4 bg-white rounded-full absolute top-1 transition-transform duration-200 ${(interest.active ?? false) ? 'translate-x-4' : 'translate-x-1'}`} />
-                          </button>
+                          />
                         </div>
                         <Show when={interest.description}>
                           <p class="text-sm text-gray-600 dark:text-gray-300 line-clamp-2">{interest.description || 'No description'}</p>

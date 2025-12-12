@@ -57,8 +57,14 @@ const SignIn: Component = () => {
 
                 if (lowerCaseMessage.includes('failed to fetch')) {
                     errorMessage = 'Could not connect to the server. Please ensure it is running and accessible.';
-                } else if (lowerCaseMessage.includes('invalid credentials')) {
+                } else if (lowerCaseMessage.includes('invalid credentials') || lowerCaseMessage.includes('unauthenticated')) {
                     errorMessage = 'Invalid email or password. Please check your details and try again.';
+                } else if (lowerCaseMessage.includes('internal server error') || lowerCaseMessage.includes('nil pointer')) {
+                    errorMessage = 'The server encountered an error. Please try again later or contact support.';
+                } else if (lowerCaseMessage.includes('user not found')) {
+                    errorMessage = 'No account found with this email address.';
+                } else if (lowerCaseMessage.includes('account is deactivated')) {
+                    errorMessage = 'Your account has been deactivated. Please contact support.';
                 } else {
                     // Clean up other ConnectRPC error messages (e.g., "[unauthenticated] token is expired")
                     errorMessage = err.message.replace(/\[.*?\]\s*/, '');

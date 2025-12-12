@@ -1,5 +1,6 @@
 import { createSignal, For, Show } from 'solid-js';
 import { Plus, X, Save } from 'lucide-solid';
+import { Switch } from '@/ui/switch';
 import type { PersonalTag } from '~/lib/api/types';
 
 interface TagsUIProps {
@@ -260,23 +261,11 @@ export default function TagsComponent(props: TagsUIProps) {
                     </div>
 
                     <div class="flex items-center justify-between">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          props.onToggleActive(tag);
-                        }}
+                      <Switch
+                        checked={tag.active ?? false}
+                        onChange={() => props.onToggleActive(tag)}
                         disabled={props.isToggling}
-                        class={`relative inline-flex h-8 w-14 items-center rounded-full border transition-colors duration-200 ${props.isToggling ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'} ${(tag.active ?? false)
-                          ? 'bg-emerald-500/90 border-emerald-500'
-                          : 'bg-gray-200 border-gray-200'
-                          }`}
-                        title={`${(tag.active ?? false) ? 'Deactivate' : 'Activate'} tag`}
-                      >
-                        <span
-                          class={`inline-block h-6 w-6 transform rounded-full bg-white shadow transition ${(tag.active ?? false) ? 'translate-x-6' : 'translate-x-1'}`}
-                        />
-                        <span class="sr-only">Toggle</span>
-                      </button>
+                      />
 
                       <Show when={tag.source === 'personal'}>
                         <div class="hidden sm:flex items-center gap-2">

@@ -3,7 +3,7 @@ import { TextField, TextFieldRoot } from "@/ui/textfield";
 import { A, useNavigate } from "@solidjs/router";
 import { Component, createSignal, Show, For, createMemo } from "solid-js";
 import AuthLayout from '../../layout/Auth'
-import { FiCheck } from "solid-icons/fi";
+import { FiCheck, FiX } from "solid-icons/fi";
 import { VsEyeClosed, VsEye } from "solid-icons/vs";
 import { useRegisterMutation } from "~/lib/api/auth";
 import { useTheme } from "~/contexts/ThemeContext";
@@ -60,15 +60,37 @@ const SignUp: Component = () => {
             navigate('/auth/signin');
         } catch (err: unknown) {
             const error = err as { message?: string };
-            setError(error?.message || 'Registration failed. Please try again.');
+            let errorMessage = 'Registration failed. Please try again.';
+
+            if (error?.message) {
+                const lowerCaseMessage = error.message.toLowerCase();
+
+                if (lowerCaseMessage.includes('failed to fetch')) {
+                    errorMessage = 'Could not connect to the server. Please try again later.';
+                } else if (lowerCaseMessage.includes('already exists')) {
+                    errorMessage = 'An account with this email already exists. Please sign in instead.';
+                } else if (lowerCaseMessage.includes('internal server error') || lowerCaseMessage.includes('nil pointer')) {
+                    errorMessage = 'The server encountered an error. Please try again later.';
+                } else if (lowerCaseMessage.includes('password')) {
+                    // Clean up password validation errors
+                    errorMessage = error.message.replace(/\[.*?\]\s*/, '');
+                    errorMessage = errorMessage.charAt(0).toUpperCase() + errorMessage.slice(1);
+                } else {
+                    errorMessage = error.message.replace(/\[.*?\]\s*/, '');
+                    errorMessage = errorMessage.charAt(0).toUpperCase() + errorMessage.slice(1);
+                }
+            }
+            setError(errorMessage);
         }
     };
 
-    const passwordRequirements = [
+    const passwordRequirements = createMemo(() => [
         { text: 'At least 8 characters', met: (formData().password?.length || 0) >= 8 },
         { text: 'Contains uppercase letter', met: /[A-Z]/.test(formData().password || '') },
+        { text: 'Contains lowercase letter', met: /[a-z]/.test(formData().password || '') },
         { text: 'Contains number', met: /\d/.test(formData().password || '') },
-    ];
+        { text: 'Contains special character (!@#$%^&*)', met: /[!@#$%^&*(),.?":{}|<>]/.test(formData().password || '') },
+    ]);
 
     const labelClass = createMemo(() => isDark() ? "text-white" : "text-slate-900");
     const inputClass = createMemo(() => isDark()
@@ -195,16 +217,25 @@ const SignUp: Component = () => {
 
 
                     <Show when={formData().password}>
-                        <div class="mt-2 space-y-1">
-                            <For each={passwordRequirements}>{req => (
+                        <div class="mt-3 space-y-1.5 p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700">
+                            <p class="text-xs font-semibold text-slate-600 dark:text-slate-300 mb-2">Password Requirements</p>
+                            <For each={passwordRequirements()}>{req => (
                                 <div class="flex items-center gap-2 text-xs">
-                                    <div class={`w-3 h-3 rounded-full flex items-center justify-center ${req.met ? 'bg-green-100 dark:bg-green-900' : 'bg-gray-100 dark:bg-gray-700'
+                                    <div class={`w-4 h-4 rounded-full flex items-center justify-center transition-colors ${req.met
+                                        ? 'bg-emerald-100 dark:bg-emerald-900/50 border border-emerald-300 dark:border-emerald-700'
+                                        : 'bg-red-100 dark:bg-red-900/50 border border-red-300 dark:border-red-700'
                                         }`}>
-                                        <Show when={req.met}>
-                                            <FiCheck class="w-2 h-2 text-green-600" />
+                                        <Show when={req.met} fallback={
+                                            <FiX class="w-2.5 h-2.5 text-red-500 dark:text-red-400" />
+                                        }>
+                                            <FiCheck class="w-2.5 h-2.5 text-emerald-600 dark:text-emerald-400" />
                                         </Show>
                                     </div>
-                                    <span class={req.met ? 'text-green-600 dark:text-green-400' : 'text-gray-500 dark:text-gray-400'}>{req.text}</span>
+                                    <span class={`transition-colors ${req.met
+                                        ? 'text-emerald-600 dark:text-emerald-400 font-medium'
+                                        : 'text-red-500 dark:text-red-400'}`}>
+                                        {req.text}
+                                    </span>
                                 </div>
                             )}</For>
                         </div>
