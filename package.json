@@ -12,7 +12,7 @@
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0"
   },
   "dependencies": {
-    "@buf/loci_loci-proto.bufbuild_es": "2.10.1-20251211155525-8e8de82b7e86.1",
+    "@buf/loci_loci-proto.bufbuild_es": "2.10.1-20251212094229-2f198fd9e1d9.1",
     "@bufbuild/protobuf": "^2.10.1",
     "@connectrpc/connect": "^2.1.1",
     "@connectrpc/connect-web": "^2.1.1",
