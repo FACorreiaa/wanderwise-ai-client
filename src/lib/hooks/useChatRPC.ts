@@ -5,6 +5,7 @@ import { ChatService, ChatRequestSchema } from "@buf/loci_loci-proto.bufbuild_es
 import { transport } from "../connect-transport";
 import { DomainType } from "../api/types";
 import { getProgressForEventType } from "../utils/chatUtils";
+import { parseStreamError } from "../errors";
 
 // Initialize client outside hook to avoid recreation
 const chatClient = createClient(ChatService, transport);
@@ -78,8 +79,10 @@ export function useChatRPC(options: UseChatRPCOptions = {}) {
                 // We map them to our internal types
 
                 // Handle explicit error field in the proto
+                // Handle explicit error field in the proto
                 if (response.error) {
-                    throw new Error(response.error);
+                    const parsed = parseStreamError(response.error);
+                    throw new Error(parsed.userMessage);
                 }
 
                 const eventType = response.type;
@@ -138,12 +141,15 @@ export function useChatRPC(options: UseChatRPCOptions = {}) {
 
         } catch (err: any) {
             console.error("RPC Stream Error:", err);
+
+            const parsedError = parseStreamError(err.message || String(err));
+
             setState({
-                error: err.message || "Streaming failed",
+                error: parsedError.userMessage,
                 isStreaming: false,
                 isConnected: false,
             });
-            options.onError?.(err.message || "Streaming failed");
+            options.onError?.(parsedError.userMessage);
         }
     };
 

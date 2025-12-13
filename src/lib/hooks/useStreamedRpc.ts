@@ -2,6 +2,7 @@
 import { createStore } from "solid-js/store";
 import { createSignal, onCleanup } from "solid-js";
 import { chatService } from "@/lib/api";
+import { parseStreamError } from "../errors";
 import { AiCityResponse } from "~/lib/api/types";
 
 type StreamedRpcOptions = {
@@ -47,9 +48,12 @@ export function useStreamedRpc(
       setStream(stream);
       await readStream(stream);
     } catch (error) {
-      const err = error as Error;
-      setStore("error", err);
-      opts.onError?.(err);
+      const err = error instanceof Error ? error : new Error(String(error));
+      const parsed = parseStreamError(err.message);
+
+      const wrappedError = new Error(parsed.userMessage);
+      setStore("error", wrappedError);
+      opts.onError?.(wrappedError);
     } finally {
       setStore("isLoading", false);
       opts.onComplete?.();
@@ -70,7 +74,8 @@ export function useStreamedRpc(
           break;
         case "error":
           if (event.error) {
-            const err = new Error(event.error);
+            const parsed = parseStreamError(event.error);
+            const err = new Error(parsed.userMessage);
             setStore("error", err);
             opts.onError?.(err);
           }
