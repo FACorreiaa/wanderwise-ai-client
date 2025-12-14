@@ -419,7 +419,80 @@ export default function Pricing() {
             </For>
           </section>
 
-          {/* Feature Comparison Table */}
+          {/* API Access for Developers Section */}
+          <section class="mb-20" aria-labelledby="api-access">
+            <div class="relative bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 dark:from-slate-800 dark:via-slate-700 dark:to-slate-800 rounded-3xl p-8 md:p-12 shadow-2xl border border-slate-700/50 overflow-hidden">
+              {/* Background decoration */}
+              <div class="absolute inset-0 overflow-hidden pointer-events-none">
+                <div class="absolute -top-24 -right-24 w-96 h-96 bg-[#0c7df2]/20 rounded-full blur-3xl" />
+                <div class="absolute -bottom-24 -left-24 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl" />
+              </div>
+
+              <div class="relative z-10">
+                <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-8">
+                  <div class="flex-1">
+                    <div class="flex items-center gap-3 mb-4">
+                      <div class="w-12 h-12 bg-gradient-to-br from-[#0c7df2] to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
+                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+                        </svg>
+                      </div>
+                      <div>
+                        <h2 id="api-access" class="text-2xl md:text-3xl font-bold text-white">API Access for Developers</h2>
+                        <span class="inline-flex items-center gap-1.5 mt-1 px-3 py-1 bg-amber-500/20 text-amber-300 text-xs font-semibold rounded-full border border-amber-500/30">
+                          <Clock class="w-3 h-3" />
+                          Coming Soon for Premium Users
+                        </span>
+                      </div>
+                    </div>
+                    <p class="text-slate-300 text-lg mb-6 max-w-2xl">
+                      Build custom integrations with the Loci API. Access our AI-powered travel recommendations, POI data, and personalization engine directly in your applications.
+                    </p>
+                    <ul class="grid grid-cols-1 md:grid-cols-2 gap-3 text-slate-300">
+                      <li class="flex items-center gap-2">
+                        <Check class="w-5 h-5 text-emerald-400 flex-shrink-0" />
+                        <span>RESTful & gRPC endpoints</span>
+                      </li>
+                      <li class="flex items-center gap-2">
+                        <Check class="w-5 h-5 text-emerald-400 flex-shrink-0" />
+                        <span>Real-time streaming responses</span>
+                      </li>
+                      <li class="flex items-center gap-2">
+                        <Check class="w-5 h-5 text-emerald-400 flex-shrink-0" />
+                        <span>AI recommendation engine</span>
+                      </li>
+                      <li class="flex items-center gap-2">
+                        <Check class="w-5 h-5 text-emerald-400 flex-shrink-0" />
+                        <span>Comprehensive documentation</span>
+                      </li>
+                      <li class="flex items-center gap-2">
+                        <Check class="w-5 h-5 text-emerald-400 flex-shrink-0" />
+                        <span>SDKs for popular languages</span>
+                      </li>
+                      <li class="flex items-center gap-2">
+                        <Check class="w-5 h-5 text-emerald-400 flex-shrink-0" />
+                        <span>Developer support</span>
+                      </li>
+                    </ul>
+                  </div>
+                  <div class="flex flex-col items-center md:items-end gap-4">
+                    <div class="text-center md:text-right">
+                      <div class="text-slate-400 text-sm mb-1">Starting at</div>
+                      <div class="text-4xl font-bold text-white">$49<span class="text-lg text-slate-400">/mo</span></div>
+                      <div class="text-slate-400 text-sm">for 10,000 API calls</div>
+                    </div>
+                    <button
+                      class="inline-flex items-center gap-2 px-6 py-3 bg-slate-700/50 text-slate-300 rounded-xl font-semibold border border-slate-600/50 cursor-not-allowed"
+                      disabled
+                    >
+                      <Clock class="w-5 h-5" />
+                      Notify Me When Available
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
           <section class="bg-muted/50 rounded-2xl p-8 mb-20" aria-labelledby="feature-comparison">
             <h2 id="feature-comparison" class="text-3xl font-bold text-foreground text-center mb-8">Feature Comparison</h2>
             <div class="overflow-x-auto">

@@ -546,6 +546,34 @@ export default function LoggedInDashboard() {
                 </button>
               </div>
             </div>
+
+            {/* API Access Coming Soon Card */}
+            <div class="rounded-2xl p-5 bg-gradient-to-br from-slate-800/90 to-slate-900/90 dark:from-slate-800/80 dark:to-slate-900/80 border border-slate-700/50 backdrop-blur shadow-xl">
+              <div class="flex items-start gap-3 mb-3">
+                <div class="w-10 h-10 bg-gradient-to-br from-[#0c7df2] to-purple-600 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+                  </svg>
+                </div>
+                <div>
+                  <h4 class="font-semibold text-white text-sm">API Access</h4>
+                  <span class="inline-flex items-center gap-1 mt-0.5 px-2 py-0.5 bg-amber-500/20 text-amber-300 text-[10px] font-medium rounded-full border border-amber-500/30">
+                    <Clock class="w-2.5 h-2.5" />
+                    Soon for Premium
+                  </span>
+                </div>
+              </div>
+              <p class="text-slate-300 text-xs mb-3">
+                Build custom integrations with our RESTful & gRPC API endpoints.
+              </p>
+              <button
+                onClick={() => navigate('/pricing#api-access')}
+                class="w-full flex items-center justify-center gap-2 px-3 py-2 bg-slate-700/50 hover:bg-slate-700 text-slate-300 hover:text-white rounded-lg text-xs font-medium transition-colors border border-slate-600/50"
+              >
+                Learn More
+                <ChevronRight class="w-3.5 h-3.5" />
+              </button>
+            </div>
           </div>
         </div>
       </div>

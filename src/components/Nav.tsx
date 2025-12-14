@@ -2,7 +2,7 @@ import { Badge } from "@/ui/badge";
 import { Button } from "@/ui/button";
 import { useLocation } from "@solidjs/router";
 import { A } from '@solidjs/router';
-import { Menu, X, User, Settings, LogOut, MessageCircle, Heart, List, MapPin, Clock, Compass, Bookmark } from "lucide-solid";
+import { Menu, X, User, Settings, LogOut, MessageCircle, Heart, List, MapPin, Clock, Compass, Bookmark, CreditCard } from "lucide-solid";
 import { createSignal, For, Show, onMount, onCleanup } from "solid-js";
 import { Portal } from "solid-js/web";
 import { ImageRoot, ImageFallback, Image } from "@/ui/image";
@@ -33,6 +33,7 @@ const userMenuItems = [
   { name: 'Bookmarks', href: '/bookmarks', icon: Bookmark },
   { name: 'My Lists', href: '/lists', icon: List },
   { name: 'Profile', href: '/profiles', icon: User },
+  { name: 'Billing', href: '/billing', icon: CreditCard, badge: 'Pro' },
   { name: 'Settings', href: '/settings', icon: Settings },
 ];
 
@@ -205,6 +206,11 @@ export default function Nav() {
                           >
                             <IconComponent class="w-4 h-4" />
                             {item.name}
+                            <Show when={(item as any).badge}>
+                              <Badge variant="secondary" class="ml-auto bg-gradient-to-r from-purple-100 to-blue-100 dark:from-purple-900/40 dark:to-blue-900/40 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-700/50 text-xs px-1.5 py-0.5">
+                                {(item as any).badge}
+                              </Badge>
+                            </Show>
                           </A>
                         );
                       }}
