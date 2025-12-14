@@ -1,4 +1,4 @@
-import { createSignal, For, Show, lazy, Suspense } from 'solid-js';
+import { createSignal, For, Show, lazy } from 'solid-js';
 import { Star, Search, MapPin, Plus, SortAsc, SortDesc } from 'lucide-solid';
 import ReviewCard from '~/components/ReviewCard';
 const ReviewForm = lazy(() => import('~/components/ReviewForm'));

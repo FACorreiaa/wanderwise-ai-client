@@ -1,4 +1,4 @@
-import { createSignal, createMemo, Show, onMount, For, lazy, Suspense } from "solid-js";
+import { createSignal, createMemo, Show, onMount, For, lazy } from "solid-js";
 import { MapPin, Navigation, Loader2, AlertCircle, ChevronDown } from "lucide-solid";
 import { useChatRPC } from "~/lib/hooks/useChatRPC";
 import { POIDetailedInfo } from "~/lib/api/types";

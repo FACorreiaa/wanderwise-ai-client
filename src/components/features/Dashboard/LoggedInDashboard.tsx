@@ -1,4 +1,4 @@
-import { Component, createSignal, Show, For, createEffect, createMemo } from 'solid-js';
+import { Component, createSignal, Show, For, createMemo } from 'solid-js';
 import { useNavigate } from '@solidjs/router';
 import {
   Send, Loader2, MapPin, Bookmark, Star,

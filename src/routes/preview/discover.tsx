@@ -1,7 +1,7 @@
-import { createSignal, For, Show } from 'solid-js';
+import { createSignal, For } from 'solid-js';
 import { Title, Meta } from '@solidjs/meta';
 import { Search, MapPin, Star, Sparkles } from 'lucide-solid';
-import { TOKYO_HOTELS, TOKYO_RESTAURANTS, TOKYO_ACTIVITIES, TOKYO_CITY_DATA } from '~/data/preview-data';
+import { TOKYO_HOTELS, TOKYO_RESTAURANTS, TOKYO_ACTIVITIES } from '~/data/preview-data';
 import FavoriteButton from '~/components/shared/FavoriteButton';
 
 export default function PreviewDiscoverPage() {

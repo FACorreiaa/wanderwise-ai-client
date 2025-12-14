@@ -15,16 +15,16 @@ import {
   ContinueChatRequestSchema as ContinueChatRequestSchema,
   DomainType as ChatDomainType,
   StartChatRequestSchema as StartChatRequestSchema,
-} from "@buf/loci_loci-proto.bufbuild_es/proto/loci/chat/chat_pb.js";
+} from "@buf/loci_loci-proto.bufbuild_es/loci/chat/chat_pb.js";
 import {
   AIItineraryResponse as ProtoAIItineraryResponse,
   AiCityResponse as ProtoAiCityResponse,
-} from "@buf/loci_loci-proto.bufbuild_es/proto/loci/chat/chat_pb.js";
-import { GeneralCityData as ProtoGeneralCityData } from "@buf/loci_loci-proto.bufbuild_es/proto/loci/city/city_pb.js";
+} from "@buf/loci_loci-proto.bufbuild_es/loci/chat/chat_pb.js";
+import { GeneralCityData as ProtoGeneralCityData } from "@buf/loci_loci-proto.bufbuild_es/loci/city/city_pb.js";
 import {
   POIDetailedInfo as ProtoPOIDetailedInfo,
   RestaurantDetailedInfo as ProtoRestaurantDetailedInfo,
-} from "@buf/loci_loci-proto.bufbuild_es/proto/loci/poi/poi_pb.js";
+} from "@buf/loci_loci-proto.bufbuild_es/loci/poi/poi_pb.js";
 import { transport } from "../connect-transport";
 //import { createGraphQLClient, gql } from '@solid-primitives/graphql';
 import type {

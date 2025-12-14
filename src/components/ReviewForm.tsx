@@ -218,7 +218,7 @@ export default function ReviewForm(props: ReviewFormProps) {
                                 maxLength={1000}
                             />
                             <div class="flex justify-between mt-1">
-                                <Show when={errors().content} fallback={<span></span>}>
+                                <Show when={errors().content} fallback={<span />}>
                                     <p class="text-sm text-destructive">{errors().content}</p>
                                 </Show>
                                 <p class="text-xs text-muted-foreground">{content().length}/1000 characters</p>

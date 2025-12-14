@@ -1,9 +1,6 @@
 import { createSignal, For, Show } from 'solid-js';
 import { User, Plus, Edit3, Trash2, Copy, X } from 'lucide-solid';
 import { Button } from '~/ui/button';
-import { Label } from '~/ui/label';
-import { TextField, TextFieldRoot } from '~/ui/textfield';
-import { TextArea } from '~/ui/textarea';
 
 interface ProfileStats {
     placesVisited: number;

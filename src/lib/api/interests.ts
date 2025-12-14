@@ -1,15 +1,14 @@
 // Interests queries and mutations - RPC version
-import { createQuery, createMutation, useQueryClient } from '@tanstack/solid-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/solid-query';
 import { createClient } from '@connectrpc/connect';
 import { create } from '@bufbuild/protobuf';
-import { InterestService } from '@buf/loci_loci-proto.bufbuild_es/proto/loci/interest/interest_pb.js';
+import { InterestService } from '@buf/loci_loci-proto.bufbuild_es/loci/interest/interest_pb.js';
 import {
   GetInterestsRequestSchema,
   CreateInterestRequestSchema,
   UpdateInterestRequestSchema,
-} from '@buf/loci_loci-proto.bufbuild_es/proto/loci/interest/interest_pb.js';
+} from '@buf/loci_loci-proto.bufbuild_es/loci/interest/interest_pb.js';
 import { queryKeys } from './shared';
-import { getAuthToken } from '../auth/tokens';
 import { transport } from '../connect-transport';
 import type { Interest } from './types';
 
@@ -21,7 +20,7 @@ const interestClient = createClient(InterestService, transport);
 // ===================
 
 export const useInterests = () => {
-  return createQuery(() => ({
+  return useQuery(() => ({
     queryKey: queryKeys.interests,
     queryFn: async (): Promise<Interest[]> => {
       const request = create(GetInterestsRequestSchema, { activeOnly: false });
@@ -44,7 +43,7 @@ export const useInterests = () => {
 export const useCreateInterestMutation = () => {
   const queryClient = useQueryClient();
 
-  return createMutation(() => ({
+  return useMutation(() => ({
     mutationFn: async ({ name, description, active = true }: { name: string; description: string; active?: boolean }) => {
       const request = create(CreateInterestRequestSchema, {
         name,
@@ -64,7 +63,7 @@ export const useCreateInterestMutation = () => {
 export const useUpdateInterestMutation = () => {
   const queryClient = useQueryClient();
 
-  return createMutation(() => ({
+  return useMutation(() => ({
     mutationFn: async ({ id, name, description, active }: {
       id: string;
       name?: string;
@@ -97,7 +96,7 @@ export const useUpdateInterestMutation = () => {
 export const useToggleInterestActiveMutation = () => {
   const queryClient = useQueryClient();
 
-  return createMutation(() => ({
+  return useMutation(() => ({
     mutationFn: async ({ id, active }: { id: string; active: boolean }) => {
       // Only send interestId and active - omit name/description
       const request = create(UpdateInterestRequestSchema, {
@@ -117,7 +116,7 @@ export const useToggleInterestActiveMutation = () => {
 export const useDeleteInterestMutation = () => {
   const queryClient = useQueryClient();
 
-  return createMutation(() => ({
+  return useMutation(() => ({
     // Note: Delete might not be in the proto - using a placeholder that toggles inactive
     mutationFn: async (interestId: string) => {
       // For now, toggle to inactive since proto doesn't have delete

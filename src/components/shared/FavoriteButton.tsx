@@ -12,12 +12,13 @@ interface FavoriteButtonProps {
 
 const FavoriteButton: Component<FavoriteButtonProps> = (props) => {
     const favoritesQuery = useFavoritesList();
-    const { toggleFavorite, isLoading } = useToggleFavorite();
+    const { toggleFavorite, isLoading, getStableItemId } = useToggleFavorite();
 
     const isFavorited = createMemo(() => {
         const favorites = favoritesQuery.data;
         if (!favorites) return false;
-        return favorites.items.includes(props.item.id);
+        const stableId = getStableItemId(props.item);
+        return favorites.items.includes(stableId);
     });
 
     const sizeClasses = () => {

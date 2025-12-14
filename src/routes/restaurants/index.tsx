@@ -1,4 +1,4 @@
-import { createSignal, createMemo, Show, onMount, lazy, Suspense } from "solid-js";
+import { createSignal, createMemo, Show, onMount, lazy } from "solid-js";
 import { useSearchParams } from "@solidjs/router";
 import { useChatRPC } from "~/lib/hooks/useChatRPC";
 import { POIDetailedInfo } from "~/lib/api/types";

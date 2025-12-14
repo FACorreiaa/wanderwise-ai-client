@@ -23,7 +23,7 @@ export default function RestaurantResults(props: RestaurantResultsProps) {
   const [showAll, setShowAll] = createSignal(false);
 
   // Check if restaurant is in favorites
-  const isFavorite = (restaurantName: string) => {
+  const _isFavorite = (restaurantName: string) => {
     return props.favorites?.includes(restaurantName) || false;
   };
 

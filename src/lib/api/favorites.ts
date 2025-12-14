@@ -1,56 +1,59 @@
-// Favorites hooks using ListService RPC
-import { createSignal, createEffect, createMemo } from 'solid-js';
-import { createQuery, useMutation, useQueryClient } from '@tanstack/solid-query';
+// Favorites hooks using FavoritesService RPC
+import { createMemo } from 'solid-js';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/solid-query';
 import { createClient } from "@connectrpc/connect";
 import {
-    ListService,
-    GetListsRequestSchema,
-    CreateListRequestSchema,
-    AddListItemRequestSchema,
-    RemoveListItemRequestSchema,
+    FavoritesService,
+    AddToFavoritesRequestSchema,
+    RemoveFromFavoritesRequestSchema,
+    GetFavoritesRequestSchema,
+    IsFavoritedRequestSchema,
     ContentType
-} from "@buf/loci_loci-proto.bufbuild_es/proto/loci/list/list_pb.js";
+} from "@buf/loci_loci-proto.bufbuild_es/loci/favorites/v1/favorites_pb.js";
 import { create } from "@bufbuild/protobuf";
 import { transport } from "../connect-transport";
-import { authAPI, getAuthToken } from "../api";
+import { getAuthToken } from "../api";
 
-// Create authenticated list client
-const listClient = createClient(ListService, transport);
+// Create authenticated favorites client
+const favoritesClient = createClient(FavoritesService, transport);
 
-// Constants
-const FAVORITES_LIST_NAME = "Favorites";
+// Helper to parse JWT payload
+const parseJwt = (token: string): { user_id?: string } | null => {
+    try {
+        const payloadBase64 = token.split('.')[1];
+        if (!payloadBase64) return null;
+        return JSON.parse(atob(payloadBase64));
+    } catch (e) {
+        console.warn("Failed to parse JWT:", e);
+        return null;
+    }
+};
 
-// Cache for user ID to avoid repeated validateSession calls
+// Cache for user ID
 let cachedUserId: string | null = null;
 let cacheTimestamp: number = 0;
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
-// Helper to get current user ID from session with caching
-const getCurrentUserId = async (): Promise<string | null> => {
-    // Check if we have a valid cached user ID
+// Helper to get current user ID from JWT token
+const getCurrentUserId = (): string | null => {
     const now = Date.now();
     if (cachedUserId && (now - cacheTimestamp) < CACHE_TTL) {
         return cachedUserId;
     }
 
-    // Check if we have a token at all (quick check)
     const token = getAuthToken();
     if (!token) {
         cachedUserId = null;
         return null;
     }
 
-    try {
-        const session = await authAPI.validateSession();
-        if (session.valid && session.user_id) {
-            cachedUserId = session.user_id;
-            cacheTimestamp = now;
-            return cachedUserId;
-        }
-    } catch (e) {
-        console.warn("Failed to get user ID from session:", e);
+    const payload = parseJwt(token);
+    if (payload?.user_id) {
+        cachedUserId = payload.user_id;
+        cacheTimestamp = now;
+        return cachedUserId;
     }
-    cachedUserId = null;
+
     return null;
 };
 
@@ -58,75 +61,14 @@ const getCurrentUserId = async (): Promise<string | null> => {
 export interface FavoriteItem {
     id: string;
     name: string;
-    contentType: 'poi' | 'restaurant' | 'hotel' | 'itinerary';
+    contentType: 'poi' | 'hotel' | 'restaurant' | 'itinerary';
     description?: string;
     llmInteractionId?: string;
-}
-
-export interface FavoritesList {
-    id: string;
-    name: string;
-    itemCount: number;
-    items: string[]; // Array of item IDs
-}
-
-// Fetch user's favorites list
-async function fetchFavoritesList(): Promise<FavoritesList | null> {
-    const userId = await getCurrentUserId();
-    if (!userId) return null;
-
-    try {
-        const response = await listClient.getLists(
-            create(GetListsRequestSchema, {
-                userId: userId,
-                limit: 100,
-                offset: 0,
-                includeItems: true,
-            })
-        );
-
-        // Find or note the favorites list
-        const favoritesList = response.lists?.find(
-            (list) => list.list?.name === FAVORITES_LIST_NAME
-        );
-
-        if (favoritesList && favoritesList.list) {
-            return {
-                id: favoritesList.list.id || '',
-                name: favoritesList.list.name || FAVORITES_LIST_NAME,
-                itemCount: Number(favoritesList.list.itemCount || 0),
-                items: (favoritesList.items || []).map(item => item.itemId || item.poiId || ''),
-            };
-        }
-
-        return null;
-    } catch (error) {
-        console.error("Failed to fetch favorites list:", error);
-        return null;
-    }
-}
-
-// Create favorites list if it doesn't exist
-async function createFavoritesList(): Promise<string | null> {
-    const userId = await getCurrentUserId();
-    if (!userId) return null;
-
-    try {
-        const response = await listClient.createList(
-            create(CreateListRequestSchema, {
-                userId: userId,
-                name: FAVORITES_LIST_NAME,
-                description: "Your favorite places and discoveries",
-                isPublic: false,
-                isItinerary: false,
-            })
-        );
-
-        return response.list?.id || null;
-    } catch (error) {
-        console.error("Failed to create favorites list:", error);
-        return null;
-    }
+    cityName?: string;
+    latitude?: number;
+    longitude?: number;
+    rating?: number;
+    category?: string;
 }
 
 // Map content type string to proto enum
@@ -140,33 +82,79 @@ function getContentTypeEnum(type: string): ContentType {
     }
 }
 
-// Add item to favorites
-async function addToFavorites(item: FavoriteItem): Promise<boolean> {
-    const userId = await getCurrentUserId();
-    if (!userId) return false;
-
-    // Get or create favorites list
-    let favoritesList = await fetchFavoritesList();
-    let listId: string | undefined = favoritesList?.id;
-
-    if (!listId) {
-        const newListId = await createFavoritesList();
-        if (!newListId) return false;
-        listId = newListId;
+// Fetch favorites list
+async function fetchFavorites(): Promise<{ items: string[]; favorites: any[] }> {
+    const userId = getCurrentUserId();
+    if (!userId) {
+        return { items: [], favorites: [] };
     }
 
     try {
-        await listClient.addListItem(
-            create(AddListItemRequestSchema, {
+        const response = await favoritesClient.getFavorites(
+            create(GetFavoritesRequestSchema, {
                 userId: userId,
-                listId: listId,
-                itemId: item.id,
-                contentType: getContentTypeEnum(item.contentType),
-                notes: item.description || '',
-                sourceLlmInteractionId: item.llmInteractionId || '',
-                itemAiDescription: item.description || '',
+                limit: 1000, // Get all favorites
             })
         );
+
+        const items = response.favorites.map(f => f.itemId);
+        console.log("favorites: Fetched", items.length, "favorites");
+        return { items, favorites: response.favorites };
+    } catch (error) {
+        console.error("Failed to fetch favorites:", error);
+        return { items: [], favorites: [] };
+    }
+}
+
+// Helper to check if ID is valid (not nil UUID or empty)
+function isValidId(id: string): boolean {
+    if (!id || id.trim() === '') return false;
+    // Check for nil UUID patterns
+    if (id === '00000000-0000-0000-0000-000000000000') return false;
+    if (id.match(/^0+$/)) return false;
+    return true;
+}
+
+// Generate a stable item ID using name if ID is invalid
+function getStableItemId(item: FavoriteItem): string {
+    if (isValidId(item.id)) {
+        return item.id;
+    }
+    // Use name as identifier if ID is invalid
+    // Normalize: lowercase, remove spaces
+    const normalized = item.name.toLowerCase().replace(/\s+/g, '-');
+    console.warn(`favorites: Using name-based ID for "${item.name}": ${normalized}`);
+    return normalized;
+}
+
+// Add item to favorites
+async function addToFavorites(item: FavoriteItem): Promise<boolean> {
+    const userId = getCurrentUserId();
+    if (!userId) {
+        console.warn("favorites: No user ID, cannot add to favorites");
+        return false;
+    }
+
+    const itemId = getStableItemId(item);
+    console.log("favorites: Adding to favorites:", { itemId, name: item.name, originalId: item.id });
+
+    try {
+        await favoritesClient.addToFavorites(
+            create(AddToFavoritesRequestSchema, {
+                userId: userId,
+                itemId: itemId,
+                itemName: item.name,
+                contentType: getContentTypeEnum(item.contentType),
+                description: item.description || '',
+                cityName: item.cityName || '',
+                latitude: item.latitude || 0,
+                longitude: item.longitude || 0,
+                rating: item.rating || 0,
+                category: item.category || '',
+                llmInteractionId: item.llmInteractionId || '',
+            })
+        );
+        console.log("favorites: Added to favorites:", item.name);
         return true;
     } catch (error) {
         console.error("Failed to add to favorites:", error);
@@ -176,21 +164,18 @@ async function addToFavorites(item: FavoriteItem): Promise<boolean> {
 
 // Remove item from favorites
 async function removeFromFavorites(itemId: string, contentType: string): Promise<boolean> {
-    const userId = await getCurrentUserId();
+    const userId = getCurrentUserId();
     if (!userId) return false;
 
-    const favoritesList = await fetchFavoritesList();
-    if (!favoritesList?.id) return false;
-
     try {
-        await listClient.removeListItem(
-            create(RemoveListItemRequestSchema, {
+        await favoritesClient.removeFromFavorites(
+            create(RemoveFromFavoritesRequestSchema, {
                 userId: userId,
-                listId: favoritesList.id,
                 itemId: itemId,
                 contentType: getContentTypeEnum(contentType),
             })
         );
+        console.log("favorites: Removed from favorites:", itemId);
         return true;
     } catch (error) {
         console.error("Failed to remove from favorites:", error);
@@ -198,11 +183,31 @@ async function removeFromFavorites(itemId: string, contentType: string): Promise
     }
 }
 
+// Check if item is favorited (kept for future use)
+async function _checkIsFavorited(itemId: string, contentType: string): Promise<boolean> {
+    const userId = getCurrentUserId();
+    if (!userId) return false;
+
+    try {
+        const response = await favoritesClient.isFavorited(
+            create(IsFavoritedRequestSchema, {
+                userId: userId,
+                itemId: itemId,
+                contentType: getContentTypeEnum(contentType),
+            })
+        );
+        return response.isFavorited;
+    } catch (error) {
+        console.error("Failed to check favorite:", error);
+        return false;
+    }
+}
+
 // Hook: Get favorites list
 export function useFavoritesList() {
-    return createQuery(() => ({
+    return useQuery(() => ({
         queryKey: ['favorites', 'list'],
-        queryFn: fetchFavoritesList,
+        queryFn: fetchFavorites,
         staleTime: 2 * 60 * 1000, // 2 minutes
     }));
 }
@@ -251,10 +256,11 @@ export function useToggleFavorite() {
 
     const toggleFavorite = async (item: FavoriteItem) => {
         const favorites = favoritesQuery.data;
-        const isFavorited = favorites?.items.includes(item.id);
+        const stableId = getStableItemId(item);
+        const isFavorited = favorites?.items.includes(stableId);
 
         if (isFavorited) {
-            await removeMutation.mutateAsync({ itemId: item.id, contentType: item.contentType });
+            await removeMutation.mutateAsync({ itemId: stableId, contentType: item.contentType });
         } else {
             await addMutation.mutateAsync(item);
         }
@@ -262,5 +268,5 @@ export function useToggleFavorite() {
 
     const isLoading = () => addMutation.isPending || removeMutation.isPending;
 
-    return { toggleFavorite, isLoading };
+    return { toggleFavorite, isLoading, getStableItemId };
 }

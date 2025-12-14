@@ -5,9 +5,6 @@ import { useUpdateProfileMutation, useUserProfileQuery, useUploadAvatarMutation 
 import { ProcessedProfileData, UserProfileResponse } from '~/lib/api/types';
 import { ProtectedRoute } from '~/contexts/AuthContext';
 import { Button } from '~/ui/button';
-import { Label } from '~/ui/label';
-import { TextField, TextFieldRoot } from '~/ui/textfield';
-import { TextArea } from '~/ui/textarea';
 
 function ProfilePageContent() {
     const { user } = useAuth();

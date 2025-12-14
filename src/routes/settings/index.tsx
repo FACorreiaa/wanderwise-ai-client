@@ -9,9 +9,6 @@ import TagsComponent from '~/components/features/Settings/Tags';
 import InterestsComponent from '~/components/features/Settings/Interests';
 import TravelProfiles from '~/components/features/Settings/TravelProfiles';
 import { Button } from '~/ui/button';
-import { Label } from '~/ui/label';
-import { TextField, TextFieldRoot } from '~/ui/textfield';
-import { TextArea } from '~/ui/textarea';
 
 export default function SettingsPage() {
     const { user } = useAuth();

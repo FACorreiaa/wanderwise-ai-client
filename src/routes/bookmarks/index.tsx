@@ -2,13 +2,13 @@ import { createSignal, For, Show, createMemo } from 'solid-js';
 import { Title, Meta } from '@solidjs/meta';
 import { Bookmark, Plus, FolderOpen, Loader2, Trash2, ExternalLink, MapPin, Calendar } from 'lucide-solid';
 import { A } from '@solidjs/router';
-import { createQuery, useMutation, useQueryClient } from '@tanstack/solid-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/solid-query';
 import { createClient } from "@connectrpc/connect";
 import {
     ListService,
     GetSavedListsRequestSchema,
     UnsaveListRequestSchema
-} from "@buf/loci_loci-proto.bufbuild_es/proto/loci/list/list_pb.js";
+} from "@buf/loci_loci-proto.bufbuild_es/loci/list/list_pb.js";
 import { create } from "@bufbuild/protobuf";
 import { transport } from "~/lib/connect-transport";
 import { authAPI, getAuthToken } from "~/lib/api";
@@ -36,10 +36,10 @@ const fetchSavedLists = async () => {
 
 export default function BookmarksPage() {
     const queryClient = useQueryClient();
-    const [selectedList, setSelectedList] = createSignal<string | null>(null);
+    const [_selectedList, _setSelectedList] = createSignal<string | null>(null);
 
     // Query for saved lists
-    const savedListsQuery = createQuery(() => ({
+    const savedListsQuery = useQuery(() => ({
         queryKey: ['savedLists'],
         queryFn: fetchSavedLists,
         staleTime: 5 * 60 * 1000,

@@ -32,7 +32,7 @@ export default function ItineraryResults(props: ItineraryResultsProps) {
   const [showAll, setShowAll] = createSignal(false);
 
   // Check if POI is in favorites
-  const isFavorite = (poiName: string) => {
+  const _isFavorite = (poiName: string) => {
     return props.favorites?.includes(poiName) || false;
   };
 

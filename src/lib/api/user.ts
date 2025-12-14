@@ -2,12 +2,12 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/solid-query';
 import { createClient } from '@connectrpc/connect';
 import { create } from '@bufbuild/protobuf';
-import { UserService } from '@buf/loci_loci-proto.bufbuild_es/proto/loci/user/user_pb.js';
+import { UserService } from '@buf/loci_loci-proto.bufbuild_es/loci/user/user_pb.js';
 import {
   GetUserProfileRequestSchema,
   UpdateUserProfileRequestSchema,
   UpdateProfileParamsSchema,
-} from '@buf/loci_loci-proto.bufbuild_es/proto/loci/user/user_pb.js';
+} from '@buf/loci_loci-proto.bufbuild_es/loci/user/user_pb.js';
 import { apiRequest, queryKeys } from './shared';
 import { fetchPreferenceProfilesRPC } from './profiles';
 import { getAuthToken } from '../auth/tokens';

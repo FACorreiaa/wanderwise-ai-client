@@ -1,8 +1,8 @@
 // Connect RPC authentication using plain Connect client with Solid Query
-import { createQuery, createMutation, useQueryClient } from '@tanstack/solid-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/solid-query';
 import { createClient } from '@connectrpc/connect';
 import { create } from '@bufbuild/protobuf';
-import { AuthService } from '@buf/loci_loci-proto.bufbuild_es/proto/loci/auth/auth_pb.js';
+import { AuthService } from '@buf/loci_loci-proto.bufbuild_es/loci/auth/auth_pb.js';
 import {
   LoginRequestSchema,
   RegisterRequestSchema,
@@ -10,7 +10,7 @@ import {
   LogoutRequestSchema,
   RefreshTokenRequestSchema,
   ChangePasswordRequestSchema,
-} from '@buf/loci_loci-proto.bufbuild_es/proto/loci/auth/auth_pb.js';
+} from '@buf/loci_loci-proto.bufbuild_es/loci/auth/auth_pb.js';
 import { clearAuthToken, getAuthToken, getRefreshToken, setAuthToken } from '../auth/tokens';
 import { queryKeys } from './shared';
 import { transport } from '../connect-transport';
@@ -23,7 +23,7 @@ const authClient = createClient(AuthService, transport);
 // =======================
 
 export const useValidateSession = () => {
-  return createQuery(() => ({
+  return useQuery(() => ({
     queryKey: queryKeys.session,
     queryFn: async () => {
       const token = getAuthToken();
@@ -58,7 +58,7 @@ export const useValidateSession = () => {
 export const useLoginMutation = () => {
   const queryClient = useQueryClient();
 
-  return createMutation(() => ({
+  return useMutation(() => ({
     mutationFn: async ({ email, password, rememberMe = false }: {
       email: string;
       password: string;
@@ -89,7 +89,7 @@ export const useLoginMutation = () => {
 export const useRegisterMutation = () => {
   const queryClient = useQueryClient();
 
-  return createMutation(() => ({
+  return useMutation(() => ({
     mutationFn: async ({ username, email, password, role = 'user' }: {
       username: string;
       email: string;
@@ -119,7 +119,7 @@ export const useRegisterMutation = () => {
 export const useLogoutMutation = () => {
   const queryClient = useQueryClient();
 
-  return createMutation(() => ({
+  return useMutation(() => ({
     mutationFn: async () => {
       const refreshToken = getRefreshToken();
       if (!refreshToken) {
@@ -145,7 +145,7 @@ export const useLogoutMutation = () => {
 };
 
 export const useUpdatePasswordMutation = () => {
-  return createMutation(() => ({
+  return useMutation(() => ({
     mutationFn: async ({ oldPassword, newPassword }: { oldPassword: string; newPassword: string }) => {
       const request = create(ChangePasswordRequestSchema, {
         oldPassword,
@@ -164,7 +164,7 @@ export const useUpdatePasswordMutation = () => {
 
 // Optional: Add refresh token mutation for manual token refresh
 export const useRefreshTokenMutation = () => {
-  return createMutation(() => ({
+  return useMutation(() => ({
     mutationFn: async () => {
       const refreshToken = getRefreshToken();
       if (!refreshToken) {

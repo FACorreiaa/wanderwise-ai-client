@@ -13,10 +13,25 @@ import {
   SortAsc,
   SortDesc,
 } from "lucide-solid";
-import { useFavorites, useRemoveFromFavoritesMutation } from "~/lib/api/pois";
-import type { POIDetailedInfo } from "~/lib/api/types";
+import { useFavoritesList, useRemoveFromFavorites } from "~/lib/api/favorites";
 import { Button } from "~/ui/button";
 import { TextField, TextFieldRoot } from "~/ui/textfield";
+
+// Local type for favorites with additional UI fields
+interface FavoriteDisplay {
+  id: string;
+  name: string;
+  description_poi?: string;
+  description?: string;
+  category: string;
+  address?: string;
+  phone_number?: string;
+  website?: string;
+  latitude?: number;
+  longitude?: number;
+  distance?: number;
+  opening_hours?: string;
+}
 
 export default function FavoritesPage() {
   const [viewMode, setViewMode] = createSignal("grid"); // 'grid', 'list'
@@ -26,12 +41,25 @@ export default function FavoritesPage() {
   const [sortOrder, setSortOrder] = createSignal("asc"); // 'asc', 'desc'
   const [selectedPOIs, setSelectedPOIs] = createSignal<string[]>([]);
 
-  // API hooks
-  const favoritesQuery = useFavorites();
-  const removeFavoriteMutation = useRemoveFromFavoritesMutation();
+  // API hooks using new FavoritesService
+  const favoritesQuery = useFavoritesList();
+  const removeFavoriteMutation = useRemoveFromFavorites();
 
-  // Get favorites from API or fallback to empty array
-  const favorites = () => favoritesQuery.data || ([] as POIDetailedInfo[]);
+  // Transform favorites from API to display format
+  const favorites = (): FavoriteDisplay[] => {
+    const data = favoritesQuery.data;
+    if (!data || !data.favorites) return [];
+    return data.favorites.map(fav => ({
+      id: fav.itemId,
+      name: fav.itemName,
+      description_poi: fav.description,
+      description: fav.description,
+      category: fav.category || 'Place',
+      address: '',
+      latitude: fav.latitude,
+      longitude: fav.longitude,
+    }));
+  };
 
   // Dynamic categories based on actual data
   const categories = () => {
@@ -152,7 +180,8 @@ export default function FavoritesPage() {
   const removeFavorite = async (favoriteId: string) => {
     try {
       await removeFavoriteMutation.mutateAsync({
-        poiId: favoriteId
+        itemId: favoriteId,
+        contentType: 'poi'
       });
     } catch (error) {
       console.error("Failed to remove favorite:", error);
@@ -167,7 +196,7 @@ export default function FavoritesPage() {
 
   console.log("favorites", favorites);
 
-  const renderGridCard = (favorite: POIDetailedInfo) => (
+  const renderGridCard = (favorite: FavoriteDisplay) => (
     <div class="cb-card group hover:shadow-lg transition-all duration-300 overflow-hidden">
       {/* Image */}
       <div class="relative h-40 bg-white/70 dark:bg-slate-900/60 border-b border-white/50 dark:border-slate-800/60 overflow-hidden">
@@ -260,7 +289,7 @@ export default function FavoritesPage() {
     </div>
   );
 
-  const renderListItem = (favorite: POIDetailedInfo) => (
+  const renderListItem = (favorite: FavoriteDisplay) => (
     <div class="cb-card hover:shadow-md transition-all duration-200">
       <div class="p-4 sm:p-6">
         <div class="flex items-start gap-4">

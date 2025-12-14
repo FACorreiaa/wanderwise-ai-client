@@ -1,5 +1,5 @@
 import { Badge } from "@/ui/badge";
-import { Component, Show, createEffect, createSignal } from "solid-js";
+import { Component, Show, For, createEffect, createSignal } from "solid-js";
 import { useMainPageStatistics } from "~/lib/api/statistics";
 
 const StatisticsComponent: Component = () => {
@@ -44,12 +44,14 @@ const StatisticsComponent: Component = () => {
                     when={!statsQuery.isLoading}
                     fallback={
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-                            {[1, 2, 3].map(() => (
-                                <div class="text-center animate-pulse">
-                                    <div class="h-10 bg-gray-200 dark:bg-gray-700 rounded w-24 mx-auto mb-2" />
-                                    <div class="h-5 bg-gray-200 dark:bg-gray-700 rounded w-32 mx-auto" />
-                                </div>
-                            ))}
+                            <For each={[1, 2, 3]}>
+                                {() => (
+                                    <div class="text-center animate-pulse">
+                                        <div class="h-10 bg-gray-200 dark:bg-gray-700 rounded w-24 mx-auto mb-2" />
+                                        <div class="h-5 bg-gray-200 dark:bg-gray-700 rounded w-32 mx-auto" />
+                                    </div>
+                                )}
+                            </For>
                         </div>
                     }
                 >

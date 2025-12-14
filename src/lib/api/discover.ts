@@ -1,4 +1,4 @@
-import { createQuery } from "@tanstack/solid-query";
+import { useQuery } from "@tanstack/solid-query";
 import { createClient } from "@connectrpc/connect";
 import { create } from "@bufbuild/protobuf";
 import {
@@ -11,9 +11,9 @@ import {
   DiscoverResult as ProtoDiscoverResult,
   TrendingDiscovery as ProtoTrendingDiscovery,
   FeaturedCollection as ProtoFeaturedCollection,
-} from "@buf/loci_loci-proto.bufbuild_es/proto/loci/discover/discover_pb.js";
-import { PaginationRequestSchema } from "@buf/loci_loci-proto.bufbuild_es/proto/loci/common/common_pb.js";
-import { ChatSession as ProtoChatSession } from "@buf/loci_loci-proto.bufbuild_es/proto/loci/chat/chat_pb.js";
+} from "@buf/loci_loci-proto.bufbuild_es/loci/discover/discover_pb.js";
+import { PaginationRequestSchema } from "@buf/loci_loci-proto.bufbuild_es/loci/common/common_pb.js";
+import { ChatSession as ProtoChatSession } from "@buf/loci_loci-proto.bufbuild_es/loci/chat/chat_pb.js";
 import { transport } from "../connect-transport";
 import type {
   DiscoverPageData,
@@ -71,7 +71,7 @@ const toDiscoverResult = (r: ProtoDiscoverResult): DiscoverResult => ({
 
 // Get all discover page data via RPC
 export function useDiscoverPageData() {
-  return createQuery(() => ({
+  return useQuery(() => ({
     queryKey: ["discover", "page"],
     queryFn: async (): Promise<DiscoverPageData> => {
       const response = await discoverClient.getDiscoverPage(
@@ -91,7 +91,7 @@ export function useDiscoverPageData() {
 
 // Get trending discoveries
 export function useTrendingDiscoveries(limit = 5) {
-  return createQuery(() => ({
+  return useQuery(() => ({
     queryKey: ["discover", "trending", limit],
     queryFn: async (): Promise<TrendingDiscovery[]> => {
       const response = await discoverClient.getTrending(
@@ -108,7 +108,7 @@ export function useTrendingDiscoveries(limit = 5) {
 
 // Get featured collections
 export function useFeaturedCollections(limit = 4) {
-  return createQuery(() => ({
+  return useQuery(() => ({
     queryKey: ["discover", "featured", limit],
     queryFn: async (): Promise<FeaturedCollection[]> => {
       const response = await discoverClient.getFeatured(
@@ -151,7 +151,7 @@ export async function fetchRecentDiscoveries(page = 1, pageSize = 10): Promise<{
 
 // Get category results
 export function useCategoryResults(category: string, cityName?: string, pageSize = 12) {
-  return createQuery(() => ({
+  return useQuery(() => ({
     queryKey: ["discover", "category", category, cityName, pageSize],
     queryFn: async (): Promise<DiscoverResult[]> => {
       const response = await discoverClient.getCategoryResults(

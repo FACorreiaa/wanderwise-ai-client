@@ -218,7 +218,7 @@ export default function PublicLandingPage() {
     }
   };
 
-  const prefillAndSearch = (prompt: string) => {
+  const _prefillAndSearch = (prompt: string) => {
     setCurrentMessage(prompt);
     handleSearchClick();
   };

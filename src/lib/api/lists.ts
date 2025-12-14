@@ -1,5 +1,5 @@
 // Lists queries and mutations using ConnectRPC ListService
-import { createQuery, useMutation, useQueryClient } from '@tanstack/solid-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/solid-query';
 import { createClient } from "@connectrpc/connect";
 import {
   ListService,
@@ -11,7 +11,7 @@ import {
   AddListItemRequestSchema,
   RemoveListItemRequestSchema,
   ContentType
-} from "@buf/loci_loci-proto.bufbuild_es/proto/loci/list/list_pb.js";
+} from "@buf/loci_loci-proto.bufbuild_es/loci/list/list_pb.js";
 import { create } from "@bufbuild/protobuf";
 import { transport } from "../connect-transport";
 import { getAuthToken, authAPI } from "../api";
@@ -61,7 +61,7 @@ export const contentTypeToProto = (type: string): ContentType => {
 // ===============
 
 export const useLists = () => {
-  return createQuery(() => ({
+  return useQuery(() => ({
     queryKey: ['lists'],
     queryFn: async () => {
       const userId = await getUserId();
@@ -82,7 +82,7 @@ export const useLists = () => {
 };
 
 export const useList = (listId: string) => {
-  return createQuery(() => ({
+  return useQuery(() => ({
     queryKey: ['list', listId],
     queryFn: async () => {
       const userId = await getUserId();

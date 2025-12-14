@@ -1,7 +1,6 @@
-import { createSignal, createMemo, Show, onMount, lazy, Suspense } from "solid-js";
+import { createSignal, createMemo, Show, onMount, lazy } from "solid-js";
 import { useSearchParams } from "@solidjs/router";
 import { useStreamedRpc } from "@/lib/hooks/useStreamedRpc";
-import { POIDetailedInfo } from "~/lib/api/types";
 import ItineraryResults from "@/components/results/ItineraryResults";
 const MapComponent = lazy(() => import("@/components/features/Map/Map"));
 import SplitView from "@/components/layout/SplitView";

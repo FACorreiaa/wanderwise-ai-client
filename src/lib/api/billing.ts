@@ -1,4 +1,4 @@
-import { createQuery, createMutation, useQueryClient } from '@tanstack/solid-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/solid-query';
 
 // Types
 export interface SubscriptionData {
@@ -46,7 +46,7 @@ const mockInvoices: Invoice[] = [];
 
 // Queries
 export function useUserSubscription() {
-    return createQuery(() => ({
+    return useQuery(() => ({
         queryKey: ['user-subscription'],
         queryFn: async (): Promise<SubscriptionData> => {
             // TODO: Replace with actual RPC call when proto is generated
@@ -63,7 +63,7 @@ export function useUserSubscription() {
 }
 
 export function usePaymentHistory(limit: number = 10) {
-    return createQuery(() => ({
+    return useQuery(() => ({
         queryKey: ['payment-history', limit],
         queryFn: async (): Promise<PaymentHistoryItem[]> => {
             // TODO: Replace with actual RPC call
@@ -75,7 +75,7 @@ export function usePaymentHistory(limit: number = 10) {
 }
 
 export function useUserInvoices(limit: number = 10) {
-    return createQuery(() => ({
+    return useQuery(() => ({
         queryKey: ['user-invoices', limit],
         queryFn: async (): Promise<Invoice[]> => {
             // TODO: Replace with actual RPC call
@@ -90,8 +90,8 @@ export function useUserInvoices(limit: number = 10) {
 export function useCreateCheckoutSession() {
     const queryClient = useQueryClient();
 
-    return createMutation(() => ({
-        mutationFn: async (params: { priceId: string; successUrl: string; cancelUrl: string }) => {
+    return useMutation(() => ({
+        mutationFn: async (_params: { priceId: string; successUrl: string; cancelUrl: string }) => {
             // TODO: Replace with actual RPC call
             // const client = getGrpcClient();
             // const response = await client.billing.createCheckoutSession(params);
@@ -108,8 +108,8 @@ export function useCreateCheckoutSession() {
 }
 
 export function useCreateCustomerPortalSession() {
-    return createMutation(() => ({
-        mutationFn: async (params: { returnUrl: string }) => {
+    return useMutation(() => ({
+        mutationFn: async (_params: { returnUrl: string }) => {
             // TODO: Replace with actual RPC call
             await new Promise(resolve => setTimeout(resolve, 1000));
             return { url: 'https://billing.stripe.com/mock' };
@@ -120,8 +120,8 @@ export function useCreateCustomerPortalSession() {
 export function useCancelSubscription() {
     const queryClient = useQueryClient();
 
-    return createMutation(() => ({
-        mutationFn: async (params: { cancelAtPeriodEnd: boolean }) => {
+    return useMutation(() => ({
+        mutationFn: async (_params: { cancelAtPeriodEnd: boolean }) => {
             // TODO: Replace with actual RPC call
             await new Promise(resolve => setTimeout(resolve, 1000));
             return { success: true };

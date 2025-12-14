@@ -17,7 +17,6 @@ import { useUserLocation } from '~/contexts/LocationContext';
 import { useDefaultSearchProfile, useSearchProfiles, useSetDefaultProfileMutation } from '~/lib/api/profiles';
 import { Button } from '~/ui/button';
 import { Label } from '~/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '~/ui/select';
 import { Checkbox, CheckboxControl } from '~/ui/checkbox';
 
 interface QuickSettingsModalProps {

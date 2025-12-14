@@ -1,4 +1,4 @@
-import { createMemo, Show, lazy, Suspense } from "solid-js";
+import { createMemo, Show, lazy } from "solid-js";
 import { TOKYO_ACTIVITIES, TOKYO_CITY_DATA } from "~/data/preview-data";
 import ActivityResults from "~/components/results/ActivityResults";
 const MapComponent = lazy(() => import("~/components/features/Map/Map"));

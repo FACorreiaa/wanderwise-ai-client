@@ -13,7 +13,6 @@ interface FormData {
     password: string;
     confirmPassword: string;
     username: string;
-    company: string;
 }
 
 const SignUp: Component = () => {
@@ -24,7 +23,6 @@ const SignUp: Component = () => {
         email: '',
         password: '',
         confirmPassword: '',
-        company: ''
     });
     const [showPassword, setShowPassword] = createSignal(false);
     const [error, setError] = createSignal<string>('');
@@ -150,20 +148,7 @@ const SignUp: Component = () => {
                     </TextFieldRoot>
                 </div>
 
-                <div>
-                    <label class={`block text-xs sm:text-sm font-semibold mb-1 sm:mb-2 ${labelClass()}`}>
-                        Company <span class={`${isDark() ? 'text-slate-200/70' : 'text-slate-500'}`}>(optional)</span>
-                    </label>
-                    <TextFieldRoot>
-                        <TextField
-                            type="text"
-                            placeholder="Acme Inc."
-                            value={formData().company || ''}
-                            onInput={(e) => setFormData(prev => ({ ...prev, company: e.currentTarget.value }))}
-                            class={inputClass()}
-                        />
-                    </TextFieldRoot>
-                </div>
+
 
                 <div>
                     <label class={`block text-xs sm:text-sm font-semibold mb-1 sm:mb-2 ${labelClass()}`}>

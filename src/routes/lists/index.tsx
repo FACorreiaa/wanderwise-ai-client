@@ -2,7 +2,7 @@ import { createSignal, For, Show, createMemo } from 'solid-js';
 import { Title, Meta } from '@solidjs/meta';
 import { A } from '@solidjs/router';
 import {
-    Folder, Plus, Edit3, Trash2, Share2, Lock, Globe,
+    Folder, Plus, Edit3, Trash2, Lock, Globe,
     Loader2, X, FolderPlus, ChevronRight, MapPin, Calendar, Heart, Bookmark
 } from 'lucide-solid';
 import {
@@ -13,9 +13,6 @@ import {
     type CreateListData
 } from '~/lib/api/lists';
 import { Button } from '~/ui/button';
-import { Label } from '~/ui/label';
-import { TextField, TextFieldRoot } from '~/ui/textfield';
-import { TextArea } from '~/ui/textarea';
 
 export default function ListsPage() {
     // State

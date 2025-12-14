@@ -8,7 +8,6 @@ import {
     Clock,
     ArrowUpRight,
     FileText,
-    Download,
     AlertCircle,
     Sparkles
 } from 'lucide-solid';

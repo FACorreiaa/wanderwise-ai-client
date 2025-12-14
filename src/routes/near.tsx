@@ -1,10 +1,8 @@
-import { createSignal, createEffect, Show, For, onMount, onCleanup, createMemo, lazy, Suspense } from 'solid-js';
-import { useLocation, useNavigate, A } from '@solidjs/router';
-import { Title, Meta } from '@solidjs/meta';
+import { createSignal, createEffect, Show, For, onMount, lazy } from 'solid-js';
+import { useLocation } from '@solidjs/router';
 import {
-    Search, MapPin, Navigation, Sparkles, Loader2, Star, Clock,
-    ChevronDown, ExternalLink, Coffee, Utensils, Camera, Hotel, Compass,
-    Heart, Share2, Bookmark, RefreshCw, Filter, SortAsc, SortDesc, Grid,
+    Search, MapPin, Star, Clock, Compass,
+    Share2, Filter, SortAsc, SortDesc, Grid,
     X, Eye, Wifi, TriangleAlert, Map as MapIcon
 } from 'lucide-solid';
 const MapComponent = lazy(() => import('~/components/features/Map/Map'));
@@ -14,7 +12,6 @@ import { useUserLocation } from '~/contexts/LocationContext';
 import { TypingAnimation } from '~/components/TypingAnimation';
 import { Button } from '~/ui/button';
 import { TextField, TextFieldRoot } from '~/ui/textfield';
-import { Label } from '~/ui/label';
 
 export default function DiscoverPage() {
     const [searchQuery, setSearchQuery] = createSignal('');

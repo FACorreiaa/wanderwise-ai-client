@@ -1,10 +1,10 @@
-import { createQuery } from '@tanstack/solid-query';
+import { useQuery } from '@tanstack/solid-query';
 import { createClient } from "@connectrpc/connect";
-import { RecentsService, GetRecentInteractionsRequestSchema } from "@buf/loci_loci-proto.bufbuild_es/proto/loci/recents/recents_pb.js";
+import { RecentsService, GetRecentInteractionsRequestSchema } from "@buf/loci_loci-proto.bufbuild_es/loci/recents/recents_pb.js";
 import { create } from "@bufbuild/protobuf";
 import { transport } from "../connect-transport";
 import { getAuthToken, authAPI } from "../api";
-import type { RecentInteractionsResponse, CityInteractions, RecentInteraction } from './types';
+import type { RecentInteractionsResponse, CityInteractions } from './types';
 
 // Create authenticated recents client
 const recentsClient = createClient(RecentsService, transport);
@@ -143,7 +143,7 @@ async function fetchRecentInteractions(limit: number = 10): Promise<RecentIntera
 
 // Hook for recent interactions (RPC-based)
 export const useRecentInteractions = (limit: number = 10) => {
-  return createQuery(() => ({
+  return useQuery(() => ({
     queryKey: ['recents', 'interactions', limit],
     queryFn: () => fetchRecentInteractions(limit),
     staleTime: 5 * 60 * 1000, // 5 minutes
@@ -152,7 +152,7 @@ export const useRecentInteractions = (limit: number = 10) => {
 
 // Hook for city details (uses same RPC but filters)
 export const useCityDetails = (cityName: string) => {
-  return createQuery(() => ({
+  return useQuery(() => ({
     queryKey: ['recents', 'city', cityName],
     queryFn: async (): Promise<CityInteractions | null> => {
       const response = await fetchRecentInteractions(50);

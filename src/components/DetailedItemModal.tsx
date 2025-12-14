@@ -1,4 +1,4 @@
-import { Show, createSignal, createEffect, For, lazy, Suspense } from "solid-js";
+import { Show, createSignal, createEffect, For, lazy } from "solid-js";
 import {
   X,
   Star,

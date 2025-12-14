@@ -1,4 +1,4 @@
-import { createSignal, For, Show, onMount, lazy, Suspense } from "solid-js";
+import { createSignal, For, Show, onMount, lazy } from "solid-js";
 import {
   MessageCircle,
   Send,

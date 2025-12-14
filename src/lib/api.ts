@@ -6,15 +6,15 @@
 // Import Connect RPC client for auth
 import { createClient } from '@connectrpc/connect';
 import { create } from '@bufbuild/protobuf';
-import { AuthService } from '@buf/loci_loci-proto.bufbuild_es/proto/loci/auth/auth_pb.js';
-import { ChatService } from '@buf/loci_loci-proto.bufbuild_es/proto/loci/chat/chat_pb.js';
+import { AuthService } from '@buf/loci_loci-proto.bufbuild_es/loci/auth/auth_pb.js';
+import { ChatService } from '@buf/loci_loci-proto.bufbuild_es/loci/chat/chat_pb.js';
 import {
   LoginRequestSchema,
   RegisterRequestSchema,
   ValidateSessionRequestSchema,
   LogoutRequestSchema,
   RefreshTokenRequestSchema,
-} from '@buf/loci_loci-proto.bufbuild_es/proto/loci/auth/auth_pb.js';
+} from '@buf/loci_loci-proto.bufbuild_es/loci/auth/auth_pb.js';
 import { transport } from './connect-transport';
 
 const API_BASE_URL = import.meta.env.VITE_CONNECT_BASE_URL || 'http://localhost:8000';

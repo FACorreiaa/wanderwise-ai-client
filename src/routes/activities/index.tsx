@@ -1,4 +1,4 @@
-import { createSignal, createMemo, Show, onMount, For, lazy, Suspense } from "solid-js";
+import { createSignal, createMemo, Show, onMount, For, lazy } from "solid-js";
 import { useSearchParams } from "@solidjs/router";
 import { useChatRPC } from "~/lib/hooks/useChatRPC";
 import { POIDetailedInfo } from "~/lib/api/types";
@@ -113,7 +113,7 @@ export default function ActivitiesPage() {
     console.log("Bookmark activities list");
   };
 
-  const handleItemFavorite = (name: string) => {
+  const _handleItemFavorite = (name: string) => {
     setFavorites(prev =>
       prev.includes(name)
         ? prev.filter(n => n !== name)
@@ -122,7 +122,7 @@ export default function ActivitiesPage() {
     console.log(`Toggled favorite for: ${name}`);
   };
 
-  const isFavorite = (name: string) => favorites().includes(name);
+  const _isFavorite = (name: string) => favorites().includes(name);
 
   const MapContent = (
     <div class="h-full w-full bg-slate-100 dark:bg-slate-900 relative">

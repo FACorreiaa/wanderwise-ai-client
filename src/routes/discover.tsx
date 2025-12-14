@@ -8,7 +8,6 @@ import RegisterBanner from '~/components/ui/RegisterBanner';
 import { sendUnifiedChatMessageStream } from '~/lib/api/llm';
 import FavoriteButton from '~/components/shared/FavoriteButton';
 import { Button } from '~/ui/button';
-import { TextField, TextFieldRoot } from '~/ui/textfield';
 
 export default function DiscoverPage() {
     const { isAuthenticated } = useAuth();

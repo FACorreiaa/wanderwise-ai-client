@@ -1,14 +1,14 @@
 // Tags queries and mutations - RPC version
-import { createQuery, createMutation, useQueryClient } from '@tanstack/solid-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/solid-query';
 import { createClient } from '@connectrpc/connect';
 import { create } from '@bufbuild/protobuf';
-import { TagsService } from '@buf/loci_loci-proto.bufbuild_es/proto/loci/tags/tags_pb.js';
+import { TagsService } from '@buf/loci_loci-proto.bufbuild_es/loci/tags/tags_pb.js';
 import {
   GetTagsRequestSchema,
   CreateTagRequestSchema,
   UpdateTagRequestSchema,
   DeleteTagRequestSchema,
-} from '@buf/loci_loci-proto.bufbuild_es/proto/loci/tags/tags_pb.js';
+} from '@buf/loci_loci-proto.bufbuild_es/loci/tags/tags_pb.js';
 import { queryKeys } from './shared';
 import { transport } from '../connect-transport';
 import type { PersonalTag } from './types';
@@ -21,7 +21,7 @@ const tagsClient = createClient(TagsService, transport);
 // ===============
 
 export const useTags = () => {
-  return createQuery(() => ({
+  return useQuery(() => ({
     queryKey: queryKeys.tags,
     queryFn: async (): Promise<PersonalTag[]> => {
       const request = create(GetTagsRequestSchema, {});
@@ -45,7 +45,7 @@ export const useTags = () => {
 export const useCreateTagMutation = () => {
   const queryClient = useQueryClient();
 
-  return createMutation(() => ({
+  return useMutation(() => ({
     mutationFn: async ({ name, description, tag_type, active = true }: {
       name: string;
       description: string;
@@ -71,7 +71,7 @@ export const useCreateTagMutation = () => {
 export const useUpdateTagMutation = () => {
   const queryClient = useQueryClient();
 
-  return createMutation(() => ({
+  return useMutation(() => ({
     mutationFn: async ({ id, name, description, tag_type, active }: {
       id: string;
       name?: string;
@@ -99,7 +99,7 @@ export const useUpdateTagMutation = () => {
 export const useToggleTagActiveMutation = () => {
   const queryClient = useQueryClient();
 
-  return createMutation(() => ({
+  return useMutation(() => ({
     mutationFn: async ({ id, active }: { id: string; active: boolean }) => {
       const request = create(UpdateTagRequestSchema, {
         tagId: id,
@@ -121,7 +121,7 @@ export const useToggleTagActiveMutation = () => {
 export const useDeleteTagMutation = () => {
   const queryClient = useQueryClient();
 
-  return createMutation(() => ({
+  return useMutation(() => ({
     mutationFn: async (tagId: string) => {
       const request = create(DeleteTagRequestSchema, { tagId });
       const response = await tagsClient.deleteTag(request);

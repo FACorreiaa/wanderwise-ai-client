@@ -31,7 +31,7 @@ export default function TagsComponent(props: TagsUIProps) {
   const [editTagName, setEditTagName] = createSignal('');
   const [editTagDescription, setEditTagDescription] = createSignal('');
   const [editTagType, setEditTagType] = createSignal('');
-  const [editTagErrors, setEditTagErrors] = createSignal<{ name?: string; type?: string; description?: string }>({});
+  const [_editTagErrors, setEditTagErrors] = createSignal<{ name?: string; type?: string; description?: string }>({});
 
   // Mobile UX: Track which tag is actively selected for actions
   const [activeTagForActions, setActiveTagForActions] = createSignal<string | null>(null);

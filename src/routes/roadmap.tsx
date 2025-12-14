@@ -1,11 +1,7 @@
-import { createSignal, For, Show } from "solid-js";
+import { For } from "solid-js";
 import { Title, Meta } from "@solidjs/meta";
 import {
-  Sparkles,
-  Map as MapIcon,
-  Smartphone,
   CheckCircle2,
-  Clock,
   Rocket,
   Zap,
   Globe,
@@ -93,7 +89,7 @@ export default function Roadmap() {
             {/* Floating 3D-ish Element */}
             <div class="hidden lg:block absolute right-10 top-20 opacity-90 animate-in fade-in slide-in-from-right-10 duration-1000">
               <div class="relative w-96 h-96">
-                <div class="absolute inset-0 bg-blue-500/20 blur-3xl rounded-full"></div>
+                <div class="absolute inset-0 bg-blue-500/20 blur-3xl rounded-full" />
                 <Rocket class="w-full h-full text-blue-300 drop-shadow-[0_0_30px_rgba(59,130,246,0.5)] rotate-12" />
               </div>
             </div>
@@ -119,7 +115,7 @@ export default function Roadmap() {
                     <For each={phases[0].features}>
                       {(feat) => (
                         <li class="flex items-center gap-2 text-gray-700 dark:text-gray-400 text-sm font-medium">
-                          <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                          <span class="w-1.5 h-1.5 rounded-full bg-emerald-500" />
                           {feat}
                         </li>
                       )}
@@ -144,7 +140,7 @@ export default function Roadmap() {
                     <For each={phases[1].features}>
                       {(feat) => (
                         <li class="flex items-center gap-2 text-gray-700 dark:text-gray-400 text-sm font-medium">
-                          <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+                          <span class="w-1.5 h-1.5 rounded-full bg-amber-500" />
                           {feat}
                         </li>
                       )}
@@ -169,7 +165,7 @@ export default function Roadmap() {
                     <For each={phases[2].features}>
                       {(feat) => (
                         <li class="flex items-center gap-2 text-gray-700 dark:text-gray-400 text-sm font-medium">
-                          <span class="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
+                          <span class="w-1.5 h-1.5 rounded-full bg-blue-500" />
                           {feat}
                         </li>
                       )}
@@ -186,7 +182,7 @@ export default function Roadmap() {
         <section class="container mx-auto px-4 py-24">
           <div class="mb-12">
             <h3 class="text-2xl font-bold text-gray-900 dark:text-gray-200 mb-2">Upcoming Highlights</h3>
-            <div class="h-1 w-20 bg-blue-500 rounded-full"></div>
+            <div class="h-1 w-20 bg-blue-500 rounded-full" />
           </div>
 
           <div class="grid grid-cols-1 md:grid-cols-2 gap-10">
