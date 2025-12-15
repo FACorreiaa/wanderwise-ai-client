@@ -133,7 +133,7 @@ export default function ListsPage() {
                             <div class="flex items-center justify-between flex-wrap gap-4">
                                 <div class="flex items-center gap-3">
                                     <div class="relative">
-                                        <div class="absolute -inset-1 bg-gradient-to-tr from-purple-500/60 via-pink-500/60 to-orange-500/60 blur-md opacity-80" />
+                                        <div class="absolute -inset-1 hero-glow blur-md opacity-80" />
                                         <div class="relative w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center text-white shadow-lg ring-2 ring-white/60">
                                             <Folder class="w-6 h-6" />
                                         </div>

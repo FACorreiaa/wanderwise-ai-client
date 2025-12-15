@@ -402,24 +402,37 @@ export default function FavoritesPage() {
   return (
     <div class="min-h-screen bg-gray-50 dark:bg-slate-900">
       {/* Header */}
-      <div class="bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div>
-              <h1 class="text-2xl font-bold text-gray-900 dark:text-white">My Favorites</h1>
-              <p class="text-gray-600 dark:text-slate-400 mt-1">
-                {favorites().length} places you've saved
-              </p>
-            </div>
-            <div class="flex items-center gap-3">
-              <Button variant="outline" class="gap-2">
-                <Download class="w-4 h-4" />
-                Export
-              </Button>
-              <Button class="gap-2">
-                <Plus class="w-4 h-4" />
-                Add Place
-              </Button>
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div class="loci-hero">
+          <div class="loci-hero__content p-6 sm:p-8 space-y-6">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div class="flex items-center gap-3">
+                <div class="relative">
+                  <div class="absolute -inset-1 hero-glow blur-md opacity-80" />
+                  <div class="relative w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center text-white shadow-lg ring-2 ring-white/60">
+                    <Heart class="w-6 h-6 fill-current" />
+                  </div>
+                </div>
+                <div>
+                  <h1 class="text-3xl sm:text-4xl font-bold tracking-tight text-white">My Favorites</h1>
+                  <p class="text-white/80 text-sm mt-1">
+                    {favorites().length} places you've saved
+                  </p>
+                </div>
+              </div>
+              <div class="flex items-center gap-3">
+                <Button
+                  variant="outline"
+                  class="gap-2 bg-white/10 hover:bg-white/20 border-white/20 text-white hover:text-white"
+                >
+                  <Download class="w-4 h-4" />
+                  Export
+                </Button>
+                <Button class="gap-2 bg-white text-blue-900 hover:bg-gray-100 border-none">
+                  <Plus class="w-4 h-4" />
+                  Add Place
+                </Button>
+              </div>
             </div>
           </div>
         </div>

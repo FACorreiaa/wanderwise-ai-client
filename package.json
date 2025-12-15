@@ -9,10 +9,11 @@
     "preview": "pnpm run build && npx wrangler dev",
     "deploy": "pnpm run build && wrangler deploy",
     "cf-typegen": "wrangler types",
-    "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0"
+    "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
+    "buf-update": "pnpm remove @buf/loci_loci-proto.bufbuild_es && pnpm add @buf/loci_loci-proto.bufbuild_es@latest"
   },
   "dependencies": {
-    "@buf/loci_loci-proto.bufbuild_es": "2.10.1-20251214184308-20e2e9a12722.1",
+    "@buf/loci_loci-proto.bufbuild_es": "2.10.1-20251215152630-ea44f59434ef.1",
     "@bufbuild/protobuf": "^2.10.2",
     "@connectrpc/connect": "^2.1.1",
     "@connectrpc/connect-web": "^2.1.1",

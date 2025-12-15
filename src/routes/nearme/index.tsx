@@ -11,6 +11,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "~/ui/card";
 import { Badge } from "~/ui/badge";
 import FavoriteButton from "~/components/shared/FavoriteButton";
 import { Button } from "~/ui/button";
+import { useSelection, type SelectionItem } from "~/lib/hooks/useSelection";
+import { SelectionToolbar } from "~/components/ui/SelectionToolbar";
+import { exportPOIsToPDF } from "~/lib/utils/pdf-export";
 
 // Distance options in kilometers
 const DISTANCE_OPTIONS = [
@@ -34,6 +37,9 @@ export default function NearmePage() {
     const [isLoadingLocation, setIsLoadingLocation] = createSignal(false);
     const [selectedDistance, setSelectedDistance] = createSignal(10); // Default 10km
     const [showDistanceDropdown, setShowDistanceDropdown] = createSignal(false);
+
+    // Selection state for POIs
+    const selection = useSelection<SelectionItem>();
 
     // Get user's location using Geolocation API
     const requestLocation = () => {
@@ -341,45 +347,65 @@ export default function NearmePage() {
                         </h3>
                         <div class="space-y-4">
                             <For each={allPois()}>
-                                {(item) => (
-                                    <Card class="hover:shadow-md transition-all cursor-pointer bg-white/80 dark:bg-gray-800/80 backdrop-blur">
-                                        <CardHeader>
-                                            <div class="flex justify-between items-start">
-                                                <CardTitle class="text-lg">{item.name}</CardTitle>
-                                                <div class="flex items-center gap-2">
-                                                    <FavoriteButton
-                                                        item={{
-                                                            id: item.name,
-                                                            name: item.name,
-                                                            contentType: 'poi',
-                                                            description: item.description_poi || item.description || '',
-                                                        }}
-                                                        size="sm"
-                                                    />
-                                                    <Badge variant="secondary">{item.category}</Badge>
+                                {(item) => {
+                                    const itemForSelection: SelectionItem = {
+                                        id: item.name,
+                                        name: item.name,
+                                        category: item.category,
+                                        description: item.description_poi || item.description,
+                                        address: item.address,
+                                        latitude: item.latitude,
+                                        longitude: item.longitude,
+                                        rating: item.rating,
+                                    };
+                                    return (
+                                        <Card class={`hover:shadow-md transition-all cursor-pointer bg-white/80 dark:bg-gray-800/80 backdrop-blur ${selection.isSelected(item.name) ? 'ring-2 ring-blue-500' : ''}`}>
+                                            <CardHeader>
+                                                <div class="flex justify-between items-start">
+                                                    <div class="flex items-center gap-3">
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={selection.isSelected(item.name)}
+                                                            onChange={() => selection.toggleSelection(itemForSelection)}
+                                                            class="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500 flex-shrink-0"
+                                                        />
+                                                        <CardTitle class="text-lg">{item.name}</CardTitle>
+                                                    </div>
+                                                    <div class="flex items-center gap-2">
+                                                        <FavoriteButton
+                                                            item={{
+                                                                id: item.name,
+                                                                name: item.name,
+                                                                contentType: 'poi',
+                                                                description: item.description_poi || item.description || '',
+                                                            }}
+                                                            size="sm"
+                                                        />
+                                                        <Badge variant="secondary">{item.category}</Badge>
+                                                    </div>
                                                 </div>
-                                            </div>
-                                        </CardHeader>
-                                        <CardContent>
-                                            <p class="text-sm text-gray-600 dark:text-gray-300 line-clamp-3 mb-2">
-                                                {item.description_poi || item.description}
-                                            </p>
-                                            <div class="flex items-center gap-4 text-xs text-gray-500 dark:text-gray-400">
-                                                <Show when={item.distance}>
-                                                    <span class="flex items-center gap-1">
-                                                        <MapPin class="w-3 h-3" />
-                                                        {typeof item.distance === 'number'
-                                                            ? `${(item.distance / 1000).toFixed(1)} km`
-                                                            : item.distance}
-                                                    </span>
-                                                </Show>
-                                                <Show when={item.address}>
-                                                    <span class="truncate">{item.address}</span>
-                                                </Show>
-                                            </div>
-                                        </CardContent>
-                                    </Card>
-                                )}
+                                            </CardHeader>
+                                            <CardContent>
+                                                <p class="text-sm text-gray-600 dark:text-gray-300 line-clamp-3 mb-2">
+                                                    {item.description_poi || item.description}
+                                                </p>
+                                                <div class="flex items-center gap-4 text-xs text-gray-500 dark:text-gray-400">
+                                                    <Show when={item.distance}>
+                                                        <span class="flex items-center gap-1">
+                                                            <MapPin class="w-3 h-3" />
+                                                            {typeof item.distance === 'number'
+                                                                ? `${(item.distance / 1000).toFixed(1)} km`
+                                                                : item.distance}
+                                                        </span>
+                                                    </Show>
+                                                    <Show when={item.address}>
+                                                        <span class="truncate">{item.address}</span>
+                                                    </Show>
+                                                </div>
+                                            </CardContent>
+                                        </Card>
+                                    );
+                                }}
                             </For>
                         </div>
                     </div>
@@ -404,6 +430,26 @@ export default function NearmePage() {
                 listContent={ListContent}
             />
             <FloatingChat />
+
+            {/* Selection Toolbar */}
+            <SelectionToolbar
+                count={selection.count()}
+                onExport={() => exportPOIsToPDF(selection.getSelectedItems())}
+                onClear={() => selection.clearSelection()}
+                onSelectAll={() => {
+                    const items = allPois().map(item => ({
+                        id: item.name,
+                        name: item.name,
+                        category: item.category,
+                        description: item.description_poi || item.description,
+                        address: item.address,
+                        latitude: item.latitude,
+                        longitude: item.longitude,
+                        rating: item.rating,
+                    }));
+                    selection.selectAll(items);
+                }}
+            />
         </>
     );
 }

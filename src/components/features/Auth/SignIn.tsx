@@ -3,11 +3,12 @@ import { Button } from "~/ui/button";
 import { TextField, TextFieldRoot } from "~/ui/textfield";
 import { Label } from "~/ui/label";
 import { Checkbox, CheckboxControl } from "~/ui/checkbox";
-import { A } from "@solidjs/router";
+import { A, useNavigate } from "@solidjs/router";
 import { Component, createSignal, Show } from "solid-js";
 import { VsEye, VsEyeClosed } from "solid-icons/vs";
 import AuthLayout from "~/components/layout/Auth";
 import { useAuth } from "~/contexts/AuthContext";
+import { useGoogleLoginMutation, useAppleLoginMutation } from "~/lib/api/custom-auth";
 import { useTheme } from "~/contexts/ThemeContext";
 
 // Define the FormData interface
@@ -20,6 +21,7 @@ interface FormData {
 const SignIn: Component = () => {
     const { login } = useAuth();
     const { isDark } = useTheme();
+    const navigate = useNavigate();
     const [formData, setFormData] = createSignal<Partial<FormData>>({
         email: '',
         password: '',
@@ -30,6 +32,44 @@ const SignIn: Component = () => {
 
     const [showPassword, setShowPassword] = createSignal(false);
     const [isLoading, setIsLoading] = createSignal(false);
+    const [socialLoading, setSocialLoading] = createSignal<string | null>(null);
+
+    // Social login mutations
+    const googleLoginMutation = useGoogleLoginMutation();
+    const appleLoginMutation = useAppleLoginMutation();
+
+    // Social login handlers
+    const handleGoogleLogin = async () => {
+        setSocialLoading('google');
+        setError('');
+        setHasAuthError(false);
+        try {
+            await googleLoginMutation.mutateAsync();
+            navigate('/');
+        } catch (err: unknown) {
+            const error = err as { message?: string };
+            setError(error?.message || 'Google sign-in failed. Please try again.');
+            setHasAuthError(true);
+        } finally {
+            setSocialLoading(null);
+        }
+    };
+
+    const handleAppleLogin = async () => {
+        setSocialLoading('apple');
+        setError('');
+        setHasAuthError(false);
+        try {
+            await appleLoginMutation.mutateAsync();
+            navigate('/');
+        } catch (err: unknown) {
+            const error = err as { message?: string };
+            setError(error?.message || 'Apple sign-in failed. Please try again.');
+            setHasAuthError(true);
+        } finally {
+            setSocialLoading(null);
+        }
+    };
 
 
     const handleSubmit = async (e: Event) => {
@@ -217,20 +257,30 @@ const SignIn: Component = () => {
                 </div>
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <Button variant="outline" class={socialButtonClass()}>
+                    <Button
+                        variant="outline"
+                        class={socialButtonClass()}
+                        onClick={handleGoogleLogin}
+                        disabled={socialLoading() !== null || isLoading()}
+                    >
                         <svg class="w-4 h-4 sm:w-5 sm:h-5 mr-1.5 sm:mr-2" viewBox="0 0 24 24">
                             <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
                             <path fill="currentColor" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
                             <path fill="currentColor" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
                             <path fill="currentColor" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
                         </svg>
-                        Google
+                        {socialLoading() === 'google' ? 'Signing in...' : 'Google'}
                     </Button>
-                    <Button variant="outline" class={socialButtonClass()}>
+                    <Button
+                        variant="outline"
+                        class={socialButtonClass()}
+                        onClick={handleAppleLogin}
+                        disabled={socialLoading() !== null || isLoading()}
+                    >
                         <svg class="w-4 h-4 sm:w-5 sm:h-5 mr-1.5 sm:mr-2" fill="currentColor" viewBox="0 0 24 24">
-                            <path d="M12.017 0C5.396 0 .029 5.367.029 11.987c0 5.079 3.158 9.417 7.618 11.024-.105-.949-.199-2.403.042-3.441.219-.937 1.407-5.965 1.407-5.965s-.359-.719-.359-1.782c0-1.668.967-2.914 2.171-2.914 1.023 0 1.518.769 1.518 1.69 0 1.029-.653 2.567-.992 3.992-.285 1.193.6 2.165 1.775 2.165 2.128 0 3.768-2.245 3.768-5.487 0-2.861-2.063-4.869-5.008-4.869-3.41 0-5.409 2.562-5.409 5.199 0 1.033.394 2.143.889 2.741.097.118.112.222.083.343-.09.369-.293 1.199-.334 1.363-.053.225-.172.271-.402.165-1.495-.69-2.433-2.878-2.433-4.646 0-3.776 2.748-7.252 7.92-7.252 4.158 0 7.392 2.967 7.392 6.923 0 4.135-2.607 7.462-6.233 7.462-1.214 0-2.357-.629-2.845-1.378l-.759 2.893c-.276 1.071-1.009 2.422-1.522 3.256 1.143.35 2.738.542 4.217.542 6.624 0 11.99-5.367 11.99-11.987C24.007 5.367 18.641.001 12.017.001z" />
+                            <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z" />
                         </svg>
-                        LinkedIn
+                        {socialLoading() === 'apple' ? 'Signing in...' : 'Apple'}
                     </Button>
                 </div>
             </form>

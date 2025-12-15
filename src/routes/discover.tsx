@@ -8,6 +8,9 @@ import RegisterBanner from '~/components/ui/RegisterBanner';
 import { sendUnifiedChatMessageStream } from '~/lib/api/llm';
 import FavoriteButton from '~/components/shared/FavoriteButton';
 import { Button } from '~/ui/button';
+import { useSelection, type SelectionItem } from '~/lib/hooks/useSelection';
+import { SelectionToolbar } from '~/components/ui/SelectionToolbar';
+import { exportPOIsToPDF } from '~/lib/utils/pdf-export';
 
 export default function DiscoverPage() {
     const { isAuthenticated } = useAuth();
@@ -24,6 +27,9 @@ export default function DiscoverPage() {
     const [recentPage, setRecentPage] = createSignal(1);
     const [recentHasMore, setRecentHasMore] = createSignal(true);
     const [recentLoadingMore, setRecentLoadingMore] = createSignal(false);
+
+    // Selection state for search results
+    const selection = useSelection<SelectionItem>();
 
     let abortController: AbortController | null = null;
 
@@ -544,43 +550,63 @@ export default function DiscoverPage() {
                                         </div>
                                     }>
                                         <For each={searchResults()}>
-                                            {(poi) => (
-                                                <div class="glass-panel rounded-2xl p-4 hover:shadow-xl hover:scale-[1.02] transition-all duration-200 cursor-pointer">
-                                                    <div class="flex items-start justify-between gap-3 mb-2">
-                                                        <div class="flex-1">
-                                                            <h3 class="text-base font-semibold text-gray-900 dark:text-white">{poi.name}</h3>
-                                                            <p class="text-xs font-medium text-gray-600 dark:text-gray-400">{poi.category || 'Place'}</p>
+                                            {(poi) => {
+                                                const itemForSelection: SelectionItem = {
+                                                    id: poi.id || poi.name,
+                                                    name: poi.name,
+                                                    category: poi.category,
+                                                    description: poi.description_poi || poi.description,
+                                                    address: poi.address,
+                                                    latitude: poi.latitude,
+                                                    longitude: poi.longitude,
+                                                    rating: poi.rating,
+                                                };
+                                                return (
+                                                    <div class={`glass-panel rounded-2xl p-4 hover:shadow-xl hover:scale-[1.02] transition-all duration-200 cursor-pointer ${selection.isSelected(poi.id || poi.name) ? 'ring-2 ring-blue-500 bg-blue-50/50 dark:bg-blue-900/20' : ''}`}>
+                                                        <div class="flex items-start justify-between gap-3 mb-2">
+                                                            <div class="flex items-center gap-3 flex-1">
+                                                                <input
+                                                                    type="checkbox"
+                                                                    checked={selection.isSelected(poi.id || poi.name)}
+                                                                    onChange={() => selection.toggleSelection(itemForSelection)}
+                                                                    class="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500 flex-shrink-0"
+                                                                />
+                                                                <div class="flex-1 min-w-0">
+                                                                    <h3 class="text-base font-semibold text-gray-900 dark:text-white">{poi.name}</h3>
+                                                                    <p class="text-xs font-medium text-gray-600 dark:text-gray-400">{poi.category || 'Place'}</p>
+                                                                </div>
+                                                            </div>
+                                                            <div class="flex items-center gap-2">
+                                                                <FavoriteButton
+                                                                    item={{
+                                                                        id: poi.id || poi.name,
+                                                                        name: poi.name,
+                                                                        contentType: 'poi',
+                                                                        description: poi.description_poi || poi.description || '',
+                                                                    }}
+                                                                    size="sm"
+                                                                />
+                                                                <span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-gradient-to-r from-blue-100 to-cyan-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-200 border border-blue-200/50 dark:border-blue-800/50">
+                                                                    {poi.city || 'Unknown'}
+                                                                </span>
+                                                            </div>
                                                         </div>
-                                                        <div class="flex items-center gap-2">
-                                                            <FavoriteButton
-                                                                item={{
-                                                                    id: poi.id || poi.name,
-                                                                    name: poi.name,
-                                                                    contentType: 'poi',
-                                                                    description: poi.description_poi || poi.description || '',
-                                                                }}
-                                                                size="sm"
-                                                            />
-                                                            <span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-gradient-to-r from-blue-100 to-cyan-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-200 border border-blue-200/50 dark:border-blue-800/50">
-                                                                {poi.city || 'Unknown'}
-                                                            </span>
+                                                        <p class="text-sm text-gray-700 dark:text-gray-400 line-clamp-2 mb-3 leading-relaxed">
+                                                            {poi.description_poi || poi.description || 'No description provided.'}
+                                                        </p>
+                                                        <div class="flex items-center gap-3 text-xs text-gray-600 dark:text-gray-500">
+                                                            <div class="flex items-center gap-1">
+                                                                <Star class="w-4 h-4 text-amber-500 dark:text-yellow-500 fill-current" />
+                                                                <span class="font-medium">{poi.rating ?? '4.0'}</span>
+                                                            </div>
+                                                            <div class="flex items-center gap-1">
+                                                                <MapPin class="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                                                                <span class="font-medium">{poi.city || 'N/A'}</span>
+                                                            </div>
                                                         </div>
                                                     </div>
-                                                    <p class="text-sm text-gray-700 dark:text-gray-400 line-clamp-2 mb-3 leading-relaxed">
-                                                        {poi.description_poi || poi.description || 'No description provided.'}
-                                                    </p>
-                                                    <div class="flex items-center gap-3 text-xs text-gray-600 dark:text-gray-500">
-                                                        <div class="flex items-center gap-1">
-                                                            <Star class="w-4 h-4 text-amber-500 dark:text-yellow-500 fill-current" />
-                                                            <span class="font-medium">{poi.rating ?? '4.0'}</span>
-                                                        </div>
-                                                        <div class="flex items-center gap-1">
-                                                            <MapPin class="w-4 h-4 text-blue-600 dark:text-blue-400" />
-                                                            <span class="font-medium">{poi.city || 'N/A'}</span>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            )}
+                                                );
+                                            }}
                                         </For>
                                     </Show>
                                 </Show>
@@ -815,6 +841,26 @@ export default function DiscoverPage() {
                     </Show>
                 </div>
             </div>
+
+            {/* Selection Toolbar */}
+            <SelectionToolbar
+                count={selection.count()}
+                onExport={() => exportPOIsToPDF(selection.getSelectedItems())}
+                onClear={() => selection.clearSelection()}
+                onSelectAll={() => {
+                    const items = searchResults().map(poi => ({
+                        id: poi.id || poi.name,
+                        name: poi.name,
+                        category: poi.category,
+                        description: poi.description_poi || poi.description,
+                        address: poi.address,
+                        latitude: poi.latitude,
+                        longitude: poi.longitude,
+                        rating: poi.rating,
+                    }));
+                    selection.selectAll(items);
+                }}
+            />
         </>
     );
 }

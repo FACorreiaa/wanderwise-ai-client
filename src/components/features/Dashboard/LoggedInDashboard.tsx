@@ -14,6 +14,7 @@ import { useAuth } from '~/contexts/AuthContext';
 import { useLandingPageStatistics } from '~/lib/api/statistics';
 import { useRecentInteractions } from '~/lib/api/recents';
 import { useTrendingDiscoveries } from '~/lib/api/discover';
+import { useFavoritesList } from '~/lib/api/favorites';
 import QuickSettingsModal from '~/components/modals/QuickSettingsModal';
 import ProfileQuickSelect from './ProfileQuickSelect';
 
@@ -61,6 +62,18 @@ export default function LoggedInDashboard() {
 
   // Get trending discoveries
   const trendingQuery = useTrendingDiscoveries(5);
+
+  // Get favorites count
+  const favoritesQuery = useFavoritesList();
+
+  // Compute total saved places (favorites + bookmarks from stats)
+  const savedPlacesCount = createMemo(() => {
+    const favCount = favoritesQuery.data?.items?.length || 0;
+    const statsCount = userStatsQuery.data?.saved_places || 0;
+    // Return whichever is higher to avoid double counting
+    // In future, backend should return combined count
+    return Math.max(favCount, statsCount);
+  });
 
   // Helper function to format relative time
   const formatRelativeTime = (dateStr: string) => {
@@ -300,7 +313,7 @@ export default function LoggedInDashboard() {
                 <div>
                   <p class="text-sm text-gray-600 dark:text-slate-200/80">Saved Places</p>
                   <p class="text-2xl font-bold text-gray-900 dark:text-white">
-                    {userStatsQuery.isLoading ? '--' : (userStatsQuery.data?.saved_places ?? '0')}
+                    {userStatsQuery.isLoading && favoritesQuery.isLoading ? '--' : savedPlacesCount()}
                   </p>
                 </div>
                 <Bookmark class="w-8 h-8 text-emerald-600 dark:text-emerald-200" />
