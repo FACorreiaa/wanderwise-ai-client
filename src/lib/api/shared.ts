@@ -297,22 +297,8 @@ export const usePrefetchUserData = () => {
   const queryClient = useQueryClient();
 
   return () => {
-    queryClient.prefetchQuery({
-      queryKey: queryKeys.profiles,
-      queryFn: () => apiRequest<UserProfile[]>("/user/search-profile/"),
-      staleTime: 10 * 60 * 1000,
-    });
-
-    queryClient.prefetchQuery({
-      queryKey: queryKeys.interests,
-      queryFn: () => apiRequest<Interest[]>("/user/interests/"),
-      staleTime: 15 * 60 * 1000,
-    });
-
-    // queryClient.prefetchQuery({
-    //   queryKey: queryKeys.favorites,
-    //   queryFn: () => apiRequest<POI[]>("/pois/favourites"),
-    //   staleTime: 5 * 60 * 1000,
-    // });
+    // NOTE: Prefetch disabled - REST API removed, use RPC-based hooks directly
+    console.log('usePrefetchUserData: Prefetch disabled - use RPC hooks');
   };
 };
+

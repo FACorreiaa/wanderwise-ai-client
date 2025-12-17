@@ -485,6 +485,36 @@ export interface HotelDetailedInfo {
   images: string[];
   rating: number;
   llm_interaction_id: string;
+  // Extended fields for detail page
+  checkIn?: string;
+  checkOut?: string;
+  pricePerNight?: string;
+  reviewCount?: number;
+  features?: string[];
+  rooms?: HotelRoom[];
+  nearbyAttractions?: NearbyAttraction[];
+  contact?: HotelContact;
+}
+
+export interface HotelRoom {
+  type: string;
+  description: string;
+  price: string;
+  size: string;
+  capacity: string;
+  amenities: string[];
+}
+
+export interface NearbyAttraction {
+  name: string;
+  type: string;
+  distance: string;
+}
+
+export interface HotelContact {
+  phone?: string;
+  email?: string;
+  website?: string;
 }
 
 export interface RestaurantDetailedInfo {
@@ -505,6 +535,28 @@ export interface RestaurantDetailedInfo {
   images: string[];
   rating: number;
   llm_interaction_id: string;
+  // Extended fields for detail page
+  reviewCount?: number;
+  isOpen?: boolean;
+  reservationRequired?: boolean;
+  acceptsCards?: boolean;
+  features?: string[] | { name: string; icon: any; available: boolean }[];
+  specialties?: string[];
+  languages?: string[];
+  averagePrice?: string;
+  priceRange?: string;
+  cuisine?: string;
+  menu?: {
+    starters: { name: string; description: string; price: string }[];
+    mains: { name: string; description: string; price: string }[];
+    desserts: { name: string; description: string; price: string }[];
+  };
+  hours?: Record<string, string>;
+  contact?: {
+    phone?: string;
+    email?: string;
+    website?: string;
+  };
 }
 
 export interface POIDetailedInfo {

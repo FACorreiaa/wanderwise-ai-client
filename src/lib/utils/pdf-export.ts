@@ -1,30 +1,32 @@
+// PDF Export utilities - Wraps the Export API service
 import type { SelectionItem } from "../hooks/useSelection";
+import { exportPOIsToPDF as exportPOIsAPI } from "../api/export";
 
 /**
  * Export selected POIs to PDF format
- * TODO: Implement server-side PDF generation
+ * This is a convenience wrapper around the Export API
  */
-export async function exportPOIsToPDF(items: SelectionItem[]): Promise<void> {
-    console.log("TODO: implement server-side PDF export", items);
+export async function exportPOIsToPDF(items: SelectionItem[], title?: string): Promise<void> {
+    if (items.length === 0) {
+        console.warn("pdf-export: No items to export");
+        return;
+    }
 
-    // Placeholder: Log selected items for now
-    console.log(`Exporting ${items.length} items to PDF:`);
-    items.forEach((item, index) => {
-        console.log(`  ${index + 1}. ${item.name} (${item.category || 'Unknown category'})`);
-    });
+    console.log(`pdf-export: Exporting ${items.length} items to PDF...`);
 
-    // TODO: Call server endpoint to generate PDF
-    // const response = await fetch('/api/export/pdf', {
-    //     method: 'POST',
-    //     headers: { 'Content-Type': 'application/json' },
-    //     body: JSON.stringify({ items }),
-    // });
-    // const blob = await response.blob();
-    // downloadBlob(blob, 'places.pdf');
+    try {
+        await exportPOIsAPI(items, title);
+        console.log("pdf-export: Export complete");
+    } catch (error) {
+        console.error("pdf-export: Export failed:", error);
+        // Fallback to JSON export on error
+        console.log("pdf-export: Falling back to JSON export");
+        exportPOIsToJSON(items);
+    }
 }
 
 /**
- * Export selected POIs to JSON format (works immediately)
+ * Export selected POIs to JSON format (fallback/works immediately)
  */
 export function exportPOIsToJSON(items: SelectionItem[], filename = "places.json"): void {
     const data = JSON.stringify(items, null, 2);

@@ -141,30 +141,11 @@ export default function HotelDetailPage() {
             <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Hotel Amenities</h3>
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 <For each={hotel()?.amenities}>
-                    {(amenity) => {
-                        if (typeof amenity === 'string') {
-                            return (
-                                <div class="flex items-center gap-3 p-3 rounded-lg bg-gray-50 dark:bg-gray-700 text-gray-500 dark:text-gray-400">
-                                    <span class="font-medium">{amenity}</span>
-                                </div>
-                            );
-                        }
-                        const IconComponent = amenity.icon;
-                        return (
-                            <div class={`flex items-center gap-3 p-3 rounded-lg ${amenity.available
-                                ? 'bg-green-50 dark:bg-green-900/20 text-green-800 dark:text-green-200'
-                                : 'bg-gray-50 dark:bg-gray-700 text-gray-500 dark:text-gray-400'
-                                }`}>
-                                <Show when={IconComponent}>
-                                    <IconComponent class="w-5 h-5" />
-                                </Show>
-                                <span class="font-medium">{amenity.name}</span>
-                                <Show when={!amenity.available}>
-                                    <span class="text-xs">(Not Available)</span>
-                                </Show>
-                            </div>
-                        );
-                    }}
+                    {(amenity) => (
+                        <div class="flex items-center gap-3 p-3 rounded-lg bg-green-50 dark:bg-green-900/20 text-green-800 dark:text-green-200">
+                            <span class="font-medium">{amenity}</span>
+                        </div>
+                    )}
                 </For>
             </div>
         </div>
@@ -285,16 +266,12 @@ export default function HotelDetailPage() {
                                 <div class="mb-6">
                                     <h3 class="font-semibold text-gray-900 dark:text-white mb-2">Popular Amenities</h3>
                                     <div class="flex flex-wrap gap-2">
-                                        <For each={hotel()?.amenities?.filter(a => typeof a !== 'string' && a.available).slice(0, 4)}>
-                                            {(amenity) => {
-                                                const IconComponent = (amenity as any).icon;
-                                                return (
-                                                    <div class="flex items-center gap-2 px-3 py-1 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded-full text-sm">
-                                                        <IconComponent class="w-4 h-4" />
-                                                        {(amenity as any).name}
-                                                    </div>
-                                                );
-                                            }}
+                                        <For each={hotel()?.amenities?.slice(0, 4)}>
+                                            {(amenity) => (
+                                                <div class="flex items-center gap-2 px-3 py-1 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded-full text-sm">
+                                                    {amenity}
+                                                </div>
+                                            )}
                                         </For>
                                     </div>
                                 </div>

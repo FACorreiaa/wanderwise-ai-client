@@ -8,7 +8,7 @@ import {
   UpdateUserProfileRequestSchema,
   UpdateProfileParamsSchema,
 } from '@buf/loci_loci-proto.bufbuild_es/loci/user/user_pb.js';
-import { apiRequest, queryKeys } from './shared';
+import { queryKeys } from './shared';
 import { fetchPreferenceProfilesRPC } from './profiles';
 import { getAuthToken } from '../auth/tokens';
 import { transport } from '../connect-transport';
@@ -50,7 +50,11 @@ export const useProfiles = () => {
 export const useProfile = (profileId: string) => {
   return useQuery(() => ({
     queryKey: queryKeys.profile(profileId),
-    queryFn: () => apiRequest<UserProfile>(`/user/search-profile/${profileId}`),
+    queryFn: async (): Promise<UserProfile | null> => {
+      // Get profile from RPC via profiles.ts
+      const profiles = await fetchPreferenceProfilesRPC();
+      return (profiles.find((p: any) => p.id === profileId) as unknown as UserProfile) || null;
+    },
     enabled: !!profileId,
   }));
 };
@@ -67,15 +71,16 @@ export const useDefaultProfile = () => {
 
 export const useCreateProfileMutation = () => {
   const queryClient = useQueryClient();
+  // Import from profiles.ts which uses RPC
+  const { useCreateSearchProfileMutation } = require('./profiles');
+  const createMutation = useCreateSearchProfileMutation();
 
   return useMutation(() => ({
-    mutationFn: (profileData: Partial<UserProfile>) =>
-      apiRequest<UserProfile>('/user/search-profile/', {
-        method: 'POST',
-        body: JSON.stringify(profileData),
-      }),
+    mutationFn: async (profileData: Partial<UserProfile>) => {
+      await createMutation.mutateAsync(profileData);
+      return profileData as UserProfile;
+    },
     onSuccess: (newProfile) => {
-      // Optimistically update the profiles list
       queryClient.setQueryData(queryKeys.profiles, (old: UserProfile[] = []) => [...old, newProfile]);
       queryClient.invalidateQueries({ queryKey: queryKeys.profiles });
     },
@@ -210,12 +215,16 @@ export const useUpdateProfileMutation = () => {
 
 export const useDeleteProfileMutation = () => {
   const queryClient = useQueryClient();
+  // Import from profiles.ts which uses RPC
+  const { useDeleteSearchProfileMutation } = require('./profiles');
+  const deleteMutation = useDeleteSearchProfileMutation();
 
   return useMutation(() => ({
-    mutationFn: (profileId: string) =>
-      apiRequest<{ message: string }>(`/user/search-profile/${profileId}`, { method: 'DELETE' }),
+    mutationFn: async (profileId: string) => {
+      await deleteMutation.mutateAsync(profileId);
+      return { message: 'Profile deleted' };
+    },
     onSuccess: (_, profileId) => {
-      // Optimistically remove from profiles list
       queryClient.setQueryData(queryKeys.profiles, (old: UserProfile[] = []) =>
         old.filter(profile => profile.id !== profileId)
       );

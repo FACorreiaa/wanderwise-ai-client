@@ -187,3 +187,44 @@ export const useRefreshTokenMutation = () => {
     },
   }));
 };
+
+// Forgot Password - initiates password reset flow
+export const useForgotPasswordMutation = () => {
+  return useMutation(() => ({
+    mutationFn: async ({ email }: { email: string }) => {
+      const { ForgotPasswordRequestSchema } = await import('@buf/loci_loci-proto.bufbuild_es/loci/auth/auth_pb.js');
+
+      const request = create(ForgotPasswordRequestSchema, {
+        email,
+      });
+
+      const response = await authClient.forgotPassword(request);
+
+      return {
+        success: response.success,
+        message: response.message,
+      };
+    },
+  }));
+};
+
+// Reset Password - completes password reset with token
+export const useResetPasswordMutation = () => {
+  return useMutation(() => ({
+    mutationFn: async ({ token, newPassword }: { token: string; newPassword: string }) => {
+      const { ResetPasswordRequestSchema } = await import('@buf/loci_loci-proto.bufbuild_es/loci/auth/auth_pb.js');
+
+      const request = create(ResetPasswordRequestSchema, {
+        token,
+        newPassword,
+      });
+
+      const response = await authClient.resetPassword(request);
+
+      return {
+        success: response.success,
+        message: response.message,
+      };
+    },
+  }));
+};

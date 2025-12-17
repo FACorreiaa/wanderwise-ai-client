@@ -93,16 +93,15 @@ export default function DiscoverPage() {
         }
     });
 
-    // Get POIs from appropriate source
-    const [pois] = useNearbyPOIs(
-        () => getSearchCoordinates().lat,
-        () => getSearchCoordinates().lon,
-        () => searchRadius()
-    );
+    // Get POIs from appropriate source - note: useNearbyPOIs is stubbed, returns empty array
+    const [poisData] = useNearbyPOIs();
+    // Wrap in accessor for compatibility
+    const pois = () => ({ loading: false, error: null as Error | null });
+    const poisList = () => poisData() || [];
 
 
 
-    console.log('📍 POIs loaded:', pois());
+    console.log('📍 POIs loaded:', poisList().length);
     console.log('⭐ Favorites query state:', {
         data: favoritesQuery.data,
         isLoading: favoritesQuery.isLoading,
@@ -138,7 +137,7 @@ export default function DiscoverPage() {
 
     // Filter and sort POIs
     const filteredPois = (): POIDetailedInfo[] => {
-        const data = pois();
+        const data = poisList();
         // If data is undefined or not an array, return an empty array
         if (!data || !Array.isArray(data)) {
             return [];
@@ -601,7 +600,7 @@ export default function DiscoverPage() {
                                 </div>
                                 <h1 class="text-3xl sm:text-4xl font-bold leading-tight">Near Me · {displayLocation()}</h1>
                                 <p class="text-white/80">
-                                    {pois.loading
+                                    {pois().loading
                                         ? 'Finding great spots around you...'
                                         : `${filteredPois().length} places curated to your vibe`}
                                 </p>
@@ -616,10 +615,10 @@ export default function DiscoverPage() {
                                             {favoritesQuery.data?.length || 0} saved
                                         </span>
                                     </Show>
-                                    <Show when={pois.error}>
+                                    <Show when={pois().error}>
                                         <span class="loci-chip bg-red-500/30 border-red-200/40 text-red-50">
                                             <TriangleAlert class="w-4 h-4" />
-                                            {pois.error.message}
+                                            {pois().error?.message || 'Error loading POIs'}
                                         </span>
                                     </Show>
                                 </div>

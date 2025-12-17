@@ -5,14 +5,16 @@ import { FiCheck } from "solid-icons/fi";
 import { Component, createSignal, Show } from "solid-js";
 import AuthLayout from '../../layout/Auth'
 import { useTheme } from "~/contexts/ThemeContext";
+import { useForgotPasswordMutation } from "~/lib/api/auth-connect";
 
 const ForgotPassword: Component = () => {
     const navigate = useNavigate();
     const { isDark } = useTheme();
     const [email, setEmail] = createSignal('');
-    const [isLoading, setIsLoading] = createSignal(false);
     const [emailSent, setEmailSent] = createSignal(false);
     const [emailError, setEmailError] = createSignal('');
+
+    const forgotPasswordMutation = useForgotPasswordMutation();
 
     const validateEmail = (email: string): boolean => {
         if (!email.trim()) {
@@ -36,10 +38,14 @@ const ForgotPassword: Component = () => {
             return;
         }
 
-        setIsLoading(true);
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        setIsLoading(false);
-        setEmailSent(true);
+        try {
+            await forgotPasswordMutation.mutateAsync({ email: email() });
+            setEmailSent(true);
+        } catch (error) {
+            // Still show success to prevent email enumeration
+            console.error('Forgot password request failed:', error);
+            setEmailSent(true);
+        }
     };
 
     const handleBackToSignIn = () => {
@@ -114,10 +120,10 @@ const ForgotPassword: Component = () => {
 
                     <Button
                         type="submit"
-                        disabled={isLoading()}
+                        disabled={forgotPasswordMutation.isPending}
                         class="w-full py-3 font-semibold bg-emerald-400 hover:bg-emerald-300 text-slate-950 shadow-[0_18px_50px_rgba(52,211,153,0.35)]"
                     >
-                        {isLoading() ? 'Sending...' : 'Send reset link'}
+                        {forgotPasswordMutation.isPending ? 'Sending...' : 'Send reset link'}
                     </Button>
                 </form>
             </Show>

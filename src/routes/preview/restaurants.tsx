@@ -11,7 +11,7 @@ export default function PreviewRestaurantsPage() {
     const restaurants = createMemo(() => TOKYO_RESTAURANTS.map(r => ({
         ...r,
         id: r.name,
-        cuisine: [r.category]
+        cuisine_type: r.category
     })));
 
     const allPois = createMemo(() => {

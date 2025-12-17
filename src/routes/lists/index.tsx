@@ -3,7 +3,8 @@ import { Title, Meta } from '@solidjs/meta';
 import { A } from '@solidjs/router';
 import {
     Folder, Plus, Edit3, Trash2, Lock, Globe,
-    Loader2, X, FolderPlus, ChevronRight, MapPin, Calendar, Heart, Bookmark
+    Loader2, X, FolderPlus, ChevronRight, MapPin, Calendar, Heart, Bookmark,
+    CheckSquare, Square, Download, Share2
 } from 'lucide-solid';
 import {
     useLists,
@@ -13,6 +14,9 @@ import {
     type CreateListData
 } from '~/lib/api/lists';
 import { Button } from '~/ui/button';
+import { useSelection, type SelectionItem } from '~/lib/hooks/useSelection';
+import { SelectionToolbar } from '~/components/ui/SelectionToolbar';
+import { exportListToPDF } from '~/lib/api/export';
 
 export default function ListsPage() {
     // State
@@ -30,6 +34,48 @@ export default function ListsPage() {
     const createMutation = useCreateListMutation();
     const updateMutation = useUpdateListMutation();
     const deleteMutation = useDeleteListMutation();
+
+    // Selection state for lists
+    const selection = useSelection<SelectionItem>();
+
+    // Convert list to selection item format
+    const listToSelectionItem = (list: any): SelectionItem => ({
+        id: list.id,
+        name: list.name,
+        category: list.isItinerary ? 'Itinerary' : 'List',
+        description: list.description || '',
+    });
+
+    // Handle list selection toggle
+    const handleListSelect = (list: any, e: Event) => {
+        e.stopPropagation();
+        e.preventDefault();
+        selection.toggleSelection(listToSelectionItem(list));
+    };
+
+    // Handle export selected lists
+    const handleExport = async () => {
+        const items = selection.getSelectedItems();
+        for (const item of items) {
+            await exportListToPDF(item.id, item.name, [], [], []);
+        }
+    };
+
+    // Select all filtered lists
+    const handleSelectAll = () => {
+        const items = filteredLists().map(listToSelectionItem);
+        selection.selectAll(items);
+    };
+
+    // Share list (copy link)
+    const handleShare = (list: any, e: Event) => {
+        e.stopPropagation();
+        e.preventDefault();
+        const url = `${window.location.origin}/lists/${list.id}`;
+        navigator.clipboard.writeText(url).then(() => {
+            alert('Link copied to clipboard!');
+        });
+    };
 
     // Derived state
     const lists = createMemo(() => listsQuery.data || []);
@@ -290,6 +336,24 @@ export default function ListsPage() {
                                             {/* Action Buttons */}
                                             <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                                                 <button
+                                                    onClick={(e) => handleListSelect(list, e)}
+                                                    class="p-2 text-gray-400 hover:text-blue-500 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/20"
+                                                    title={selection.isSelected(list.id) ? 'Deselect' : 'Select'}
+                                                >
+                                                    {selection.isSelected(list.id)
+                                                        ? <CheckSquare class="w-4 h-4 text-blue-600" />
+                                                        : <Square class="w-4 h-4" />}
+                                                </button>
+                                                <Show when={list.isPublic}>
+                                                    <button
+                                                        onClick={(e) => handleShare(list, e)}
+                                                        class="p-2 text-gray-400 hover:text-green-500 rounded-lg hover:bg-green-50 dark:hover:bg-green-900/20"
+                                                        title="Share"
+                                                    >
+                                                        <Share2 class="w-4 h-4" />
+                                                    </button>
+                                                </Show>
+                                                <button
                                                     onClick={() => openEditModal(list)}
                                                     class="p-2 text-gray-400 hover:text-blue-500 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/20"
                                                     title="Edit"
@@ -434,6 +498,14 @@ export default function ListsPage() {
                         </div>
                     </div>
                 </Show>
+
+                {/* Selection Toolbar */}
+                <SelectionToolbar
+                    count={selection.count()}
+                    onExport={handleExport}
+                    onClear={selection.clearSelection}
+                    onSelectAll={handleSelectAll}
+                />
             </div>
         </>
     );

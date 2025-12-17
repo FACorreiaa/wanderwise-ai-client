@@ -1,10 +1,13 @@
 import { createSignal, For, Show } from 'solid-js';
 import { A, useNavigate } from '@solidjs/router';
-import { Search, MapPin, Clock, Star, Filter, Grid, List, TrendingUp, Sparkles, ChevronRight, RotateCcw, SortAsc, SortDesc, Bookmark } from 'lucide-solid';
+import { Search, MapPin, Clock, Star, Filter, Grid, List, TrendingUp, Sparkles, ChevronRight, RotateCcw, SortAsc, SortDesc, Bookmark, CheckSquare, Square } from 'lucide-solid';
 import { useRecentInteractions } from '~/lib/api/recents';
 import type { CityInteractions } from '~/lib/api/types';
 import { Button } from '~/ui/button';
 import { TextField, TextFieldRoot } from '~/ui/textfield';
+import { useSelection, type SelectionItem } from '~/lib/hooks/useSelection';
+import { SelectionToolbar } from '~/components/ui/SelectionToolbar';
+import { exportPOIsToPDF } from '~/lib/utils/pdf-export';
 
 export default function RecentsPage() {
   const [searchQuery, setSearchQuery] = createSignal('');
@@ -16,6 +19,36 @@ export default function RecentsPage() {
 
   const navigate = useNavigate();
   const recentsQuery = useRecentInteractions(50); // Get more cities for better overview
+
+  // Selection state for cities
+  const selection = useSelection<SelectionItem>();
+  const [selectionMode, setSelectionMode] = createSignal(false);
+
+  // Convert city to selection item format
+  const cityToSelectionItem = (city: CityInteractions): SelectionItem => ({
+    id: city.city_name,
+    name: city.city_name,
+    category: 'City',
+    description: `${city.interactions.length} interactions, ${city.poi_count} places`,
+  });
+
+  // Handle city selection toggle
+  const handleCitySelect = (city: CityInteractions, e: Event) => {
+    e.stopPropagation();
+    selection.toggleSelection(cityToSelectionItem(city));
+  };
+
+  // Handle export
+  const handleExport = () => {
+    const items = selection.getSelectedItems();
+    exportPOIsToPDF(items, 'Recent Cities');
+  };
+
+  // Select all filtered cities
+  const handleSelectAll = () => {
+    const items = filteredCities().map(cityToSelectionItem);
+    selection.selectAll(items);
+  };
 
   const timeframeOptions = [
     { id: 'all', label: 'All Time' },
@@ -150,12 +183,16 @@ export default function RecentsPage() {
             </span>
           </div>
 
-          {/* Navigation Arrow */}
-          <div class="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
-            <div class="p-1.5 bg-white/90 dark:bg-gray-800/90 rounded-lg">
-              <ChevronRight class="w-4 h-4 text-gray-600 dark:text-gray-400" />
-            </div>
-          </div>
+          {/* Selection Checkbox */}
+          <button
+            onClick={(e) => handleCitySelect(city, e)}
+            class="absolute top-3 right-3 p-1.5 bg-white/90 dark:bg-gray-800/90 rounded-lg hover:bg-white dark:hover:bg-gray-700 transition-colors z-10"
+            title={selection.isSelected(city.city_name) ? 'Deselect' : 'Select'}
+          >
+            {selection.isSelected(city.city_name)
+              ? <CheckSquare class="w-4 h-4 text-blue-600" />
+              : <Square class="w-4 h-4 text-gray-400 group-hover:text-gray-600 dark:group-hover:text-gray-300" />}
+          </button>
         </div>
 
         {/* Content */}
@@ -243,7 +280,15 @@ export default function RecentsPage() {
                   <span class="mr-1">{activityInfo.icon}</span>
                   {activityInfo.level === 'high' ? 'Very Active' : activityInfo.level === 'medium' ? 'Active' : 'Visited'}
                 </span>
-                <ChevronRight class="w-4 h-4 text-gray-400 group-hover:text-gray-600 dark:group-hover:text-gray-300 transition-colors" />
+                <button
+                  onClick={(e) => handleCitySelect(city, e)}
+                  class="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                  title={selection.isSelected(city.city_name) ? 'Deselect' : 'Select'}
+                >
+                  {selection.isSelected(city.city_name)
+                    ? <CheckSquare class="w-4 h-4 text-blue-600" />
+                    : <Square class="w-4 h-4 text-gray-400 group-hover:text-gray-600 dark:group-hover:text-gray-300" />}
+                </button>
               </div>
             </div>
 
@@ -486,6 +531,14 @@ export default function RecentsPage() {
           </Show>
         </Show>
       </div>
+
+      {/* Selection Toolbar */}
+      <SelectionToolbar
+        count={selection.count()}
+        onExport={handleExport}
+        onClear={selection.clearSelection}
+        onSelectAll={handleSelectAll}
+      />
     </div>
   );
 }

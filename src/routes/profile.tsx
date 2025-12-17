@@ -1,10 +1,13 @@
-import { createSignal, For, Show, Switch, Match } from 'solid-js';
+import { createSignal, For, Show, Switch, Match, createMemo } from 'solid-js';
 import { User, Mail, MapPin, Calendar, Camera, Edit3, Save, X, Tag, Heart } from 'lucide-solid';
 import { useAuth } from '~/contexts/AuthContext';
 import { useUpdateProfileMutation, useUserProfileQuery, useUploadAvatarMutation } from '~/lib/api/user';
 import { ProcessedProfileData, UserProfileResponse } from '~/lib/api/types';
 import { ProtectedRoute } from '~/contexts/AuthContext';
 import { Button } from '~/ui/button';
+import { useRecentInteractions } from '~/lib/api/recents';
+import { useLists } from '~/lib/api/lists';
+import { useFavorites } from '~/lib/api/pois';
 
 function ProfilePageContent() {
     const { user } = useAuth();
@@ -16,12 +19,59 @@ function ProfilePageContent() {
     const profileQuery = useUserProfileQuery();
     const updateProfileMutation = useUpdateProfileMutation();
 
+    // API hooks for real data - no more hardcoded values
+    const recentsQuery = useRecentInteractions(20);
+    const listsQuery = useLists();
+    const favoritesQuery = useFavorites();
+
     console.log('Profile page - User data:', user());
     console.log('Profile query status:', {
         isLoading: profileQuery.isLoading,
         isError: profileQuery.isError,
         error: profileQuery.error,
         data: profileQuery.data
+    });
+
+    // Compute real stats from API data
+    const computedStats = createMemo(() => {
+        const cities = recentsQuery.data?.cities || [];
+        const lists = listsQuery.data || [];
+        const favorites = favoritesQuery.data || [];
+
+        // Count unique cities visited (places_visited)
+        const placesVisited = cities.length;
+        // Lists created
+        const listsCreated = lists.length;
+        // Favorites count
+        const favoritesCount = favorites.length;
+
+        return {
+            places_visited: placesVisited,
+            reviews_written: 0, // Reviews not implemented yet (item #7)
+            lists_created: listsCreated,
+            followers: 0, // Social features not implemented
+            following: 0  // Social features not implemented
+        };
+    });
+
+    // Compute badges based on real activity
+    const computedBadges = createMemo(() => {
+        const badges: string[] = [];
+        const stats = computedStats();
+
+        // Early Adopter - all users get this
+        badges.push('Early Adopter');
+
+        // Explorer badge - visited 5+ places
+        if (stats.places_visited >= 5) badges.push('Explorer');
+
+        // Curator badge - created 3+ lists
+        if (stats.lists_created >= 3) badges.push('Curator');
+
+        // Traveler badge - visited 10+ places
+        if (stats.places_visited >= 10) badges.push('Traveler');
+
+        return badges;
     });
 
     // Get profile data from API - no hardcoded fallbacks
@@ -40,15 +90,10 @@ function ProfilePageContent() {
             joinedDate: apiData?.created_at || userData?.created_at,
             avatar: apiData?.profile_image_url || userData?.profile_image_url,
             interests: apiData?.interests || ['Architecture', 'Food & Dining', 'Museums', 'Photography'],
-            // Temporary hardcoded data for UI purposes
-            badges: ['Early Adopter', 'Review Writer', 'Local Guide'],
-            stats: {
-                places_visited: 47,
-                reviews_written: 23,
-                lists_created: 8,
-                followers: 156,
-                following: 89
-            }
+            // Badges based on real activity
+            badges: computedBadges(),
+            // Real stats from API data
+            stats: computedStats()
         };
     };
 
@@ -142,45 +187,77 @@ function ProfilePageContent() {
         { id: 'reviews', label: 'Reviews' }
     ];
 
-    const recentActivity = [
-        {
-            type: 'review',
-            title: 'Reviewed Livraria Lello',
-            description: 'Amazing architecture and atmosphere!',
-            date: '2 days ago',
-            rating: 5
-        },
-        {
-            type: 'list',
-            title: 'Created "Hidden Gems in Porto"',
-            description: 'A curated list of off-the-beaten-path spots',
-            date: '1 week ago'
-        },
-        {
-            type: 'favorite',
-            title: 'Added Ponte Luís I to favorites',
-            date: '2 weeks ago'
-        }
-    ];
+    // Compute recent activity from real data
+    const recentActivity = createMemo(() => {
+        const activities: { type: string; title: string; description?: string; date: string; rating?: number }[] = [];
 
-    const getUserLists = () => [
-        {
-            id: 1,
-            name: 'European Hidden Gems',
-            description: 'Off-the-beaten-path destinations across Europe',
-            itemCount: 15,
-            isPublic: true,
-            likes: 42
-        },
-        {
-            id: 2,
-            name: 'Best Food Markets',
-            description: 'Amazing food markets from around the world',
-            itemCount: 8,
-            isPublic: false,
-            likes: 0
+        // Add recent interactions from recents API
+        const cities = recentsQuery.data?.cities || [];
+        for (const city of cities.slice(0, 3)) {
+            const interaction = city.interactions[0];
+            if (interaction) {
+                activities.push({
+                    type: 'visit',
+                    title: `Explored ${city.city_name}`,
+                    description: interaction.prompt || 'Recent activity',
+                    date: interaction.created_at
+                        ? formatTimeAgo(new Date(interaction.created_at))
+                        : 'Recently'
+                });
+            }
         }
-    ];
+
+        // Add recent favorites
+        const favorites = (favoritesQuery.data as any[]) || [];
+        for (const fav of favorites.slice(0, 2)) {
+            activities.push({
+                type: 'favorite',
+                title: `Added ${fav.name || 'a place'} to favorites`,
+                date: 'Recently'
+            });
+        }
+
+        // Add recent lists
+        const lists = listsQuery.data || [];
+        for (const list of lists.slice(0, 2)) {
+            activities.push({
+                type: 'list',
+                title: `Created "${list.name}"`,
+                description: list.description || 'Custom list',
+                date: list.createdAt
+                    ? formatTimeAgo(new Date(list.createdAt.seconds ? Number(list.createdAt.seconds) * 1000 : list.createdAt))
+                    : 'Recently'
+            });
+        }
+
+        return activities.slice(0, 5); // Limit to 5 activities
+    });
+
+    // Helper function to format time ago
+    const formatTimeAgo = (date: Date): string => {
+        const now = new Date();
+        const diffMs = now.getTime() - date.getTime();
+        const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+        if (diffDays === 0) return 'Today';
+        if (diffDays === 1) return 'Yesterday';
+        if (diffDays < 7) return `${diffDays} days ago`;
+        if (diffDays < 30) return `${Math.floor(diffDays / 7)} week${Math.floor(diffDays / 7) > 1 ? 's' : ''} ago`;
+        return `${Math.floor(diffDays / 30)} month${Math.floor(diffDays / 30) > 1 ? 's' : ''} ago`;
+    };
+
+    // Get user lists from real API data
+    const getUserLists = () => {
+        const lists = listsQuery.data || [];
+        return lists.map((list: any) => ({
+            id: list.id,
+            name: list.name || 'Untitled List',
+            description: list.description || '',
+            itemCount: list.itemCount || 0,
+            isPublic: list.isPublic || false,
+            likes: list.saveCount || 0
+        }));
+    };
 
     const renderOverview = () => {
         const profile = profileData();
@@ -243,7 +320,7 @@ function ProfilePageContent() {
                 <div class="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
                     <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Recent Activity</h3>
                     <div class="space-y-4">
-                        <For each={recentActivity}>
+                        <For each={recentActivity()}>
                             {(activity) => (
                                 <div class="flex items-start gap-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
                                     <div class="w-8 h-8 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center flex-shrink-0">
@@ -284,7 +361,7 @@ function ProfilePageContent() {
         <div class="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
             <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Activity Feed</h3>
             <div class="space-y-4">
-                <For each={recentActivity}>
+                <For each={recentActivity()}>
                     {(activity) => (
                         <div class="border-b border-gray-200 dark:border-gray-700 pb-4 last:border-b-0">
                             <div class="flex items-start gap-3">

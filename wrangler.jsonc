@@ -4,7 +4,7 @@
  */
 {
     "$schema": "node_modules/wrangler/config-schema.json",
-    "name": "loci-dev",
+    "name": "loci",
     "main": "./.output/server/index.mjs",
     "compatibility_date": "2025-06-12",
     "compatibility_flags": [
@@ -16,6 +16,18 @@
     },
     "observability": {
         "enabled": true
+    },
+    /**
+     * Staging Environment (Beta)
+     * Deploy with: wrangler deploy --env staging
+     */
+    "env": {
+        "staging": {
+            "name": "loci-staging",
+            "vars": {
+                "ENVIRONMENT": "staging"
+            }
+        }
     }
     /**
 	 * Smart Placement

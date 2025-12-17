@@ -1,10 +1,20 @@
-// Search Profile queries and mutations
+// Search Profile queries and mutations - Using RPC
 import { useQuery, useMutation, useQueryClient } from '@tanstack/solid-query';
 import { createClient } from '@connectrpc/connect';
 import { create } from '@bufbuild/protobuf';
-import { ProfileService, GetUserPreferenceProfilesRequestSchema } from '@buf/loci_loci-proto.bufbuild_es/loci/profile/profile_pb.js';
+import {
+  ProfileService,
+  GetUserPreferenceProfilesRequestSchema,
+  GetUserPreferenceProfileRequestSchema,
+  CreateUserPreferenceProfileRequestSchema,
+  UpdateUserPreferenceProfileRequestSchema,
+  DeleteUserPreferenceProfileRequestSchema,
+  SetDefaultProfileRequestSchema,
+  GetDomainPreferencesRequestSchema,
+  GetCombinedFiltersRequestSchema,
+} from '@buf/loci_loci-proto.bufbuild_es/loci/profile/profile_pb.js';
 import { transport } from '../connect-transport';
-import { apiRequest, queryKeys } from './shared';
+import { queryKeys } from './shared';
 import { getAuthToken } from '../api';
 import type { SearchProfile, TravelProfileFormData, AccommodationPreferences, DiningPreferences, ActivityPreferences, ItineraryPreferences } from './types';
 
@@ -19,20 +29,75 @@ const mapProtoToSearchProfile = (profile: any): SearchProfile => ({
   preferred_time: profile.preferredTime ?? 'DAY_PREFERENCE_ANY',
   budget_level: profile.budgetLevel ?? 0,
   preferred_pace: profile.preferredPace ?? 'SEARCH_PACE_ANY',
-  prefer_accessible_pois: false,
-  prefer_outdoor_seating: false,
-  prefer_dog_friendly: false,
-  preferred_vibes: [],
+  prefer_accessible_pois: profile.preferAccessiblePois ?? false,
+  prefer_outdoor_seating: profile.preferOutdoorSeating ?? false,
+  prefer_dog_friendly: profile.preferDogFriendly ?? false,
+  preferred_vibes: profile.preferredVibes || [],
   preferred_transport: profile.preferredTransport ?? 'TRANSPORT_PREFERENCE_ANY',
-  dietary_needs: [],
-  interests: null,
-  tags: null,
-  user_latitude: null,
-  user_longitude: null,
-  created_at: profile.createdAt ?? '',
-  updated_at: profile.updatedAt ?? '',
+  dietary_needs: profile.dietaryNeeds || [],
+  interests: profile.interests || null,
+  tags: profile.tags || null,
+  user_latitude: profile.userLatitude || null,
+  user_longitude: profile.userLongitude || null,
+  created_at: profile.createdAt?.toDate?.()?.toISOString() || '',
+  updated_at: profile.updatedAt?.toDate?.()?.toISOString() || '',
 });
 
+const mapProtoToAccommodationPreferences = (prefs: any): AccommodationPreferences => ({
+  accommodation_type: prefs?.accommodationType || [],
+  star_rating: prefs?.starRating ? { min: prefs.starRating.min || 0, max: prefs.starRating.max || 5 } : { min: 0, max: 5 },
+  price_range_per_night: prefs?.priceRangePerNight ? { min: prefs.priceRangePerNight.min || 0, max: prefs.priceRangePerNight.max || 1000 } : { min: 0, max: 1000 },
+  amenities: prefs?.amenities || [],
+  room_type: prefs?.roomType || [],
+  chain_preference: prefs?.chainPreference || '',
+  cancellation_policy: prefs?.cancellationPolicy || [],
+  booking_flexibility: prefs?.bookingFlexibility || '',
+});
+
+const mapProtoToDiningPreferences = (prefs: any): DiningPreferences => ({
+  cuisine_types: prefs?.cuisineTypes || [],
+  meal_types: prefs?.mealTypes || [],
+  service_style: prefs?.serviceStyle || [],
+  price_range_per_person: prefs?.priceRangePerPerson ? { min: prefs.priceRangePerPerson.min || 0, max: prefs.priceRangePerPerson.max || 100 } : { min: 0, max: 100 },
+  dietary_needs: prefs?.dietaryNeeds || [],
+  allergen_free: prefs?.allergenFree || [],
+  michelin_rated: prefs?.michelinRated || false,
+  local_recommendations: prefs?.localRecommendations || false,
+  chain_vs_local: prefs?.chainVsLocal || '',
+  organic_preference: prefs?.organicPreference || false,
+  outdoor_seating_preferred: prefs?.outdoorSeatingPreferred || false,
+});
+
+const mapProtoToActivityPreferences = (prefs: any): ActivityPreferences => ({
+  activity_categories: prefs?.activityCategories || [],
+  physical_activity_level: prefs?.physicalActivityLevel || '',
+  indoor_outdoor_preference: prefs?.indoorOutdoorPreference || '',
+  cultural_immersion_level: prefs?.culturalImmersionLevel || '',
+  must_see_vs_hidden_gems: prefs?.mustSeeVsHiddenGems || '',
+  educational_preference: prefs?.educationalPreference || false,
+  photography_opportunities: prefs?.photographyOpportunities || false,
+  season_specific_activities: prefs?.seasonSpecificActivities || [],
+  avoid_crowds: prefs?.avoidCrowds || false,
+  local_events_interest: prefs?.localEventsInterest || [],
+});
+
+const mapProtoToItineraryPreferences = (prefs: any): ItineraryPreferences => ({
+  planning_style: prefs?.planningStyle || '',
+  preferred_pace: prefs?.preferredPace || '',
+  time_flexibility: prefs?.timeFlexibility || '',
+  morning_vs_evening: prefs?.morningVsEvening || '',
+  weekend_vs_weekday: prefs?.weekendVsWeekday || '',
+  preferred_seasons: prefs?.preferredSeasons || [],
+  avoid_peak_season: prefs?.avoidPeakSeason || false,
+  adventure_vs_relaxation: prefs?.adventureVsRelaxation || '',
+  spontaneous_vs_planned: prefs?.spontaneousVsPlanned || '',
+});
+
+// ==================
+// DIRECT FETCH FUNCTIONS (for use outside React)
+// ==================
+
+// Fetch all preference profiles directly (RPC)
 export const fetchPreferenceProfilesRPC = async (): Promise<SearchProfile[]> => {
   const request = create(GetUserPreferenceProfilesRequestSchema, {});
   const response = await profileClient.getUserPreferenceProfiles(request);
@@ -40,14 +105,18 @@ export const fetchPreferenceProfilesRPC = async (): Promise<SearchProfile[]> => 
 };
 
 // ==================
-// SEARCH PROFILE QUERIES
+// SEARCH PROFILE QUERIES (RPC)
 // ==================
 
 // Get all search profiles for the user
 export const useSearchProfiles = () => {
   return useQuery(() => ({
     queryKey: queryKeys.profiles,
-    queryFn: () => fetchPreferenceProfilesRPC(),
+    queryFn: async (): Promise<SearchProfile[]> => {
+      const request = create(GetUserPreferenceProfilesRequestSchema, {});
+      const response = await profileClient.getUserPreferenceProfiles(request);
+      return (response.profiles || []).map(mapProtoToSearchProfile);
+    },
     staleTime: 10 * 60 * 1000,
     enabled: !!getAuthToken(),
   }));
@@ -57,9 +126,10 @@ export const useSearchProfiles = () => {
 export const useSearchProfile = (profileId: string) => {
   return useQuery(() => ({
     queryKey: queryKeys.profile(profileId),
-    queryFn: async () => {
-      const profiles = await fetchPreferenceProfilesRPC();
-      return profiles.find((p) => p.id === profileId) as SearchProfile;
+    queryFn: async (): Promise<SearchProfile> => {
+      const request = create(GetUserPreferenceProfileRequestSchema, { profileId });
+      const response = await profileClient.getUserPreferenceProfile(request);
+      return mapProtoToSearchProfile(response.profile);
     },
     enabled: !!profileId && !!getAuthToken(),
     staleTime: 10 * 60 * 1000,
@@ -70,8 +140,10 @@ export const useSearchProfile = (profileId: string) => {
 export const useDefaultSearchProfile = () => {
   return useQuery(() => ({
     queryKey: queryKeys.defaultProfile,
-    queryFn: async () => {
-      const profiles = await fetchPreferenceProfilesRPC();
+    queryFn: async (): Promise<SearchProfile | undefined> => {
+      const request = create(GetUserPreferenceProfilesRequestSchema, {});
+      const response = await profileClient.getUserPreferenceProfiles(request);
+      const profiles = (response.profiles || []).map(mapProtoToSearchProfile);
       return profiles.find((p) => p.is_default) || profiles[0];
     },
     staleTime: 10 * 60 * 1000,
@@ -80,15 +152,19 @@ export const useDefaultSearchProfile = () => {
 };
 
 // ==================
-// DOMAIN-SPECIFIC PREFERENCE QUERIES
+// DOMAIN-SPECIFIC PREFERENCE QUERIES (RPC)
 // ==================
 
 // Get accommodation preferences for a profile
 export const useAccommodationPreferences = (profileId: string) => {
   return useQuery(() => ({
     queryKey: ['profiles', profileId, 'accommodation'],
-    queryFn: () => apiRequest<AccommodationPreferences>(`/user/search-profile/${profileId}/accommodation`),
-    enabled: !!profileId,
+    queryFn: async (): Promise<AccommodationPreferences> => {
+      const request = create(GetDomainPreferencesRequestSchema, { profileId });
+      const response = await profileClient.getAccommodationPreferences(request);
+      return mapProtoToAccommodationPreferences(response.preferences);
+    },
+    enabled: !!profileId && !!getAuthToken(),
     staleTime: 10 * 60 * 1000,
   }));
 };
@@ -97,18 +173,26 @@ export const useAccommodationPreferences = (profileId: string) => {
 export const useDiningPreferences = (profileId: string) => {
   return useQuery(() => ({
     queryKey: ['profiles', profileId, 'dining'],
-    queryFn: () => apiRequest<DiningPreferences>(`/user/search-profile/${profileId}/dining`),
-    enabled: !!profileId,
+    queryFn: async (): Promise<DiningPreferences> => {
+      const request = create(GetDomainPreferencesRequestSchema, { profileId });
+      const response = await profileClient.getDiningPreferences(request);
+      return mapProtoToDiningPreferences(response.preferences);
+    },
+    enabled: !!profileId && !!getAuthToken(),
     staleTime: 10 * 60 * 1000,
   }));
 };
 
-// Get activity preferences for a profile 
+// Get activity preferences for a profile
 export const useActivityPreferences = (profileId: string) => {
   return useQuery(() => ({
     queryKey: ['profiles', profileId, 'activities'],
-    queryFn: () => apiRequest<ActivityPreferences>(`/user/search-profile/${profileId}/activities`),
-    enabled: !!profileId,
+    queryFn: async (): Promise<ActivityPreferences> => {
+      const request = create(GetDomainPreferencesRequestSchema, { profileId });
+      const response = await profileClient.getActivityPreferences(request);
+      return mapProtoToActivityPreferences(response.preferences);
+    },
+    enabled: !!profileId && !!getAuthToken(),
     staleTime: 10 * 60 * 1000,
   }));
 };
@@ -117,8 +201,12 @@ export const useActivityPreferences = (profileId: string) => {
 export const useItineraryPreferences = (profileId: string) => {
   return useQuery(() => ({
     queryKey: ['profiles', profileId, 'itinerary'],
-    queryFn: () => apiRequest<ItineraryPreferences>(`/user/search-profile/${profileId}/itinerary`),
-    enabled: !!profileId,
+    queryFn: async (): Promise<ItineraryPreferences> => {
+      const request = create(GetDomainPreferencesRequestSchema, { profileId });
+      const response = await profileClient.getItineraryPreferences(request);
+      return mapProtoToItineraryPreferences(response.preferences);
+    },
+    enabled: !!profileId && !!getAuthToken(),
     staleTime: 10 * 60 * 1000,
   }));
 };
@@ -127,14 +215,24 @@ export const useItineraryPreferences = (profileId: string) => {
 export const useCombinedFilters = (profileId: string, domain?: string) => {
   return useQuery(() => ({
     queryKey: ['profiles', profileId, 'filters', domain || 'general'],
-    queryFn: () => apiRequest<any>(`/user/search-profile/${profileId}/filters${domain ? `?domain=${domain}` : ''}`),
-    enabled: !!profileId,
+    queryFn: async () => {
+      const request = create(GetCombinedFiltersRequestSchema, { profileId, domain });
+      const response = await profileClient.getCombinedFilters(request);
+      return {
+        profile: response.profile ? mapProtoToSearchProfile(response.profile) : null,
+        accommodation: response.accommodation ? mapProtoToAccommodationPreferences(response.accommodation) : null,
+        dining: response.dining ? mapProtoToDiningPreferences(response.dining) : null,
+        activity: response.activity ? mapProtoToActivityPreferences(response.activity) : null,
+        itinerary: response.itinerary ? mapProtoToItineraryPreferences(response.itinerary) : null,
+      };
+    },
+    enabled: !!profileId && !!getAuthToken(),
     staleTime: 10 * 60 * 1000,
   }));
 };
 
 // ==================
-// SEARCH PROFILE MUTATIONS
+// SEARCH PROFILE MUTATIONS (RPC)
 // ==================
 
 // Create a new search profile
@@ -142,11 +240,23 @@ export const useCreateSearchProfileMutation = () => {
   const queryClient = useQueryClient();
 
   return useMutation(() => ({
-    mutationFn: (data: Partial<TravelProfileFormData>) =>
-      apiRequest<SearchProfile>('/user/search-profile', {
-        method: 'POST',
-        body: JSON.stringify(data),
-      }),
+    mutationFn: async (data: Partial<TravelProfileFormData>) => {
+      const request = create(CreateUserPreferenceProfileRequestSchema, {
+        profileName: data.profile_name || 'New Profile',
+        isDefault: data.is_default,
+        searchRadiusKm: data.search_radius_km,
+        budgetLevel: data.budget_level,
+        preferAccessiblePois: data.prefer_accessible_pois,
+        preferOutdoorSeating: data.prefer_outdoor_seating,
+        preferDogFriendly: data.prefer_dog_friendly,
+        preferredVibes: data.preferred_vibes || [],
+        dietaryNeeds: data.dietary_needs || [],
+        tagIds: data.tags || [],
+        interestIds: data.interests || [],
+      });
+      const response = await profileClient.createUserPreferenceProfile(request);
+      return response;
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.profiles });
       queryClient.invalidateQueries({ queryKey: queryKeys.defaultProfile });
@@ -159,11 +269,24 @@ export const useUpdateSearchProfileMutation = () => {
   const queryClient = useQueryClient();
 
   return useMutation(() => ({
-    mutationFn: ({ profileId, data }: { profileId: string; data: Partial<TravelProfileFormData> }) =>
-      apiRequest<SearchProfile>(`/user/search-profile/${profileId}`, {
-        method: 'PUT',
-        body: JSON.stringify(data),
-      }),
+    mutationFn: async ({ profileId, data }: { profileId: string; data: Partial<TravelProfileFormData> }) => {
+      const request = create(UpdateUserPreferenceProfileRequestSchema, {
+        profileId,
+        profileName: data.profile_name,
+        isDefault: data.is_default,
+        searchRadiusKm: data.search_radius_km,
+        budgetLevel: data.budget_level,
+        preferAccessiblePois: data.prefer_accessible_pois,
+        preferOutdoorSeating: data.prefer_outdoor_seating,
+        preferDogFriendly: data.prefer_dog_friendly,
+        preferredVibes: data.preferred_vibes || [],
+        dietaryNeeds: data.dietary_needs || [],
+        tagIds: data.tags || [],
+        interestIds: data.interests || [],
+      });
+      const response = await profileClient.updateUserPreferenceProfile(request);
+      return response;
+    },
     onSuccess: (_, { profileId }) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.profile(profileId) });
       queryClient.invalidateQueries({ queryKey: queryKeys.profiles });
@@ -177,10 +300,11 @@ export const useDeleteSearchProfileMutation = () => {
   const queryClient = useQueryClient();
 
   return useMutation(() => ({
-    mutationFn: (profileId: string) =>
-      apiRequest(`/user/search-profile/${profileId}`, {
-        method: 'DELETE',
-      }),
+    mutationFn: async (profileId: string) => {
+      const request = create(DeleteUserPreferenceProfileRequestSchema, { profileId });
+      const response = await profileClient.deleteUserPreferenceProfile(request);
+      return response;
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.profiles });
       queryClient.invalidateQueries({ queryKey: queryKeys.defaultProfile });
@@ -193,19 +317,14 @@ export const useSetDefaultProfileMutation = () => {
   const queryClient = useQueryClient();
 
   return useMutation(() => ({
-    mutationFn: (profileId: string) =>
-      apiRequest(`/user/search-profile/default/${profileId}`, {
-        method: 'PUT',
-      }),
+    mutationFn: async (profileId: string) => {
+      const request = create(SetDefaultProfileRequestSchema, { profileId });
+      const response = await profileClient.setDefaultProfile(request);
+      return response;
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.profiles });
       queryClient.invalidateQueries({ queryKey: queryKeys.defaultProfile });
     },
   }));
 };
-
-// ==================
-// DOMAIN-SPECIFIC PREFERENCE MUTATIONS
-// ==================
-
-// Domain-specific preferences are now included in the main profile update endpoint

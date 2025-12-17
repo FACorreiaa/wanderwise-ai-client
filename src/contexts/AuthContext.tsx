@@ -74,6 +74,13 @@ export const AuthProvider = (props: AuthProviderProps) => {
   // Check authentication status on mount
   onMount(async () => {
     console.log('AuthProvider: Initializing authentication state...');
+
+    // PWA Hydration Delay: Wait for storage to be available
+    // This prevents race conditions where SSR hydration clears state before client localStorage is accessible
+    if (typeof window !== 'undefined') {
+      await new Promise(resolve => setTimeout(resolve, 50));
+    }
+
     const token = getAuthToken();
     const useLocalStorage = isPersistentSession();
     console.log('AuthProvider: Token found?', !!token, 'Persistent?', useLocalStorage);
