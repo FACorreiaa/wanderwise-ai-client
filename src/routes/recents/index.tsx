@@ -1,6 +1,22 @@
 import { createSignal, For, Show } from 'solid-js';
 import { A, useNavigate } from '@solidjs/router';
-import { Search, MapPin, Clock, Star, Filter, Grid, List, TrendingUp, Sparkles, ChevronRight, RotateCcw, SortAsc, SortDesc, Bookmark, CheckSquare, Square } from 'lucide-solid';
+import {
+  Search,
+  MapPin,
+  Clock,
+  Star,
+  Filter,
+  Grid,
+  List,
+  TrendingUp,
+  Sparkles,
+  RotateCcw,
+  SortAsc,
+  SortDesc,
+  Bookmark,
+  CheckSquare,
+  Square,
+} from "lucide-solid";
 import { useRecentInteractions } from '~/lib/api/recents';
 import type { CityInteractions } from '~/lib/api/types';
 import { Button } from '~/ui/button';
@@ -22,7 +38,7 @@ export default function RecentsPage() {
 
   // Selection state for cities
   const selection = useSelection<SelectionItem>();
-  const [selectionMode, setSelectionMode] = createSignal(false);
+
 
   // Convert city to selection item format
   const cityToSelectionItem = (city: CityInteractions): SelectionItem => ({

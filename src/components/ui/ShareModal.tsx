@@ -41,7 +41,7 @@ export function ShareModal(props: ShareModalProps) {
             } else {
                 setError('Failed to generate share link');
             }
-        } catch (e) {
+        } catch (_e) {
             setError('An error occurred');
         } finally {
             setIsLoading(false);

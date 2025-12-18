@@ -4,7 +4,7 @@ import { A } from '@solidjs/router';
 import {
     Folder, Plus, Edit3, Trash2, Lock, Globe,
     Loader2, X, FolderPlus, ChevronRight, MapPin, Calendar, Heart, Bookmark,
-    CheckSquare, Square, Download, Share2
+    CheckSquare, Square, Share2
 } from 'lucide-solid';
 import {
     useLists,

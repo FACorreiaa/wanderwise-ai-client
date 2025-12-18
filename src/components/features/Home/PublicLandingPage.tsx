@@ -25,7 +25,7 @@ import { handleLinkPreload } from "~/lib/preload";
 const RealTimeStats = lazy(() => import("~/components/features/Home/RealTimeStats"));
 const MobileAppAnnouncement = lazy(() => import("~/components/features/Home/MobileAppAnnouncement"));
 const LocationPermissionPrompt = lazy(() => import("~/components/LocationPermissionPrompt"));
-import { sendUnifiedChatMessageStreamFree, detectDomain } from "~/lib/api/llm";
+import { sendUnifiedChatMessageStream, detectDomain } from "~/lib/api/llm";
 import {
   streamingService,
   createStreamingSession,
@@ -162,7 +162,7 @@ export default function PublicLandingPage() {
         JSON.stringify(session),
       );
 
-      const response = await sendUnifiedChatMessageStreamFree({
+      const response = await sendUnifiedChatMessageStream({
         profileId: "free",
         message: message,
         userLocation: userLocation()
@@ -172,10 +172,6 @@ export default function PublicLandingPage() {
           }
           : undefined,
       });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
 
       streamingService.startStream(response, {
         session,

@@ -65,8 +65,8 @@ export default function Nav() {
   });
 
   return (
-    <nav class="sticky top-0 z-50 backdrop-blur-2xl bg-white/95 dark:bg-gradient-to-r dark:from-[#050915]/90 dark:via-[#0b1c36]/90 dark:to-[#050915]/90 border-b border-gray-300 dark:border-white/10 shadow-lg dark:shadow-[0_18px_60px_rgba(3,7,18,0.45)] transition-all">
-      <div class="px-4 sm:px-6 lg:px-8">
+    <nav class="sticky top-0 z-50 transition-all">
+      <div class="island-nav px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between items-center h-14 sm:h-16">
           {/* Logo - Mobile First */}
           <div class="flex items-center">
@@ -107,7 +107,8 @@ export default function Nav() {
                     {(item) => (
                       <A
                         href={item.href}
-                        class="text-gray-700 dark:text-slate-200 hover:text-blue-700 dark:hover:text-emerald-200 font-medium transition-colors text-sm lg:text-base"
+                        class="text-gray-700 dark:text-slate-200 hover:text-blue-700 dark:hover:text-emerald-200 font-medium transition-colors text-sm lg:text-base jb-tab"
+                        activeClass="jb-tab-active"
                       >
                         {item.name}
                       </A>
@@ -124,10 +125,8 @@ export default function Nav() {
                       <A
                         href={item.href}
                         onMouseEnter={() => handleLinkPreload(item.href)}
-                        class={`flex items-center gap-2 px-3 py-2 rounded-xl font-medium transition-all text-sm border ${location.pathname === item.href
-                          ? 'bg-blue-100 dark:bg-white/10 text-gray-900 dark:text-white border-blue-300 dark:border-white/20 shadow-lg'
-                          : 'text-gray-700 dark:text-slate-200 hover:text-blue-700 dark:hover:text-emerald-200 hover:bg-gray-100 dark:hover:bg-white/5 border-transparent hover:border-blue-300 dark:hover:border-emerald-200/40'
-                          }`}
+                        class="flex items-center gap-2 px-3 py-2 rounded-xl font-medium transition-all text-sm border border-transparent jb-tab hover:bg-gray-100 dark:hover:bg-white/5"
+                        activeClass="jb-tab-active shadow-sm"
                       >
                         <IconComponent class="w-4 h-4" />
                         {item.name}

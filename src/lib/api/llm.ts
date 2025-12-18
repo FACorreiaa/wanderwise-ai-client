@@ -2,7 +2,6 @@
 import { useMutation } from "@tanstack/solid-query";
 import { create } from "@bufbuild/protobuf";
 import { createClient } from "@connectrpc/connect";
-import { apiRequest, API_BASE_URL } from "./shared";
 import {
   defaultLLMRateLimiter,
   RateLimitError,
@@ -28,9 +27,7 @@ import {
 import { transport } from "../connect-transport";
 //import { createGraphQLClient, gql } from '@solid-primitives/graphql';
 import type {
-  ChatSession,
   ChatMessage,
-  ChatSessionResponse,
   DomainType as ClientDomainType,
   GeneralCityData,
   AIItineraryResponse,
@@ -38,7 +35,6 @@ import type {
   POIDetailedInfo,
   RestaurantDetailedInfo,
   StreamEvent,
-  UnifiedChatResponse,
   SessionPerformanceMetrics,
   SessionContentMetrics,
   SessionEngagementMetrics,
@@ -439,39 +435,7 @@ const enforceRateLimit = async (endpoint: string) => {
   }
 };
 
-// Rate-limited fetch function for streaming endpoints
-async function rateLimitedFetch(
-  url: string,
-  options: RequestInit,
-  endpoint: string,
-): Promise<Response> {
-  // Apply client-side rate limiting for LLM endpoints
-  const rateLimitCheck = await defaultLLMRateLimiter.checkRateLimit(endpoint);
-  if (!rateLimitCheck.allowed) {
-    const retryAfter = rateLimitCheck.retryAfter || 60;
-    showRateLimitNotification(retryAfter, endpoint);
-    throw new RateLimitError(
-      `Rate limit exceeded for ${endpoint}. Retry after ${retryAfter} seconds.`,
-      retryAfter,
-      endpoint,
-    );
-  }
 
-  const response = await fetch(url, options);
-
-  // Handle server-side rate limiting
-  if (response.status === 429) {
-    const retryAfter = parseInt(response.headers.get("Retry-After") || "60");
-    showRateLimitNotification(retryAfter, endpoint);
-    throw new RateLimitError(
-      `Server rate limit exceeded for ${endpoint}. Retry after ${retryAfter} seconds.`,
-      retryAfter,
-      endpoint,
-    );
-  }
-
-  return response;
-}
 
 export interface StartChatRequest {
   profileId?: string;
@@ -491,47 +455,7 @@ export interface ContinueChatRequest {
 // CHAT/LLM QUERIES
 // ==================
 
-export const useCreateChatSessionMutation = () => {
-  return useMutation(() => ({
-    mutationFn: (profileId: string) =>
-      apiRequest<ChatSession>(
-        `/llm/prompt-response/chat/sessions/${profileId}`,
-        { method: "POST" },
-      ),
-  }));
-};
 
-export const useSendMessageMutation = () => {
-  return useMutation(() => ({
-    mutationFn: ({
-      sessionId,
-      message,
-    }: {
-      sessionId: string;
-      message: string;
-    }) =>
-      apiRequest<ChatMessage>(
-        `/llm/prompt-response/chat/sessions/${sessionId}/messages`,
-        {
-          method: "POST",
-          body: JSON.stringify({ message }),
-        },
-      ),
-  }));
-};
-
-export const useGetRecommendationsMutation = () => {
-  return useMutation(() => ({
-    mutationFn: ({ profileId, query }: { profileId: string; query: string }) =>
-      apiRequest<UnifiedChatResponse>(
-        `/llm/prompt-response/profile/${profileId}`,
-        {
-          method: "POST",
-          body: JSON.stringify({ query }),
-        },
-      ),
-  }));
-};
 
 // ==================
 // ENHANCED CHAT SERVICES
@@ -668,30 +592,7 @@ export interface UnifiedChatRequest {
 export interface UnifiedChatStreamRequest extends UnifiedChatRequest { }
 
 // Unified chat service - sends message and gets streaming response
-export const sendUnifiedChatMessage = async (
-  request: UnifiedChatRequest,
-): Promise<Response> => {
-  const token =
-    localStorage.getItem("access_token") ||
-    sessionStorage.getItem("access_token");
-  const endpoint = `/llm/prompt-response/chat/sessions/${request.profileId}`;
 
-  return rateLimitedFetch(
-    `${API_BASE_URL}${endpoint}`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        ...(token && { Authorization: `Bearer ${token}` }),
-      },
-      body: JSON.stringify({
-        message: request.message,
-        user_location: request.userLocation,
-      }),
-    },
-    endpoint,
-  );
-};
 
 /**
  * Convert Proto StreamEvent to SSE format
@@ -818,34 +719,7 @@ export const sendUnifiedChatMessageStream = async (
   return convertProtoStreamToSSE(protoStream);
 };
 
-export const sendUnifiedChatMessageStreamFree = async (
-  request: UnifiedChatStreamRequest,
-): Promise<Response> => {
-  //const token =
-  //  localStorage.getItem("access_token") ||
-  //  sessionStorage.getItem("access_token");
-  const endpoint = `/llm/chat/stream/free`;
 
-  console.log("=== STREAMING API CALL ===");
-  //console.log("Token found:", !!token);
-  console.log("Request:", request);
-
-  return rateLimitedFetch(
-    `${API_BASE_URL}${endpoint}`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        //...(token && { Authorization: `Bearer ${token}` }),
-      },
-      body: JSON.stringify({
-        message: request.message,
-        user_location: request.userLocation,
-      }),
-    },
-    endpoint,
-  );
-};
 
 // GraphQL alternative to streaming service
 // const PROCESS_UNIFIED_CHAT_MESSAGE = gql`
@@ -986,11 +860,7 @@ export const detectDomain = (message: string): import("./types").DomainType => {
 // MUTATION HOOKS FOR UNIFIED CHAT
 // ==================
 
-export const useUnifiedChatMutation = () => {
-  return useMutation(() => ({
-    mutationFn: sendUnifiedChatMessage,
-  }));
-};
+
 
 // ==================
 // CHAT SESSIONS RETRIEVAL
@@ -1016,229 +886,15 @@ export interface ChatSessionSummary {
 
 // Get chat sessions for a user
 export const getUserChatSessions = async (
-  profileId: string,
+  _profileId: string,
 ): Promise<ChatSessionSummary[]> => {
-  try {
-    console.log("🔍 Fetching chat sessions for profile:", profileId);
-    const response = await apiRequest<ChatSessionResponse[]>(
-      `/llm/prompt-response/chat/sessions/user/${profileId}`,
-      {
-        method: "GET",
-      },
-    );
-
-    console.log(
-      "✅ Successfully fetched chat sessions:",
-      response?.length || 0,
-    );
-
-    // Transform the response to our expected format
-    return response.map((session: ChatSessionResponse) => ({
-      id: session.id,
-      title: generateSessionTitle(
-        session.conversation_history,
-        session.city_name,
-        session.content_metrics,
-      ),
-      preview: generatePreview(session.conversation_history),
-      timestamp: session.updated_at || session.created_at,
-      messageCount: session.conversation_history?.length || 0,
-      hasItinerary:
-        session.content_metrics?.has_itinerary ||
-        hasItineraryInMessages(session.conversation_history),
-      lastMessage: getLastMessage(session.conversation_history),
-      cityName: session.city_name,
-      performanceMetrics: session.performance_metrics,
-      contentMetrics: session.content_metrics,
-      engagementMetrics: session.engagement_metrics,
-      // Include the conversation history for session loading
-      conversationHistory: session.conversation_history,
-      created_at: session.created_at,
-      updated_at: session.updated_at,
-    }));
-  } catch (error) {
-    console.error("❌ Failed to fetch chat sessions:", error);
-
-    // Check if it's the specific SQL error
-    if (
-      (error as any)?.message?.includes("COALESCE types uuid and text cannot be matched")
-    ) {
-      console.warn(
-        "🔧 Database type mismatch error detected - backend needs to fix COALESCE query",
-      );
-    }
-
-    // Return empty array when backend endpoint has issues
-    // This allows the chat to still work even if history loading fails
-    return [];
-  }
+  // NOTE: This endpoint has been removed from the legacy REST API.
+  // We return an empty array until a proper History Service RPC is implemented.
+  console.warn("getUserChatSessions: REST API removed. Returning empty session list.");
+  return [];
 };
 
-// Helper function to generate session title from conversation
-const generateSessionTitle = (
-  conversationHistory: ChatMessage[],
-  cityName?: string,
-  contentMetrics?: SessionContentMetrics,
-): string => {
-  if (!conversationHistory || conversationHistory.length === 0) {
-    return cityName ? `Trip to ${cityName}` : "New Conversation";
-  }
 
-  // Use content metrics for smarter title generation
-  if (contentMetrics) {
-    const {
-      dominant_categories,
-      complexity_score,
-      total_pois: _total_pois,
-      total_hotels: _total_hotels,
-      total_restaurants: _total_restaurants,
-    } = contentMetrics;
-
-    // Generate title based on dominant categories
-    if (dominant_categories.length > 0) {
-      const primaryCategory = dominant_categories[0];
-      const categoryNames = {
-        accommodation: "Hotels",
-        dining: "Restaurants",
-        attractions: "Attractions",
-        itinerary: "Itinerary Planning",
-      };
-
-      const categoryName =
-        categoryNames[primaryCategory as keyof typeof categoryNames] ||
-        "Recommendations";
-      const cityPart = cityName ? ` in ${cityName}` : "";
-
-      // Add complexity indicator for rich sessions
-      if (complexity_score >= 8) {
-        return `Complete ${categoryName}${cityPart}`;
-      } else if (complexity_score >= 6) {
-        return `${categoryName} Guide${cityPart}`;
-      } else {
-        return `${categoryName}${cityPart}`;
-      }
-    }
-  }
-
-  // Look for first user message (role can be 'user' or type can be 'user')
-  const firstUserMessage = conversationHistory.find(
-    (msg) => msg.role === "user" || msg.type === "user",
-  );
-  if (firstUserMessage) {
-    const content = firstUserMessage.content || "";
-
-    // Try to detect the intent from the message content
-    const lowerContent = content.toLowerCase();
-
-    // Check for specific intents and create meaningful titles
-    if (
-      lowerContent.includes("hotel") ||
-      lowerContent.includes("accommodation")
-    ) {
-      return cityName ? `Hotels in ${cityName}` : "Hotel Search";
-    }
-    if (
-      lowerContent.includes("restaurant") ||
-      lowerContent.includes("food") ||
-      lowerContent.includes("eat")
-    ) {
-      return cityName ? `Dining in ${cityName}` : "Restaurant Search";
-    }
-    if (
-      lowerContent.includes("activity") ||
-      lowerContent.includes("visit") ||
-      lowerContent.includes("see")
-    ) {
-      return cityName ? `Activities in ${cityName}` : "Activity Search";
-    }
-    if (
-      lowerContent.includes("itinerary") ||
-      lowerContent.includes("plan") ||
-      lowerContent.includes("trip")
-    ) {
-      return cityName ? `${cityName} Itinerary` : "Trip Planning";
-    }
-
-    // Fallback: Use first meaningful words + city
-    const words = content
-      .split(" ")
-      .filter((word) => word.length > 2)
-      .slice(0, 3);
-    const baseTitle = words.join(" ");
-
-    if (cityName && !baseTitle.toLowerCase().includes(cityName.toLowerCase())) {
-      return `${baseTitle} - ${cityName}`;
-    }
-
-    return baseTitle || (cityName ? `Trip to ${cityName}` : "Chat Session");
-  }
-
-  return cityName ? `Trip to ${cityName}` : "Chat Session";
-};
-
-// Helper function to generate preview from conversation
-const generatePreview = (conversationHistory: ChatMessage[]): string => {
-  if (!conversationHistory || conversationHistory.length === 0) {
-    return "Start a new conversation...";
-  }
-
-  // Get the last assistant message for preview
-  const lastAssistantMessage = [...conversationHistory]
-    .reverse()
-    .find((msg) => msg.role === "assistant" || msg.type === "assistant");
-  if (lastAssistantMessage) {
-    const content = lastAssistantMessage.content || "";
-    return content.length > 60 ? content.substring(0, 60) + "..." : content;
-  }
-
-  // Fallback to last message
-  const lastMessage = conversationHistory[conversationHistory.length - 1];
-  if (lastMessage) {
-    const content = lastMessage.content || "";
-    return content.length > 60 ? content.substring(0, 60) + "..." : content;
-  }
-
-  return "Continue conversation...";
-};
-
-// Helper function to get last message
-const getLastMessage = (conversationHistory: ChatMessage[]): string => {
-  if (!conversationHistory || conversationHistory.length === 0) {
-    return "";
-  }
-
-  const lastMessage = conversationHistory[conversationHistory.length - 1];
-  return lastMessage?.content || "";
-};
-
-// Helper function to check if conversation contains itinerary content
-const hasItineraryInMessages = (
-  conversationHistory: ChatMessage[],
-): boolean => {
-  if (!conversationHistory || conversationHistory.length === 0) {
-    return false;
-  }
-
-  // Look for itinerary-related keywords in assistant messages
-  const itineraryKeywords = [
-    "itinerary",
-    "recommendations",
-    "places to visit",
-    "day 1",
-    "day 2",
-    "restaurants",
-    "hotels",
-    "activities",
-  ];
-
-  return conversationHistory.some((message: ChatMessage) => {
-    if (message.role === "assistant" && message.content) {
-      const content = message.content.toLowerCase();
-      return itineraryKeywords.some((keyword) => content.includes(keyword));
-    }
-    return false;
-  });
-};
 
 // Query hook for getting chat sessions
 export const useGetChatSessionsQuery = (profileId: string | undefined) => {

@@ -43,7 +43,7 @@ function ProfilePageContent() {
         // Lists created
         const listsCreated = lists.length;
         // Favorites count
-        const favoritesCount = favorites.length;
+        const _favoritesCount = favorites.length; // Underscored as it's not directly used in the returned object
 
         return {
             places_visited: placesVisited,

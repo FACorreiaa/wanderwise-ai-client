@@ -9,6 +9,7 @@ import { ActionToolbar } from "@/components/ui/ActionToolbar";
 import FloatingChat from "@/components/features/Chat/FloatingChat";
 import { Skeleton } from "@/ui/skeleton";
 import { Card, CardContent, CardHeader } from "@/ui/card";
+import { useSaveItineraryMutation } from "@/lib/api/itineraries";
 
 export default function ItineraryPage() {
   const [searchParams] = useSearchParams();
@@ -22,6 +23,9 @@ export default function ItineraryPage() {
 
   // Local favorites state
   const [favorites, setFavorites] = createSignal<string[]>([]);
+
+  // Mutation hook for bookmarking
+  const saveItineraryMutation = useSaveItineraryMutation();
 
   // Helper to normalize stored data - flattens nested itinerary_response structure
   const normalizeStoredData = (data: any): any => {
@@ -158,9 +162,34 @@ export default function ItineraryPage() {
     }
   };
 
-  const handleBookmark = () => {
-    // Implement bookmark logic here - saves the full itinerary to user's lists
-    console.log("Bookmarked current itinerary");
+  const handleBookmark = async () => {
+    const city = cityData();
+    const sessionId = searchParams.sessionId as string || store.data?.session_id;
+    const itinerary = itineraryData();
+
+    if (!city?.city) {
+      console.warn("Cannot bookmark: No city data available");
+      alert("Unable to bookmark: No city data available yet.");
+      return;
+    }
+
+    const bookmarkData = {
+      session_id: sessionId,
+      primary_city_name: city.city,
+      title: `${city.city} Itinerary`,
+      description: city.description || `Itinerary for ${city.city}`,
+      tags: [],
+      is_public: false,
+    };
+
+    try {
+      await saveItineraryMutation.mutateAsync(bookmarkData);
+      alert(`Itinerary for ${city.city} has been bookmarked!`);
+      console.log("✅ Itinerary bookmarked successfully");
+    } catch (error) {
+      console.error("❌ Failed to bookmark itinerary:", error);
+      alert("Failed to bookmark the itinerary. Please try again.");
+    }
   };
 
   const handleItemFavorite = (poi: any) => {

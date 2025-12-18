@@ -1,7 +1,7 @@
 import { Component, createSignal, JSX, Show } from "solid-js";
 import { A } from "@solidjs/router";
 import { AlertTriangle, RefreshCw, Home, ServerCrash } from "lucide-solid";
-import { APIError } from "../lib/api/shared";
+import { APIError } from "../lib/api";
 
 interface ErrorBoundaryProps {
   children: JSX.Element;

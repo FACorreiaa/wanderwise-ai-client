@@ -21,7 +21,7 @@ export const useUpdateSettingsMutation = () => {
   const queryClient = useQueryClient();
 
   return useMutation(() => ({
-    mutationFn: async ({ profileId, settings }: { profileId: string; settings: any }) => {
+    mutationFn: async ({ profileId: _profileId, settings: _settings }: { profileId: string; settings: any }) => {
       console.warn('⚠️ useUpdateSettingsMutation: REST API removed - needs RPC implementation');
       // TODO: Implement via ProfileService.UpdateUserPreferenceProfile
       return { success: false, message: 'Not implemented' };

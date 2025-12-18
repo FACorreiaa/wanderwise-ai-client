@@ -9,7 +9,7 @@ import {
   UpdateProfileParamsSchema,
 } from '@buf/loci_loci-proto.bufbuild_es/loci/user/user_pb.js';
 import { queryKeys } from './shared';
-import { fetchPreferenceProfilesRPC } from './profiles';
+import { fetchPreferenceProfilesRPC, useCreateSearchProfileMutation, useDeleteSearchProfileMutation } from './profiles';
 import { getAuthToken } from '../auth/tokens';
 import { transport } from '../connect-transport';
 import type { UserProfile, UserProfileResponse } from './types';
@@ -71,13 +71,16 @@ export const useDefaultProfile = () => {
 
 export const useCreateProfileMutation = () => {
   const queryClient = useQueryClient();
-  // Import from profiles.ts which uses RPC
-  const { useCreateSearchProfileMutation } = require('./profiles');
-  const createMutation = useCreateSearchProfileMutation();
 
   return useMutation(() => ({
     mutationFn: async (profileData: Partial<UserProfile>) => {
-      await createMutation.mutateAsync(profileData);
+      // Map budget_level from string (if any) to number for the search profile mutation
+      const mappedData: any = { ...profileData };
+      if (typeof profileData.budget_level === 'string') {
+        mappedData.budget_level = parseInt(profileData.budget_level, 10) || 0;
+      }
+
+      await useCreateSearchProfileMutation().mutateAsync(mappedData);
       return profileData as UserProfile;
     },
     onSuccess: (newProfile) => {
@@ -215,13 +218,10 @@ export const useUpdateProfileMutation = () => {
 
 export const useDeleteProfileMutation = () => {
   const queryClient = useQueryClient();
-  // Import from profiles.ts which uses RPC
-  const { useDeleteSearchProfileMutation } = require('./profiles');
-  const deleteMutation = useDeleteSearchProfileMutation();
 
   return useMutation(() => ({
     mutationFn: async (profileId: string) => {
-      await deleteMutation.mutateAsync(profileId);
+      await useDeleteSearchProfileMutation().mutateAsync(profileId);
       return { message: 'Profile deleted' };
     },
     onSuccess: (_, profileId) => {
