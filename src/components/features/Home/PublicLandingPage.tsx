@@ -227,11 +227,11 @@ export default function PublicLandingPage() {
         <div class="domain-halo" aria-hidden="true" />
       </div>
 
-      <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-16">
+      <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 sm:pt-24 lg:pt-28">
         {/* Hero */}
-        <section class="rounded-3xl border border-gray-300 dark:border-white/10 bg-white/90 dark:bg-white/5 backdrop-blur-2xl shadow-xl dark:shadow-[0_35px_120px_rgba(3,7,18,0.55)] overflow-hidden">
-          <div class="grid grid-cols-1 lg:grid-cols-2 gap-10 p-8 sm:p-10 lg:p-12">
-            <div class="space-y-6">
+        <section class="rounded-3xl border border-gray-200/80 dark:border-white/[0.08] bg-white/95 dark:bg-white/[0.02] backdrop-blur-xl shadow-lg dark:shadow-[0_20px_60px_rgba(0,0,0,0.35)] overflow-hidden">
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 p-8 sm:p-10 lg:p-14">
+            <div class="space-y-8">
               <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm font-semibold bg-emerald-100 dark:bg-emerald-400/10 text-emerald-800 dark:text-emerald-200 border border-emerald-300 dark:border-emerald-300/30 w-fit">
                 <Sparkles class="w-4 h-4" />
                 Taste-first city intelligence
@@ -263,7 +263,7 @@ export default function PublicLandingPage() {
                   Create my account
                 </Button>
               </div>
-              <div class="grid grid-cols-2 gap-4 text-sm">
+              <div class="grid grid-cols-2 gap-5 text-sm">
                 <div class="glass-panel gradient-border rounded-2xl p-4">
                   <p class="font-semibold text-gray-900 dark:text-white mb-1">Problem → Solution</p>
                   <p class="text-gray-700 dark:text-slate-200/80">
@@ -279,7 +279,7 @@ export default function PublicLandingPage() {
               </div>
             </div>
 
-            <div class="space-y-6">
+            <div class="space-y-8">
               {/* Email capture */}
               <form
                 onSubmit={handleEmailSubmit}
@@ -417,7 +417,7 @@ export default function PublicLandingPage() {
         </section>
 
         {/* Domain previews */}
-        <section class="mt-12">
+        <section class="mt-20 lg:mt-24">
           <h2 class="sr-only">Explore Features</h2>
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             <For each={previewCards}>{(card) => (
@@ -446,13 +446,13 @@ export default function PublicLandingPage() {
         </section>
 
         {/* Value stack + social proof */}
-        <section class="mt-14 grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <section class="mt-20 lg:mt-28 grid grid-cols-1 lg:grid-cols-3 gap-10 lg:gap-12">
           <div class="lg:col-span-2 space-y-4">
             <h2 class="text-2xl font-bold text-gray-900 dark:text-white">Why travelers stay</h2>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               <For each={valueStack}>{(item) => (
-                <div class="glass-panel gradient-border rounded-2xl p-4 bg-white/90 dark:bg-white/5">
-                  <p class="text-xs uppercase tracking-[0.16em] text-emerald-700 dark:text-emerald-200 mb-2">
+                <div class="glass-panel gradient-border rounded-2xl p-5 bg-white/95 dark:bg-white/[0.02]">
+                  <p class="text-xs tracking-wider text-emerald-600 dark:text-emerald-300 mb-2 font-medium">
                     {item.label}
                   </p>
                   <p class="text-sm text-gray-700 dark:text-slate-100/85">{item.copy}</p>
@@ -467,7 +467,7 @@ export default function PublicLandingPage() {
             </h3>
             <div class="space-y-3">
               <For each={socialProof}>{(proof) => (
-                <div class="glass-panel rounded-2xl p-4 bg-white/90 dark:bg-white/5">
+                <div class="glass-panel rounded-2xl p-5 bg-white/95 dark:bg-white/[0.02]">
                   <p class="text-sm text-gray-900 dark:text-white/90">{proof.quote}</p>
                   <p class="text-xs text-gray-600 dark:text-slate-200/70 mt-2">{proof.name}</p>
                 </div>
@@ -481,10 +481,10 @@ export default function PublicLandingPage() {
         <MobileAppAnnouncement />
 
         {/* Objection handling */}
-        <section class="mt-6">
-          <div class="glass-panel gradient-border rounded-3xl p-6 sm:p-8 grid grid-cols-1 md:grid-cols-3 gap-6 items-center bg-white/90 dark:bg-white/5">
-            <div class="space-y-2">
-              <p class="text-xs uppercase tracking-[0.2em] text-emerald-700 dark:text-emerald-200">
+        <section class="mt-16 lg:mt-20">
+          <div class="glass-panel gradient-border rounded-3xl p-8 sm:p-10 lg:p-12 grid grid-cols-1 md:grid-cols-3 gap-8 lg:gap-10 items-center bg-white/95 dark:bg-white/[0.02]">
+            <div class="space-y-3">
+              <p class="text-xs tracking-wider text-emerald-600 dark:text-emerald-300 font-medium">
                 Objections handled
               </p>
               <h2 class="text-2xl font-bold text-gray-900 dark:text-white">Safe to try. Easy to leave.</h2>

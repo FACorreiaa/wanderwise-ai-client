@@ -165,7 +165,7 @@ export default function ItineraryPage() {
   const handleBookmark = async () => {
     const city = cityData();
     const sessionId = searchParams.sessionId as string || store.data?.session_id;
-    const itinerary = itineraryData();
+    // const itinerary = itineraryData();
 
     if (!city?.city) {
       console.warn("Cannot bookmark: No city data available");

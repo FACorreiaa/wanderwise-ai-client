@@ -13,16 +13,16 @@ export default function MobileAppAnnouncement() {
                 isOpen={isWaitlistOpen}
                 onClose={() => setIsWaitlistOpen(false)}
             />
-            <section class="w-full py-16 relative overflow-hidden" aria-labelledby="mobile-app-heading">
+            <section class="w-full py-20 sm:py-24 lg:py-28 relative overflow-hidden" aria-labelledby="mobile-app-heading">
                 <div class="pointer-events-none absolute inset-0 bg-gradient-to-r from-emerald-400/5 via-transparent to-purple-500/5" aria-hidden="true" />
                 <div class="container px-4 sm:px-6 lg:px-8 relative z-10">
-                    <Card class="max-w-5xl mx-auto glass-panel gradient-border border-0 shadow-2xl relative overflow-hidden">
+                    <Card class="max-w-5xl mx-auto glass-panel gradient-border border-0 shadow-xl relative overflow-hidden">
                         {/* Background decoration */}
-                        <div class="absolute top-0 right-0 w-64 h-64 bg-blue-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
-                        <div class="absolute bottom-0 left-0 w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2" />
+                        <div class="absolute top-0 right-0 w-64 h-64 bg-blue-500/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
+                        <div class="absolute bottom-0 left-0 w-64 h-64 bg-emerald-500/5 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2" />
 
-                        <CardContent class="p-8 sm:p-12 relative z-10">
-                            <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+                        <CardContent class="p-10 sm:p-12 lg:p-16 relative z-10">
+                            <div class="grid grid-cols-1 lg:grid-cols-2 gap-14 lg:gap-16 items-center">
 
                                 {/* Left Column: Text Content */}
                                 <div class="text-left space-y-6">

@@ -118,8 +118,8 @@ export default function RealTimeStats(props: RealTimeStatsProps) {
     };
 
     return (
-        <section class="w-full py-12 sm:py-16 md:py-20 lg:py-24 relative overflow-hidden" aria-labelledby="stats-heading">
-            <div class="pointer-events-none absolute inset-0 bg-gray-50/50 dark:bg-slate-900/30" aria-hidden="true" />
+        <section class="w-full py-20 sm:py-24 md:py-28 lg:py-32 relative overflow-hidden" aria-labelledby="stats-heading">
+            <div class="pointer-events-none absolute inset-0 bg-gray-50/30 dark:bg-slate-900/20" aria-hidden="true" />
             <div class="container text-center px-4 sm:px-6 lg:px-8 relative z-10">
                 <div class="flex items-center justify-center gap-2 mb-6 sm:mb-8">
                     <Badge class="bg-gradient-to-r from-blue-600 to-cyan-600 dark:bg-[#0c7df2] hover:from-blue-700 hover:to-cyan-700 dark:hover:bg-[#0a6ed6] text-white font-semibold px-3 sm:px-4 py-1 sm:py-1.5 text-xs sm:text-sm shadow-lg border border-blue-300/40 dark:border-white/20">

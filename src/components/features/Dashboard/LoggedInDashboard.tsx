@@ -282,10 +282,10 @@ export default function LoggedInDashboard() {
         <div class="domain-veil" aria-hidden="true" />
         <div class="domain-halo" aria-hidden="true" />
       </div>
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-10 pb-16 relative z-10">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 sm:pt-20 pb-20 relative z-10">
 
         {/* Welcome Header */}
-        <div class="mb-8">
+        <div class="mb-10">
           <div class="flex items-center justify-between mb-6">
             <div>
               <h1 class="text-3xl font-bold text-gray-900 dark:text-white tracking-tight">
@@ -307,8 +307,8 @@ export default function LoggedInDashboard() {
           </div>
 
           {/* Quick Stats */}
-          <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-            <div class="rounded-xl p-4 bg-white/90 dark:bg-white/5 border border-gray-300 dark:border-white/10 backdrop-blur shadow-xl dark:shadow-[0_18px_60px_rgba(3,7,18,0.4)]">
+          <div class="grid grid-cols-1 md:grid-cols-4 gap-5 mb-10">
+            <div class="rounded-xl p-5 bg-white/95 dark:bg-white/[0.03] border border-gray-200/80 dark:border-white/[0.08] backdrop-blur-xl shadow-md dark:shadow-[0_4px_32px_rgba(0,0,0,0.3)]">
               <div class="flex items-center justify-between">
                 <div>
                   <p class="text-sm text-gray-600 dark:text-slate-200/80">Saved Places</p>
@@ -319,7 +319,7 @@ export default function LoggedInDashboard() {
                 <Bookmark class="w-8 h-8 text-emerald-600 dark:text-emerald-200" />
               </div>
             </div>
-            <div class="rounded-xl p-4 bg-white/90 dark:bg-white/5 border border-gray-300 dark:border-white/10 backdrop-blur shadow-xl dark:shadow-[0_18px_60px_rgba(3,7,18,0.4)]">
+            <div class="rounded-xl p-5 bg-white/95 dark:bg-white/[0.03] border border-gray-200/80 dark:border-white/[0.08] backdrop-blur-xl shadow-md dark:shadow-[0_4px_32px_rgba(0,0,0,0.3)]">
               <div class="flex items-center justify-between">
                 <div>
                   <p class="text-sm text-gray-600 dark:text-slate-200/80">Itineraries</p>
@@ -330,7 +330,7 @@ export default function LoggedInDashboard() {
                 <Calendar class="w-8 h-8 text-emerald-600 dark:text-emerald-200" />
               </div>
             </div>
-            <div class="rounded-xl p-4 bg-white/90 dark:bg-white/5 border border-gray-300 dark:border-white/10 backdrop-blur shadow-xl dark:shadow-[0_18px_60px_rgba(3,7,18,0.4)]">
+            <div class="rounded-xl p-5 bg-white/95 dark:bg-white/[0.03] border border-gray-200/80 dark:border-white/[0.08] backdrop-blur-xl shadow-md dark:shadow-[0_4px_32px_rgba(0,0,0,0.3)]">
               <div class="flex items-center justify-between">
                 <div>
                   <p class="text-sm text-gray-600 dark:text-slate-200/80">Cities Explored</p>
@@ -341,7 +341,7 @@ export default function LoggedInDashboard() {
                 <Globe class="w-8 h-8 text-blue-600 dark:text-blue-200" />
               </div>
             </div>
-            <div class="rounded-xl p-4 bg-white/90 dark:bg-white/5 border border-gray-300 dark:border-white/10 backdrop-blur shadow-xl dark:shadow-[0_18px_60px_rgba(3,7,18,0.4)]">
+            <div class="rounded-xl p-5 bg-white/95 dark:bg-white/[0.03] border border-gray-200/80 dark:border-white/[0.08] backdrop-blur-xl shadow-md dark:shadow-[0_4px_32px_rgba(0,0,0,0.3)]">
               <div class="flex items-center justify-between">
                 <div>
                   <p class="text-sm text-gray-600 dark:text-slate-200/80">Discoveries</p>
@@ -356,8 +356,8 @@ export default function LoggedInDashboard() {
         </div>
 
         {/* Main Search */}
-        <div class="mb-8">
-          <div class="rounded-2xl p-6 shadow-xl dark:shadow-[0_24px_90px_rgba(3,7,18,0.55)] bg-white/90 dark:bg-white/5 border border-gray-300 dark:border-white/10 backdrop-blur">
+        <div class="mb-10">
+          <div class="rounded-2xl p-6 sm:p-8 shadow-lg dark:shadow-[0_8px_40px_rgba(0,0,0,0.35)] bg-white/95 dark:bg-white/[0.03] border border-gray-200/80 dark:border-white/[0.08] backdrop-blur-xl">
             <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
               <Sparkles class="w-5 h-5 text-emerald-600 dark:text-emerald-200" />
               What would you like to discover?
@@ -401,17 +401,17 @@ export default function LoggedInDashboard() {
           </div>
         </div>
 
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-10">
 
           {/* Quick Actions */}
           <div class="lg:col-span-2">
-            <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-4">Quick Discoveries</h2>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+            <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-5">Quick Discoveries</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-5 mb-10">
               <For each={quickDiscoveries}>
                 {(discovery) => (
                   <button
                     onClick={() => handleQuickDiscovery(discovery)}
-                    class={`rounded-2xl p-6 text-white shadow-xl dark:shadow-[0_20px_70px_rgba(3,7,18,0.45)] hover:shadow-2xl dark:hover:shadow-[0_25px_80px_rgba(52,211,153,0.25)] transform hover:translate-y-[-4px] transition-all duration-200 text-left group border border-gray-300 dark:border-white/15 backdrop-blur bg-gradient-to-br ${discovery.tone} from-white/8`}
+                    class={`rounded-2xl p-6 text-white shadow-lg dark:shadow-[0_8px_32px_rgba(0,0,0,0.35)] hover:shadow-xl dark:hover:shadow-[0_12px_40px_rgba(52,211,153,0.2)] transform hover:translate-y-[-4px] transition-all duration-200 text-left group border border-white/20 dark:border-white/[0.1] backdrop-blur bg-gradient-to-br ${discovery.tone} from-white/8`}
                   >
                     <div class="flex items-start justify-between mb-3">
                       <discovery.icon class="w-8 h-8" />
@@ -427,7 +427,7 @@ export default function LoggedInDashboard() {
             {/* Personalized Suggestions */}
             {/* Trending Destinations */}
             <Show when={trendingQuery.data && trendingQuery.data.length > 0}>
-              <div class="rounded-2xl p-6 bg-white/90 dark:bg-white/5 border border-gray-300 dark:border-white/10 backdrop-blur shadow-xl dark:shadow-[0_22px_80px_rgba(3,7,18,0.45)]">
+              <div class="rounded-2xl p-6 bg-white/95 dark:bg-white/[0.03] border border-gray-200/80 dark:border-white/[0.08] backdrop-blur-xl shadow-lg dark:shadow-[0_8px_40px_rgba(0,0,0,0.35)]">
                 <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
                   <TrendingUp class="w-5 h-5 text-emerald-600 dark:text-emerald-200" />
                   Trending Destinations
@@ -466,7 +466,7 @@ export default function LoggedInDashboard() {
           <div class="space-y-6">
 
             {/* Recent Activity */}
-            <div class="rounded-2xl p-6 bg-white/90 dark:bg-white/5 border border-gray-300 dark:border-white/10 backdrop-blur shadow-xl dark:shadow-[0_22px_80px_rgba(3,7,18,0.45)]">
+            <div class="rounded-2xl p-6 bg-white/95 dark:bg-white/[0.03] border border-gray-200/80 dark:border-white/[0.08] backdrop-blur-xl shadow-lg dark:shadow-[0_8px_40px_rgba(0,0,0,0.35)]">
               <div class="flex items-center justify-between mb-4">
                 <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Recent Activity</h3>
                 <button class="text-emerald-600 dark:text-emerald-200 hover:text-emerald-700 dark:hover:text-white text-sm font-semibold">
@@ -504,7 +504,7 @@ export default function LoggedInDashboard() {
             </div>
 
             {/* Quick Actions Sidebar */}
-            <div class="rounded-2xl p-6 bg-white/90 dark:bg-white/5 border border-gray-300 dark:border-white/10 backdrop-blur shadow-xl dark:shadow-[0_22px_80px_rgba(3,7,18,0.45)]">
+            <div class="rounded-2xl p-6 bg-white/95 dark:bg-white/[0.03] border border-gray-200/80 dark:border-white/[0.08] backdrop-blur-xl shadow-lg dark:shadow-[0_8px_40px_rgba(0,0,0,0.35)]">
               <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Quick Actions</h3>
               <div class="space-y-3">
                 <button
