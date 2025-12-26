@@ -6,12 +6,12 @@ on:
   workflow_dispatch:
     inputs:
       deploy_reason:
-        description: 'Reason for deployment'
+        description: "Reason for deployment"
         required: true
 
 env:
-  NODE_VERSION: '22'
-  PNPM_VERSION: '9'
+  NODE_VERSION: "22"
+  PNPM_VERSION: "9"
 
 jobs:
   # Require CI to pass before deploying
@@ -31,7 +31,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'pnpm'
+          cache: "pnpm"
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -50,8 +50,8 @@ jobs:
     needs: ci-check
     environment:
       name: production
-      url: https://loci.dev  # Update with actual production URL
-    
+      url: https://loci.dev # Update with actual production URL
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -65,7 +65,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'pnpm'
+          cache: "pnpm"
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile

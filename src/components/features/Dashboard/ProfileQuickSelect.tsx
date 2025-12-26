@@ -1,7 +1,11 @@
-import { Show, For, createSignal } from 'solid-js';
-import { User, Check, ChevronDown, Plus } from 'lucide-solid';
-import { useSearchProfiles, useDefaultSearchProfile, useSetDefaultProfileMutation } from '~/lib/api/profiles';
-import { useNavigate } from '@solidjs/router';
+import { Show, For, createSignal } from "solid-js";
+import { User, Check, ChevronDown, Plus } from "lucide-solid";
+import {
+  useSearchProfiles,
+  useDefaultSearchProfile,
+  useSetDefaultProfileMutation,
+} from "~/lib/api/profiles";
+import { useNavigate } from "@solidjs/router";
 
 export default function ProfileQuickSelect() {
   const navigate = useNavigate();
@@ -25,26 +29,24 @@ export default function ProfileQuickSelect() {
       await setDefaultMutation.mutateAsync(profileId);
       setIsOpen(false);
     } catch (error) {
-      console.error('Failed to set default profile:', error);
+      console.error("Failed to set default profile:", error);
     }
   };
 
   const getBudgetLabel = (level: number) => {
-    if (level === 1) return '€';
-    if (level === 2) return '€€';
-    if (level === 3) return '€€€';
-    if (level === 4) return '€€€€';
-    return 'Any';
+    if (level === 1) return "€";
+    if (level === 2) return "€€";
+    if (level === 3) return "€€€";
+    if (level === 4) return "€€€€";
+    return "Any";
   };
 
   return (
     <div class="mb-6">
       <div class="flex items-center justify-between mb-3">
-        <label class="text-sm font-medium text-gray-700 dark:text-slate-200">
-          Search Profile
-        </label>
+        <label class="text-sm font-medium text-gray-700 dark:text-slate-200">Search Profile</label>
         <button
-          onClick={() => navigate('/settings/profiles')}
+          onClick={() => navigate("/settings/profiles")}
           class="text-xs text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 font-medium flex items-center gap-1 transition-colors"
         >
           <Plus class="w-3 h-3" />
@@ -74,8 +76,12 @@ export default function ProfileQuickSelect() {
                 when={currentProfile()}
                 fallback={
                   <div class="flex-1 text-left">
-                    <p class="text-sm font-medium text-gray-900 dark:text-white">No profile selected</p>
-                    <p class="text-xs text-gray-500 dark:text-slate-400">Create a profile to get started</p>
+                    <p class="text-sm font-medium text-gray-900 dark:text-white">
+                      No profile selected
+                    </p>
+                    <p class="text-xs text-gray-500 dark:text-slate-400">
+                      Create a profile to get started
+                    </p>
                   </div>
                 }
               >
@@ -101,7 +107,7 @@ export default function ProfileQuickSelect() {
             </Show>
           </div>
           <ChevronDown
-            class={`w-4 h-4 text-gray-500 dark:text-slate-400 transition-transform ${isOpen() ? 'rotate-180' : ''}`}
+            class={`w-4 h-4 text-gray-500 dark:text-slate-400 transition-transform ${isOpen() ? "rotate-180" : ""}`}
           />
         </button>
 
@@ -117,7 +123,7 @@ export default function ProfileQuickSelect() {
                   <button
                     onClick={() => {
                       setIsOpen(false);
-                      navigate('/settings/profiles');
+                      navigate("/settings/profiles");
                     }}
                     class="text-sm text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 font-medium"
                   >
@@ -134,15 +140,19 @@ export default function ProfileQuickSelect() {
                     <button
                       onClick={() => handleSelectProfile(profile.id)}
                       disabled={isChangingProfile()}
-                      class={`w-full flex items-center gap-3 px-4 py-3 text-left transition-colors disabled:opacity-50 ${isSelected()
-                          ? 'bg-emerald-50 dark:bg-emerald-900/20'
-                          : 'hover:bg-gray-50 dark:hover:bg-white/5'
-                        }`}
+                      class={`w-full flex items-center gap-3 px-4 py-3 text-left transition-colors disabled:opacity-50 ${
+                        isSelected()
+                          ? "bg-emerald-50 dark:bg-emerald-900/20"
+                          : "hover:bg-gray-50 dark:hover:bg-white/5"
+                      }`}
                     >
-                      <div class={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${isSelected()
-                          ? 'bg-gradient-to-br from-emerald-500 to-teal-600 shadow-lg'
-                          : 'bg-gray-200 dark:bg-white/10'
-                        }`}>
+                      <div
+                        class={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
+                          isSelected()
+                            ? "bg-gradient-to-br from-emerald-500 to-teal-600 shadow-lg"
+                            : "bg-gray-200 dark:bg-white/10"
+                        }`}
+                      >
                         <Show
                           when={isSelected()}
                           fallback={<User class="w-4 h-4 text-gray-600 dark:text-slate-400" />}
@@ -152,10 +162,13 @@ export default function ProfileQuickSelect() {
                       </div>
                       <div class="flex-1 min-w-0">
                         <div class="flex items-center gap-2">
-                          <p class={`text-sm font-medium truncate ${isSelected()
-                              ? 'text-emerald-700 dark:text-emerald-300'
-                              : 'text-gray-900 dark:text-white'
-                            }`}>
+                          <p
+                            class={`text-sm font-medium truncate ${
+                              isSelected()
+                                ? "text-emerald-700 dark:text-emerald-300"
+                                : "text-gray-900 dark:text-white"
+                            }`}
+                          >
                             {profile.profile_name}
                           </p>
                           <Show when={profile.is_default}>
@@ -188,7 +201,7 @@ export default function ProfileQuickSelect() {
               <button
                 onClick={() => {
                   setIsOpen(false);
-                  navigate('/settings/profiles');
+                  navigate("/settings/profiles");
                 }}
                 class="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
               >
@@ -206,10 +219,7 @@ export default function ProfileQuickSelect() {
 
       {/* Click outside to close */}
       <Show when={isOpen()}>
-        <div
-          class="fixed inset-0 z-40"
-          onClick={() => setIsOpen(false)}
-        />
+        <div class="fixed inset-0 z-40" onClick={() => setIsOpen(false)} />
       </Show>
     </div>
   );

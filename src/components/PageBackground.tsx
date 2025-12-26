@@ -94,7 +94,11 @@ export default function PageBackground() {
   });
 
   return (
-    <div class="absolute inset-0 -z-10 overflow-hidden" data-domain={theme().key} aria-hidden="true">
+    <div
+      class="absolute inset-0 -z-10 overflow-hidden"
+      data-domain={theme().key}
+      aria-hidden="true"
+    >
       <div
         class="domain-veil opacity-90"
         style={{

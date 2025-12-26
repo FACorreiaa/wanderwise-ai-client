@@ -49,13 +49,13 @@ export default function FavoritesPage() {
   const favorites = (): FavoriteDisplay[] => {
     const data = favoritesQuery.data;
     if (!data || !data.favorites) return [];
-    return data.favorites.map(fav => ({
+    return data.favorites.map((fav) => ({
       id: fav.itemId,
       name: fav.itemName,
       description_poi: fav.description,
       description: fav.description,
-      category: fav.category || 'Place',
-      address: '',
+      category: fav.category || "Place",
+      address: "",
       latitude: fav.latitude,
       longitude: fav.longitude,
     }));
@@ -63,18 +63,17 @@ export default function FavoritesPage() {
 
   // Dynamic categories based on actual data
   const categories = () => {
-    const allCategories = favorites().map(fav => fav.category).filter(Boolean);
+    const allCategories = favorites()
+      .map((fav) => fav.category)
+      .filter(Boolean);
     const uniqueCategories = [...new Set(allCategories)];
-    const categoryCounts = uniqueCategories.map(cat => ({
+    const categoryCounts = uniqueCategories.map((cat) => ({
       id: cat.toLowerCase(),
       label: cat,
-      count: favorites().filter(fav => fav.category === cat).length
+      count: favorites().filter((fav) => fav.category === cat).length,
     }));
 
-    return [
-      { id: "all", label: "All Categories", count: favorites().length },
-      ...categoryCounts
-    ];
+    return [{ id: "all", label: "All Categories", count: favorites().length }, ...categoryCounts];
   };
 
   const sortOptions = [
@@ -95,15 +94,13 @@ export default function FavoritesPage() {
           fav.name?.toLowerCase().includes(query) ||
           fav.description_poi?.toLowerCase().includes(query) ||
           fav.category?.toLowerCase().includes(query) ||
-          fav.address?.toLowerCase().includes(query)
+          fav.address?.toLowerCase().includes(query),
       );
     }
 
     // Category filter
     if (selectedCategory() !== "all") {
-      filtered = filtered.filter((fav) =>
-        fav.category?.toLowerCase() === selectedCategory()
-      );
+      filtered = filtered.filter((fav) => fav.category?.toLowerCase() === selectedCategory());
     }
 
     // Sort
@@ -140,12 +137,9 @@ export default function FavoritesPage() {
 
   const togglePOISelection = (poiId: string) => {
     setSelectedPOIs((prev) =>
-      prev.includes(poiId)
-        ? prev.filter((id) => id !== poiId)
-        : [...prev, poiId],
+      prev.includes(poiId) ? prev.filter((id) => id !== poiId) : [...prev, poiId],
     );
   };
-
 
   const clearSelection = () => {
     setSelectedPOIs([]);
@@ -153,27 +147,35 @@ export default function FavoritesPage() {
 
   const getCategoryColor = (category: string) => {
     const colorMap: Record<string, string> = {
-      "Restaurant": "text-orange-600 bg-orange-50",
-      "Park": "text-green-600 bg-green-50",
-      "Beach": "text-blue-600 bg-blue-50",
-      "Landmark": "text-purple-600 bg-purple-50",
+      Restaurant: "text-orange-600 bg-orange-50",
+      Park: "text-green-600 bg-green-50",
+      Beach: "text-blue-600 bg-blue-50",
+      Landmark: "text-purple-600 bg-purple-50",
       "Religious Site": "text-indigo-600 bg-indigo-50",
-      "Museum": "text-amber-600 bg-amber-50",
-      "Shopping": "text-pink-600 bg-pink-50",
+      Museum: "text-amber-600 bg-amber-50",
+      Shopping: "text-pink-600 bg-pink-50",
     };
     return colorMap[category] || "text-gray-600 bg-gray-50";
   };
 
   const getCategoryIcon = (category: string) => {
     switch (category) {
-      case "Restaurant": return "🍽️";
-      case "Park": return "🌳";
-      case "Beach": return "🏖️";
-      case "Landmark": return "🏛️";
-      case "Religious Site": return "⛪";
-      case "Museum": return "🏛️";
-      case "Shopping": return "🛍️";
-      default: return "📍";
+      case "Restaurant":
+        return "🍽️";
+      case "Park":
+        return "🌳";
+      case "Beach":
+        return "🏖️";
+      case "Landmark":
+        return "🏛️";
+      case "Religious Site":
+        return "⛪";
+      case "Museum":
+        return "🏛️";
+      case "Shopping":
+        return "🛍️";
+      default:
+        return "📍";
     }
   };
 
@@ -181,7 +183,7 @@ export default function FavoritesPage() {
     try {
       await removeFavoriteMutation.mutateAsync({
         itemId: favoriteId,
-        contentType: 'poi'
+        contentType: "poi",
       });
     } catch (error) {
       console.error("Failed to remove favorite:", error);
@@ -231,7 +233,9 @@ export default function FavoritesPage() {
 
         {/* Category badge */}
         <div class="absolute bottom-3 left-3">
-          <span class={`px-2 py-1 rounded-full text-xs font-medium ${getCategoryColor(favorite.category)}`}>
+          <span
+            class={`px-2 py-1 rounded-full text-xs font-medium ${getCategoryColor(favorite.category)}`}
+          >
             {favorite.category}
           </span>
         </div>
@@ -244,7 +248,9 @@ export default function FavoritesPage() {
             {favorite.name}
           </h3>
           <Show when={formatDistance(favorite.distance)}>
-            <p class="text-sm text-gray-500 dark:text-slate-400">{formatDistance(favorite.distance)} away</p>
+            <p class="text-sm text-gray-500 dark:text-slate-400">
+              {formatDistance(favorite.distance)} away
+            </p>
           </Show>
         </div>
 
@@ -314,11 +320,15 @@ export default function FavoritesPage() {
                   {favorite.name}
                 </h3>
                 <div class="flex items-center gap-2 mb-2">
-                  <span class={`px-2 py-1 rounded-full text-xs font-medium ${getCategoryColor(favorite.category)}`}>
+                  <span
+                    class={`px-2 py-1 rounded-full text-xs font-medium ${getCategoryColor(favorite.category)}`}
+                  >
                     {favorite.category}
                   </span>
                   <Show when={formatDistance(favorite.distance)}>
-                    <span class="text-sm text-gray-500 dark:text-slate-400">{formatDistance(favorite.distance)} away</span>
+                    <span class="text-sm text-gray-500 dark:text-slate-400">
+                      {formatDistance(favorite.distance)} away
+                    </span>
                   </Show>
                 </div>
               </div>
@@ -353,7 +363,10 @@ export default function FavoritesPage() {
               <Show when={favorite.phone_number}>
                 <div class="flex items-center gap-2">
                   <span class="w-4 h-4 text-center">📞</span>
-                  <a href={`tel:${favorite.phone_number}`} class="hover:text-blue-600 dark:hover:text-blue-400">
+                  <a
+                    href={`tel:${favorite.phone_number}`}
+                    class="hover:text-blue-600 dark:hover:text-blue-400"
+                  >
                     {favorite.phone_number}
                   </a>
                 </div>
@@ -414,10 +427,10 @@ export default function FavoritesPage() {
                   </div>
                 </div>
                 <div>
-                  <h1 class="text-3xl sm:text-4xl font-bold tracking-tight text-white">My Favorites</h1>
-                  <p class="text-white/80 text-sm mt-1">
-                    {favorites().length} places you've saved
-                  </p>
+                  <h1 class="text-3xl sm:text-4xl font-bold tracking-tight text-white">
+                    My Favorites
+                  </h1>
+                  <p class="text-white/80 text-sm mt-1">{favorites().length} places you've saved</p>
                 </div>
               </div>
               <div class="flex items-center gap-3">
@@ -479,22 +492,14 @@ export default function FavoritesPage() {
                 class="px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
                 <For each={sortOptions}>
-                  {(option) => (
-                    <option value={option.id}>{option.label}</option>
-                  )}
+                  {(option) => <option value={option.id}>{option.label}</option>}
                 </For>
               </select>
               <button
-                onClick={() =>
-                  setSortOrder((prev) => (prev === "asc" ? "desc" : "asc"))
-                }
+                onClick={() => setSortOrder((prev) => (prev === "asc" ? "desc" : "asc"))}
                 class="p-2 border border-gray-300 dark:border-slate-600 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-700 text-gray-700 dark:text-slate-300"
               >
-                {sortOrder() === "asc" ? (
-                  <SortAsc class="w-4 h-4" />
-                ) : (
-                  <SortDesc class="w-4 h-4" />
-                )}
+                {sortOrder() === "asc" ? <SortAsc class="w-4 h-4" /> : <SortDesc class="w-4 h-4" />}
               </button>
             </div>
 
@@ -561,9 +566,7 @@ export default function FavoritesPage() {
                   ? "Try adjusting your search or filters"
                   : "Start exploring and save places you love!"}
               </p>
-              <Button>
-                Discover Places
-              </Button>
+              <Button>Discover Places</Button>
             </div>
           }
         >
@@ -576,9 +579,7 @@ export default function FavoritesPage() {
           >
             <For each={filteredFavorites()}>
               {(favorite) =>
-                viewMode() === "grid"
-                  ? renderGridCard(favorite)
-                  : renderListItem(favorite)
+                viewMode() === "grid" ? renderGridCard(favorite) : renderListItem(favorite)
               }
             </For>
           </div>

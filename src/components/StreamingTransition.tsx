@@ -1,9 +1,9 @@
-import { createSignal, createEffect, Show, For } from 'solid-js';
-import { useNavigate } from '@solidjs/router';
-import { ArrowRight, MapPin, Sparkles } from 'lucide-solid';
-import StreamingChatDisplay from './StreamingChatDisplay';
-import type { StreamingSession } from '~/lib/api/types';
-import { getDomainRoute } from '~/lib/streaming-service';
+import { createSignal, createEffect, Show, For } from "solid-js";
+import { useNavigate } from "@solidjs/router";
+import { ArrowRight, MapPin, Sparkles } from "lucide-solid";
+import StreamingChatDisplay from "./StreamingChatDisplay";
+import type { StreamingSession } from "~/lib/api/types";
+import { getDomainRoute } from "~/lib/streaming-service";
 
 interface StreamingTransitionProps {
   session: () => StreamingSession | null;
@@ -14,7 +14,9 @@ interface StreamingTransitionProps {
 export default function StreamingTransition(props: StreamingTransitionProps) {
   const navigate = useNavigate();
   const [showTransition, setShowTransition] = createSignal(false);
-  const [transitionPhase, setTransitionPhase] = createSignal<'chat' | 'preview' | 'navigating'>('chat');
+  const [transitionPhase, setTransitionPhase] = createSignal<"chat" | "preview" | "navigating">(
+    "chat",
+  );
   const [previewData, setPreviewData] = createSignal<any>(null);
 
   // Show the component when session starts
@@ -22,14 +24,14 @@ export default function StreamingTransition(props: StreamingTransitionProps) {
     const session = props.session();
     if (session) {
       setShowTransition(true);
-      setTransitionPhase('chat');
+      setTransitionPhase("chat");
     }
   });
 
   const handleChatComplete = (data: any) => {
-    console.log('Chat complete, received data:', data);
+    console.log("Chat complete, received data:", data);
     setPreviewData(data);
-    setTransitionPhase('preview');
+    setTransitionPhase("preview");
 
     // Auto-navigate after showing preview
     setTimeout(() => {
@@ -38,7 +40,7 @@ export default function StreamingTransition(props: StreamingTransitionProps) {
   };
 
   const navigateToResults = (data: any) => {
-    setTransitionPhase('navigating');
+    setTransitionPhase("navigating");
 
     const session = props.session();
     if (!session) return;
@@ -47,12 +49,15 @@ export default function StreamingTransition(props: StreamingTransitionProps) {
     const route = getDomainRoute(session.domain);
 
     // Store the streaming data for the destination page
-    sessionStorage.setItem('completedStreamingSession', JSON.stringify({
-      sessionId: session.sessionId,
-      domain: session.domain,
-      data: data,
-      timestamp: new Date().toISOString()
-    }));
+    sessionStorage.setItem(
+      "completedStreamingSession",
+      JSON.stringify({
+        sessionId: session.sessionId,
+        domain: session.domain,
+        data: data,
+        timestamp: new Date().toISOString(),
+      }),
+    );
 
     // Navigate after a short delay for smooth transition
     setTimeout(() => {
@@ -60,8 +65,8 @@ export default function StreamingTransition(props: StreamingTransitionProps) {
         state: {
           streamingData: data,
           sessionId: session.sessionId,
-          fromChat: true
-        }
+          fromChat: true,
+        },
       });
       setShowTransition(false);
       if (props.onClose) props.onClose();
@@ -74,45 +79,46 @@ export default function StreamingTransition(props: StreamingTransitionProps) {
     if (!session || !data) return null;
 
     switch (session.domain) {
-      case 'accommodation':
+      case "accommodation":
         return {
-          title: '🏨 Found Amazing Hotels!',
+          title: "🏨 Found Amazing Hotels!",
           subtitle: `${data.hotels?.length || 0} handpicked accommodations`,
-          description: 'Perfect stays tailored to your preferences and budget',
-          items: data.hotels?.slice(0, 3).map((hotel: any) => hotel.name) || []
+          description: "Perfect stays tailored to your preferences and budget",
+          items: data.hotels?.slice(0, 3).map((hotel: any) => hotel.name) || [],
         };
 
-      case 'dining':
+      case "dining":
         return {
-          title: '🍽️ Delicious Discoveries!',
+          title: "🍽️ Delicious Discoveries!",
           subtitle: `${data.restaurants?.length || 0} restaurant recommendations`,
-          description: 'From local gems to fine dining experiences',
-          items: data.restaurants?.slice(0, 3).map((restaurant: any) => restaurant.name) || []
+          description: "From local gems to fine dining experiences",
+          items: data.restaurants?.slice(0, 3).map((restaurant: any) => restaurant.name) || [],
         };
 
-      case 'activities':
+      case "activities":
         return {
-          title: '🎯 Exciting Activities!',
+          title: "🎯 Exciting Activities!",
           subtitle: `${data.activities?.length || 0} curated experiences`,
-          description: 'Adventures and attractions just for you',
-          items: data.activities?.slice(0, 3).map((activity: any) => activity.name) || []
+          description: "Adventures and attractions just for you",
+          items: data.activities?.slice(0, 3).map((activity: any) => activity.name) || [],
         };
 
-      case 'itinerary':
-      case 'general':
+      case "itinerary":
+      case "general":
         return {
-          title: '✨ Your Personalized Itinerary!',
+          title: "✨ Your Personalized Itinerary!",
           subtitle: `${data.points_of_interest?.length || 0} amazing places to visit`,
-          description: data.itinerary_response?.overall_description || 'A perfectly crafted travel plan',
-          items: data.points_of_interest?.slice(0, 3).map((poi: any) => poi.name) || []
+          description:
+            data.itinerary_response?.overall_description || "A perfectly crafted travel plan",
+          items: data.points_of_interest?.slice(0, 3).map((poi: any) => poi.name) || [],
         };
 
       default:
         return {
-          title: '🌟 Planning Complete!',
-          subtitle: 'Your personalized recommendations are ready',
-          description: 'Get ready for an amazing experience',
-          items: []
+          title: "🌟 Planning Complete!",
+          subtitle: "Your personalized recommendations are ready",
+          description: "Get ready for an amazing experience",
+          items: [],
         };
     }
   };
@@ -170,22 +176,19 @@ export default function StreamingTransition(props: StreamingTransitionProps) {
 
   return (
     <Show when={showTransition()}>
-      <div class={`fixed inset-0 z-50 ${props.fullScreen ? '' : 'bg-black/50 flex items-center justify-center'}`}>
-        <div class={`${props.fullScreen ? 'h-full w-full' : 'w-full max-w-2xl h-[600px] bg-white rounded-xl shadow-2xl overflow-hidden'}`}>
-          <Show when={transitionPhase() === 'chat'}>
-            <StreamingChatDisplay
-              session={props.session}
-              onComplete={handleChatComplete}
-            />
+      <div
+        class={`fixed inset-0 z-50 ${props.fullScreen ? "" : "bg-black/50 flex items-center justify-center"}`}
+      >
+        <div
+          class={`${props.fullScreen ? "h-full w-full" : "w-full max-w-2xl h-[600px] bg-white rounded-xl shadow-2xl overflow-hidden"}`}
+        >
+          <Show when={transitionPhase() === "chat"}>
+            <StreamingChatDisplay session={props.session} onComplete={handleChatComplete} />
           </Show>
 
-          <Show when={transitionPhase() === 'preview'}>
-            {renderPreview()}
-          </Show>
+          <Show when={transitionPhase() === "preview"}>{renderPreview()}</Show>
 
-          <Show when={transitionPhase() === 'navigating'}>
-            {renderNavigating()}
-          </Show>
+          <Show when={transitionPhase() === "navigating"}>{renderNavigating()}</Show>
         </div>
 
         {/* Close button for non-fullscreen */}

@@ -1,14 +1,11 @@
- 
 // Global type definitions for missing modules
 
-
-
-declare module 'virtual:pwa-register' {
+declare module "virtual:pwa-register" {
   export function registerSW(options?: unknown): unknown;
 }
 
 // Global environment variables
-declare module '@env' {
+declare module "@env" {
   export const VITE_CONNECT_BASE_URL: string;
   export const VITE_MAPBOX_API_KEY: string;
 }
@@ -28,4 +25,4 @@ declare namespace JSX {
   }
 }
 
-export { };
+export {};

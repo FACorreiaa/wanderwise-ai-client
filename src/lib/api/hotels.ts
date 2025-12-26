@@ -1,15 +1,15 @@
 // Hotels queries - Using RPC
-import { useQuery } from '@tanstack/solid-query';
-import { createClient } from '@connectrpc/connect';
-import { create } from '@bufbuild/protobuf';
+import { useQuery } from "@tanstack/solid-query";
+import { createClient } from "@connectrpc/connect";
+import { create } from "@bufbuild/protobuf";
 import {
   FavoritesService,
   GetHotelDetailsRequestSchema,
   GetNearbyHotelsRequestSchema,
-} from '@buf/loci_loci-proto.bufbuild_es/loci/favorites/v1/favorites_pb.js';
-import { transport } from '../connect-transport';
-import { queryKeys } from './shared';
-import type { HotelDetailedInfo } from './types';
+} from "@buf/loci_loci-proto.bufbuild_es/loci/favorites/v1/favorites_pb.js";
+import { transport } from "../connect-transport";
+import { queryKeys } from "./shared";
+import type { HotelDetailedInfo } from "./types";
 
 const favoritesClient = createClient(FavoritesService, transport);
 
@@ -64,7 +64,7 @@ export const useHotelDetails = (hotelId: string) => {
       const request = create(GetHotelDetailsRequestSchema, { hotelId });
       const response = await favoritesClient.getHotelDetails(request);
       if (!response.hotel) {
-        throw new Error('Hotel not found');
+        throw new Error("Hotel not found");
       }
       return mapProtoToHotel(response.hotel);
     },
@@ -83,7 +83,7 @@ export const useHotelsByPreferences = (preferences: any) => {
     queryFn: async (): Promise<HotelDetailedInfo[]> => {
       // LLM-driven queries should use the streaming chat endpoint
       // Return empty for now - actual implementation uses sendUnifiedChatMessageStream
-      console.warn('useHotelsByPreferences: Use streaming chat for LLM-driven hotel search');
+      console.warn("useHotelsByPreferences: Use streaming chat for LLM-driven hotel search");
       return [];
     },
     enabled: false, // Disabled - use streaming chat instead

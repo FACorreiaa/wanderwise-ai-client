@@ -5,13 +5,12 @@ import { createConnectTransport } from "@connectrpc/connect-web";
 import { StatisticsService } from "@buf/loci_loci-proto.bufbuild_es/loci/statistics/statistics_pb.js";
 
 // Get API base URL
-const API_BASE_URL =
-  import.meta.env.VITE_CONNECT_BASE_URL || "http://localhost:8000";
+const API_BASE_URL = import.meta.env.VITE_CONNECT_BASE_URL || "http://localhost:8000";
 
 // Helper to parse JWT payload
 const parseJwt = (token: string): { user_id?: string } | null => {
   try {
-    const payloadBase64 = token.split('.')[1];
+    const payloadBase64 = token.split(".")[1];
     if (!payloadBase64) return null;
     return JSON.parse(atob(payloadBase64));
   } catch (e) {
@@ -238,10 +237,7 @@ export class StatisticsSSE {
   private maxReconnectAttempts = 5;
   private reconnectDelay = 1000; // Start with 1 second
 
-  constructor(
-    onUpdate: (stats: MainPageStatistics) => void,
-    onError?: (error: Event) => void,
-  ) {
+  constructor(onUpdate: (stats: MainPageStatistics) => void, onError?: (error: Event) => void) {
     this.onUpdate = onUpdate;
     this.onError = onError as any;
   }

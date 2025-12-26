@@ -1,7 +1,17 @@
-import { For, Show, createSignal } from 'solid-js';
-import { Star, MapPin, Wifi, Car, Coffee, Utensils, ChevronDown, ChevronUp, Share2 } from 'lucide-solid';
-import FavoriteButton from '~/components/shared/FavoriteButton';
-import { HotelDetailedInfo } from '~/lib/api/types';
+import { For, Show, createSignal } from "solid-js";
+import {
+  Star,
+  MapPin,
+  Wifi,
+  Car,
+  Coffee,
+  Utensils,
+  ChevronDown,
+  ChevronUp,
+  Share2,
+} from "lucide-solid";
+import FavoriteButton from "~/components/shared/FavoriteButton";
+import { HotelDetailedInfo } from "~/lib/api/types";
 
 interface HotelResultsProps {
   hotels: HotelDetailedInfo[];
@@ -48,7 +58,7 @@ export default function HotelResults(props: HotelResultsProps) {
     const remaining = hotels.length - initialLimit;
 
     if (showAll()) {
-      return 'Show Less';
+      return "Show Less";
     } else {
       return `Show ${remaining} More`;
     }
@@ -56,18 +66,22 @@ export default function HotelResults(props: HotelResultsProps) {
 
   const getAmenityIcon = (amenity: string) => {
     const amenityLower = amenity.toLowerCase();
-    if (amenityLower.includes('wifi') || amenityLower.includes('internet')) return <Wifi class="w-3 h-3" />;
-    if (amenityLower.includes('parking') || amenityLower.includes('car')) return <Car class="w-3 h-3" />;
-    if (amenityLower.includes('breakfast') || amenityLower.includes('coffee')) return <Coffee class="w-3 h-3" />;
-    if (amenityLower.includes('restaurant') || amenityLower.includes('dining')) return <Utensils class="w-3 h-3" />;
+    if (amenityLower.includes("wifi") || amenityLower.includes("internet"))
+      return <Wifi class="w-3 h-3" />;
+    if (amenityLower.includes("parking") || amenityLower.includes("car"))
+      return <Car class="w-3 h-3" />;
+    if (amenityLower.includes("breakfast") || amenityLower.includes("coffee"))
+      return <Coffee class="w-3 h-3" />;
+    if (amenityLower.includes("restaurant") || amenityLower.includes("dining"))
+      return <Utensils class="w-3 h-3" />;
     return null;
   };
 
   const getRatingColor = (rating: number) => {
-    if (rating >= 4.5) return 'text-green-600 dark:text-green-400';
-    if (rating >= 4.0) return 'text-blue-600 dark:text-blue-400';
-    if (rating >= 3.5) return 'text-yellow-600 dark:text-yellow-400';
-    return 'text-gray-600 dark:text-gray-400';
+    if (rating >= 4.5) return "text-green-600 dark:text-green-400";
+    if (rating >= 4.0) return "text-blue-600 dark:text-blue-400";
+    if (rating >= 3.5) return "text-yellow-600 dark:text-yellow-400";
+    return "text-gray-600 dark:text-gray-400";
   };
 
   return (
@@ -85,16 +99,20 @@ export default function HotelResults(props: HotelResultsProps) {
         <For each={displayHotels()}>
           {(hotel) => (
             <div
-              class={`rounded-lg border border-gray-200 dark:border-gray-700 ${props.compact
-                ? "p-3 bg-gray-50 dark:bg-gray-800"
-                : "p-4 bg-white dark:bg-gray-800 shadow-sm hover:shadow-md transition-shadow"
-                } ${props.onItemClick ? 'cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700' : ''}`}
+              class={`rounded-lg border border-gray-200 dark:border-gray-700 ${
+                props.compact
+                  ? "p-3 bg-gray-50 dark:bg-gray-800"
+                  : "p-4 bg-white dark:bg-gray-800 shadow-sm hover:shadow-md transition-shadow"
+              } ${props.onItemClick ? "cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700" : ""}`}
               onClick={() => props.onItemClick?.(hotel)}
             >
               <div class="flex items-start justify-between mb-2">
                 <div class="flex-1 min-w-0">
-                  <h4 class={`font-medium text-gray-900 dark:text-white truncate ${props.compact ? "text-sm" : "text-base"
-                    }`}>
+                  <h4
+                    class={`font-medium text-gray-900 dark:text-white truncate ${
+                      props.compact ? "text-sm" : "text-base"
+                    }`}
+                  >
                     {hotel.name}
                   </h4>
                   <Show when={hotel.category}>
@@ -164,8 +182,8 @@ export default function HotelResults(props: HotelResultsProps) {
                     item={{
                       id: hotel.name,
                       name: hotel.name,
-                      contentType: 'hotel',
-                      description: hotel.description || '',
+                      contentType: "hotel",
+                      description: hotel.description || "",
                     }}
                     size="sm"
                   />
@@ -210,10 +228,7 @@ export default function HotelResults(props: HotelResultsProps) {
             class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-700 transition-colors"
           >
             <span>{getToggleText()}</span>
-            {showAll() ?
-              <ChevronUp class="w-4 h-4" /> :
-              <ChevronDown class="w-4 h-4" />
-            }
+            {showAll() ? <ChevronUp class="w-4 h-4" /> : <ChevronDown class="w-4 h-4" />}
           </button>
         </div>
       </Show>

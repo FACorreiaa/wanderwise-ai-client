@@ -1,8 +1,8 @@
 // Connect RPC authentication using plain Connect client with Solid Query
-import { useQuery, useMutation, useQueryClient } from '@tanstack/solid-query';
-import { createClient } from '@connectrpc/connect';
-import { create } from '@bufbuild/protobuf';
-import { AuthService } from '@buf/loci_loci-proto.bufbuild_es/loci/auth/auth_pb.js';
+import { useQuery, useMutation, useQueryClient } from "@tanstack/solid-query";
+import { createClient } from "@connectrpc/connect";
+import { create } from "@bufbuild/protobuf";
+import { AuthService } from "@buf/loci_loci-proto.bufbuild_es/loci/auth/auth_pb.js";
 import {
   LoginRequestSchema,
   RegisterRequestSchema,
@@ -10,10 +10,10 @@ import {
   LogoutRequestSchema,
   RefreshTokenRequestSchema,
   ChangePasswordRequestSchema,
-} from '@buf/loci_loci-proto.bufbuild_es/loci/auth/auth_pb.js';
-import { clearAuthToken, getAuthToken, getRefreshToken, setAuthToken } from '../auth/tokens';
-import { queryKeys } from './shared';
-import { transport } from '../connect-transport';
+} from "@buf/loci_loci-proto.bufbuild_es/loci/auth/auth_pb.js";
+import { clearAuthToken, getAuthToken, getRefreshToken, setAuthToken } from "../auth/tokens";
+import { queryKeys } from "./shared";
+import { transport } from "../connect-transport";
 
 // Create the auth service client
 const authClient = createClient(AuthService, transport);
@@ -59,10 +59,14 @@ export const useLoginMutation = () => {
   const queryClient = useQueryClient();
 
   return useMutation(() => ({
-    mutationFn: async ({ email, password, rememberMe = false }: {
+    mutationFn: async ({
+      email,
+      password,
+      rememberMe = false,
+    }: {
       email: string;
       password: string;
-      rememberMe?: boolean
+      rememberMe?: boolean;
     }) => {
       const request = create(LoginRequestSchema, {
         email,
@@ -90,7 +94,12 @@ export const useRegisterMutation = () => {
   const queryClient = useQueryClient();
 
   return useMutation(() => ({
-    mutationFn: async ({ username, email, password, role = 'user' }: {
+    mutationFn: async ({
+      username,
+      email,
+      password,
+      role = "user",
+    }: {
       username: string;
       email: string;
       password: string;
@@ -123,7 +132,7 @@ export const useLogoutMutation = () => {
     mutationFn: async () => {
       const refreshToken = getRefreshToken();
       if (!refreshToken) {
-        throw new Error('No refresh token available for logout');
+        throw new Error("No refresh token available for logout");
       }
 
       const request = create(LogoutRequestSchema, {
@@ -146,7 +155,13 @@ export const useLogoutMutation = () => {
 
 export const useUpdatePasswordMutation = () => {
   return useMutation(() => ({
-    mutationFn: async ({ oldPassword, newPassword }: { oldPassword: string; newPassword: string }) => {
+    mutationFn: async ({
+      oldPassword,
+      newPassword,
+    }: {
+      oldPassword: string;
+      newPassword: string;
+    }) => {
       const request = create(ChangePasswordRequestSchema, {
         oldPassword,
         newPassword,
@@ -168,7 +183,7 @@ export const useRefreshTokenMutation = () => {
     mutationFn: async () => {
       const refreshToken = getRefreshToken();
       if (!refreshToken) {
-        throw new Error('No refresh token available');
+        throw new Error("No refresh token available");
       }
 
       const request = create(RefreshTokenRequestSchema, {
@@ -192,7 +207,8 @@ export const useRefreshTokenMutation = () => {
 export const useForgotPasswordMutation = () => {
   return useMutation(() => ({
     mutationFn: async ({ email }: { email: string }) => {
-      const { ForgotPasswordRequestSchema } = await import('@buf/loci_loci-proto.bufbuild_es/loci/auth/auth_pb.js');
+      const { ForgotPasswordRequestSchema } =
+        await import("@buf/loci_loci-proto.bufbuild_es/loci/auth/auth_pb.js");
 
       const request = create(ForgotPasswordRequestSchema, {
         email,
@@ -212,7 +228,8 @@ export const useForgotPasswordMutation = () => {
 export const useResetPasswordMutation = () => {
   return useMutation(() => ({
     mutationFn: async ({ token, newPassword }: { token: string; newPassword: string }) => {
-      const { ResetPasswordRequestSchema } = await import('@buf/loci_loci-proto.bufbuild_es/loci/auth/auth_pb.js');
+      const { ResetPasswordRequestSchema } =
+        await import("@buf/loci_loci-proto.bufbuild_es/loci/auth/auth_pb.js");
 
       const request = create(ResetPasswordRequestSchema, {
         token,

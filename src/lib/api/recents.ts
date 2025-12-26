@@ -1,10 +1,13 @@
-import { useQuery } from '@tanstack/solid-query';
+import { useQuery } from "@tanstack/solid-query";
 import { createClient } from "@connectrpc/connect";
-import { RecentsService, GetRecentInteractionsRequestSchema } from "@buf/loci_loci-proto.bufbuild_es/loci/recents/recents_pb.js";
+import {
+  RecentsService,
+  GetRecentInteractionsRequestSchema,
+} from "@buf/loci_loci-proto.bufbuild_es/loci/recents/recents_pb.js";
 import { create } from "@bufbuild/protobuf";
 import { transport } from "../connect-transport";
 import { getAuthToken, authAPI } from "../api";
-import type { RecentInteractionsResponse, CityInteractions } from './types';
+import type { RecentInteractionsResponse, CityInteractions } from "./types";
 
 // Create authenticated recents client
 const recentsClient = createClient(RecentsService, transport);
@@ -12,7 +15,7 @@ const recentsClient = createClient(RecentsService, transport);
 // Helper to parse JWT payload
 const parseJwt = (token: string): { user_id?: string } | null => {
   try {
-    const payloadBase64 = token.split('.')[1];
+    const payloadBase64 = token.split(".")[1];
     if (!payloadBase64) return null;
     return JSON.parse(atob(payloadBase64));
   } catch (e) {
@@ -66,7 +69,7 @@ async function fetchRecentInteractions(limit: number = 10): Promise<RecentIntera
         limit: limit,
         offset: 0,
         groupByCity: true,
-      })
+      }),
     );
 
     console.log("🕐 fetchRecentInteractions: Response received", response);
@@ -87,7 +90,7 @@ async function fetchRecentInteractions(limit: number = 10): Promise<RecentIntera
       }
 
       // If no match, check if it's a POI lookup prompt (starts with "Return ONLY")
-      if (description.startsWith('Return ONLY')) {
+      if (description.startsWith("Return ONLY")) {
         const poiMatch = description.match(/for "([^"]+)" in ([^.]+)/);
         if (poiMatch) {
           return `Looking up ${poiMatch[1]} in ${poiMatch[2]}`;
@@ -95,21 +98,21 @@ async function fetchRecentInteractions(limit: number = 10): Promise<RecentIntera
       }
 
       // Fallback to first 50 chars or city name
-      return description.length > 50 ? description.slice(0, 50) + '...' : description || cityName;
+      return description.length > 50 ? description.slice(0, 50) + "..." : description || cityName;
     };
 
     // Map proto response to frontend types
-    const cities: CityInteractions[] = (response.citySummaries || []).map(summary => ({
-      city_name: summary.cityName || '',
+    const cities: CityInteractions[] = (response.citySummaries || []).map((summary) => ({
+      city_name: summary.cityName || "",
       city_id: summary.cityId || null,
-      interactions: (summary.recentInteractions || []).map(interaction => ({
-        id: interaction.id || '',
-        user_id: interaction.userId || '',
-        city_name: summary.cityName || '',
+      interactions: (summary.recentInteractions || []).map((interaction) => ({
+        id: interaction.id || "",
+        user_id: interaction.userId || "",
+        city_name: summary.cityName || "",
         city_id: null,
-        prompt: extractMessage(interaction.description || '', summary.cityName || ''),
-        response_text: '',
-        model_used: '',
+        prompt: extractMessage(interaction.description || "", summary.cityName || ""),
+        response_text: "",
+        model_used: "",
         latency_ms: 0,
         created_at: interaction.createdAt
           ? new Date(Number(interaction.createdAt.seconds) * 1000).toISOString()
@@ -144,7 +147,7 @@ async function fetchRecentInteractions(limit: number = 10): Promise<RecentIntera
 // Hook for recent interactions (RPC-based)
 export const useRecentInteractions = (limit: number = 10) => {
   return useQuery(() => ({
-    queryKey: ['recents', 'interactions', limit],
+    queryKey: ["recents", "interactions", limit],
     queryFn: () => fetchRecentInteractions(limit),
     staleTime: 5 * 60 * 1000, // 5 minutes
   }));
@@ -153,10 +156,10 @@ export const useRecentInteractions = (limit: number = 10) => {
 // Hook for city details (uses same RPC but filters)
 export const useCityDetails = (cityName: string) => {
   return useQuery(() => ({
-    queryKey: ['recents', 'city', cityName],
+    queryKey: ["recents", "city", cityName],
     queryFn: async (): Promise<CityInteractions | null> => {
       const response = await fetchRecentInteractions(50);
-      const city = response.cities.find(c => c.city_name === cityName);
+      const city = response.cities.find((c) => c.city_name === cityName);
       return city || null;
     },
     enabled: !!cityName,

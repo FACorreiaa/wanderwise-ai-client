@@ -23,14 +23,12 @@ import { Label } from "~/ui/label";
 import { handleLinkPreload } from "~/lib/preload";
 
 const RealTimeStats = lazy(() => import("~/components/features/Home/RealTimeStats"));
-const MobileAppAnnouncement = lazy(() => import("~/components/features/Home/MobileAppAnnouncement"));
+const MobileAppAnnouncement = lazy(
+  () => import("~/components/features/Home/MobileAppAnnouncement"),
+);
 const LocationPermissionPrompt = lazy(() => import("~/components/LocationPermissionPrompt"));
 import { sendUnifiedChatMessageStream, detectDomain } from "~/lib/api/llm";
-import {
-  streamingService,
-  createStreamingSession,
-  getDomainRoute,
-} from "~/lib/streaming-service";
+import { streamingService, createStreamingSession, getDomainRoute } from "~/lib/streaming-service";
 
 const statsData = {
   badgeText: "Seen in beta",
@@ -99,8 +97,7 @@ const valueStack = [
 
 const socialProof = [
   {
-    quote:
-      "Feels like a concierge who already knows my taste in coffee, museums, and bedtime.",
+    quote: "Feels like a concierge who already knows my taste in coffee, museums, and bedtime.",
     name: "Nadia — prototype user in Lisbon",
   },
   {
@@ -157,36 +154,27 @@ export default function PublicLandingPage() {
       const session = createStreamingSession(domain);
       session.query = message;
 
-      sessionStorage.setItem(
-        "currentStreamingSession",
-        JSON.stringify(session),
-      );
+      sessionStorage.setItem("currentStreamingSession", JSON.stringify(session));
 
       const response = await sendUnifiedChatMessageStream({
         profileId: "free",
         message: message,
         userLocation: userLocation()
           ? {
-            userLat: userLocation()!.latitude,
-            userLon: userLocation()!.longitude,
-          }
+              userLat: userLocation()!.latitude,
+              userLon: userLocation()!.longitude,
+            }
           : undefined,
       });
 
       streamingService.startStream(response, {
         session,
         onProgress: (updatedSession) => {
-          sessionStorage.setItem(
-            "currentStreamingSession",
-            JSON.stringify(updatedSession),
-          );
+          sessionStorage.setItem("currentStreamingSession", JSON.stringify(updatedSession));
         },
         onComplete: (completedSession) => {
           setIsLoading(false);
-          sessionStorage.setItem(
-            "completedStreamingSession",
-            JSON.stringify(completedSession),
-          );
+          sessionStorage.setItem("completedStreamingSession", JSON.stringify(completedSession));
           const route = getDomainRoute(
             completedSession.domain,
             completedSession.sessionId,
@@ -243,23 +231,15 @@ export default function PublicLandingPage() {
                 </span>
               </h1>
               <p class="text-lg sm:text-xl text-gray-700 dark:text-slate-200/90 leading-relaxed max-w-xl">
-                Loci learns what you actually like — coffee strength, gallery pace,
-                bedtime — then curates itineraries, restaurants, activities, and hotels
-                that feel handpicked.
+                Loci learns what you actually like — coffee strength, gallery pace, bedtime — then
+                curates itineraries, restaurants, activities, and hotels that feel handpicked.
               </p>
               <div class="flex flex-wrap gap-3">
-                <Button
-                  onClick={() => navigate("/preview/discover")}
-                  class="gap-2"
-                >
+                <Button onClick={() => navigate("/preview/discover")} class="gap-2">
                   Preview: 48h in Tokyo
                   <ArrowRight class="w-4 h-4" />
                 </Button>
-                <Button
-                  variant="outline"
-                  onClick={handleGetStarted}
-                  class="gap-2"
-                >
+                <Button variant="outline" onClick={handleGetStarted} class="gap-2">
                   Create my account
                 </Button>
               </div>
@@ -312,13 +292,13 @@ export default function PublicLandingPage() {
                           setEmail(e.currentTarget.value);
                           if (emailError()) setEmailError("");
                         }}
-                        class={emailError() ? "border-destructive focus-visible:ring-destructive" : ""}
+                        class={
+                          emailError() ? "border-destructive focus-visible:ring-destructive" : ""
+                        }
                         placeholder="you@travelersclub.com"
                       />
                     </TextFieldRoot>
-                    <Button type="submit">
-                      Join updates
-                    </Button>
+                    <Button type="submit">Join updates</Button>
                   </div>
                   <Show when={emailError()}>
                     <p class="text-sm text-red-500 dark:text-red-400">{emailError()}</p>
@@ -351,7 +331,9 @@ export default function PublicLandingPage() {
                           setCurrentMessage(e.currentTarget.value);
                           if (searchError()) setSearchError("");
                         }}
-                        placeholder={'"Best vinyl bars near Barcelona" or "Quiet art walks in Copenhagen"'}
+                        placeholder={
+                          '"Best vinyl bars near Barcelona" or "Quiet art walks in Copenhagen"'
+                        }
                         class={`min-h-[56px] border-none bg-transparent ${searchError() ? "border-b-2 border-destructive" : ""}`}
                         onKeyDown={(e) => {
                           if (e.key === "Enter" && !e.shiftKey) {
@@ -420,28 +402,37 @@ export default function PublicLandingPage() {
         <section class="mt-20 lg:mt-24">
           <h2 class="sr-only">Explore Features</h2>
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <For each={previewCards}>{(card) => (
-              <A
-                href={card.href}
-                onMouseEnter={() => handleLinkPreload(card.href)}
-                class="group relative overflow-hidden rounded-2xl border border-gray-200 dark:border-white/10 bg-white/90 dark:bg-white/5 backdrop-blur-xl p-5 shadow-xl dark:shadow-[0_20px_80px_rgba(3,7,18,0.45)] hover:-translate-y-1 transition-all"
-              >
-                <div class={`absolute inset-0 bg-gradient-to-br ${card.accent} opacity-20 dark:opacity-40`} aria-hidden="true" />
-                <div class="relative flex items-start gap-3">
-                  <div class="p-3 rounded-2xl bg-gray-100 dark:bg-white/15 border border-gray-300 dark:border-white/20 text-gray-900 dark:text-white">
-                    <card.icon class="w-5 h-5" />
+            <For each={previewCards}>
+              {(card) => (
+                <A
+                  href={card.href}
+                  onMouseEnter={() => handleLinkPreload(card.href)}
+                  class="group relative overflow-hidden rounded-2xl border border-gray-200 dark:border-white/10 bg-white/90 dark:bg-white/5 backdrop-blur-xl p-5 shadow-xl dark:shadow-[0_20px_80px_rgba(3,7,18,0.45)] hover:-translate-y-1 transition-all"
+                >
+                  <div
+                    class={`absolute inset-0 bg-gradient-to-br ${card.accent} opacity-20 dark:opacity-40`}
+                    aria-hidden="true"
+                  />
+                  <div class="relative flex items-start gap-3">
+                    <div class="p-3 rounded-2xl bg-gray-100 dark:bg-white/15 border border-gray-300 dark:border-white/20 text-gray-900 dark:text-white">
+                      <card.icon class="w-5 h-5" />
+                    </div>
+                    <div class="flex-1">
+                      <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
+                        {card.title}
+                      </h3>
+                      <p class="text-sm text-gray-700 dark:text-slate-100/80 mt-1">
+                        {card.description}
+                      </p>
+                    </div>
                   </div>
-                  <div class="flex-1">
-                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white">{card.title}</h3>
-                    <p class="text-sm text-gray-700 dark:text-slate-100/80 mt-1">{card.description}</p>
+                  <div class="relative mt-4 flex items-center gap-2 text-sm text-emerald-700 dark:text-emerald-100 group-hover:text-emerald-800 dark:group-hover:text-white">
+                    <ShieldCheck class="w-4 h-4" />
+                    Search available. Unlock chat when you register.
                   </div>
-                </div>
-                <div class="relative mt-4 flex items-center gap-2 text-sm text-emerald-700 dark:text-emerald-100 group-hover:text-emerald-800 dark:group-hover:text-white">
-                  <ShieldCheck class="w-4 h-4" />
-                  Search available. Unlock chat when you register.
-                </div>
-              </A>
-            )}</For>
+                </A>
+              )}
+            </For>
           </div>
         </section>
 
@@ -450,14 +441,16 @@ export default function PublicLandingPage() {
           <div class="lg:col-span-2 space-y-4">
             <h2 class="text-2xl font-bold text-gray-900 dark:text-white">Why travelers stay</h2>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <For each={valueStack}>{(item) => (
-                <div class="glass-panel gradient-border rounded-2xl p-5 bg-white/95 dark:bg-white/[0.02]">
-                  <p class="text-xs tracking-wider text-emerald-600 dark:text-emerald-300 mb-2 font-medium">
-                    {item.label}
-                  </p>
-                  <p class="text-sm text-gray-700 dark:text-slate-100/85">{item.copy}</p>
-                </div>
-              )}</For>
+              <For each={valueStack}>
+                {(item) => (
+                  <div class="glass-panel gradient-border rounded-2xl p-5 bg-white/95 dark:bg-white/[0.02]">
+                    <p class="text-xs tracking-wider text-emerald-600 dark:text-emerald-300 mb-2 font-medium">
+                      {item.label}
+                    </p>
+                    <p class="text-sm text-gray-700 dark:text-slate-100/85">{item.copy}</p>
+                  </div>
+                )}
+              </For>
             </div>
           </div>
           <div class="space-y-4">
@@ -466,12 +459,14 @@ export default function PublicLandingPage() {
               Social proof
             </h3>
             <div class="space-y-3">
-              <For each={socialProof}>{(proof) => (
-                <div class="glass-panel rounded-2xl p-5 bg-white/95 dark:bg-white/[0.02]">
-                  <p class="text-sm text-gray-900 dark:text-white/90">{proof.quote}</p>
-                  <p class="text-xs text-gray-600 dark:text-slate-200/70 mt-2">{proof.name}</p>
-                </div>
-              )}</For>
+              <For each={socialProof}>
+                {(proof) => (
+                  <div class="glass-panel rounded-2xl p-5 bg-white/95 dark:bg-white/[0.02]">
+                    <p class="text-sm text-gray-900 dark:text-white/90">{proof.quote}</p>
+                    <p class="text-xs text-gray-600 dark:text-slate-200/70 mt-2">{proof.name}</p>
+                  </div>
+                )}
+              </For>
             </div>
           </div>
         </section>
@@ -487,7 +482,9 @@ export default function PublicLandingPage() {
               <p class="text-xs tracking-wider text-emerald-600 dark:text-emerald-300 font-medium">
                 Objections handled
               </p>
-              <h2 class="text-2xl font-bold text-gray-900 dark:text-white">Safe to try. Easy to leave.</h2>
+              <h2 class="text-2xl font-bold text-gray-900 dark:text-white">
+                Safe to try. Easy to leave.
+              </h2>
               <p class="text-sm text-gray-700 dark:text-slate-100/80">
                 Search free. No spam. Delete your data from settings anytime.
               </p>
@@ -507,10 +504,7 @@ export default function PublicLandingPage() {
               </div>
             </div>
             <div class="flex flex-col gap-3">
-              <Button
-                onClick={handleGetStarted}
-                class="w-full gap-2"
-              >
+              <Button onClick={handleGetStarted} class="w-full gap-2">
                 Register to unlock chat
                 <ArrowRight class="w-4 h-4" />
               </Button>

@@ -1,15 +1,15 @@
 // Restaurants queries - Using RPC
-import { useQuery } from '@tanstack/solid-query';
-import { createClient } from '@connectrpc/connect';
-import { create } from '@bufbuild/protobuf';
+import { useQuery } from "@tanstack/solid-query";
+import { createClient } from "@connectrpc/connect";
+import { create } from "@bufbuild/protobuf";
 import {
   FavoritesService,
   GetRestaurantDetailsRequestSchema,
   GetNearbyRestaurantsRequestSchema,
-} from '@buf/loci_loci-proto.bufbuild_es/loci/favorites/v1/favorites_pb.js';
-import { transport } from '../connect-transport';
-import { queryKeys } from './shared';
-import type { RestaurantDetailedInfo } from './types';
+} from "@buf/loci_loci-proto.bufbuild_es/loci/favorites/v1/favorites_pb.js";
+import { transport } from "../connect-transport";
+import { queryKeys } from "./shared";
+import type { RestaurantDetailedInfo } from "./types";
 
 const favoritesClient = createClient(FavoritesService, transport);
 
@@ -64,7 +64,7 @@ export const useRestaurantDetails = (restaurantId: string) => {
       const request = create(GetRestaurantDetailsRequestSchema, { restaurantId });
       const response = await favoritesClient.getRestaurantDetails(request);
       if (!response.restaurant) {
-        throw new Error('Restaurant not found');
+        throw new Error("Restaurant not found");
       }
       return mapProtoToRestaurant(response.restaurant);
     },
@@ -81,7 +81,9 @@ export const useRestaurantsByPreferences = (preferences: any) => {
     queryKey: queryKeys.restaurantsByPreferences(preferences),
     queryFn: async (): Promise<RestaurantDetailedInfo[]> => {
       // LLM-driven queries should use the streaming chat endpoint
-      console.warn('useRestaurantsByPreferences: Use streaming chat for LLM-driven restaurant search');
+      console.warn(
+        "useRestaurantsByPreferences: Use streaming chat for LLM-driven restaurant search",
+      );
       return [];
     },
     enabled: false, // Disabled - use streaming chat instead

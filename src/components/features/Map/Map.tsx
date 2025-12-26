@@ -40,19 +40,21 @@ const MapComponent = (_props: MapComponentProps) => {
 
     while (remaining.length > 0) {
       const current = optimized[optimized.length - 1];
-      const currentLat = typeof current.latitude === 'string' ? parseFloat(current.latitude) : current.latitude;
-      const currentLng = typeof current.longitude === 'string' ? parseFloat(current.longitude) : current.longitude;
+      const currentLat =
+        typeof current.latitude === "string" ? parseFloat(current.latitude) : current.latitude;
+      const currentLng =
+        typeof current.longitude === "string" ? parseFloat(current.longitude) : current.longitude;
 
       let nearestIndex = 0;
       let nearestDistance = Infinity;
 
       remaining.forEach((poi, index) => {
-        const poiLat = typeof poi.latitude === 'string' ? parseFloat(poi.latitude) : poi.latitude;
-        const poiLng = typeof poi.longitude === 'string' ? parseFloat(poi.longitude) : poi.longitude;
+        const poiLat = typeof poi.latitude === "string" ? parseFloat(poi.latitude) : poi.latitude;
+        const poiLng =
+          typeof poi.longitude === "string" ? parseFloat(poi.longitude) : poi.longitude;
 
         const distance = Math.sqrt(
-          Math.pow(poiLat - currentLat, 2) +
-          Math.pow(poiLng - currentLng, 2),
+          Math.pow(poiLat - currentLat, 2) + Math.pow(poiLng - currentLng, 2),
         );
         if (distance < nearestDistance) {
           nearestDistance = distance;
@@ -135,20 +137,12 @@ const MapComponent = (_props: MapComponentProps) => {
 
       // Handle missing coordinate properties
       if (!Object.hasOwn(poi, "latitude") || !Object.hasOwn(poi, "longitude")) {
-        console.warn(
-          `🚫 POI ${poi.name} missing latitude or longitude properties`,
-        );
+        console.warn(`🚫 POI ${poi.name} missing latitude or longitude properties`);
         return false;
       }
 
-      const lat =
-        typeof poi.latitude === "string"
-          ? parseFloat(poi.latitude)
-          : poi.latitude;
-      const lng =
-        typeof poi.longitude === "string"
-          ? parseFloat(poi.longitude)
-          : poi.longitude;
+      const lat = typeof poi.latitude === "string" ? parseFloat(poi.latitude) : poi.latitude;
+      const lng = typeof poi.longitude === "string" ? parseFloat(poi.longitude) : poi.longitude;
 
       // Check for null, undefined, or empty values
       if (
@@ -181,9 +175,7 @@ const MapComponent = (_props: MapComponentProps) => {
 
       // Check for reasonable coordinate ranges
       if (lat < -90 || lat > 90 || lng < -180 || lng > 180) {
-        console.warn(
-          `🚫 POI ${poi.name} has out-of-range coordinates: lat=${lat}, lng=${lng}`,
-        );
+        console.warn(`🚫 POI ${poi.name} has out-of-range coordinates: lat=${lat}, lng=${lng}`);
         return false;
       }
 
@@ -195,9 +187,7 @@ const MapComponent = (_props: MapComponentProps) => {
         // Still allow (0,0) but log it as suspicious
       }
 
-      console.log(
-        `✅ POI ${poi.name} has valid coordinates: lat=${lat}, lng=${lng}`,
-      );
+      console.log(`✅ POI ${poi.name} has valid coordinates: lat=${lat}, lng=${lng}`);
       return true;
     });
 
@@ -207,9 +197,7 @@ const MapComponent = (_props: MapComponentProps) => {
       return;
     }
 
-    console.log(
-      `Filtered ${pois.length} POIs down to ${validPOIs.length} valid POIs`,
-    );
+    console.log(`Filtered ${pois.length} POIs down to ${validPOIs.length} valid POIs`);
 
     clearMapFeatures();
 
@@ -221,19 +209,11 @@ const MapComponent = (_props: MapComponentProps) => {
       console.log(`Creating marker ${index + 1}:`, poi);
       console.log(`  - Name: ${poi.name}`);
       console.log(`  - Coordinates: [${poi.longitude}, ${poi.latitude}]`);
-      console.log(
-        `  - Lat type: ${typeof poi.latitude}, Lng type: ${typeof poi.longitude}`,
-      );
+      console.log(`  - Lat type: ${typeof poi.latitude}, Lng type: ${typeof poi.longitude}`);
 
       // Convert coordinates to numbers if they're strings (already validated above)
-      const lat =
-        typeof poi.latitude === "string"
-          ? parseFloat(poi.latitude)
-          : poi.latitude;
-      const lng =
-        typeof poi.longitude === "string"
-          ? parseFloat(poi.longitude)
-          : poi.longitude;
+      const lat = typeof poi.latitude === "string" ? parseFloat(poi.latitude) : poi.latitude;
+      const lng = typeof poi.longitude === "string" ? parseFloat(poi.longitude) : poi.longitude;
 
       console.log(`  - Converted coordinates: [${lng}, ${lat}]`);
 
@@ -281,17 +261,13 @@ const MapComponent = (_props: MapComponentProps) => {
         });
       }
 
-      const marker = new mapboxgl.Marker(markerElement)
-        .setLngLat([lng, lat])
-        .addTo(map!);
+      const marker = new mapboxgl.Marker(markerElement).setLngLat([lng, lat]).addTo(map!);
 
       console.log(`  - Marker created and added to map`);
       currentMarkers.push(marker);
 
       // Responsive popup content
-      const popupWidth = isMobile
-        ? "min-w-[180px] max-w-[250px]"
-        : "min-w-[200px] max-w-[300px]";
+      const popupWidth = isMobile ? "min-w-[180px] max-w-[250px]" : "min-w-[200px] max-w-[300px]";
       const textSize = isMobile ? "text-xs" : "text-sm";
       const titleSize = isMobile ? "text-sm" : "text-base";
 
@@ -324,14 +300,8 @@ const MapComponent = (_props: MapComponentProps) => {
         const isMobile = mapContainer ? mapContainer.offsetWidth < 768 : true;
 
         const coordinates = optimizedPOIs.map((poi: POI) => {
-          const lat =
-            typeof poi.latitude === "string"
-              ? parseFloat(poi.latitude)
-              : poi.latitude;
-          const lng =
-            typeof poi.longitude === "string"
-              ? parseFloat(poi.longitude)
-              : poi.longitude;
+          const lat = typeof poi.latitude === "string" ? parseFloat(poi.latitude) : poi.latitude;
+          const lng = typeof poi.longitude === "string" ? parseFloat(poi.longitude) : poi.longitude;
           return [lng, lat];
         });
 
@@ -341,9 +311,7 @@ const MapComponent = (_props: MapComponentProps) => {
         if (map.isStyleLoaded()) {
           // Double-check that source doesn't exist (defensive programming)
           if (map.getSource("route")) {
-            console.warn(
-              "Route source already exists, skipping route creation",
-            );
+            console.warn("Route source already exists, skipping route creation");
             return;
           }
 
@@ -391,14 +359,8 @@ const MapComponent = (_props: MapComponentProps) => {
       try {
         const bounds = new mapboxgl.LngLatBounds();
         optimizedPOIs.forEach((poi: POI) => {
-          const lat =
-            typeof poi.latitude === "string"
-              ? parseFloat(poi.latitude)
-              : poi.latitude;
-          const lng =
-            typeof poi.longitude === "string"
-              ? parseFloat(poi.longitude)
-              : poi.longitude;
+          const lat = typeof poi.latitude === "string" ? parseFloat(poi.latitude) : poi.latitude;
+          const lng = typeof poi.longitude === "string" ? parseFloat(poi.longitude) : poi.longitude;
           bounds.extend([lng, lat]);
         });
 
@@ -429,14 +391,8 @@ const MapComponent = (_props: MapComponentProps) => {
     const validPOIs = pois.filter((poi: POI) => {
       if (!poi) return false;
 
-      const lat =
-        typeof poi.latitude === "string"
-          ? parseFloat(poi.latitude)
-          : poi.latitude;
-      const lng =
-        typeof poi.longitude === "string"
-          ? parseFloat(poi.longitude)
-          : poi.longitude;
+      const lat = typeof poi.latitude === "string" ? parseFloat(poi.latitude) : poi.latitude;
+      const lng = typeof poi.longitude === "string" ? parseFloat(poi.longitude) : poi.longitude;
 
       if (
         isNaN(lat) ||
@@ -446,9 +402,7 @@ const MapComponent = (_props: MapComponentProps) => {
         lat === undefined ||
         lng === undefined
       ) {
-        console.warn(
-          `Filtering out POI with invalid coordinates in addFeaturesToMap: ${poi.name}`,
-        );
+        console.warn(`Filtering out POI with invalid coordinates in addFeaturesToMap: ${poi.name}`);
         return false;
       }
 
@@ -469,22 +423,12 @@ const MapComponent = (_props: MapComponentProps) => {
     }
 
     const optimizedPOIs = optimizeRoute(validPOIs);
-    console.log(
-      "addFeaturesToMap: Processing",
-      optimizedPOIs.length,
-      "valid POIs",
-    );
+    console.log("addFeaturesToMap: Processing", optimizedPOIs.length, "valid POIs");
 
     // Add markers for each POI
     optimizedPOIs.forEach((poi: POI, index: number) => {
-      const lat =
-        typeof poi.latitude === "string"
-          ? parseFloat(poi.latitude)
-          : poi.latitude;
-      const lng =
-        typeof poi.longitude === "string"
-          ? parseFloat(poi.longitude)
-          : poi.longitude;
+      const lat = typeof poi.latitude === "string" ? parseFloat(poi.latitude) : poi.latitude;
+      const lng = typeof poi.longitude === "string" ? parseFloat(poi.longitude) : poi.longitude;
 
       const markerElement = document.createElement("div");
       // ... (your existing marker styling is fine)
@@ -499,14 +443,11 @@ const MapComponent = (_props: MapComponentProps) => {
             `;
       markerElement.textContent = String(index + 1);
 
-      const marker = new mapboxgl.Marker(markerElement)
-        .setLngLat([lng, lat])
-        .addTo(map!);
+      const marker = new mapboxgl.Marker(markerElement).setLngLat([lng, lat]).addTo(map!);
 
       currentMarkers.push(marker);
 
-      const popup = new mapboxgl.Popup({ offset: 25, closeButton: false })
-        .setHTML(`
+      const popup = new mapboxgl.Popup({ offset: 25, closeButton: false }).setHTML(`
                     <div class="p-2 min-w-[200px]">
                         <h3 class="font-semibold text-gray-900 mb-1 text-base">${poi.name}</h3>
                         <p class="text-sm text-gray-600">${poi.category}</p>
@@ -519,22 +460,14 @@ const MapComponent = (_props: MapComponentProps) => {
     if (optimizedPOIs.length > 1) {
       try {
         const coordinates = optimizedPOIs.map((poi: POI) => {
-          const lat =
-            typeof poi.latitude === "string"
-              ? parseFloat(poi.latitude)
-              : poi.latitude;
-          const lng =
-            typeof poi.longitude === "string"
-              ? parseFloat(poi.longitude)
-              : poi.longitude;
+          const lat = typeof poi.latitude === "string" ? parseFloat(poi.latitude) : poi.latitude;
+          const lng = typeof poi.longitude === "string" ? parseFloat(poi.longitude) : poi.longitude;
           return [lng, lat];
         });
 
         // Defensive check to prevent adding source if it somehow still exists
         if (map.getSource("route")) {
-          console.warn(
-            "Route source already exists in addFeaturesToMap, skipping",
-          );
+          console.warn("Route source already exists in addFeaturesToMap, skipping");
           return;
         }
 
@@ -571,14 +504,8 @@ const MapComponent = (_props: MapComponentProps) => {
     try {
       const bounds = new mapboxgl.LngLatBounds();
       optimizedPOIs.forEach((poi: POI) => {
-        const lat =
-          typeof poi.latitude === "string"
-            ? parseFloat(poi.latitude)
-            : poi.latitude;
-        const lng =
-          typeof poi.longitude === "string"
-            ? parseFloat(poi.longitude)
-            : poi.longitude;
+        const lat = typeof poi.latitude === "string" ? parseFloat(poi.latitude) : poi.latitude;
+        const lng = typeof poi.longitude === "string" ? parseFloat(poi.longitude) : poi.longitude;
         bounds.extend([lng, lat]);
       });
       map.fitBounds(bounds, { padding: 60, maxZoom: 15 });
@@ -620,9 +547,7 @@ const MapComponent = (_props: MapComponentProps) => {
 
       // Check coordinate ranges
       else if (lat < -90 || lat > 90 || lng < -180 || lng > 180) {
-        console.warn(
-          `🚫 Center coordinates out of range: lng=${lng}, lat=${lat}`,
-        );
+        console.warn(`🚫 Center coordinates out of range: lng=${lng}, lat=${lat}`);
         validCenter = [-8.6291, 41.1579]; // Default to Porto coordinates
       }
 
@@ -689,14 +614,8 @@ const MapComponent = (_props: MapComponentProps) => {
       if (!poi) return false;
 
       // More comprehensive coordinate validation
-      const lat =
-        typeof poi.latitude === "string"
-          ? parseFloat(poi.latitude)
-          : poi.latitude;
-      const lng =
-        typeof poi.longitude === "string"
-          ? parseFloat(poi.longitude)
-          : poi.longitude;
+      const lat = typeof poi.latitude === "string" ? parseFloat(poi.latitude) : poi.latitude;
+      const lng = typeof poi.longitude === "string" ? parseFloat(poi.longitude) : poi.longitude;
 
       // Check for null, undefined, empty string, NaN
       if (
@@ -725,9 +644,7 @@ const MapComponent = (_props: MapComponentProps) => {
     });
 
     if (!hasValidPOIs) {
-      console.log(
-        "No POIs with valid coordinates found, clearing map features",
-      );
+      console.log("No POIs with valid coordinates found, clearing map features");
       clearMapFeatures();
       return;
     }
@@ -768,11 +685,6 @@ const MapComponent = (_props: MapComponentProps) => {
     }
   });
 
-  return (
-    <div
-      ref={mapContainer}
-      class="w-full h-full min-h-[300px] rounded-lg overflow-hidden"
-    />
-  );
-}
+  return <div ref={mapContainer} class="w-full h-full min-h-[300px] rounded-lg overflow-hidden" />;
+};
 export default MapComponent;

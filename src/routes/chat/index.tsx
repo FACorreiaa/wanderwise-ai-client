@@ -20,14 +20,8 @@ import {
   useGetChatSessionsQuery,
   domainToContextType,
 } from "~/lib/api/llm";
-import {
-  streamingService,
-  createStreamingSession,
-} from "~/lib/streaming-service";
-import type {
-  DomainType,
-}
-  from "~/lib/api/types";
+import { streamingService, createStreamingSession } from "~/lib/streaming-service";
+import type { DomainType } from "~/lib/api/types";
 import { useUserLocation } from "~/contexts/LocationContext";
 import HotelResults from "~/components/results/HotelResults";
 import RestaurantResults from "~/components/results/RestaurantResults";
@@ -65,9 +59,7 @@ export default function ChatPage() {
   const profileId = () => defaultProfileQuery.data?.id;
 
   // Get chat sessions from API - only query when profileId is available
-  const chatSessionsQuery = useQuery(() =>
-    useGetChatSessionsQuery(profileId()),
-  );
+  const chatSessionsQuery = useQuery(() => useGetChatSessionsQuery(profileId()));
 
   const sessions = () => {
     // Include localSessionsVersion in the reactive dependency to trigger updates
@@ -82,12 +74,7 @@ export default function ChatPage() {
       console.log("🔍 Raw localStorage data:", localStorageData);
 
       const localSessions = JSON.parse(localStorageData || "[]");
-      console.log(
-        "📂 API sessions:",
-        apiSessions.length,
-        "Local sessions:",
-        localSessions.length,
-      );
+      console.log("📂 API sessions:", apiSessions.length, "Local sessions:", localSessions.length);
       console.log("📂 API error status:", chatSessionsQuery.isError);
       console.log("📂 API loading status:", chatSessionsQuery.isLoading);
       console.log("📂 Local sessions data:", localSessions);
@@ -96,14 +83,9 @@ export default function ChatPage() {
       if (!chatSessionsQuery.isError && apiSessions.length > 0) {
         // Remove local sessions that might be duplicated in API
         const apiSessionIds = new Set(apiSessions.map((s) => s.id));
-        const uniqueLocalSessions = localSessions.filter(
-          (s: any) => !apiSessionIds.has(s.id),
-        );
+        const uniqueLocalSessions = localSessions.filter((s: any) => !apiSessionIds.has(s.id));
         console.log("🔄 Merging API and local sessions");
-        console.log(
-          "🔄 Unique local sessions after dedup:",
-          uniqueLocalSessions,
-        );
+        console.log("🔄 Unique local sessions after dedup:", uniqueLocalSessions);
         return [...apiSessions, ...uniqueLocalSessions];
       }
 
@@ -185,9 +167,9 @@ export default function ChatPage() {
     console.log("🚀 Chat page mounted - starting fresh session");
 
     // Clear any previous session data to ensure fresh start
-    sessionStorage.removeItem('currentStreamingSession');
-    sessionStorage.removeItem('completedStreamingSession');
-    sessionStorage.removeItem('localChatSessions');
+    sessionStorage.removeItem("currentStreamingSession");
+    sessionStorage.removeItem("completedStreamingSession");
+    sessionStorage.removeItem("localChatSessions");
     setSessionId(null);
     setStreamingSession(null);
 
@@ -239,8 +221,7 @@ export default function ChatPage() {
       const errorMessage = {
         id: `msg-${Date.now()}-error`,
         type: "error",
-        content:
-          "Sorry, there was an error processing your request. Please try again.",
+        content: "Sorry, there was an error processing your request. Please try again.",
         timestamp: new Date(),
       };
       setMessages((prev) => [...prev, errorMessage]);
@@ -290,7 +271,7 @@ export default function ChatPage() {
 
         // Update progress message based on domain and progress
         const domain = updatedSession.domain;
-        if ('general_city_data' in updatedSession.data && updatedSession.data.general_city_data) {
+        if ("general_city_data" in updatedSession.data && updatedSession.data.general_city_data) {
           setStreamProgress(
             `Found information about ${updatedSession.data.general_city_data.city}...`,
           );
@@ -305,10 +286,7 @@ export default function ChatPage() {
         }
 
         // Update session storage
-        sessionStorage.setItem(
-          "currentStreamingSession",
-          JSON.stringify(updatedSession),
-        );
+        sessionStorage.setItem("currentStreamingSession", JSON.stringify(updatedSession));
       },
       onComplete: (completedSession) => {
         setStreamingSession(completedSession);
@@ -317,10 +295,7 @@ export default function ChatPage() {
 
         // *** CAPTURE SESSION ID FROM NEW SESSION ***
         if (completedSession.sessionId) {
-          console.log(
-            "✅ Captured session ID from new session:",
-            completedSession.sessionId,
-          );
+          console.log("✅ Captured session ID from new session:", completedSession.sessionId);
           setSessionId(completedSession.sessionId);
 
           // Store session locally as backup when backend chat history fails
@@ -363,18 +338,12 @@ export default function ChatPage() {
 
             console.log("💾 Updated local sessions array:", localSessions);
 
-            localStorage.setItem(
-              "localChatSessions",
-              JSON.stringify(localSessions),
-            );
+            localStorage.setItem("localChatSessions", JSON.stringify(localSessions));
             console.log("💾 Successfully saved session to localStorage");
 
             // Verify the save worked
             const verifyData = localStorage.getItem("localChatSessions");
-            console.log(
-              "💾 Verification - localStorage now contains:",
-              verifyData,
-            );
+            console.log("💾 Verification - localStorage now contains:", verifyData);
 
             // Force trigger a reactivity update by invalidating the query AND updating version
             // This will cause the sessions() function to be re-evaluated
@@ -384,9 +353,7 @@ export default function ChatPage() {
 
             // Also increment version to trigger reactive updates in SolidJS
             setLocalSessionsVersion((prev) => prev + 1);
-            console.log(
-              "💾 Triggered query invalidation and version bump to refresh chat history",
-            );
+            console.log("💾 Triggered query invalidation and version bump to refresh chat history");
           } catch (error) {
             console.error("💾 Failed to save session locally:", error);
           }
@@ -396,10 +363,7 @@ export default function ChatPage() {
         const assistantMessage = {
           id: `msg-${Date.now()}-response`,
           type: "assistant",
-          content: getCompletionMessage(
-            completedSession.domain,
-            completedSession.city,
-          ),
+          content: getCompletionMessage(completedSession.domain, completedSession.city),
           timestamp: new Date(),
           hasItinerary: true,
           streamingData: completedSession.data,
@@ -409,10 +373,7 @@ export default function ChatPage() {
         setMessages((prev) => [...prev, assistantMessage]);
 
         // Store completed session
-        sessionStorage.setItem(
-          "completedStreamingSession",
-          JSON.stringify(completedSession),
-        );
+        sessionStorage.setItem("completedStreamingSession", JSON.stringify(completedSession));
 
         // Invalidate chat sessions query to refresh the sidebar
         const currentProfileId = profileId();
@@ -454,15 +415,14 @@ export default function ChatPage() {
     }
 
     // Get city name from current streaming session
-    const currentCity = streamingSession()?.city ||
-      streamingSession()?.data?.general_city_data?.city ||
-      "";
+    const currentCity =
+      streamingSession()?.city || streamingSession()?.data?.general_city_data?.city || "";
 
     console.log("🔄 ContinueChat request:", {
       sessionId: existingSessionId,
       message: messageContent,
       city: currentCity,
-      domain
+      domain,
     });
 
     try {
@@ -495,7 +455,7 @@ export default function ChatPage() {
           setStreamingSession(updatedSession);
 
           // Update progress message based on response content
-          if ('general_city_data' in updatedSession.data && updatedSession.data.general_city_data) {
+          if ("general_city_data" in updatedSession.data && updatedSession.data.general_city_data) {
             setStreamProgress(
               `Processing updates for ${updatedSession.data.general_city_data.city}...`,
             );
@@ -504,10 +464,7 @@ export default function ChatPage() {
           }
 
           // Update session storage
-          sessionStorage.setItem(
-            "currentStreamingSession",
-            JSON.stringify(updatedSession),
-          );
+          sessionStorage.setItem("currentStreamingSession", JSON.stringify(updatedSession));
         },
         onComplete: (completedSession) => {
           setStreamingSession(completedSession);
@@ -521,10 +478,7 @@ export default function ChatPage() {
           const assistantMessage = {
             id: `msg-${Date.now()}-response`,
             type: "assistant",
-            content: getCompletionMessage(
-              completedSession.domain,
-              completedSession.city,
-            ),
+            content: getCompletionMessage(completedSession.domain, completedSession.city),
             timestamp: new Date(),
             hasItinerary: true,
             streamingData: completedSession.data,
@@ -534,10 +488,7 @@ export default function ChatPage() {
           setMessages((prev) => [...prev, assistantMessage]);
 
           // Store completed session
-          sessionStorage.setItem(
-            "completedStreamingSession",
-            JSON.stringify(completedSession),
-          );
+          sessionStorage.setItem("completedStreamingSession", JSON.stringify(completedSession));
 
           // Invalidate chat sessions query to refresh the sidebar
           const currentProfileIdValue = profileId();
@@ -635,11 +586,7 @@ export default function ChatPage() {
     setSelectedItem(null);
   };
 
-  const renderStreamingResults = (
-    streamingData: any,
-    messageId: string,
-    compact = false,
-  ) => {
+  const renderStreamingResults = (streamingData: any, messageId: string, compact = false) => {
     const isExpanded = expandedResults().has(messageId);
     const actualCompact = compact && !isExpanded;
 
@@ -655,25 +602,17 @@ export default function ChatPage() {
             onItemClick={(hotel: any) => handleItemClick(hotel, "hotel")}
           />
         </Show>
-        <Show
-          when={
-            streamingData.restaurants && streamingData.restaurants.length > 0
-          }
-        >
+        <Show when={streamingData.restaurants && streamingData.restaurants.length > 0}>
           <RestaurantResults
             restaurants={streamingData.restaurants}
             compact={actualCompact}
             showToggle={false}
             initialLimit={3}
             limit={actualCompact ? 3 : undefined}
-            onItemClick={(restaurant: any) =>
-              handleItemClick(restaurant, "restaurant")
-            }
+            onItemClick={(restaurant: any) => handleItemClick(restaurant, "restaurant")}
           />
         </Show>
-        <Show
-          when={streamingData.activities && streamingData.activities.length > 0}
-        >
+        <Show when={streamingData.activities && streamingData.activities.length > 0}>
           <ActivityResults
             activities={streamingData.activities}
             compact={actualCompact}
@@ -687,33 +626,37 @@ export default function ChatPage() {
         {(() => {
           // Check if we have an itinerary response with its own POIs
           const hasItineraryResponse = Boolean((streamingData as any).itinerary_response);
-          const itineraryResponsePOIs = (streamingData as any).itinerary_response?.points_of_interest || [];
+          const itineraryResponsePOIs =
+            (streamingData as any).itinerary_response?.points_of_interest || [];
 
           // Check for standalone points_of_interest (not from itinerary_response)
           const standalonePOIs = streamingData.points_of_interest || [];
 
           // Use itinerary_response POIs if available, otherwise use standalone POIs
           // This prevents duplicate rendering
-          const poisToRender = itineraryResponsePOIs.length > 0 ? itineraryResponsePOIs : standalonePOIs;
+          const poisToRender =
+            itineraryResponsePOIs.length > 0 ? itineraryResponsePOIs : standalonePOIs;
 
           // Only render if we have POIs and no domain-specific results (hotels, restaurants, activities)
           // Domain-specific results are rendered by their own components above
-          const hasDomainSpecificResults = (
+          const hasDomainSpecificResults =
             (streamingData.hotels && streamingData.hotels.length > 0) ||
             (streamingData.restaurants && streamingData.restaurants.length > 0) ||
-            (streamingData.activities && streamingData.activities.length > 0)
-          );
+            (streamingData.activities && streamingData.activities.length > 0);
 
-          // Render itinerary if we have POIs from itinerary_response, 
+          // Render itinerary if we have POIs from itinerary_response,
           // OR if we have standalone POIs and no domain-specific results
-          const shouldRenderItinerary = itineraryResponsePOIs.length > 0 ||
+          const shouldRenderItinerary =
+            itineraryResponsePOIs.length > 0 ||
             (standalonePOIs.length > 0 && !hasDomainSpecificResults);
 
           return (
             <Show when={shouldRenderItinerary}>
               <ItineraryResults
                 pois={poisToRender}
-                itinerary={hasItineraryResponse ? (streamingData as any).itinerary_response : undefined}
+                itinerary={
+                  hasItineraryResponse ? (streamingData as any).itinerary_response : undefined
+                }
                 compact={actualCompact}
                 showToggle={false}
                 initialLimit={5}
@@ -726,8 +669,6 @@ export default function ChatPage() {
       </div>
     );
   };
-
-
 
   const newChat = () => {
     console.log("🔥 Starting new chat - clearing all session data");
@@ -814,10 +755,7 @@ export default function ChatPage() {
             throw new Error(`API responded with ${response.status}`);
           }
         } catch (apiError) {
-          console.log(
-            "⚠️ API load failed, using basic session data:",
-            apiError,
-          );
+          console.log("⚠️ API load failed, using basic session data:", apiError);
           // Use the basic session info we have
           sessionData = {
             ...session,
@@ -829,32 +767,18 @@ export default function ChatPage() {
       // Convert conversation history to our message format
       let conversationMessages = [];
 
-      if (
-        sessionData.conversation_history &&
-        sessionData.conversation_history.length > 0
-      ) {
-        conversationMessages = sessionData.conversation_history.map(
-          (msg: any, index: any) => ({
-            id: `session-${session.id}-msg-${index}`,
-            type: msg.role === "user" ? "user" : "assistant",
-            content: msg.content || msg.message || "No content available",
-            timestamp: new Date(
-              msg.timestamp ||
-              msg.created_at ||
-              sessionData.updated_at ||
-              sessionData.timestamp,
-            ),
-            hasItinerary:
-              msg.role === "assistant" && (msg.data || msg.streaming_data)
-                ? true
-                : false,
-            streamingData: msg.data || msg.streaming_data || null,
-            showResults:
-              msg.role === "assistant" && (msg.data || msg.streaming_data)
-                ? true
-                : false,
-          }),
-        );
+      if (sessionData.conversation_history && sessionData.conversation_history.length > 0) {
+        conversationMessages = sessionData.conversation_history.map((msg: any, index: any) => ({
+          id: `session-${session.id}-msg-${index}`,
+          type: msg.role === "user" ? "user" : "assistant",
+          content: msg.content || msg.message || "No content available",
+          timestamp: new Date(
+            msg.timestamp || msg.created_at || sessionData.updated_at || sessionData.timestamp,
+          ),
+          hasItinerary: msg.role === "assistant" && (msg.data || msg.streaming_data) ? true : false,
+          streamingData: msg.data || msg.streaming_data || null,
+          showResults: msg.role === "assistant" && (msg.data || msg.streaming_data) ? true : false,
+        }));
       } else {
         // Create placeholder messages if no conversation history
         console.log("📝 No conversation history found, creating placeholder");
@@ -889,16 +813,11 @@ export default function ChatPage() {
         ?.pop();
 
       if (lastAssistantMessage?.data) {
-        console.log(
-          "🔄 Restoring session streaming data:",
-          lastAssistantMessage.data,
-        );
+        console.log("🔄 Restoring session streaming data:", lastAssistantMessage.data);
         const streamingSessionData = {
           sessionId: session.id,
           domain: lastAssistantMessage.data.domain || "general",
-          city:
-            session.cityName ||
-            lastAssistantMessage.data.general_city_data?.city,
+          city: session.cityName || lastAssistantMessage.data.general_city_data?.city,
           query: "", // Will be set on next message
           data: lastAssistantMessage.data,
         };
@@ -906,10 +825,7 @@ export default function ChatPage() {
         setStreamingSession(streamingSessionData);
 
         // Update session storage
-        sessionStorage.setItem(
-          "completedStreamingSession",
-          JSON.stringify(streamingSessionData),
-        );
+        sessionStorage.setItem("completedStreamingSession", JSON.stringify(streamingSessionData));
       }
 
       // Load all conversation messages
@@ -994,8 +910,7 @@ export default function ChatPage() {
         if (parsed.city && parsed.country) {
           const details = [];
           if (parsed.description) details.push(parsed.description);
-          if (parsed.population)
-            details.push(`Population: ${parsed.population}`);
+          if (parsed.population) details.push(`Population: ${parsed.population}`);
           if (parsed.weather) details.push(`Weather: ${parsed.weather}`);
 
           let result = `Let me tell you about ${parsed.city}, ${parsed.country}!`;
@@ -1017,13 +932,9 @@ export default function ChatPage() {
           }
         }
 
-        if (
-          parsed.points_of_interest &&
-          Array.isArray(parsed.points_of_interest)
-        ) {
+        if (parsed.points_of_interest && Array.isArray(parsed.points_of_interest)) {
           const count = parsed.points_of_interest.length;
-          const first =
-            parsed.points_of_interest[0]?.name || "some amazing places";
+          const first = parsed.points_of_interest[0]?.name || "some amazing places";
           return `I created a personalized itinerary with ${count} places to visit, including ${first} and more!`;
         }
 
@@ -1043,24 +954,15 @@ export default function ChatPage() {
           return "I found information about your destination. Let me share the details with you!";
         }
 
-        if (
-          lowerContent.includes("hotel") ||
-          lowerContent.includes("accommodation")
-        ) {
+        if (lowerContent.includes("hotel") || lowerContent.includes("accommodation")) {
           return "I found some excellent hotel options for you!";
         }
 
-        if (
-          lowerContent.includes("restaurant") ||
-          lowerContent.includes("dining")
-        ) {
+        if (lowerContent.includes("restaurant") || lowerContent.includes("dining")) {
           return "I discovered some amazing restaurants for you!";
         }
 
-        if (
-          lowerContent.includes("itinerary") ||
-          lowerContent.includes("plan")
-        ) {
+        if (lowerContent.includes("itinerary") || lowerContent.includes("plan")) {
           return "I created a personalized travel plan for you!";
         }
 
@@ -1074,25 +976,22 @@ export default function ChatPage() {
   };
 
   const renderMessage = (message: any) => (
-    <div
-      class={`flex gap-2 sm:gap-3 ${message.type === "user" ? "justify-end" : "justify-start"}`}
-    >
+    <div class={`flex gap-2 sm:gap-3 ${message.type === "user" ? "justify-end" : "justify-start"}`}>
       {message.type === "assistant" && (
         <div class="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center flex-shrink-0">
           <Bot class="w-3 h-3 sm:w-4 sm:h-4 text-white" />
         </div>
       )}
 
-      <div
-        class={`max-w-[85%] sm:max-w-[70%] ${message.type === "user" ? "order-1" : ""}`}
-      >
+      <div class={`max-w-[85%] sm:max-w-[70%] ${message.type === "user" ? "order-1" : ""}`}>
         <div
-          class={`rounded-2xl px-3 py-2 sm:px-4 sm:py-3 shadow-sm ${message.type === "user"
-            ? "bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-blue-500/20"
-            : message.type === "error"
-              ? "bg-red-50/80 dark:bg-red-900/30 text-red-800 dark:text-red-200 border border-red-200/50 dark:border-red-800/50 backdrop-blur-sm"
-              : "bg-white/80 dark:bg-slate-800/80 text-gray-800 dark:text-gray-200 backdrop-blur-sm border border-gray-200/50 dark:border-white/10"
-            }`}
+          class={`rounded-2xl px-3 py-2 sm:px-4 sm:py-3 shadow-sm ${
+            message.type === "user"
+              ? "bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-blue-500/20"
+              : message.type === "error"
+                ? "bg-red-50/80 dark:bg-red-900/30 text-red-800 dark:text-red-200 border border-red-200/50 dark:border-red-800/50 backdrop-blur-sm"
+                : "bg-white/80 dark:bg-slate-800/80 text-gray-800 dark:text-gray-200 backdrop-blur-sm border border-gray-200/50 dark:border-white/10"
+          }`}
         >
           <div class="text-sm whitespace-pre-wrap">
             <TypingAnimation text={formatMessageContent(message.content)} />
@@ -1108,10 +1007,8 @@ export default function ChatPage() {
                 <div class="min-w-0 flex-1 pr-2">
                   <h4 class="font-semibold text-gray-900 dark:text-white text-sm sm:text-base truncate">
                     {(() => {
-                      const rawName =
-                        message.streamingData.itinerary_response?.itinerary_name;
-                      if (!rawName)
-                        return `${message.streamingData.general_city_data.city} Guide`;
+                      const rawName = message.streamingData.itinerary_response?.itinerary_name;
+                      if (!rawName) return `${message.streamingData.general_city_data.city} Guide`;
 
                       // Handle case where itinerary_name might be a JSON string or object
                       if (typeof rawName === "string" && rawName.startsWith("{")) {
@@ -1123,23 +1020,14 @@ export default function ChatPage() {
                             `${message.streamingData.general_city_data.city} Guide`
                           );
                         } catch (e) {
-                          console.warn(
-                            "Failed to parse itinerary name JSON in chat:",
-                            e,
-                          );
+                          console.warn("Failed to parse itinerary name JSON in chat:", e);
                           return `${message.streamingData.general_city_data.city} Guide`;
                         }
-                      } else if (
-                        typeof rawName === "object" &&
-                        rawName?.itinerary_name
-                      ) {
+                      } else if (typeof rawName === "object" && rawName?.itinerary_name) {
                         return rawName.itinerary_name;
                       }
 
-                      return (
-                        rawName ||
-                        `${message.streamingData.general_city_data.city} Guide`
-                      );
+                      return rawName || `${message.streamingData.general_city_data.city} Guide`;
                     })()}
                   </h4>
                   <p class="text-xs sm:text-sm text-gray-600 dark:text-gray-300 truncate">
@@ -1173,11 +1061,7 @@ export default function ChatPage() {
                 class="w-full mt-2 sm:mt-3 flex items-center justify-center gap-1 sm:gap-2 py-2 text-xs sm:text-sm text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-700 transition-colors"
                 onClick={() => toggleResultExpansion(message.id)}
               >
-                <span>
-                  {expandedResults().has(message.id)
-                    ? "Show Less"
-                    : "Show All Details"}
-                </span>
+                <span>{expandedResults().has(message.id) ? "Show Less" : "Show All Details"}</span>
                 {expandedResults().has(message.id) ? (
                   <ChevronUp class="w-3 h-3 sm:w-4 sm:h-4" />
                 ) : (
@@ -1219,11 +1103,7 @@ export default function ChatPage() {
             <h2 class="text-base sm:text-lg font-semibold text-gray-900 dark:text-white">
               AI Assistant
             </h2>
-            <Button
-              onClick={newChat}
-              size="icon"
-              title="New chat"
-            >
+            <Button onClick={newChat} size="icon" title="New chat">
               <Plus class="w-4 h-4" />
             </Button>
           </div>
@@ -1256,16 +1136,15 @@ export default function ChatPage() {
                         setActiveProfile(profile.name);
                         setShowProfileSelector(false);
                       }}
-                      class={`w-full flex items-center gap-2 sm:gap-3 p-2 sm:p-3 hover:bg-gray-50 dark:hover:bg-gray-700 dark:bg-gray-700 transition-colors first:rounded-t-lg last:rounded-b-lg ${activeProfile() === profile.name
-                        ? "bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400"
-                        : "text-gray-700 dark:text-gray-300"
-                        }`}
+                      class={`w-full flex items-center gap-2 sm:gap-3 p-2 sm:p-3 hover:bg-gray-50 dark:hover:bg-gray-700 dark:bg-gray-700 transition-colors first:rounded-t-lg last:rounded-b-lg ${
+                        activeProfile() === profile.name
+                          ? "bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400"
+                          : "text-gray-700 dark:text-gray-300"
+                      }`}
                     >
                       <span class="text-base sm:text-lg">{profile.icon}</span>
                       <div class="flex-1 text-left min-w-0">
-                        <p class="text-xs sm:text-sm font-medium truncate">
-                          {profile.name}
-                        </p>
+                        <p class="text-xs sm:text-sm font-medium truncate">{profile.name}</p>
                         <p class="text-xs text-gray-500 dark:text-gray-400 hidden sm:block">
                           {profile.description}
                         </p>
@@ -1300,8 +1179,8 @@ export default function ChatPage() {
                   Chat History Unavailable
                 </p>
                 <p class="text-xs text-gray-500 dark:text-gray-400 mb-3 leading-relaxed">
-                  There's a temporary issue loading your chat history. You can
-                  still start new conversations.
+                  There's a temporary issue loading your chat history. You can still start new
+                  conversations.
                 </p>
                 <button
                   onClick={() => chatSessionsQuery.refetch()}
@@ -1312,9 +1191,7 @@ export default function ChatPage() {
               </div>
             </Show>
 
-            <Show
-              when={!chatSessionsQuery.isLoading && !chatSessionsQuery.isError}
-            >
+            <Show when={!chatSessionsQuery.isLoading && !chatSessionsQuery.isError}>
               <div class="space-y-1 sm:space-y-2">
                 <Show when={sessions().length === 0}>
                   <div class="text-center py-8 px-4">
@@ -1325,8 +1202,8 @@ export default function ChatPage() {
                       No chat history yet
                     </h3>
                     <p class="text-xs text-gray-500 dark:text-gray-400 mb-4 leading-relaxed">
-                      Start a conversation to explore destinations, get
-                      recommendations, and create personalized itineraries.
+                      Start a conversation to explore destinations, get recommendations, and create
+                      personalized itineraries.
                     </p>
                     <div class="space-y-2">
                       <div class="flex items-center gap-2 text-xs text-gray-400 dark:text-gray-500">
@@ -1350,10 +1227,11 @@ export default function ChatPage() {
                     <button
                       onClick={() => loadSession(session)}
                       disabled={isLoading()}
-                      class={`w-full text-left p-2 sm:p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${(selectedSession() as any)?.id === session.id
-                        ? "bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700"
-                        : "border border-transparent"
-                        }`}
+                      class={`w-full text-left p-2 sm:p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                        (selectedSession() as any)?.id === session.id
+                          ? "bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700"
+                          : "border border-transparent"
+                      }`}
                     >
                       <div class="flex items-start justify-between mb-1">
                         <div class="flex-1 min-w-0">
@@ -1381,28 +1259,19 @@ export default function ChatPage() {
                           {/* Content metrics summary */}
                           <Show when={session.contentMetrics}>
                             <div class="flex items-center gap-2 mt-1 text-xs text-gray-500 dark:text-gray-400">
-                              <Show
-                                when={session.contentMetrics!.total_pois > 0}
-                              >
+                              <Show when={session.contentMetrics!.total_pois > 0}>
                                 <span class="bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 px-1 py-0.5 rounded text-xs">
                                   {session.contentMetrics!.total_pois} POIs
                                 </span>
                               </Show>
-                              <Show
-                                when={session.contentMetrics!.total_hotels > 0}
-                              >
+                              <Show when={session.contentMetrics!.total_hotels > 0}>
                                 <span class="bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 px-1 py-0.5 rounded text-xs">
                                   {session.contentMetrics!.total_hotels} Hotels
                                 </span>
                               </Show>
-                              <Show
-                                when={
-                                  session.contentMetrics!.total_restaurants > 0
-                                }
-                              >
+                              <Show when={session.contentMetrics!.total_restaurants > 0}>
                                 <span class="bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 px-1 py-0.5 rounded text-xs">
-                                  {session.contentMetrics!.total_restaurants}{" "}
-                                  Restaurants
+                                  {session.contentMetrics!.total_restaurants} Restaurants
                                 </span>
                               </Show>
                             </div>
@@ -1415,22 +1284,20 @@ export default function ChatPage() {
                           {/* Engagement level indicator */}
                           <Show when={session.engagementMetrics}>
                             <div
-                              class={`w-2 h-2 rounded-full ${session.engagementMetrics!.engagement_level ===
-                                "high"
-                                ? "bg-green-500"
-                                : session.engagementMetrics!
-                                  .engagement_level === "medium"
-                                  ? "bg-yellow-500"
-                                  : "bg-gray-400"
-                                }`}
+                              class={`w-2 h-2 rounded-full ${
+                                session.engagementMetrics!.engagement_level === "high"
+                                  ? "bg-green-500"
+                                  : session.engagementMetrics!.engagement_level === "medium"
+                                    ? "bg-yellow-500"
+                                    : "bg-gray-400"
+                              }`}
                               title={`${session.engagementMetrics!.engagement_level} engagement`}
                             />
                           </Show>
                           {/* Complexity score indicator */}
                           <Show
                             when={
-                              session.contentMetrics &&
-                              session.contentMetrics.complexity_score >= 7
+                              session.contentMetrics && session.contentMetrics.complexity_score >= 7
                             }
                           >
                             <div
@@ -1444,16 +1311,13 @@ export default function ChatPage() {
                         {session.preview}
                       </p>
                       <div class="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
-                        <span class="text-xs">
-                          {formatTimestamp(session.timestamp)}
-                        </span>
+                        <span class="text-xs">{formatTimestamp(session.timestamp)}</span>
                         <div class="flex items-center gap-2">
                           {/* Performance indicator */}
                           <Show
                             when={
                               session.performanceMetrics &&
-                              session.performanceMetrics.avg_response_time_ms >
-                              0
+                              session.performanceMetrics.avg_response_time_ms > 0
                             }
                           >
                             <span
@@ -1461,19 +1325,13 @@ export default function ChatPage() {
                               title={`Avg response: ${session.performanceMetrics!.avg_response_time_ms}ms`}
                             >
                               ⚡{" "}
-                              {Math.round(
-                                session.performanceMetrics!
-                                  .avg_response_time_ms / 1000,
-                              )}
-                              s
+                              {Math.round(session.performanceMetrics!.avg_response_time_ms / 1000)}s
                             </span>
                           </Show>
                           <span class="text-xs hidden sm:inline">
                             {session.messageCount} messages
                           </span>
-                          <span class="text-xs sm:hidden">
-                            {session.messageCount}m
-                          </span>
+                          <span class="text-xs sm:hidden">{session.messageCount}m</span>
                           <Show when={session.hasItinerary}>
                             <span class="text-xs text-purple-600 dark:text-purple-400 hidden sm:inline">
                               • Itinerary
@@ -1510,9 +1368,7 @@ export default function ChatPage() {
             </div>
 
             <div class="flex items-center gap-1 sm:gap-2 flex-shrink-0">
-              <span class="text-xs text-gray-500 dark:text-gray-400 hidden sm:inline">
-                Using:
-              </span>
+              <span class="text-xs text-gray-500 dark:text-gray-400 hidden sm:inline">Using:</span>
               <span class="text-xs font-medium text-blue-600 dark:text-blue-400 truncate max-w-20 sm:max-w-none">
                 {activeProfile()}
               </span>
@@ -1559,16 +1415,12 @@ export default function ChatPage() {
                   <div class="text-xs text-gray-500 dark:text-gray-400 space-y-1">
                     <div class="flex items-center gap-1 sm:gap-2">
                       <span class="inline-block w-2 h-2 bg-blue-500 rounded-full flex-shrink-0" />
-                      <span class="truncate">
-                        Domain: {streamingSession()?.domain}
-                      </span>
+                      <span class="truncate">Domain: {streamingSession()?.domain}</span>
                     </div>
                     <Show when={streamingSession()?.city}>
                       <div class="flex items-center gap-1 sm:gap-2">
                         <MapPin class="w-3 h-3 flex-shrink-0" />
-                        <span class="truncate">
-                          City: {streamingSession()?.city}
-                        </span>
+                        <span class="truncate">City: {streamingSession()?.city}</span>
                       </div>
                     </Show>
                     <Show when={streamingSession()?.sessionId}>
@@ -1597,9 +1449,7 @@ export default function ChatPage() {
                       class="bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm border border-gray-300/70 dark:border-gray-600/70 rounded-xl hover:bg-white dark:hover:bg-slate-700 hover:shadow-lg hover:shadow-blue-500/10 hover:border-blue-400/50 dark:hover:border-blue-500/50 transition-all duration-300 p-3 sm:p-4 text-left group"
                     >
                       <div class="flex items-start gap-2 sm:gap-3">
-                        <span class="text-xl sm:text-2xl flex-shrink-0">
-                          {prompt.icon}
-                        </span>
+                        <span class="text-xl sm:text-2xl flex-shrink-0">{prompt.icon}</span>
                         <div class="min-w-0 flex-1">
                           <h4 class="font-medium text-gray-900 dark:text-white mb-1 text-sm sm:text-base">
                             {prompt.text}

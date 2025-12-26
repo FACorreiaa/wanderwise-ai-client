@@ -124,7 +124,10 @@ export function useFeaturedCollections(limit = 4) {
 }
 
 // Get recent discoveries
-export async function fetchRecentDiscoveries(page = 1, pageSize = 10): Promise<{
+export async function fetchRecentDiscoveries(
+  page = 1,
+  pageSize = 10,
+): Promise<{
   sessions: ChatSession[];
   pagination?: PaginationMetadata;
 }> {

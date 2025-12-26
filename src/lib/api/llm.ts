@@ -2,11 +2,7 @@
 import { useMutation } from "@tanstack/solid-query";
 import { create } from "@bufbuild/protobuf";
 import { createClient } from "@connectrpc/connect";
-import {
-  defaultLLMRateLimiter,
-  RateLimitError,
-  showRateLimitNotification,
-} from "../rate-limiter";
+import { defaultLLMRateLimiter, RateLimitError, showRateLimitNotification } from "../rate-limiter";
 import {
   ChatService,
   ChatRequestSchema,
@@ -44,11 +40,7 @@ import type {
 // CHAT/LLM TYPES
 // ==================
 
-export type ChatContextType =
-  | "hotels"
-  | "restaurants"
-  | "itineraries"
-  | "general";
+export type ChatContextType = "hotels" | "restaurants" | "itineraries" | "general";
 
 const chatClient = createClient(ChatService, transport);
 
@@ -60,9 +52,7 @@ const EMPTY_ITINERARY: AIItineraryResponse = {
   bars: [],
 };
 
-export const toProtoDomainType = (
-  contextType?: ChatContextType,
-): ChatDomainType => {
+export const toProtoDomainType = (contextType?: ChatContextType): ChatDomainType => {
   switch (contextType) {
     case "hotels":
       return ChatDomainType.ACCOMMODATION;
@@ -75,9 +65,7 @@ export const toProtoDomainType = (
   }
 };
 
-const toClientDomainType = (
-  contextType?: ChatContextType,
-): ClientDomainType => {
+const toClientDomainType = (contextType?: ChatContextType): ClientDomainType => {
   switch (contextType) {
     case "hotels":
       return "accommodation";
@@ -90,9 +78,7 @@ const toClientDomainType = (
   }
 };
 
-export const domainToContextType = (
-  domain: ClientDomainType | string,
-): ChatContextType => {
+export const domainToContextType = (domain: ClientDomainType | string): ChatContextType => {
   switch (domain) {
     case "accommodation":
       return "hotels";
@@ -107,9 +93,7 @@ export const domainToContextType = (
   }
 };
 
-const mapGeneralCityData = (
-  data?: ProtoGeneralCityData,
-): GeneralCityData | undefined => {
+const mapGeneralCityData = (data?: ProtoGeneralCityData): GeneralCityData | undefined => {
   if (!data) return undefined;
 
   return {
@@ -160,7 +144,8 @@ const mapPoi = (poi: ProtoPOIDetailedInfo): POIDetailedInfo => {
     images: poi.images || [],
     llm_interaction_id: poi.llmInteractionId || "",
     cuisine_type: poi.cuisineType || "",
-    star_rating: typeof poi.starRating === 'string' ? parseFloat(poi.starRating) : (poi.starRating || 0),
+    star_rating:
+      typeof poi.starRating === "string" ? parseFloat(poi.starRating) : poi.starRating || 0,
     distance: poi.distance || 0,
     description_poi: poi.descriptionPoi || "",
     created_at:
@@ -190,12 +175,11 @@ const mapRestaurant = (
     (restaurant as ProtoRestaurantDetailedInfo).phoneNumber ||
     (restaurant as ProtoPOIDetailedInfo).phoneNumber ||
     "",
-  opening_hours:
-    (typeof (restaurant as ProtoRestaurantDetailedInfo).openingHours === "object"
-      ? JSON.stringify((restaurant as ProtoRestaurantDetailedInfo).openingHours)
-      : typeof (restaurant as ProtoRestaurantDetailedInfo).openingHours === 'string'
-        ? (restaurant as ProtoRestaurantDetailedInfo).openingHours
-        : (restaurant as ProtoPOIDetailedInfo).openingHours || "") as string,
+  opening_hours: (typeof (restaurant as ProtoRestaurantDetailedInfo).openingHours === "object"
+    ? JSON.stringify((restaurant as ProtoRestaurantDetailedInfo).openingHours)
+    : typeof (restaurant as ProtoRestaurantDetailedInfo).openingHours === "string"
+      ? (restaurant as ProtoRestaurantDetailedInfo).openingHours
+      : (restaurant as ProtoPOIDetailedInfo).openingHours || "") as string,
   price_level:
     (restaurant as ProtoRestaurantDetailedInfo).priceLevel ||
     (restaurant as ProtoPOIDetailedInfo).priceLevel ||
@@ -221,20 +205,18 @@ const mapItineraryResponse = (
   return {
     itinerary_name: response.itineraryName,
     overall_description: response.overallDescription,
-    points_of_interest:
-      response.pointsOfInterest?.map(mapPoi) ?? [],
+    points_of_interest: response.pointsOfInterest?.map(mapPoi) ?? [],
     restaurants: response.restaurants?.map(mapRestaurant) ?? [],
     bars: response.bars?.map(mapRestaurant) ?? [],
   };
 };
 
-const mapAiCityResponse = (
-  response?: ProtoAiCityResponse,
-): AiCityResponse | undefined => {
+const mapAiCityResponse = (response?: ProtoAiCityResponse): AiCityResponse | undefined => {
   if (!response) return undefined;
 
   const mappedItinerary =
-    mapItineraryResponse(response.itineraryResponse) || (EMPTY_ITINERARY as unknown as AIItineraryResponse);
+    mapItineraryResponse(response.itineraryResponse) ||
+    (EMPTY_ITINERARY as unknown as AIItineraryResponse);
 
   const hotelsFromAccommodation =
     // @ts-expect-error: backend may return accommodationResponse
@@ -246,22 +228,18 @@ const mapAiCityResponse = (
 
   const deriveLists = () => {
     const points =
-      response.pointsOfInterest?.map(mapPoi) ||
-      mappedItinerary.points_of_interest ||
-      [];
+      response.pointsOfInterest?.map(mapPoi) || mappedItinerary.points_of_interest || [];
 
-    const hotels = points.filter((poi) =>
-      (poi.category || '').toLowerCase().includes('hotel'),
-    );
+    const hotels = points.filter((poi) => (poi.category || "").toLowerCase().includes("hotel"));
     const restaurants = points.filter((poi) => {
-      const cat = (poi.category || '').toLowerCase();
-      return cat.includes('restaurant') || cat.includes('dining');
+      const cat = (poi.category || "").toLowerCase();
+      return cat.includes("restaurant") || cat.includes("dining");
     });
     const activities = points.filter(
       (poi) =>
-        !(poi.category || '').toLowerCase().includes('hotel') &&
-        !(poi.category || '').toLowerCase().includes('restaurant') &&
-        !(poi.category || '').toLowerCase().includes('dining'),
+        !(poi.category || "").toLowerCase().includes("hotel") &&
+        !(poi.category || "").toLowerCase().includes("restaurant") &&
+        !(poi.category || "").toLowerCase().includes("dining"),
     );
 
     return { hotels, restaurants, activities };
@@ -270,13 +248,27 @@ const mapAiCityResponse = (
   const derived = deriveLists();
 
   return {
-    general_city_data: mapGeneralCityData(response.generalCityData) as GeneralCityData || { city: '', country: '', state_province: '', description: '', center_latitude: 0, center_longitude: 0, population: '', area: '', timezone: '', language: '', weather: '', attractions: '', history: '' },
+    general_city_data: (mapGeneralCityData(response.generalCityData) as GeneralCityData) || {
+      city: "",
+      country: "",
+      state_province: "",
+      description: "",
+      center_latitude: 0,
+      center_longitude: 0,
+      population: "",
+      area: "",
+      timezone: "",
+      language: "",
+      weather: "",
+      attractions: "",
+      history: "",
+    },
     points_of_interest: response.pointsOfInterest?.map(mapPoi) ?? [],
     itinerary_response: mappedItinerary,
     hotels: hotelsFromAccommodation || derived.hotels,
     restaurants: mappedItinerary.restaurants?.length
       ? mappedItinerary.restaurants
-      : derived.restaurants as unknown as RestaurantDetailedInfo[],
+      : (derived.restaurants as unknown as RestaurantDetailedInfo[]),
     bars: mappedItinerary.bars,
     session_id: response.sessionId,
   };
@@ -326,12 +318,9 @@ const createSseResponse = (events: StreamEvent[]): Response => {
   });
 };
 
-const buildChatStreamResponse = (
-  response: NormalizedChatResponse,
-): Response => {
+const buildChatStreamResponse = (response: NormalizedChatResponse): Response => {
   const events: StreamEvent[] = [];
-  const sessionCity =
-    response.updatedItinerary?.general_city_data?.city;
+  const sessionCity = response.updatedItinerary?.general_city_data?.city;
 
   events.push({
     type: "start",
@@ -347,47 +336,47 @@ const buildChatStreamResponse = (
     const _total_pois = response.updatedItinerary?.points_of_interest?.length || 0;
     const _total_hotels = response.updatedItinerary?.hotels?.length || 0;
     const _total_restaurants = response.updatedItinerary?.restaurants?.length || 0;
-    const hotels =
-      response.updatedItinerary?.hotels?.length
-        ? response.updatedItinerary.hotels
-        : response.updatedItinerary?.itinerary_response?.points_of_interest?.length
-          ? response.updatedItinerary.itinerary_response.points_of_interest
-          : response.updatedItinerary?.points_of_interest;
+    const hotels = response.updatedItinerary?.hotels?.length
+      ? response.updatedItinerary.hotels
+      : response.updatedItinerary?.itinerary_response?.points_of_interest?.length
+        ? response.updatedItinerary.itinerary_response.points_of_interest
+        : response.updatedItinerary?.points_of_interest;
     if (hotels?.length) {
-      console.log('🏨 Building hotels event with', hotels.length, 'hotels');
+      console.log("🏨 Building hotels event with", hotels.length, "hotels");
       events.push({
         type: "hotels",
         data: hotels,
       });
     } else {
-      console.warn('⚠️ No hotels found in response.updatedItinerary:', response.updatedItinerary);
+      console.warn("⚠️ No hotels found in response.updatedItinerary:", response.updatedItinerary);
     }
   } else if (response.domain === "dining") {
     // Check consolidated path first: itineraryResponse.pointsOfInterest
-    const restaurants =
-      response.updatedItinerary?.restaurants?.length
-        ? response.updatedItinerary.restaurants
-        : response.updatedItinerary?.itinerary_response?.points_of_interest?.length
-          ? response.updatedItinerary.itinerary_response.points_of_interest
-          : response.updatedItinerary?.itinerary_response?.restaurants?.length
-            ? response.updatedItinerary.itinerary_response.restaurants
-            : response.updatedItinerary?.points_of_interest;
+    const restaurants = response.updatedItinerary?.restaurants?.length
+      ? response.updatedItinerary.restaurants
+      : response.updatedItinerary?.itinerary_response?.points_of_interest?.length
+        ? response.updatedItinerary.itinerary_response.points_of_interest
+        : response.updatedItinerary?.itinerary_response?.restaurants?.length
+          ? response.updatedItinerary.itinerary_response.restaurants
+          : response.updatedItinerary?.points_of_interest;
 
     if (restaurants?.length) {
-      console.log('🍽️ Building restaurants event with', restaurants.length, 'restaurants');
+      console.log("🍽️ Building restaurants event with", restaurants.length, "restaurants");
       events.push({
         type: "restaurants",
         data: restaurants,
       });
     } else {
-      console.warn('⚠️ No restaurants found in response.updatedItinerary:', response.updatedItinerary);
+      console.warn(
+        "⚠️ No restaurants found in response.updatedItinerary:",
+        response.updatedItinerary,
+      );
     }
   } else if (response.domain === "activities") {
     // Check consolidated path first: itineraryResponse.pointsOfInterest
-    const activities =
-      response.updatedItinerary?.itinerary_response?.points_of_interest?.length
-        ? response.updatedItinerary.itinerary_response.points_of_interest
-        : response.updatedItinerary?.points_of_interest;
+    const activities = response.updatedItinerary?.itinerary_response?.points_of_interest?.length
+      ? response.updatedItinerary.itinerary_response.points_of_interest
+      : response.updatedItinerary?.points_of_interest;
     if (activities?.length) {
       events.push({
         type: "activities",
@@ -435,8 +424,6 @@ const enforceRateLimit = async (endpoint: string) => {
   }
 };
 
-
-
 export interface StartChatRequest {
   profileId?: string;
   contextType?: ChatContextType;
@@ -455,15 +442,11 @@ export interface ContinueChatRequest {
 // CHAT/LLM QUERIES
 // ==================
 
-
-
 // ==================
 // ENHANCED CHAT SERVICES
 // ==================
 
-export const StartChat = async (
-  request: StartChatRequest,
-): Promise<NormalizedChatResponse> => {
+export const StartChat = async (request: StartChatRequest): Promise<NormalizedChatResponse> => {
   const endpoint = "loci.chat.ChatService/StartChat";
   await enforceRateLimit(endpoint);
 
@@ -514,9 +497,7 @@ export const StartChatStreamReal = async (
 };
 
 // Keep the old fake streaming for backward compatibility
-export const StartChatStream = async (
-  request: StartChatRequest,
-): Promise<Response> => {
+export const StartChatStream = async (request: StartChatRequest): Promise<Response> => {
   const normalized = await StartChat(request);
   return buildChatStreamResponse(normalized);
 };
@@ -542,18 +523,14 @@ export const ContinueChat = async (
 /**
  * REAL streaming for ContinueChat using Server Streaming RPC
  */
-export const ContinueChatStreamReal = async (
-  request: ContinueChatRequest,
-): Promise<Response> => {
+export const ContinueChatStreamReal = async (request: ContinueChatRequest): Promise<Response> => {
   // Use unary ContinueChat and adapt to SSE so existing consumers keep working
   const normalized = await ContinueChat(request);
   return buildChatStreamResponse(normalized);
 };
 
 // Updated ContinueChatStream to use REAL ContinueChat RPC (no fake streaming)
-export const ContinueChatStream = async (
-  request: ContinueChatRequest,
-): Promise<Response> => {
+export const ContinueChatStream = async (request: ContinueChatRequest): Promise<Response> => {
   console.log("🚀 Using ContinueChat (unary) wrapped as SSE");
   return ContinueChatStreamReal(request);
 };
@@ -589,10 +566,9 @@ export interface UnifiedChatRequest {
   };
 }
 
-export interface UnifiedChatStreamRequest extends UnifiedChatRequest { }
+export interface UnifiedChatStreamRequest extends UnifiedChatRequest {}
 
 // Unified chat service - sends message and gets streaming response
-
 
 /**
  * Convert Proto StreamEvent to SSE format
@@ -646,9 +622,7 @@ const normalizeStreamPayload = (payload: any): any => {
   return payload;
 };
 
-const convertProtoStreamToSSE = async (
-  protoStream: ReadableStream<any>,
-): Promise<Response> => {
+const convertProtoStreamToSSE = async (protoStream: ReadableStream<any>): Promise<Response> => {
   const stream = new ReadableStream({
     async start(controller) {
       const reader = protoStream.getReader();
@@ -682,7 +656,7 @@ const convertProtoStreamToSSE = async (
 
         controller.close();
       } catch (error) {
-        console.error('Error in Proto to SSE conversion:', error);
+        console.error("Error in Proto to SSE conversion:", error);
         controller.error(error);
       } finally {
         reader.releaseLock();
@@ -705,7 +679,7 @@ export const sendUnifiedChatMessageStream = async (
 ): Promise<Response> => {
   const contextType = request.contextType || "general";
 
-  console.log('🚀 Using REAL server streaming (not fake!)');
+  console.log("🚀 Using REAL server streaming (not fake!)");
 
   // Use real streaming RPC
   const protoStream = await StartChatStreamReal({
@@ -718,8 +692,6 @@ export const sendUnifiedChatMessageStream = async (
   // Convert proto stream to SSE format
   return convertProtoStreamToSSE(protoStream);
 };
-
-
 
 // GraphQL alternative to streaming service
 // const PROCESS_UNIFIED_CHAT_MESSAGE = gql`
@@ -844,11 +816,7 @@ export const detectDomain = (message: string): import("./types").DomainType => {
   }
 
   // Itinerary domain keywords
-  if (
-    /itinerary|plan|schedule|trip|day|week|journey|route|organize|arrange/.test(
-      lowerMessage,
-    )
-  ) {
+  if (/itinerary|plan|schedule|trip|day|week|journey|route|organize|arrange/.test(lowerMessage)) {
     return "itinerary";
   }
 
@@ -859,8 +827,6 @@ export const detectDomain = (message: string): import("./types").DomainType => {
 // ==================
 // MUTATION HOOKS FOR UNIFIED CHAT
 // ==================
-
-
 
 // ==================
 // CHAT SESSIONS RETRIEVAL
@@ -885,16 +851,12 @@ export interface ChatSessionSummary {
 }
 
 // Get chat sessions for a user
-export const getUserChatSessions = async (
-  _profileId: string,
-): Promise<ChatSessionSummary[]> => {
+export const getUserChatSessions = async (_profileId: string): Promise<ChatSessionSummary[]> => {
   // NOTE: This endpoint has been removed from the legacy REST API.
   // We return an empty array until a proper History Service RPC is implemented.
   console.warn("getUserChatSessions: REST API removed. Returning empty session list.");
   return [];
 };
-
-
 
 // Query hook for getting chat sessions
 export const useGetChatSessionsQuery = (profileId: string | undefined) => {

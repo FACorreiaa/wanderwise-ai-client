@@ -178,20 +178,22 @@ export default function DetailedItemModal(props: DetailedItemModalProps) {
           <div class="flex border-b border-gray-200 dark:border-gray-700">
             <button
               onClick={() => setActiveTab("details")}
-              class={`flex-1 px-4 py-3 text-sm font-medium border-b-2 transition-colors ${activeTab() === "details"
-                ? "border-blue-500 text-blue-600 dark:text-blue-400"
-                : "border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
-                }`}
+              class={`flex-1 px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
+                activeTab() === "details"
+                  ? "border-blue-500 text-blue-600 dark:text-blue-400"
+                  : "border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
+              }`}
             >
               Details
             </button>
             <Show when={props.item!.latitude && props.item!.longitude}>
               <button
                 onClick={() => setActiveTab("map")}
-                class={`flex-1 px-4 py-3 text-sm font-medium border-b-2 transition-colors ${activeTab() === "map"
-                  ? "border-blue-500 text-blue-600 dark:text-blue-400"
-                  : "border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
-                  }`}
+                class={`flex-1 px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
+                  activeTab() === "map"
+                    ? "border-blue-500 text-blue-600 dark:text-blue-400"
+                    : "border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
+                }`}
               >
                 Map
               </button>
@@ -212,9 +214,7 @@ export default function DetailedItemModal(props: DetailedItemModalProps) {
                         <Star class="w-4 h-4 fill-current" />
                         <span class="font-semibold">{props.item!.rating}</span>
                       </div>
-                      <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                        Rating
-                      </p>
+                      <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Rating</p>
                     </div>
                   </Show>
                   <Show when={props.item!.price_range}>
@@ -223,26 +223,18 @@ export default function DetailedItemModal(props: DetailedItemModalProps) {
                         class={`flex items-center justify-center gap-1 ${getPriceColor(props.item!.price_range!)}`}
                       >
                         <DollarSign class="w-4 h-4" />
-                        <span class="font-semibold">
-                          {props.item!.price_range}
-                        </span>
+                        <span class="font-semibold">{props.item!.price_range}</span>
                       </div>
-                      <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                        Price
-                      </p>
+                      <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Price</p>
                     </div>
                   </Show>
                   <Show when={props.item!.distance}>
                     <div class="text-center">
                       <div class="flex items-center justify-center gap-1 text-gray-600 dark:text-gray-400">
                         <MapPin class="w-4 h-4" />
-                        <span class="font-semibold">
-                          {props.item!.distance}km
-                        </span>
+                        <span class="font-semibold">{props.item!.distance}km</span>
                       </div>
-                      <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                        Distance
-                      </p>
+                      <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Distance</p>
                     </div>
                   </Show>
                   <Show when={props.item!.timeToSpend || props.item!.duration}>
@@ -253,9 +245,7 @@ export default function DetailedItemModal(props: DetailedItemModalProps) {
                           {props.item!.timeToSpend || props.item!.duration}
                         </span>
                       </div>
-                      <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                        Duration
-                      </p>
+                      <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Duration</p>
                     </div>
                   </Show>
                 </div>
@@ -263,9 +253,7 @@ export default function DetailedItemModal(props: DetailedItemModalProps) {
                 {/* Description */}
                 <Show when={props.item!.description_poi}>
                   <div>
-                    <h3 class="font-semibold text-gray-900 dark:text-white mb-2">
-                      About
-                    </h3>
+                    <h3 class="font-semibold text-gray-900 dark:text-white mb-2">About</h3>
                     <p class="text-gray-600 dark:text-gray-300 leading-relaxed">
                       {props.item!.description_poi}
                     </p>
@@ -278,9 +266,7 @@ export default function DetailedItemModal(props: DetailedItemModalProps) {
                     <div class="flex items-start gap-3">
                       <MapPin class="w-5 h-5 text-gray-400 flex-shrink-0 mt-0.5" />
                       <div>
-                        <p class="font-medium text-gray-900 dark:text-white">
-                          Address
-                        </p>
+                        <p class="font-medium text-gray-900 dark:text-white">Address</p>
                         <p class="text-sm text-gray-600 dark:text-gray-300">
                           {props.item!.address}
                         </p>
@@ -291,9 +277,7 @@ export default function DetailedItemModal(props: DetailedItemModalProps) {
                     <div class="flex items-start gap-3">
                       <Phone class="w-5 h-5 text-gray-400 flex-shrink-0 mt-0.5" />
                       <div>
-                        <p class="font-medium text-gray-900 dark:text-white">
-                          Phone
-                        </p>
+                        <p class="font-medium text-gray-900 dark:text-white">Phone</p>
                         <a
                           href={`tel:${props.item!.phone_number}`}
                           class="text-sm text-blue-600 dark:text-blue-400 hover:underline"
@@ -307,9 +291,7 @@ export default function DetailedItemModal(props: DetailedItemModalProps) {
                     <div class="flex items-start gap-3">
                       <Globe class="w-5 h-5 text-gray-400 flex-shrink-0 mt-0.5" />
                       <div>
-                        <p class="font-medium text-gray-900 dark:text-white">
-                          Website
-                        </p>
+                        <p class="font-medium text-gray-900 dark:text-white">Website</p>
                         <a
                           href={props.item!.website}
                           target="_blank"
@@ -325,9 +307,7 @@ export default function DetailedItemModal(props: DetailedItemModalProps) {
                     <div class="flex items-start gap-3">
                       <Clock class="w-5 h-5 text-gray-400 flex-shrink-0 mt-0.5" />
                       <div>
-                        <p class="font-medium text-gray-900 dark:text-white">
-                          Hours
-                        </p>
+                        <p class="font-medium text-gray-900 dark:text-white">Hours</p>
                         <p class="text-sm text-gray-600 dark:text-gray-300">
                           {props.item!.opening_hours}
                         </p>
@@ -337,15 +317,9 @@ export default function DetailedItemModal(props: DetailedItemModalProps) {
                 </div>
 
                 {/* Amenities/Tags */}
-                <Show
-                  when={
-                    props.item!.amenities && props.item!.amenities!.length > 0
-                  }
-                >
+                <Show when={props.item!.amenities && props.item!.amenities!.length > 0}>
                   <div>
-                    <h3 class="font-semibold text-gray-900 dark:text-white mb-3">
-                      Amenities
-                    </h3>
+                    <h3 class="font-semibold text-gray-900 dark:text-white mb-3">Amenities</h3>
                     <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
                       <For each={props.item!.amenities}>
                         {(amenity: string) => (
@@ -363,9 +337,7 @@ export default function DetailedItemModal(props: DetailedItemModalProps) {
 
                 <Show when={props.item!.tags && props.item!.tags!.length > 0}>
                   <div>
-                    <h3 class="font-semibold text-gray-900 dark:text-white mb-3">
-                      Tags
-                    </h3>
+                    <h3 class="font-semibold text-gray-900 dark:text-white mb-3">Tags</h3>
                     <div class="flex flex-wrap gap-2">
                       <For each={props.item!.tags}>
                         {(tag: string) => (
@@ -380,13 +352,7 @@ export default function DetailedItemModal(props: DetailedItemModalProps) {
               </div>
             </Show>
 
-            <Show
-              when={
-                activeTab() === "map" &&
-                props.item!.latitude &&
-                props.item!.longitude
-              }
-            >
+            <Show when={activeTab() === "map" && props.item!.latitude && props.item!.longitude}>
               <div class="h-96 sm:h-[500px]">
                 <MapComponent
                   center={[props.item!.longitude!, props.item!.latitude!]}
@@ -399,7 +365,7 @@ export default function DetailedItemModal(props: DetailedItemModalProps) {
                       name: props.item!.name,
                       latitude: props.item!.latitude!,
                       longitude: props.item!.longitude!,
-                      category: props.item!.category || '',
+                      category: props.item!.category || "",
                     },
                   ]}
                 />
@@ -413,14 +379,13 @@ export default function DetailedItemModal(props: DetailedItemModalProps) {
               <div class="flex gap-2">
                 <button
                   onClick={() => setIsFavorited(!isFavorited())}
-                  class={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${isFavorited()
-                    ? "bg-red-100 dark:bg-red-900/20 text-red-700 dark:text-red-400"
-                    : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
-                    }`}
+                  class={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    isFavorited()
+                      ? "bg-red-100 dark:bg-red-900/20 text-red-700 dark:text-red-400"
+                      : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
+                  }`}
                 >
-                  <Heart
-                    class={`w-4 h-4 ${isFavorited() ? "fill-current" : ""}`}
-                  />
+                  <Heart class={`w-4 h-4 ${isFavorited() ? "fill-current" : ""}`} />
                   {isFavorited() ? "Saved" : "Save"}
                 </button>
                 <button

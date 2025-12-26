@@ -1,7 +1,13 @@
-import { createContext, useContext, createSignal, createEffect, onMount, JSX } from 'solid-js';
-import { useNavigate } from '@solidjs/router';
-import { getAuthToken, getRefreshToken, setAuthToken, clearAuthToken, isPersistentSession } from '~/lib/auth/tokens';
-import { authAPI } from '~/lib/api';
+import { createContext, useContext, createSignal, createEffect, onMount, JSX } from "solid-js";
+import { useNavigate } from "@solidjs/router";
+import {
+  getAuthToken,
+  getRefreshToken,
+  setAuthToken,
+  clearAuthToken,
+  isPersistentSession,
+} from "~/lib/auth/tokens";
+import { authAPI } from "~/lib/api";
 
 interface User {
   id: string;
@@ -41,7 +47,7 @@ const AuthContext = createContext<AuthContextType>();
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;
 };
@@ -67,128 +73,143 @@ export const AuthProvider = (props: AuthProviderProps) => {
         setUser(userProfile);
       }
     } catch (error) {
-      console.error('Auth retry failed:', error);
+      console.error("Auth retry failed:", error);
     }
   };
 
   // Check authentication status on mount
   onMount(async () => {
-    console.log('AuthProvider: Initializing authentication state...');
+    console.log("AuthProvider: Initializing authentication state...");
 
     // PWA Hydration Delay: Wait for storage to be available
     // This prevents race conditions where SSR hydration clears state before client localStorage is accessible
-    if (typeof window !== 'undefined') {
-      await new Promise(resolve => setTimeout(resolve, 50));
+    if (typeof window !== "undefined") {
+      await new Promise((resolve) => setTimeout(resolve, 50));
     }
 
     const token = getAuthToken();
     const useLocalStorage = isPersistentSession();
-    console.log('AuthProvider: Token found?', !!token, 'Persistent?', useLocalStorage);
+    console.log("AuthProvider: Token found?", !!token, "Persistent?", useLocalStorage);
 
     if (!token) {
-      console.log('AuthProvider: No token found');
+      console.log("AuthProvider: No token found");
       setUser(null);
       setIsLoading(false);
-      console.log('AuthProvider: Initialization complete');
+      console.log("AuthProvider: Initialization complete");
       return;
     }
 
     const loadUserProfile = async () => {
-      console.log('AuthProvider: Restoring session by fetching user profile...');
+      console.log("AuthProvider: Restoring session by fetching user profile...");
       const userProfile = await authAPI.getCurrentUser();
-      console.log('AuthProvider: User profile fetched:', userProfile);
+      console.log("AuthProvider: User profile fetched:", userProfile);
       setUser(userProfile);
     };
 
     try {
       await loadUserProfile();
     } catch (error) {
-      console.error('AuthProvider: Session restoration failed:', error);
+      console.error("AuthProvider: Session restoration failed:", error);
 
       const refreshToken = getRefreshToken();
       if (!refreshToken) {
         clearAuthToken();
         setUser(null);
         setIsLoading(false);
-        console.log('AuthProvider: Initialization complete');
+        console.log("AuthProvider: Initialization complete");
         return;
       }
 
       try {
-        console.log('AuthProvider: Attempting token refresh for session restoration...');
+        console.log("AuthProvider: Attempting token refresh for session restoration...");
         const refreshed = await authAPI.refreshToken();
-        setAuthToken(refreshed.access_token, useLocalStorage, refreshed.refresh_token || refreshToken);
+        setAuthToken(
+          refreshed.access_token,
+          useLocalStorage,
+          refreshed.refresh_token || refreshToken,
+        );
         await loadUserProfile();
-        console.log('AuthProvider: Session restored after token refresh');
+        console.log("AuthProvider: Session restored after token refresh");
       } catch (refreshError) {
-        console.error('AuthProvider: Token refresh failed during restore:', refreshError);
+        console.error("AuthProvider: Token refresh failed during restore:", refreshError);
         clearAuthToken();
         setUser(null);
       }
     }
 
     setIsLoading(false);
-    console.log('AuthProvider: Initialization complete');
+    console.log("AuthProvider: Initialization complete");
   });
 
   // Listen for token changes to handle cross-tab authentication
   createEffect(() => {
     const handleStorageChange = async (e: StorageEvent) => {
-      if (e.key === 'access_token' || e.key === null) {
+      if (e.key === "access_token" || e.key === null) {
         const token = getAuthToken();
         if (!token && user()) {
           // Token was cleared in another tab
           setUser(null);
-          navigate('/auth/signin');
+          navigate("/auth/signin");
         } else if (token && !user()) {
           // Token was set in another tab, fetch profile
           try {
             const userProfile = await authAPI.getCurrentUser();
             setUser(userProfile);
           } catch (error) {
-            console.error('Cross-tab session validation failed:', error);
+            console.error("Cross-tab session validation failed:", error);
           }
         }
       }
     };
 
-    window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
+    window.addEventListener("storage", handleStorageChange);
+    return () => window.removeEventListener("storage", handleStorageChange);
   });
 
-  const login = async (email: string, password: string, rememberMe: boolean = false): Promise<void> => {
+  const login = async (
+    email: string,
+    password: string,
+    rememberMe: boolean = false,
+  ): Promise<void> => {
     setIsLoading(true);
     try {
-      console.log('AuthProvider: Login attempt for:', email, 'Remember me:', rememberMe);
+      console.log("AuthProvider: Login attempt for:", email, "Remember me:", rememberMe);
       // Authenticate with server and get access token
       const response = await authAPI.login(email, password);
-      console.log('AuthProvider: Login successful, response:', response);
+      console.log("AuthProvider: Login successful, response:", response);
 
       const { access_token, refresh_token, user_id, username, email: userEmail } = response;
       setAuthToken(access_token, rememberMe, refresh_token);
 
       // Build display name with proper fallbacks
-      const displayName = username || userEmail?.split('@')[0] || email.split('@')[0];
+      const displayName = username || userEmail?.split("@")[0] || email.split("@")[0];
 
-      console.log('AuthProvider: Setting user with id:', user_id, 'username:', username, 'display_name:', displayName);
+      console.log(
+        "AuthProvider: Setting user with id:",
+        user_id,
+        "username:",
+        username,
+        "display_name:",
+        displayName,
+      );
       setUser({
-        id: user_id || '',
+        id: user_id || "",
         email: userEmail || email,
-        username: username || '',
+        username: username || "",
         is_active: true,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
-        role: 'user',
-        firstname: '',
-        lastname: '',
+        role: "user",
+        firstname: "",
+        lastname: "",
         display_name: displayName,
       });
 
-      console.log('AuthProvider: User set, navigating...');
+      console.log("AuthProvider: User set, navigating...");
       setIsLoading(false);
-      navigate('/');
+      navigate("/");
     } catch (error) {
-      console.error('AuthProvider: Login failed:', error);
+      console.error("AuthProvider: Login failed:", error);
       setIsLoading(false);
       throw error;
     }
@@ -213,13 +234,13 @@ export const AuthProvider = (props: AuthProviderProps) => {
       // Call server logout endpoint to invalidate session
       await authAPI.logout();
     } catch (error) {
-      console.error('Logout error:', error);
+      console.error("Logout error:", error);
     } finally {
       // Clear local authentication state
       clearAuthToken();
       setUser(null);
       setIsLoading(false);
-      navigate('/auth/signin');
+      navigate("/auth/signin");
     }
   };
 
@@ -240,11 +261,7 @@ export const AuthProvider = (props: AuthProviderProps) => {
     retryAuth,
   };
 
-  return (
-    <AuthContext.Provider value={authValue}>
-      {props.children}
-    </AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={authValue}>{props.children}</AuthContext.Provider>;
 };
 
 // Protected Route Component
@@ -259,7 +276,7 @@ export const ProtectedRoute = (props: ProtectedRouteProps) => {
 
   createEffect(() => {
     if (!isLoading() && !isAuthenticated()) {
-      navigate('/auth/signin', { replace: true });
+      navigate("/auth/signin", { replace: true });
     }
   });
 
@@ -274,13 +291,15 @@ export const ProtectedRoute = (props: ProtectedRouteProps) => {
 
   if (!isAuthenticated()) {
     // eslint-disable-next-line solid/components-return-once
-    return props.fallback || (
-      <div class="min-h-screen flex items-center justify-center">
-        <div class="text-center">
-          <h2 class="text-xl font-semibold text-gray-900 mb-2">Access Denied</h2>
-          <p class="text-gray-600">You need to be logged in to access this page.</p>
+    return (
+      props.fallback || (
+        <div class="min-h-screen flex items-center justify-center">
+          <div class="text-center">
+            <h2 class="text-xl font-semibold text-gray-900 mb-2">Access Denied</h2>
+            <p class="text-gray-600">You need to be logged in to access this page.</p>
+          </div>
         </div>
-      </div>
+      )
     );
   }
 
@@ -299,7 +318,7 @@ export const PublicRoute = (props: PublicRouteProps) => {
 
   createEffect(() => {
     if (!isLoading() && isAuthenticated()) {
-      navigate(props.redirectTo || '/');
+      navigate(props.redirectTo || "/");
     }
   });
 

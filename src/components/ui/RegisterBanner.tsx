@@ -25,15 +25,11 @@ export default function RegisterBanner(props: RegisterBannerProps): JSX.Element 
           <p class="text-xs uppercase tracking-[0.16em] font-medium text-blue-700/80 dark:text-slate-300">
             {props.badge || "Preview mode"}
           </p>
-          <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
-            {props.title}
-          </h3>
+          <h3 class="text-lg font-semibold text-gray-900 dark:text-white">{props.title}</h3>
         </div>
       </div>
 
-      <p class="text-sm text-gray-800 dark:text-slate-200 leading-relaxed">
-        {props.description}
-      </p>
+      <p class="text-sm text-gray-800 dark:text-slate-200 leading-relaxed">{props.description}</p>
 
       <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <A

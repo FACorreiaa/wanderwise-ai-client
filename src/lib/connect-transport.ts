@@ -2,7 +2,13 @@
 import { createConnectTransport } from "@connectrpc/connect-web";
 import type { Interceptor, Transport } from "@connectrpc/connect";
 import { ConnectError, Code } from "@connectrpc/connect";
-import { getAuthToken, getRefreshToken, setAuthToken, isPersistentSession, clearAuthToken } from "./auth/tokens";
+import {
+  getAuthToken,
+  getRefreshToken,
+  setAuthToken,
+  isPersistentSession,
+  clearAuthToken,
+} from "./auth/tokens";
 
 // Connect RPC base URL (without /api/v1 prefix - Connect appends service paths)
 const API_BASE_URL = import.meta.env.VITE_CONNECT_BASE_URL;
@@ -37,7 +43,7 @@ async function refreshAccessToken(): Promise<boolean> {
       return false;
     }
 
-    const data = await response.json() as { accessToken?: string; refreshToken?: string };
+    const data = (await response.json()) as { accessToken?: string; refreshToken?: string };
 
     if (data.accessToken) {
       // Preserve the remember me preference
@@ -77,8 +83,11 @@ const tokenRefreshInterceptor: Interceptor = (next) => async (req) => {
     if (error instanceof ConnectError && error.code === Code.Unauthenticated) {
       // Check if the error indicates an expired token (not invalid credentials)
       const message = error.message.toLowerCase();
-      if (message.includes("expired") || message.includes("invalid token") || message.includes("token")) {
-
+      if (
+        message.includes("expired") ||
+        message.includes("invalid token") ||
+        message.includes("token")
+      ) {
         // Prevent multiple simultaneous refresh attempts
         if (!isRefreshing) {
           isRefreshing = true;
@@ -122,10 +131,7 @@ export function createAuthenticatedTransport(): Transport {
   return createConnectTransport({
     baseUrl: API_BASE_URL,
     // Interceptors run in order: auth first (adds token), then refresh (handles 401)
-    interceptors: [
-      authInterceptor,
-      tokenRefreshInterceptor,
-    ],
+    interceptors: [authInterceptor, tokenRefreshInterceptor],
   });
 }
 

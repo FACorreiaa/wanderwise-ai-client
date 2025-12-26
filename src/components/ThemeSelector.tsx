@@ -1,14 +1,8 @@
 import { Sun, Moon, Palette } from "lucide-solid";
 import { useTheme } from "~/contexts/ThemeContext";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/ui/select";
 
-type DesignTheme = 'classic' | 'modern' | 'loci';
+type DesignTheme = "classic" | "modern" | "loci";
 
 interface ThemeOption {
   value: DesignTheme;
@@ -17,15 +11,15 @@ interface ThemeOption {
 }
 
 const themeOptions: ThemeOption[] = [
-  { value: 'loci', label: 'Loci', description: 'Bold structural design' },
-  { value: 'classic', label: 'Classic', description: 'Editorial luxury' },
-  { value: 'modern', label: 'Modern', description: 'Clean functional' },
+  { value: "loci", label: "Loci", description: "Bold structural design" },
+  { value: "classic", label: "Classic", description: "Editorial luxury" },
+  { value: "modern", label: "Modern", description: "Clean functional" },
 ];
 
 export default function ThemeSelector() {
   const { isDark, toggleTheme, designTheme, setDesignTheme } = useTheme();
 
-  const currentTheme = () => themeOptions.find(t => t.value === designTheme()) || themeOptions[0];
+  const currentTheme = () => themeOptions.find((t) => t.value === designTheme()) || themeOptions[0];
 
   return (
     <div class="flex items-center gap-3 p-1.5 rounded-2xl bg-white/60 dark:bg-slate-900/50 backdrop-blur-xl border border-white/40 dark:border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.08)] dark:shadow-[0_8px_32px_rgba(0,0,0,0.3)]">
@@ -52,10 +46,15 @@ export default function ThemeSelector() {
         optionValue="value"
         optionTextValue="label"
         itemComponent={(props) => (
-          <SelectItem item={props.item} class="rounded-lg hover:bg-white/50 dark:hover:bg-slate-800/50 transition-colors duration-200">
+          <SelectItem
+            item={props.item}
+            class="rounded-lg hover:bg-white/50 dark:hover:bg-slate-800/50 transition-colors duration-200"
+          >
             <div class="flex flex-col py-0.5">
               <span class="font-semibold text-sm">{props.item.rawValue.label}</span>
-              <span class="text-[11px] text-muted-foreground/70">{props.item.rawValue.description}</span>
+              <span class="text-[11px] text-muted-foreground/70">
+                {props.item.rawValue.description}
+              </span>
             </div>
           </SelectItem>
         )}
@@ -66,9 +65,7 @@ export default function ThemeSelector() {
               <Palette class="w-3.5 h-3.5 text-primary/70" />
             </div>
             <SelectValue<ThemeOption>>
-              {(state) => (
-                <span class="font-medium text-sm">{state.selectedOption()?.label}</span>
-              )}
+              {(state) => <span class="font-medium text-sm">{state.selectedOption()?.label}</span>}
             </SelectValue>
           </div>
         </SelectTrigger>

@@ -1,7 +1,7 @@
 // Itineraries queries and mutations - Using RPC
-import { useQuery, useMutation, useQueryClient } from '@tanstack/solid-query';
-import { createClient } from '@connectrpc/connect';
-import { create } from '@bufbuild/protobuf';
+import { useQuery, useMutation, useQueryClient } from "@tanstack/solid-query";
+import { createClient } from "@connectrpc/connect";
+import { create } from "@bufbuild/protobuf";
 import {
   ItineraryService,
   GetUserItinerariesRequestSchema,
@@ -9,11 +9,15 @@ import {
   UpdateItineraryRequestSchema,
   BookmarkRequestSchema,
   DeleteBookmarkRequestSchema,
-} from '@buf/loci_loci-proto.bufbuild_es/loci/itinerary/itinerary_pb.js';
-import { PaginationRequestSchema } from '@buf/loci_loci-proto.bufbuild_es/loci/common/common_pb.js';
-import { transport } from '../connect-transport';
-import { queryKeys } from './shared';
-import type { UserSavedItinerary, PaginatedItinerariesResponse, BookmarkRequest as BookmarkRequestType } from './types';
+} from "@buf/loci_loci-proto.bufbuild_es/loci/itinerary/itinerary_pb.js";
+import { PaginationRequestSchema } from "@buf/loci_loci-proto.bufbuild_es/loci/common/common_pb.js";
+import { transport } from "../connect-transport";
+import { queryKeys } from "./shared";
+import type {
+  UserSavedItinerary,
+  PaginatedItinerariesResponse,
+  BookmarkRequest as BookmarkRequestType,
+} from "./types";
 
 const itineraryClient = createClient(ItineraryService, transport);
 
@@ -24,7 +28,7 @@ const mapProtoToItinerary = (proto: any): UserSavedItinerary => ({
   source_llm_interaction_id: proto.sourceLlmInteractionId,
   primary_city_id: proto.primaryCityId,
   title: proto.title,
-  description: proto.description || '',
+  description: proto.description || "",
   markdown_content: proto.markdownContent,
   tags: proto.tags || [],
   estimated_duration_days: proto.estimatedDurationDays,
@@ -68,7 +72,7 @@ export const useItinerary = (itineraryId: string, options: { enabled?: boolean }
       const request = create(GetItineraryRequestSchema, { itineraryId });
       const response = await itineraryClient.getItinerary(request);
       if (!response.itinerary) {
-        throw new Error('Itinerary not found');
+        throw new Error("Itinerary not found");
       }
       return mapProtoToItinerary(response.itinerary);
     },
@@ -98,7 +102,7 @@ export const useUpdateItineraryMutation = () => {
     },
     onSuccess: (_, { itineraryId }) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.itinerary(itineraryId) });
-      queryClient.invalidateQueries({ queryKey: ['itineraries'] });
+      queryClient.invalidateQueries({ queryKey: ["itineraries"] });
     },
   }));
 };
@@ -117,7 +121,7 @@ export const useSaveItineraryMutation = () => {
         llmInteractionId: itineraryData.llm_interaction_id,
         sessionId: itineraryData.session_id,
         primaryCityId: itineraryData.primary_city_id,
-        primaryCityName: itineraryData.primary_city_name || '',
+        primaryCityName: itineraryData.primary_city_name || "",
         title: itineraryData.title,
         description: itineraryData.description,
         tags: itineraryData.tags || [],
@@ -127,7 +131,7 @@ export const useSaveItineraryMutation = () => {
       return response;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['itineraries'] });
+      queryClient.invalidateQueries({ queryKey: ["itineraries"] });
       queryClient.invalidateQueries({ queryKey: queryKeys.userItineraries });
     },
   }));
@@ -163,7 +167,7 @@ export const useRemoveItineraryMutation = () => {
       }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['itineraries'] });
+      queryClient.invalidateQueries({ queryKey: ["itineraries"] });
       queryClient.invalidateQueries({ queryKey: queryKeys.userItineraries });
     },
   }));

@@ -1,6 +1,6 @@
 import { A } from "@solidjs/router";
 import { Component, createSignal, onMount } from "solid-js";
-import { ServerCrash, RefreshCw, Home, Wifi, AlertTriangle, Compass } from 'lucide-solid';
+import { ServerCrash, RefreshCw, Home, Wifi, AlertTriangle, Compass } from "lucide-solid";
 import { Button } from "~/ui/button";
 
 const ServerDownPage: Component = () => {
@@ -13,19 +13,19 @@ const ServerDownPage: Component = () => {
 
     try {
       // Test connection to the server
-      const response = await fetch('/api/v1/health', {
-        method: 'GET',
-        signal: AbortSignal.timeout(5000) // 5 second timeout
+      const response = await fetch("/api/v1/health", {
+        method: "GET",
+        signal: AbortSignal.timeout(5000), // 5 second timeout
       });
 
       if (response.ok) {
         // Server is back up, reload the page
         window.location.reload();
       } else {
-        throw new Error('Server still unavailable');
+        throw new Error("Server still unavailable");
       }
     } catch (error) {
-      console.log('Server still down:', error);
+      console.log("Server still down:", error);
       // Keep the retry button enabled for another attempt
     } finally {
       setIsRetrying(false);
@@ -82,7 +82,7 @@ const ServerDownPage: Component = () => {
             <div class="flex justify-between">
               <span class="text-gray-600 dark:text-gray-400">Last Check:</span>
               <span class="text-gray-900 dark:text-white">
-                {lastAttempt() ? lastAttempt()!.toLocaleTimeString() : 'Never'}
+                {lastAttempt() ? lastAttempt()!.toLocaleTimeString() : "Never"}
               </span>
             </div>
             <div class="flex justify-between">
@@ -94,20 +94,11 @@ const ServerDownPage: Component = () => {
 
         {/* Action Buttons */}
         <div class="space-y-3 sm:space-y-0 sm:space-x-4 sm:flex sm:justify-center mb-8">
-          <Button
-            onClick={handleRetry}
-            disabled={isRetrying()}
-            class="w-full sm:w-auto gap-2"
-          >
-            <RefreshCw class={`w-4 h-4 ${isRetrying() ? 'animate-spin' : ''}`} />
-            {isRetrying() ? 'Checking...' : 'Try Again'}
+          <Button onClick={handleRetry} disabled={isRetrying()} class="w-full sm:w-auto gap-2">
+            <RefreshCw class={`w-4 h-4 ${isRetrying() ? "animate-spin" : ""}`} />
+            {isRetrying() ? "Checking..." : "Try Again"}
           </Button>
-          <Button
-            variant="outline"
-            as={A}
-            href="/"
-            class="w-full sm:w-auto gap-2"
-          >
+          <Button variant="outline" as={A} href="/" class="w-full sm:w-auto gap-2">
             <Home class="w-4 h-4" />
             Back to Home
           </Button>
@@ -172,8 +163,8 @@ const ServerDownPage: Component = () => {
             <span class="text-sm font-medium text-orange-900 dark:text-orange-100">Travel Tip</span>
           </div>
           <p class="text-xs text-slate-700 dark:text-slate-200">
-            Server downtime is like weather delays - they happen! Use this time to review your saved places
-            or plan your next adventure. We'll be back online soon! ✈️
+            Server downtime is like weather delays - they happen! Use this time to review your saved
+            places or plan your next adventure. We'll be back online soon! ✈️
           </p>
         </div>
       </div>

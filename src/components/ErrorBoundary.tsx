@@ -57,29 +57,20 @@ const ErrorBoundary: Component<ErrorBoundaryProps> = (props) => {
                 {/* Dynamic Icon based on error type */}
                 <div class="mb-8 relative">
                   <div
-                    class={`w-24 h-24 mx-auto rounded-full flex items-center justify-center animate-pulse shadow-[0_18px_38px_rgba(248,113,113,0.25)] ${error instanceof APIError &&
-                      error.code === "CONNECTION_REFUSED"
-                      ? "bg-orange-500"
-                      : error instanceof APIError &&
-                        error.code === "NETWORK_ERROR"
-                        ? "bg-amber-500"
-                        : "bg-red-500"
-                      }`}
+                    class={`w-24 h-24 mx-auto rounded-full flex items-center justify-center animate-pulse shadow-[0_18px_38px_rgba(248,113,113,0.25)] ${
+                      error instanceof APIError && error.code === "CONNECTION_REFUSED"
+                        ? "bg-orange-500"
+                        : error instanceof APIError && error.code === "NETWORK_ERROR"
+                          ? "bg-amber-500"
+                          : "bg-red-500"
+                    }`}
                   >
                     <Show
-                      when={
-                        error instanceof APIError &&
-                        error.code === "CONNECTION_REFUSED"
-                      }
+                      when={error instanceof APIError && error.code === "CONNECTION_REFUSED"}
                       fallback={
                         <Show
-                          when={
-                            error instanceof APIError &&
-                            error.code === "NETWORK_ERROR"
-                          }
-                          fallback={
-                            <AlertTriangle class="w-12 h-12 text-white" />
-                          }
+                          when={error instanceof APIError && error.code === "NETWORK_ERROR"}
+                          fallback={<AlertTriangle class="w-12 h-12 text-white" />}
                         >
                           <ServerCrash class="w-12 h-12 text-white" />
                         </Show>
@@ -92,21 +83,17 @@ const ErrorBoundary: Component<ErrorBoundaryProps> = (props) => {
 
                 {/* Error Message */}
                 <h1 class="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-white mb-4">
-                  {error instanceof APIError &&
-                    error.code === "CONNECTION_REFUSED"
+                  {error instanceof APIError && error.code === "CONNECTION_REFUSED"
                     ? "Server Unavailable"
-                    : error instanceof APIError &&
-                      error.code === "NETWORK_ERROR"
+                    : error instanceof APIError && error.code === "NETWORK_ERROR"
                       ? "Network Error"
                       : "Something went wrong"}
                 </h1>
 
                 <p class="text-gray-600 dark:text-gray-400 mb-6 leading-relaxed">
-                  {error instanceof APIError &&
-                    error.code === "CONNECTION_REFUSED"
+                  {error instanceof APIError && error.code === "CONNECTION_REFUSED"
                     ? "We't reach our servers right now. They might be down for maintenance or experiencing issues."
-                    : error instanceof APIError &&
-                      error.code === "NETWORK_ERROR"
+                    : error instanceof APIError && error.code === "NETWORK_ERROR"
                       ? "There seems to be a problem with your network connection. Please check your internet connection and try again."
                       : "An unexpected error occurred. Our team has been notified and is working on a fix."}
                 </p>
@@ -133,8 +120,7 @@ const ErrorBoundary: Component<ErrorBoundaryProps> = (props) => {
                         </div>
                       </Show>
                       <div>
-                        <strong>Retry Count:</strong>{" "}
-                        {errorInfo()?.retryCount ?? 0}
+                        <strong>Retry Count:</strong> {errorInfo()?.retryCount ?? 0}
                       </div>
                     </div>
                   </details>
@@ -159,35 +145,19 @@ const ErrorBoundary: Component<ErrorBoundaryProps> = (props) => {
                 </div>
 
                 {/* Helpful Links for specific errors */}
-                <Show
-                  when={
-                    error instanceof APIError &&
-                    error.code === "CONNECTION_REFUSED"
-                  }
-                >
+                <Show when={error instanceof APIError && error.code === "CONNECTION_REFUSED"}>
                   <div class="text-sm text-gray-500 dark:text-gray-400">
-                    <p class="mb-2">
-                      While our servers are down, you can still:
-                    </p>
+                    <p class="mb-2">While our servers are down, you can still:</p>
                     <div class="flex flex-wrap justify-center gap-2">
-                      <A
-                        href="/favorites"
-                        class="text-blue-600 hover:text-blue-700"
-                      >
+                      <A href="/favorites" class="text-blue-600 hover:text-blue-700">
                         View Favorites
                       </A>
                       <span>•</span>
-                      <A
-                        href="/lists"
-                        class="text-blue-600 hover:text-blue-700"
-                      >
+                      <A href="/lists" class="text-blue-600 hover:text-blue-700">
                         Browse Lists
                       </A>
                       <span>•</span>
-                      <A
-                        href="/profile"
-                        class="text-blue-600 hover:text-blue-700"
-                      >
+                      <A href="/profile" class="text-blue-600 hover:text-blue-700">
                         Edit Profile
                       </A>
                     </div>

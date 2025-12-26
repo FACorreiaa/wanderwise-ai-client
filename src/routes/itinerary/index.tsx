@@ -13,9 +13,7 @@ import { useSaveItineraryMutation } from "@/lib/api/itineraries";
 
 export default function ItineraryPage() {
   const [searchParams] = useSearchParams();
-  const [message] = createSignal(
-    (searchParams.message as string) || "Show me an itinerary"
-  );
+  const [message] = createSignal((searchParams.message as string) || "Show me an itinerary");
   const [cityName] = createSignal((searchParams.cityName as string) || "London");
   const [profileId] = createSignal((searchParams.profileId as string) || "");
 
@@ -33,8 +31,10 @@ export default function ItineraryPage() {
 
     // Check if data is wrapped in itinerary_response that contains the actual payload
     // Server sometimes returns: { itinerary_response: { general_city_data, points_of_interest, itinerary_response, session_id } }
-    if (data.itinerary_response &&
-      (data.itinerary_response.general_city_data || data.itinerary_response.points_of_interest)) {
+    if (
+      data.itinerary_response &&
+      (data.itinerary_response.general_city_data || data.itinerary_response.points_of_interest)
+    ) {
       const inner = data.itinerary_response;
       return {
         general_city_data: inner.general_city_data,
@@ -54,59 +54,68 @@ export default function ItineraryPage() {
   // Connect on mount - but only if we don't already have data from navigation
   onMount(() => {
     const sessionIdFromUrl = searchParams.sessionId as string;
-    const streaming = searchParams.streaming === 'true';
+    const streaming = searchParams.streaming === "true";
     const domain = searchParams.domain as string;
 
-    console.log('🔍 Itinerary page mount - checking params:', { sessionIdFromUrl, streaming, domain });
+    console.log("🔍 Itinerary page mount - checking params:", {
+      sessionIdFromUrl,
+      streaming,
+      domain,
+    });
 
     // If we have a sessionId in the URL, we came from navigation (chat page or deep link)
     // In this case, DON'T start a new connection - the FloatingChat will handle updates
     if (sessionIdFromUrl) {
-      console.log('📍 SessionId found in URL, attempting to restore data...');
+      console.log("📍 SessionId found in URL, attempting to restore data...");
 
       // Try to restore data from session storage
-      const completedSession = sessionStorage.getItem('completedStreamingSession');
+      const completedSession = sessionStorage.getItem("completedStreamingSession");
       if (completedSession) {
         try {
           const parsed = JSON.parse(completedSession);
           const parsedData = parsed.data || parsed;
-          if (parsedData && (parsed.sessionId === sessionIdFromUrl || parsedData.session_id === sessionIdFromUrl)) {
-            console.log('✅ Found completed streaming session data, restoring...');
+          if (
+            parsedData &&
+            (parsed.sessionId === sessionIdFromUrl || parsedData.session_id === sessionIdFromUrl)
+          ) {
+            console.log("✅ Found completed streaming session data, restoring...");
             const normalizedData = normalizeStoredData(parsedData);
-            console.log('📦 Normalized data:', normalizedData);
-            setStore('data', normalizedData);
+            console.log("📦 Normalized data:", normalizedData);
+            setStore("data", normalizedData);
             return;
           }
         } catch (e) {
-          console.warn('Failed to parse completed streaming session:', e);
+          console.warn("Failed to parse completed streaming session:", e);
         }
       }
 
       // Check active streaming session
-      const activeSession = sessionStorage.getItem('active_streaming_session');
+      const activeSession = sessionStorage.getItem("active_streaming_session");
       if (activeSession) {
         try {
           const parsed = JSON.parse(activeSession);
           if (parsed.sessionId === sessionIdFromUrl && parsed.data) {
-            console.log('✅ Found active streaming session data, restoring...');
+            console.log("✅ Found active streaming session data, restoring...");
             const normalizedData = normalizeStoredData(parsed.data);
-            console.log('📦 Normalized data:', normalizedData);
-            setStore('data', normalizedData);
+            console.log("📦 Normalized data:", normalizedData);
+            setStore("data", normalizedData);
             return;
           }
         } catch (e) {
-          console.warn('Failed to parse active streaming session:', e);
+          console.warn("Failed to parse active streaming session:", e);
         }
       }
 
       // No data found but we have sessionId - data might still be streaming
       // DON'T start a new connection - FloatingChat will handle updates via useChatSession
-      console.log('⏳ SessionId present but no cached data yet - waiting for streaming data via FloatingChat...');
+      console.log(
+        "⏳ SessionId present but no cached data yet - waiting for streaming data via FloatingChat...",
+      );
       return;
     }
 
     // No sessionId in URL - this is a fresh page load, start new connection
-    console.log('🆕 Fresh page load (no sessionId), starting new streaming connection...');
+    console.log("🆕 Fresh page load (no sessionId), starting new streaming connection...");
     connect();
   });
 
@@ -124,14 +133,14 @@ export default function ItineraryPage() {
     [...itineraryPois, ...generalPois].forEach((poi) => {
       if (poi && poi.name) {
         // Normalize coordinates and ensure ID exists
-        const lat = typeof poi.latitude === 'string' ? parseFloat(poi.latitude) : poi.latitude;
-        const lng = typeof poi.longitude === 'string' ? parseFloat(poi.longitude) : poi.longitude;
+        const lat = typeof poi.latitude === "string" ? parseFloat(poi.latitude) : poi.latitude;
+        const lng = typeof poi.longitude === "string" ? parseFloat(poi.longitude) : poi.longitude;
 
         poiMap.set(poi.name, {
           ...poi,
           id: poi.name, // Use name as ID since it's unique enough for display
           latitude: lat || 0,
-          longitude: lng || 0
+          longitude: lng || 0,
         });
       }
     });
@@ -152,11 +161,13 @@ export default function ItineraryPage() {
 
   const handleShare = () => {
     if (navigator.share) {
-      navigator.share({
-        title: `Itinerary for ${cityName()}`,
-        text: `Check out this itinerary for ${cityName()}!`,
-        url: window.location.href,
-      }).catch(console.error);
+      navigator
+        .share({
+          title: `Itinerary for ${cityName()}`,
+          text: `Check out this itinerary for ${cityName()}!`,
+          url: window.location.href,
+        })
+        .catch(console.error);
     } else {
       console.log("Share API not supported");
     }
@@ -164,7 +175,7 @@ export default function ItineraryPage() {
 
   const handleBookmark = async () => {
     const city = cityData();
-    const sessionId = searchParams.sessionId as string || store.data?.session_id;
+    const sessionId = (searchParams.sessionId as string) || store.data?.session_id;
     // const itinerary = itineraryData();
 
     if (!city?.city) {
@@ -194,10 +205,8 @@ export default function ItineraryPage() {
 
   const handleItemFavorite = (poi: any) => {
     const name = poi.name;
-    setFavorites(prev =>
-      prev.includes(name)
-        ? prev.filter(n => n !== name)
-        : [...prev, name]
+    setFavorites((prev) =>
+      prev.includes(name) ? prev.filter((n) => n !== name) : [...prev, name],
     );
     console.log(`Toggled favorite for: ${name}`);
   };
@@ -205,15 +214,18 @@ export default function ItineraryPage() {
   // Map Content
   const MapContent = (
     <div class="h-full w-full bg-slate-100 dark:bg-slate-900 relative">
-      <Show when={allPois().length > 0} fallback={
-        <div class="h-full w-full flex items-center justify-center text-muted-foreground p-4 text-center">
-          {store.isLoading ? "Loading map data..." : "No items to display on map"}
-        </div>
-      }>
+      <Show
+        when={allPois().length > 0}
+        fallback={
+          <div class="h-full w-full flex items-center justify-center text-muted-foreground p-4 text-center">
+            {store.isLoading ? "Loading map data..." : "No items to display on map"}
+          </div>
+        }
+      >
         <MapComponent
           center={[
             (allPois()[0]?.longitude as number) || 0,
-            (allPois()[0]?.latitude as number) || 0
+            (allPois()[0]?.latitude as number) || 0,
           ]}
           pointsOfInterest={allPois()}
           zoom={12}
@@ -234,20 +246,19 @@ export default function ItineraryPage() {
   // List Content
   const ListContent = (
     <div class="h-full overflow-y-auto p-4 md:p-6 bg-slate-50/50 dark:bg-slate-950/50 backdrop-blur-sm">
-      <div class="max-w-3xl mx-auto pb-20"> {/* pb-20 for FAB space */}
+      <div class="max-w-3xl mx-auto pb-20">
+        {" "}
+        {/* pb-20 for FAB space */}
         <CityInfoHeader cityData={cityData()} isLoading={store.isLoading && !cityData()} />
-
         <Show when={store.error}>
           <div class="mb-6 p-4 rounded-xl bg-red-50 border border-red-200 text-red-600 dark:bg-red-900/20 dark:border-red-900/50 dark:text-red-400">
             <p class="font-bold">Unable to load itinerary</p>
             <p class="text-sm opacity-90">{store.error?.message}</p>
           </div>
         </Show>
-
         <Show when={store.isLoading && !store.data}>
           <ItinerarySkeleton />
         </Show>
-
         {/* Display Generic Points of Interest first if available */}
         <Show when={pointsOfInterest().length > 0}>
           <div class="mb-8">
@@ -263,7 +274,6 @@ export default function ItineraryPage() {
             />
           </div>
         </Show>
-
         {/* Display Custom Itinerary */}
         <Show when={itineraryData()} keyed>
           {(itinerary) => (
@@ -286,14 +296,10 @@ export default function ItineraryPage() {
 
   return (
     <>
-      <SplitView
-        listContent={ListContent}
-        mapContent={MapContent}
-        initialMode="split"
-      />
+      <SplitView listContent={ListContent} mapContent={MapContent} initialMode="split" />
       <FloatingChat
         getStreamingData={() => store.data}
-        setStreamingData={(fn) => setStore('data', fn)}
+        setStreamingData={(fn) => setStore("data", fn)}
         initialSessionId={searchParams.sessionId as string}
       />
     </>

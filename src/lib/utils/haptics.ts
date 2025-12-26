@@ -5,43 +5,43 @@
  * Falls back gracefully on desktop or unsupported devices.
  */
 
-export type HapticPattern = 'light' | 'medium' | 'heavy' | 'success' | 'warning' | 'error';
+export type HapticPattern = "light" | "medium" | "heavy" | "success" | "warning" | "error";
 
 /**
  * Check if haptic feedback is supported
  */
 export function isHapticSupported(): boolean {
-  return 'vibrate' in navigator;
+  return "vibrate" in navigator;
 }
 
 /**
  * Trigger haptic feedback with a specific pattern
  */
-export function triggerHaptic(pattern: HapticPattern = 'light'): void {
+export function triggerHaptic(pattern: HapticPattern = "light"): void {
   if (!isHapticSupported()) {
     return;
   }
 
   // Vibration patterns in milliseconds [vibrate, pause, vibrate, ...]
   const patterns: Record<HapticPattern, number | number[]> = {
-    light: 10,                // Single short vibration
-    medium: 20,               // Single medium vibration
-    heavy: 30,                // Single strong vibration
-    success: [10, 50, 10],    // Double tap pattern
+    light: 10, // Single short vibration
+    medium: 20, // Single medium vibration
+    heavy: 30, // Single strong vibration
+    success: [10, 50, 10], // Double tap pattern
     warning: [20, 100, 20, 100, 20], // Triple tap pattern
-    error: [30, 50, 30],      // Strong double tap
+    error: [30, 50, 30], // Strong double tap
   };
 
   const vibrationPattern = patterns[pattern];
 
   try {
-    if (typeof vibrationPattern === 'number') {
+    if (typeof vibrationPattern === "number") {
       navigator.vibrate(vibrationPattern);
     } else {
       navigator.vibrate(vibrationPattern);
     }
   } catch (error) {
-    console.warn('Haptic feedback failed:', error);
+    console.warn("Haptic feedback failed:", error);
   }
 }
 
@@ -52,32 +52,32 @@ export const haptics = {
   /**
    * Light tap feedback for button presses
    */
-  tap: () => triggerHaptic('light'),
+  tap: () => triggerHaptic("light"),
 
   /**
    * Medium feedback for selections or toggles
    */
-  select: () => triggerHaptic('medium'),
+  select: () => triggerHaptic("medium"),
 
   /**
    * Heavy feedback for important actions
    */
-  impact: () => triggerHaptic('heavy'),
+  impact: () => triggerHaptic("heavy"),
 
   /**
    * Success feedback for completed actions
    */
-  success: () => triggerHaptic('success'),
+  success: () => triggerHaptic("success"),
 
   /**
    * Warning feedback for caution states
    */
-  warning: () => triggerHaptic('warning'),
+  warning: () => triggerHaptic("warning"),
 
   /**
    * Error feedback for failures
    */
-  error: () => triggerHaptic('error'),
+  error: () => triggerHaptic("error"),
 
   /**
    * Custom pattern feedback
@@ -87,7 +87,7 @@ export const haptics = {
       try {
         navigator.vibrate(pattern);
       } catch (error) {
-        console.warn('Custom haptic feedback failed:', error);
+        console.warn("Custom haptic feedback failed:", error);
       }
     }
   },
@@ -99,7 +99,7 @@ export const haptics = {
     if (isHapticSupported()) {
       navigator.vibrate(0);
     }
-  }
+  },
 };
 
 /**
@@ -109,6 +109,6 @@ export const haptics = {
 export function useHaptic() {
   return {
     isSupported: isHapticSupported(),
-    ...haptics
+    ...haptics,
   };
 }

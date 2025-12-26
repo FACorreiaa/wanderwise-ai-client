@@ -1,8 +1,8 @@
-import { Show } from 'solid-js';
-import { Title, Meta } from '@solidjs/meta';
-import { useAuth } from '~/contexts/AuthContext';
-import LoggedInDashboard from '~/components/features/Dashboard/LoggedInDashboard';
-import PublicLandingPage from '~/components/features/Home/PublicLandingPage';
+import { Show } from "solid-js";
+import { Title, Meta } from "@solidjs/meta";
+import { useAuth } from "~/contexts/AuthContext";
+import LoggedInDashboard from "~/components/features/Dashboard/LoggedInDashboard";
+import PublicLandingPage from "~/components/features/Home/PublicLandingPage";
 
 export default function Index() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -10,13 +10,25 @@ export default function Index() {
   return (
     <>
       <Title>Loci - AI-Powered Travel Discovery & Personalized Recommendations</Title>
-      <Meta name="description" content="Discover your perfect travel experiences with Loci's AI-powered recommendations. Get personalized itineraries, restaurant suggestions, and activities tailored to your preferences." />
-      <Meta name="keywords" content="AI travel planner, personalized travel, trip planning, travel recommendations, itinerary planner, restaurant finder, travel discovery, AI travel assistant" />
+      <Meta
+        name="description"
+        content="Discover your perfect travel experiences with Loci's AI-powered recommendations. Get personalized itineraries, restaurant suggestions, and activities tailored to your preferences."
+      />
+      <Meta
+        name="keywords"
+        content="AI travel planner, personalized travel, trip planning, travel recommendations, itinerary planner, restaurant finder, travel discovery, AI travel assistant"
+      />
       <Meta property="og:title" content="Loci - AI-Powered Travel Discovery" />
-      <Meta property="og:description" content="Discover your perfect travel experiences with AI-powered, personalized recommendations for itineraries, restaurants, and activities." />
+      <Meta
+        property="og:description"
+        content="Discover your perfect travel experiences with AI-powered, personalized recommendations for itineraries, restaurants, and activities."
+      />
       <Meta property="og:url" content="https://loci.app" />
       <Meta name="twitter:title" content="Loci - AI-Powered Travel Discovery" />
-      <Meta name="twitter:description" content="Discover your perfect travel experiences with AI-powered, personalized recommendations." />
+      <Meta
+        name="twitter:description"
+        content="Discover your perfect travel experiences with AI-powered, personalized recommendations."
+      />
       <link rel="canonical" href="https://loci.app" />
 
       {/* Structured Data - Organization */}
@@ -24,13 +36,12 @@ export default function Index() {
         {JSON.stringify({
           "@context": "https://schema.org",
           "@type": "Organization",
-          "name": "Loci",
-          "url": "https://loci.app",
-          "logo": "https://loci.app/images/loci.png",
-          "description": "AI-powered travel discovery platform delivering hyper-personalized city exploration recommendations",
-          "sameAs": [
-            "https://twitter.com/loci"
-          ]
+          name: "Loci",
+          url: "https://loci.app",
+          logo: "https://loci.app/images/loci.png",
+          description:
+            "AI-powered travel discovery platform delivering hyper-personalized city exploration recommendations",
+          sameAs: ["https://twitter.com/loci"],
         })}
       </script>
 
@@ -39,17 +50,17 @@ export default function Index() {
         {JSON.stringify({
           "@context": "https://schema.org",
           "@type": "WebSite",
-          "name": "Loci",
-          "url": "https://loci.app",
-          "description": "AI-Powered Travel Discovery & Personalized Recommendations",
-          "potentialAction": {
+          name: "Loci",
+          url: "https://loci.app",
+          description: "AI-Powered Travel Discovery & Personalized Recommendations",
+          potentialAction: {
             "@type": "SearchAction",
-            "target": {
+            target: {
               "@type": "EntryPoint",
-              "urlTemplate": "https://loci.app/discover?q={search_term_string}"
+              urlTemplate: "https://loci.app/discover?q={search_term_string}",
             },
-            "query-input": "required name=search_term_string"
-          }
+            "query-input": "required name=search_term_string",
+          },
         })}
       </script>
 
@@ -58,30 +69,33 @@ export default function Index() {
         {JSON.stringify({
           "@context": "https://schema.org",
           "@type": "SoftwareApplication",
-          "name": "Loci - AI Travel Companion",
-          "applicationCategory": "TravelApplication",
-          "operatingSystem": "Web, iOS (coming soon), Android (coming soon)",
-          "offers": {
+          name: "Loci - AI Travel Companion",
+          applicationCategory: "TravelApplication",
+          operatingSystem: "Web, iOS (coming soon), Android (coming soon)",
+          offers: {
             "@type": "Offer",
-            "price": "0",
-            "priceCurrency": "USD"
+            price: "0",
+            priceCurrency: "USD",
           },
-          "aggregateRating": {
+          aggregateRating: {
             "@type": "AggregateRating",
-            "ratingValue": "4.8",
-            "ratingCount": "1250"
-          }
+            ratingValue: "4.8",
+            ratingCount: "1250",
+          },
         })}
       </script>
 
-      <Show when={!isLoading()} fallback={
-        <div class="min-h-screen flex items-center justify-center">
-          <div class="glass-panel gradient-border rounded-2xl p-6 text-center shadow-lg">
-            <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-sky-600 mx-auto mb-4" />
-            <p class="text-gray-600 dark:text-gray-200 font-medium">Loading...</p>
+      <Show
+        when={!isLoading()}
+        fallback={
+          <div class="min-h-screen flex items-center justify-center">
+            <div class="glass-panel gradient-border rounded-2xl p-6 text-center shadow-lg">
+              <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-sky-600 mx-auto mb-4" />
+              <p class="text-gray-600 dark:text-gray-200 font-medium">Loading...</p>
+            </div>
           </div>
-        </div>
-      }>
+        }
+      >
         <Show when={isAuthenticated()} fallback={<PublicLandingPage />}>
           <LoggedInDashboard />
         </Show>

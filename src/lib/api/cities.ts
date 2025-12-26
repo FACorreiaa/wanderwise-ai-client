@@ -1,13 +1,13 @@
 // Cities API functions - Using RPC
-import { useQuery } from '@tanstack/solid-query';
-import { createClient } from '@connectrpc/connect';
-import { create } from '@bufbuild/protobuf';
+import { useQuery } from "@tanstack/solid-query";
+import { createClient } from "@connectrpc/connect";
+import { create } from "@bufbuild/protobuf";
 import {
   CityService,
   SearchCitiesRequestSchema,
-} from '@buf/loci_loci-proto.bufbuild_es/loci/city/city_pb.js';
-import { transport } from '../connect-transport';
-import { queryKeys } from './shared';
+} from "@buf/loci_loci-proto.bufbuild_es/loci/city/city_pb.js";
+import { transport } from "../connect-transport";
+import { queryKeys } from "./shared";
 
 const cityClient = createClient(CityService, transport);
 
@@ -36,7 +36,7 @@ const mapProtoToCity = (proto: any): City => ({
   name: proto.name,
   country: proto.country,
   state_province: proto.stateProvince,
-  ai_summary: proto.aiSummary || '',
+  ai_summary: proto.aiSummary || "",
   center_latitude: proto.centerLatitude,
   center_longitude: proto.centerLongitude,
 });
@@ -47,7 +47,7 @@ const mapProtoToCity = (proto: any): City => ({
 
 // Get all cities from database via RPC
 export const getCities = async (): Promise<City[]> => {
-  const request = create(SearchCitiesRequestSchema, { query: '' });
+  const request = create(SearchCitiesRequestSchema, { query: "" });
   const response = await cityClient.searchCities(request);
   return (response.cities || []).map(mapProtoToCity);
 };
@@ -64,12 +64,12 @@ export const useCities = () => {
 // Helper function to convert backend cities to frontend format
 export const convertCitiesToDropdownFormat = (cities: City[]): CityWithCoordinates[] => {
   const frontendCities: CityWithCoordinates[] = [
-    { id: 'all', label: 'All Cities', lat: null, lon: null }
+    { id: "all", label: "All Cities", lat: null, lon: null },
   ];
 
-  cities.forEach(city => {
+  cities.forEach((city) => {
     frontendCities.push({
-      id: city.name.toLowerCase().replace(/\s+/g, '-'),
+      id: city.name.toLowerCase().replace(/\s+/g, "-"),
       label: city.name,
       lat: city.center_latitude || null,
       lon: city.center_longitude || null,

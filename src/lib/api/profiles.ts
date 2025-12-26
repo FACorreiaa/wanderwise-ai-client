@@ -1,7 +1,7 @@
 // Search Profile queries and mutations - Using RPC
-import { useQuery, useMutation, useQueryClient } from '@tanstack/solid-query';
-import { createClient } from '@connectrpc/connect';
-import { create } from '@bufbuild/protobuf';
+import { useQuery, useMutation, useQueryClient } from "@tanstack/solid-query";
+import { createClient } from "@connectrpc/connect";
+import { create } from "@bufbuild/protobuf";
 import {
   ProfileService,
   GetUserPreferenceProfilesRequestSchema,
@@ -12,11 +12,18 @@ import {
   SetDefaultProfileRequestSchema,
   GetDomainPreferencesRequestSchema,
   GetCombinedFiltersRequestSchema,
-} from '@buf/loci_loci-proto.bufbuild_es/loci/profile/profile_pb.js';
-import { transport } from '../connect-transport';
-import { queryKeys } from './shared';
-import { getAuthToken } from '../api';
-import type { SearchProfile, TravelProfileFormData, AccommodationPreferences, DiningPreferences, ActivityPreferences, ItineraryPreferences } from './types';
+} from "@buf/loci_loci-proto.bufbuild_es/loci/profile/profile_pb.js";
+import { transport } from "../connect-transport";
+import { queryKeys } from "./shared";
+import { getAuthToken } from "../api";
+import type {
+  SearchProfile,
+  TravelProfileFormData,
+  AccommodationPreferences,
+  DiningPreferences,
+  ActivityPreferences,
+  ItineraryPreferences,
+} from "./types";
 
 const profileClient = createClient(ProfileService, transport);
 
@@ -26,54 +33,60 @@ const mapProtoToSearchProfile = (profile: any): SearchProfile => ({
   profile_name: profile.profileName,
   is_default: profile.isDefault ?? false,
   search_radius_km: profile.searchRadiusKm ?? 0,
-  preferred_time: profile.preferredTime ?? 'DAY_PREFERENCE_ANY',
+  preferred_time: profile.preferredTime ?? "DAY_PREFERENCE_ANY",
   budget_level: profile.budgetLevel ?? 0,
-  preferred_pace: profile.preferredPace ?? 'SEARCH_PACE_ANY',
+  preferred_pace: profile.preferredPace ?? "SEARCH_PACE_ANY",
   prefer_accessible_pois: profile.preferAccessiblePois ?? false,
   prefer_outdoor_seating: profile.preferOutdoorSeating ?? false,
   prefer_dog_friendly: profile.preferDogFriendly ?? false,
   preferred_vibes: profile.preferredVibes || [],
-  preferred_transport: profile.preferredTransport ?? 'TRANSPORT_PREFERENCE_ANY',
+  preferred_transport: profile.preferredTransport ?? "TRANSPORT_PREFERENCE_ANY",
   dietary_needs: profile.dietaryNeeds || [],
   interests: profile.interests || null,
   tags: profile.tags || null,
   user_latitude: profile.userLatitude || null,
   user_longitude: profile.userLongitude || null,
-  created_at: profile.createdAt?.toDate?.()?.toISOString() || '',
-  updated_at: profile.updatedAt?.toDate?.()?.toISOString() || '',
+  created_at: profile.createdAt?.toDate?.()?.toISOString() || "",
+  updated_at: profile.updatedAt?.toDate?.()?.toISOString() || "",
 });
 
 const mapProtoToAccommodationPreferences = (prefs: any): AccommodationPreferences => ({
   accommodation_type: prefs?.accommodationType || [],
-  star_rating: prefs?.starRating ? { min: prefs.starRating.min || 0, max: prefs.starRating.max || 5 } : { min: 0, max: 5 },
-  price_range_per_night: prefs?.priceRangePerNight ? { min: prefs.priceRangePerNight.min || 0, max: prefs.priceRangePerNight.max || 1000 } : { min: 0, max: 1000 },
+  star_rating: prefs?.starRating
+    ? { min: prefs.starRating.min || 0, max: prefs.starRating.max || 5 }
+    : { min: 0, max: 5 },
+  price_range_per_night: prefs?.priceRangePerNight
+    ? { min: prefs.priceRangePerNight.min || 0, max: prefs.priceRangePerNight.max || 1000 }
+    : { min: 0, max: 1000 },
   amenities: prefs?.amenities || [],
   room_type: prefs?.roomType || [],
-  chain_preference: prefs?.chainPreference || '',
+  chain_preference: prefs?.chainPreference || "",
   cancellation_policy: prefs?.cancellationPolicy || [],
-  booking_flexibility: prefs?.bookingFlexibility || '',
+  booking_flexibility: prefs?.bookingFlexibility || "",
 });
 
 const mapProtoToDiningPreferences = (prefs: any): DiningPreferences => ({
   cuisine_types: prefs?.cuisineTypes || [],
   meal_types: prefs?.mealTypes || [],
   service_style: prefs?.serviceStyle || [],
-  price_range_per_person: prefs?.priceRangePerPerson ? { min: prefs.priceRangePerPerson.min || 0, max: prefs.priceRangePerPerson.max || 100 } : { min: 0, max: 100 },
+  price_range_per_person: prefs?.priceRangePerPerson
+    ? { min: prefs.priceRangePerPerson.min || 0, max: prefs.priceRangePerPerson.max || 100 }
+    : { min: 0, max: 100 },
   dietary_needs: prefs?.dietaryNeeds || [],
   allergen_free: prefs?.allergenFree || [],
   michelin_rated: prefs?.michelinRated || false,
   local_recommendations: prefs?.localRecommendations || false,
-  chain_vs_local: prefs?.chainVsLocal || '',
+  chain_vs_local: prefs?.chainVsLocal || "",
   organic_preference: prefs?.organicPreference || false,
   outdoor_seating_preferred: prefs?.outdoorSeatingPreferred || false,
 });
 
 const mapProtoToActivityPreferences = (prefs: any): ActivityPreferences => ({
   activity_categories: prefs?.activityCategories || [],
-  physical_activity_level: prefs?.physicalActivityLevel || '',
-  indoor_outdoor_preference: prefs?.indoorOutdoorPreference || '',
-  cultural_immersion_level: prefs?.culturalImmersionLevel || '',
-  must_see_vs_hidden_gems: prefs?.mustSeeVsHiddenGems || '',
+  physical_activity_level: prefs?.physicalActivityLevel || "",
+  indoor_outdoor_preference: prefs?.indoorOutdoorPreference || "",
+  cultural_immersion_level: prefs?.culturalImmersionLevel || "",
+  must_see_vs_hidden_gems: prefs?.mustSeeVsHiddenGems || "",
   educational_preference: prefs?.educationalPreference || false,
   photography_opportunities: prefs?.photographyOpportunities || false,
   season_specific_activities: prefs?.seasonSpecificActivities || [],
@@ -82,15 +95,15 @@ const mapProtoToActivityPreferences = (prefs: any): ActivityPreferences => ({
 });
 
 const mapProtoToItineraryPreferences = (prefs: any): ItineraryPreferences => ({
-  planning_style: prefs?.planningStyle || '',
-  preferred_pace: prefs?.preferredPace || '',
-  time_flexibility: prefs?.timeFlexibility || '',
-  morning_vs_evening: prefs?.morningVsEvening || '',
-  weekend_vs_weekday: prefs?.weekendVsWeekday || '',
+  planning_style: prefs?.planningStyle || "",
+  preferred_pace: prefs?.preferredPace || "",
+  time_flexibility: prefs?.timeFlexibility || "",
+  morning_vs_evening: prefs?.morningVsEvening || "",
+  weekend_vs_weekday: prefs?.weekendVsWeekday || "",
   preferred_seasons: prefs?.preferredSeasons || [],
   avoid_peak_season: prefs?.avoidPeakSeason || false,
-  adventure_vs_relaxation: prefs?.adventureVsRelaxation || '',
-  spontaneous_vs_planned: prefs?.spontaneousVsPlanned || '',
+  adventure_vs_relaxation: prefs?.adventureVsRelaxation || "",
+  spontaneous_vs_planned: prefs?.spontaneousVsPlanned || "",
 });
 
 // ==================
@@ -158,7 +171,7 @@ export const useDefaultSearchProfile = () => {
 // Get accommodation preferences for a profile
 export const useAccommodationPreferences = (profileId: string) => {
   return useQuery(() => ({
-    queryKey: ['profiles', profileId, 'accommodation'],
+    queryKey: ["profiles", profileId, "accommodation"],
     queryFn: async (): Promise<AccommodationPreferences> => {
       const request = create(GetDomainPreferencesRequestSchema, { profileId });
       const response = await profileClient.getAccommodationPreferences(request);
@@ -172,7 +185,7 @@ export const useAccommodationPreferences = (profileId: string) => {
 // Get dining preferences for a profile
 export const useDiningPreferences = (profileId: string) => {
   return useQuery(() => ({
-    queryKey: ['profiles', profileId, 'dining'],
+    queryKey: ["profiles", profileId, "dining"],
     queryFn: async (): Promise<DiningPreferences> => {
       const request = create(GetDomainPreferencesRequestSchema, { profileId });
       const response = await profileClient.getDiningPreferences(request);
@@ -186,7 +199,7 @@ export const useDiningPreferences = (profileId: string) => {
 // Get activity preferences for a profile
 export const useActivityPreferences = (profileId: string) => {
   return useQuery(() => ({
-    queryKey: ['profiles', profileId, 'activities'],
+    queryKey: ["profiles", profileId, "activities"],
     queryFn: async (): Promise<ActivityPreferences> => {
       const request = create(GetDomainPreferencesRequestSchema, { profileId });
       const response = await profileClient.getActivityPreferences(request);
@@ -200,7 +213,7 @@ export const useActivityPreferences = (profileId: string) => {
 // Get itinerary preferences for a profile
 export const useItineraryPreferences = (profileId: string) => {
   return useQuery(() => ({
-    queryKey: ['profiles', profileId, 'itinerary'],
+    queryKey: ["profiles", profileId, "itinerary"],
     queryFn: async (): Promise<ItineraryPreferences> => {
       const request = create(GetDomainPreferencesRequestSchema, { profileId });
       const response = await profileClient.getItineraryPreferences(request);
@@ -214,13 +227,15 @@ export const useItineraryPreferences = (profileId: string) => {
 // Get combined filters for a domain
 export const useCombinedFilters = (profileId: string, domain?: string) => {
   return useQuery(() => ({
-    queryKey: ['profiles', profileId, 'filters', domain || 'general'],
+    queryKey: ["profiles", profileId, "filters", domain || "general"],
     queryFn: async () => {
       const request = create(GetCombinedFiltersRequestSchema, { profileId, domain });
       const response = await profileClient.getCombinedFilters(request);
       return {
         profile: response.profile ? mapProtoToSearchProfile(response.profile) : null,
-        accommodation: response.accommodation ? mapProtoToAccommodationPreferences(response.accommodation) : null,
+        accommodation: response.accommodation
+          ? mapProtoToAccommodationPreferences(response.accommodation)
+          : null,
         dining: response.dining ? mapProtoToDiningPreferences(response.dining) : null,
         activity: response.activity ? mapProtoToActivityPreferences(response.activity) : null,
         itinerary: response.itinerary ? mapProtoToItineraryPreferences(response.itinerary) : null,
@@ -242,7 +257,7 @@ export const useCreateSearchProfileMutation = () => {
   return useMutation(() => ({
     mutationFn: async (data: Partial<TravelProfileFormData>) => {
       const request = create(CreateUserPreferenceProfileRequestSchema, {
-        profileName: data.profile_name || 'New Profile',
+        profileName: data.profile_name || "New Profile",
         isDefault: data.is_default,
         searchRadiusKm: data.search_radius_km,
         budgetLevel: data.budget_level,
@@ -269,7 +284,13 @@ export const useUpdateSearchProfileMutation = () => {
   const queryClient = useQueryClient();
 
   return useMutation(() => ({
-    mutationFn: async ({ profileId, data }: { profileId: string; data: Partial<TravelProfileFormData> }) => {
+    mutationFn: async ({
+      profileId,
+      data,
+    }: {
+      profileId: string;
+      data: Partial<TravelProfileFormData>;
+    }) => {
       const request = create(UpdateUserPreferenceProfileRequestSchema, {
         profileId,
         profileName: data.profile_name,

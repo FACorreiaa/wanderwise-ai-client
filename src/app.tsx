@@ -23,7 +23,7 @@ export default function App() {
         <ThemeProvider>
           <GlobalErrorBoundary>
             <Router
-              root={props => (
+              root={(props) => (
                 <AuthProvider>
                   <LocationProvider>
                     <div class="min-h-screen flex flex-col relative overflow-hidden transition-colors">

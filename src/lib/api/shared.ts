@@ -1,9 +1,7 @@
 // Shared utilities and types for API queries
 import { useQueryClient } from "@tanstack/solid-query";
 
-
-export const API_BASE_URL =
-  import.meta.env.VITE_CONNECT_BASE_URL || "http://localhost:8000";
+export const API_BASE_URL = import.meta.env.VITE_CONNECT_BASE_URL || "http://localhost:8000";
 
 // Query Keys for consistent cache invalidation
 export const queryKeys = {
@@ -29,12 +27,10 @@ export const queryKeys = {
   nearbyPois: (lat: number, lng: number, radius?: number) =>
     ["pois", "nearby", lat, lng, radius] as const,
   poisByCity: (cityId: string) => ["pois", "city", cityId] as const,
-  searchPois: (query: string, filters?: any) =>
-    ["pois", "search", query, filters] as const,
+  searchPois: (query: string, filters?: any) => ["pois", "search", query, filters] as const,
 
   // Itineraries
-  itineraries: (page: number, limit: number) =>
-    ["itineraries", page, limit] as const,
+  itineraries: (page: number, limit: number) => ["itineraries", page, limit] as const,
   itinerary: (id: string) => ["itineraries", id] as const,
   userItineraries: ["user-itineraries"] as const,
 
@@ -67,8 +63,7 @@ export const queryKeys = {
 
   // Recents
   recents: ["recents"] as const,
-  recentInteractions: (limit: number) =>
-    ["recents", "interactions", limit] as const,
+  recentInteractions: (limit: number) => ["recents", "interactions", limit] as const,
   cityDetails: (cityName: string) => ["recents", "city", cityName] as const,
 };
 
@@ -91,6 +86,6 @@ export const usePrefetchUserData = () => {
 
   return () => {
     // NOTE: Prefetch disabled - REST API removed, use RPC-based hooks directly
-    console.log('usePrefetchUserData: Prefetch disabled - use RPC hooks');
+    console.log("usePrefetchUserData: Prefetch disabled - use RPC hooks");
   };
 };

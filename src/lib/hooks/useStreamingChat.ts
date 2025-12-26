@@ -1,6 +1,6 @@
-import { createSignal, onCleanup } from 'solid-js';
-import { getAuthToken } from '~/lib/api';
-import type { StreamEvent, DomainType } from '~/lib/api/types';
+import { createSignal, onCleanup } from "solid-js";
+import { getAuthToken } from "~/lib/api";
+import type { StreamEvent, DomainType } from "~/lib/api/types";
 
 export interface StreamingChatOptions {
   onProgress?: (_: any) => void;
@@ -24,7 +24,7 @@ export function useStreamingChat(options: StreamingChatOptions = {}) {
     isConnected: false,
     error: null,
     progress: 0,
-    currentStep: '',
+    currentStep: "",
     streamedData: null,
   });
 
@@ -39,7 +39,7 @@ export function useStreamingChat(options: StreamingChatOptions = {}) {
         isConnected: false,
         error: null,
         progress: 0,
-        currentStep: 'Connecting...',
+        currentStep: "Connecting...",
         streamedData: null,
       });
 
@@ -47,14 +47,14 @@ export function useStreamingChat(options: StreamingChatOptions = {}) {
       const token = getAuthToken();
 
       const response = await fetch(url, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'text/event-stream',
-          'Cache-Control': 'no-cache',
+          "Content-Type": "application/json",
+          Accept: "text/event-stream",
+          "Cache-Control": "no-cache",
           ...(token && { Authorization: `Bearer ${token}` }),
         },
-        credentials: 'include',
+        credentials: "include",
         body: JSON.stringify(requestBody),
         signal: abortController.signal,
       });
@@ -64,13 +64,13 @@ export function useStreamingChat(options: StreamingChatOptions = {}) {
       }
 
       if (!response.body) {
-        throw new Error('Response body is null');
+        throw new Error("Response body is null");
       }
 
-      setState(prev => ({
+      setState((prev) => ({
         ...prev,
         isConnected: true,
-        currentStep: 'Processing request...',
+        currentStep: "Processing request...",
         progress: 10,
       }));
 
@@ -78,17 +78,16 @@ export function useStreamingChat(options: StreamingChatOptions = {}) {
       const decoder = new TextDecoder();
 
       await processStream(reader, decoder);
-
     } catch (err: any) {
-      if (err.name === 'AbortError') {
-        console.log('Stream was aborted');
+      if (err.name === "AbortError") {
+        console.log("Stream was aborted");
         return;
       }
 
-      console.error('Streaming failed:', err);
-      const errorMessage = err.message || 'Failed to start streaming';
+      console.error("Streaming failed:", err);
+      const errorMessage = err.message || "Failed to start streaming";
 
-      setState(prev => ({
+      setState((prev) => ({
         ...prev,
         error: errorMessage,
         isStreaming: false,
@@ -101,43 +100,43 @@ export function useStreamingChat(options: StreamingChatOptions = {}) {
 
   const processStream = async (
     reader: ReadableStreamDefaultReader<Uint8Array>,
-    decoder: TextDecoder
+    decoder: TextDecoder,
   ) => {
     try {
       while (true) {
         const { done, value } = await reader.read();
 
         if (done) {
-          setState(prev => ({
+          setState((prev) => ({
             ...prev,
             isStreaming: false,
             isConnected: false,
-            currentStep: 'Complete!',
+            currentStep: "Complete!",
             progress: 100,
           }));
           break;
         }
 
         const chunk = decoder.decode(value, { stream: true });
-        const lines = chunk.split('\n');
+        const lines = chunk.split("\n");
 
         for (const line of lines) {
-          if (line.startsWith('data: ')) {
+          if (line.startsWith("data: ")) {
             const data = line.slice(6).trim();
-            if (data === '') continue;
+            if (data === "") continue;
 
             try {
               const event: StreamEvent = JSON.parse(data);
               processStreamEvent(event);
             } catch (parseError) {
-              console.error('Failed to parse SSE data:', parseError);
+              console.error("Failed to parse SSE data:", parseError);
             }
           }
         }
       }
     } catch (error) {
-      console.error('Stream processing error:', error);
-      setState(prev => ({
+      console.error("Stream processing error:", error);
+      setState((prev) => ({
         ...prev,
         error: `Stream error: ${error}`,
         isStreaming: false,
@@ -149,18 +148,18 @@ export function useStreamingChat(options: StreamingChatOptions = {}) {
 
   const processStreamEvent = (event: StreamEvent) => {
     switch (event.type) {
-      case 'start':
-        setState(prev => ({
+      case "start":
+        setState((prev) => ({
           ...prev,
-          currentStep: 'Starting generation...',
+          currentStep: "Starting generation...",
           progress: 15,
         }));
         break;
 
-      case 'progress': {
+      case "progress": {
         const progressData = event.data as any;
         if (progressData?.progress) {
-          setState(prev => ({
+          setState((prev) => ({
             ...prev,
             progress: progressData.progress,
             currentStep: progressData.message || prev.currentStep,
@@ -169,87 +168,83 @@ export function useStreamingChat(options: StreamingChatOptions = {}) {
         break;
       }
 
-      case 'city_data':
-        setState(prev => ({
+      case "city_data":
+        setState((prev) => ({
           ...prev,
-          currentStep: 'Loading city information...',
+          currentStep: "Loading city information...",
           progress: 25,
         }));
         options.onProgress?.(event.data);
         break;
 
-      case 'general_pois':
-        setState(prev => ({
+      case "general_pois":
+        setState((prev) => ({
           ...prev,
-          currentStep: 'Finding points of interest...',
+          currentStep: "Finding points of interest...",
           progress: 50,
         }));
         options.onProgress?.(event.data);
         break;
 
-      case 'itinerary':
-        setState(prev => ({
+      case "itinerary":
+        setState((prev) => ({
           ...prev,
-          currentStep: 'Creating your itinerary...',
+          currentStep: "Creating your itinerary...",
           progress: 75,
         }));
         options.onProgress?.(event.data);
         break;
 
-      case 'hotels':
-        setState(prev => ({
+      case "hotels":
+        setState((prev) => ({
           ...prev,
-          currentStep: 'Finding accommodations...',
+          currentStep: "Finding accommodations...",
           progress: 60,
         }));
         options.onProgress?.(event.data);
         break;
 
-      case 'restaurants':
-        setState(prev => ({
+      case "restaurants":
+        setState((prev) => ({
           ...prev,
-          currentStep: 'Discovering restaurants...',
+          currentStep: "Discovering restaurants...",
           progress: 65,
         }));
         options.onProgress?.(event.data);
         break;
 
-      case 'activities':
-        setState(prev => ({
+      case "activities":
+        setState((prev) => ({
           ...prev,
-          currentStep: 'Finding activities...',
+          currentStep: "Finding activities...",
           progress: 70,
         }));
         options.onProgress?.(event.data);
         break;
 
-      case 'complete': {
+      case "complete": {
         const completeData = event.data as any;
-        setState(prev => ({
+        setState((prev) => ({
           ...prev,
           isStreaming: false,
           isConnected: false,
-          currentStep: 'Complete!',
+          currentStep: "Complete!",
           progress: 100,
           streamedData: completeData,
         }));
 
         // Handle redirect if navigation data is provided
         if (completeData?.domain && completeData?.session_id && completeData?.city) {
-          options.onRedirect?.(
-            completeData.domain,
-            completeData.session_id,
-            completeData.city
-          );
+          options.onRedirect?.(completeData.domain, completeData.session_id, completeData.city);
         }
 
         options.onComplete?.(completeData);
         break;
       }
 
-      case 'error': {
-        const errorMessage = (event.data as any)?.message || 'An error occurred during streaming';
-        setState(prev => ({
+      case "error": {
+        const errorMessage = (event.data as any)?.message || "An error occurred during streaming";
+        setState((prev) => ({
           ...prev,
           error: errorMessage,
           isStreaming: false,
@@ -260,7 +255,7 @@ export function useStreamingChat(options: StreamingChatOptions = {}) {
       }
 
       default:
-        console.log('Unknown event type:', event.type, event);
+        console.log("Unknown event type:", event.type, event);
     }
   };
 
@@ -271,7 +266,7 @@ export function useStreamingChat(options: StreamingChatOptions = {}) {
     if (reader) {
       reader.cancel();
     }
-    setState(prev => ({
+    setState((prev) => ({
       ...prev,
       isStreaming: false,
       isConnected: false,

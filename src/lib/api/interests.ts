@@ -1,16 +1,16 @@
 // Interests queries and mutations - RPC version
-import { useQuery, useMutation, useQueryClient } from '@tanstack/solid-query';
-import { createClient } from '@connectrpc/connect';
-import { create } from '@bufbuild/protobuf';
-import { InterestService } from '@buf/loci_loci-proto.bufbuild_es/loci/interest/interest_pb.js';
+import { useQuery, useMutation, useQueryClient } from "@tanstack/solid-query";
+import { createClient } from "@connectrpc/connect";
+import { create } from "@bufbuild/protobuf";
+import { InterestService } from "@buf/loci_loci-proto.bufbuild_es/loci/interest/interest_pb.js";
 import {
   GetInterestsRequestSchema,
   CreateInterestRequestSchema,
   UpdateInterestRequestSchema,
-} from '@buf/loci_loci-proto.bufbuild_es/loci/interest/interest_pb.js';
-import { queryKeys } from './shared';
-import { transport } from '../connect-transport';
-import type { Interest } from './types';
+} from "@buf/loci_loci-proto.bufbuild_es/loci/interest/interest_pb.js";
+import { queryKeys } from "./shared";
+import { transport } from "../connect-transport";
+import type { Interest } from "./types";
 
 // Create the interest service client
 const interestClient = createClient(InterestService, transport);
@@ -26,15 +26,21 @@ export const useInterests = () => {
       const request = create(GetInterestsRequestSchema, { activeOnly: false });
       const response = await interestClient.getInterests(request);
 
-      return response.interests.map((interest): Interest => ({
-        id: interest.id,
-        name: interest.name,
-        description: interest.description ?? null,
-        active: interest.active ?? true,
-        source: (interest.source === 'global' ? 'global' : 'custom') as 'global' | 'custom',
-        created_at: interest.createdAt ? new Date(Number(interest.createdAt.seconds) * 1000).toISOString() : '',
-        updated_at: interest.updatedAt ? new Date(Number(interest.updatedAt.seconds) * 1000).toISOString() : null,
-      }));
+      return response.interests.map(
+        (interest): Interest => ({
+          id: interest.id,
+          name: interest.name,
+          description: interest.description ?? null,
+          active: interest.active ?? true,
+          source: (interest.source === "global" ? "global" : "custom") as "global" | "custom",
+          created_at: interest.createdAt
+            ? new Date(Number(interest.createdAt.seconds) * 1000).toISOString()
+            : "",
+          updated_at: interest.updatedAt
+            ? new Date(Number(interest.updatedAt.seconds) * 1000).toISOString()
+            : null,
+        }),
+      );
     },
     staleTime: 15 * 60 * 1000, // 15 minutes - interests don't change often
   }));
@@ -44,7 +50,15 @@ export const useCreateInterestMutation = () => {
   const queryClient = useQueryClient();
 
   return useMutation(() => ({
-    mutationFn: async ({ name, description, active = true }: { name: string; description: string; active?: boolean }) => {
+    mutationFn: async ({
+      name,
+      description,
+      active = true,
+    }: {
+      name: string;
+      description: string;
+      active?: boolean;
+    }) => {
       const request = create(CreateInterestRequestSchema, {
         name,
         description,
@@ -64,11 +78,16 @@ export const useUpdateInterestMutation = () => {
   const queryClient = useQueryClient();
 
   return useMutation(() => ({
-    mutationFn: async ({ id, name, description, active }: {
+    mutationFn: async ({
+      id,
+      name,
+      description,
+      active,
+    }: {
       id: string;
       name?: string;
       description?: string;
-      active?: boolean
+      active?: boolean;
     }) => {
       // Only include fields that are being updated
       const requestData: {

@@ -1,14 +1,18 @@
-import { createSignal, For, Show } from 'solid-js';
-import { Plus, X, Save, Heart } from 'lucide-solid';
-import { Switch } from '@/ui/switch';
-import type { Interest } from '~/lib/api/types';
+import { createSignal, For, Show } from "solid-js";
+import { Plus, X, Save, Heart } from "lucide-solid";
+import { Switch } from "@/ui/switch";
+import type { Interest } from "~/lib/api/types";
 
 interface InterestsUIProps {
   interests: Interest[];
   isLoading: boolean;
   isError: boolean;
   onRetry: () => void;
-  onCreateInterest: (data: { name: string; description: string; active?: boolean }) => Promise<void>;
+  onCreateInterest: (data: {
+    name: string;
+    description: string;
+    active?: boolean;
+  }) => Promise<void>;
   onUpdateInterest: (data: { id: string; name: string; description: string }) => Promise<void>;
   onDeleteInterest: (interest: Interest) => Promise<void>;
   onToggleActive: (interest: Interest) => Promise<void>;
@@ -20,24 +24,24 @@ interface InterestsUIProps {
 
 export default function InterestsComponent(props: InterestsUIProps) {
   // Form state
-  const [newInterest, setNewInterest] = createSignal('');
-  const [newInterestDescription, setNewInterestDescription] = createSignal('');
+  const [newInterest, setNewInterest] = createSignal("");
+  const [newInterestDescription, setNewInterestDescription] = createSignal("");
   const [showAddInterestForm, setShowAddInterestForm] = createSignal(false);
-  const [newInterestError, setNewInterestError] = createSignal('');
+  const [newInterestError, setNewInterestError] = createSignal("");
 
   // Edit state
   const [editingInterest, setEditingInterest] = createSignal<Interest | null>(null);
-  const [editInterestName, setEditInterestName] = createSignal('');
-  const [editInterestDescription, setEditInterestDescription] = createSignal('');
-  const [editInterestError, setEditInterestError] = createSignal('');
+  const [editInterestName, setEditInterestName] = createSignal("");
+  const [editInterestDescription, setEditInterestDescription] = createSignal("");
+  const [editInterestError, setEditInterestError] = createSignal("");
 
   // Mobile UX: Track which interest is actively selected for actions
   const [activeInterestForActions, setActiveInterestForActions] = createSignal<string | null>(null);
 
   // Get active interests
-  const activeInterests = () => props.interests.filter(interest => interest.active ?? false);
-  const customInterests = () => props.interests.filter(interest => interest.source === 'custom');
-  const globalInterests = () => props.interests.filter(interest => interest.source === 'global');
+  const activeInterests = () => props.interests.filter((interest) => interest.active ?? false);
+  const customInterests = () => props.interests.filter((interest) => interest.source === "custom");
+  const globalInterests = () => props.interests.filter((interest) => interest.source === "global");
 
   // Create interest
   const handleCreateInterest = async () => {
@@ -46,27 +50,27 @@ export default function InterestsComponent(props: InterestsUIProps) {
 
     // Validate on submit
     if (!name) {
-      setNewInterestError('Interest name is required');
+      setNewInterestError("Interest name is required");
       return;
     }
     if (name.length < 2) {
-      setNewInterestError('Interest name must be at least 2 characters');
+      setNewInterestError("Interest name must be at least 2 characters");
       return;
     }
-    setNewInterestError('');
+    setNewInterestError("");
 
     try {
       await props.onCreateInterest({
         name,
         description,
-        active: true
+        active: true,
       });
-      setNewInterest('');
-      setNewInterestDescription('');
+      setNewInterest("");
+      setNewInterestDescription("");
       setShowAddInterestForm(false);
     } catch (error) {
-      console.error('Failed to create interest:', error);
-      setNewInterestError('Failed to create interest. Please try again.');
+      console.error("Failed to create interest:", error);
+      setNewInterestError("Failed to create interest. Please try again.");
     }
   };
 
@@ -74,7 +78,7 @@ export default function InterestsComponent(props: InterestsUIProps) {
   const startEditingInterest = (interest: Interest) => {
     setEditingInterest(interest);
     setEditInterestName(interest.name);
-    setEditInterestDescription(interest.description || '');
+    setEditInterestDescription(interest.description || "");
   };
 
   // Save edited interest
@@ -85,29 +89,29 @@ export default function InterestsComponent(props: InterestsUIProps) {
 
     // Validate on submit
     if (!name) {
-      setEditInterestError('Interest name is required');
+      setEditInterestError("Interest name is required");
       return;
     }
     if (name.length < 2) {
-      setEditInterestError('Interest name must be at least 2 characters');
+      setEditInterestError("Interest name must be at least 2 characters");
       return;
     }
-    setEditInterestError('');
+    setEditInterestError("");
 
     if (interest) {
       try {
         await props.onUpdateInterest({
           id: interest.id,
           name,
-          description
+          description,
         });
         setEditingInterest(null);
-        setEditInterestName('');
-        setEditInterestDescription('');
-        setEditInterestError('');
+        setEditInterestName("");
+        setEditInterestDescription("");
+        setEditInterestError("");
       } catch (error) {
-        console.error('Failed to update interest:', error);
-        setEditInterestError('Failed to update interest. Please try again.');
+        console.error("Failed to update interest:", error);
+        setEditInterestError("Failed to update interest. Please try again.");
       }
     }
   };
@@ -115,8 +119,8 @@ export default function InterestsComponent(props: InterestsUIProps) {
   // Cancel editing
   const cancelEditing = () => {
     setEditingInterest(null);
-    setEditInterestName('');
-    setEditInterestDescription('');
+    setEditInterestName("");
+    setEditInterestDescription("");
   };
 
   // Show loading state
@@ -137,8 +141,12 @@ export default function InterestsComponent(props: InterestsUIProps) {
     return (
       <div class="space-y-8">
         <div class="text-center py-12">
-          <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">Error Loading Interests</h3>
-          <p class="text-gray-600 dark:text-gray-300 mb-4">Unable to load interests. Please try again.</p>
+          <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+            Error Loading Interests
+          </h3>
+          <p class="text-gray-600 dark:text-gray-300 mb-4">
+            Unable to load interests. Please try again.
+          </p>
           <button
             onClick={props.onRetry}
             class="px-4 py-2 bg-purple-600 hover:bg-purple-700 dark:bg-purple-500 dark:hover:bg-purple-600 text-white rounded-lg"
@@ -183,21 +191,26 @@ export default function InterestsComponent(props: InterestsUIProps) {
           <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
             <div>
               <h4 class="font-semibold text-gray-900 dark:text-white">Manage Interests</h4>
-              <p class="text-sm text-gray-500">Short, precise interests work best for recommendations.</p>
+              <p class="text-sm text-gray-500">
+                Short, precise interests work best for recommendations.
+              </p>
             </div>
-            <Show when={!showAddInterestForm()} fallback={
-              <button
-                onClick={() => {
-                  setShowAddInterestForm(false);
-                  setNewInterest('');
-                  setNewInterestDescription('');
-                  setNewInterestError('');
-                }}
-                class="px-3 py-1.5 text-sm text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-gray-100 rounded-lg border border-gray-200 dark:border-gray-700"
-              >
-                Cancel
-              </button>
-            }>
+            <Show
+              when={!showAddInterestForm()}
+              fallback={
+                <button
+                  onClick={() => {
+                    setShowAddInterestForm(false);
+                    setNewInterest("");
+                    setNewInterestDescription("");
+                    setNewInterestError("");
+                  }}
+                  class="px-3 py-1.5 text-sm text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-gray-100 rounded-lg border border-gray-200 dark:border-gray-700"
+                >
+                  Cancel
+                </button>
+              }
+            >
               <button
                 onClick={() => setShowAddInterestForm(true)}
                 class="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500 to-indigo-500 hover:brightness-105 text-white rounded-xl text-sm font-semibold shadow-md"
@@ -217,13 +230,14 @@ export default function InterestsComponent(props: InterestsUIProps) {
                     value={newInterest()}
                     onInput={(e) => {
                       setNewInterest(e.target.value);
-                      if (newInterestError()) setNewInterestError('');
+                      if (newInterestError()) setNewInterestError("");
                     }}
                     placeholder="Interest name..."
-                    class={`w-full px-3 py-2.5 border rounded-xl focus:ring-2 focus:border-transparent text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white transition-colors ${newInterestError()
-                      ? 'border-red-500 focus:ring-red-500'
-                      : 'border-gray-200 dark:border-gray-600 focus:ring-purple-500'
-                      }`}
+                    class={`w-full px-3 py-2.5 border rounded-xl focus:ring-2 focus:border-transparent text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white transition-colors ${
+                      newInterestError()
+                        ? "border-red-500 focus:ring-red-500"
+                        : "border-gray-200 dark:border-gray-600 focus:ring-purple-500"
+                    }`}
                   />
                   <Show when={newInterestError()}>
                     <p class="text-sm text-red-500 dark:text-red-400">{newInterestError()}</p>
@@ -234,7 +248,7 @@ export default function InterestsComponent(props: InterestsUIProps) {
                   disabled={props.isCreating}
                   class="px-4 py-2.5 bg-gradient-to-r from-purple-500 to-indigo-500 hover:brightness-105 text-white rounded-xl disabled:opacity-50 disabled:cursor-not-allowed text-sm font-semibold shadow-sm"
                 >
-                  {props.isCreating ? 'Adding...' : 'Add'}
+                  {props.isCreating ? "Adding..." : "Add"}
                 </button>
               </div>
               <textarea
@@ -252,112 +266,127 @@ export default function InterestsComponent(props: InterestsUIProps) {
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           <For each={props.interests}>
             {(interest) => (
-              <Show when={editingInterest()?.id === interest.id} fallback={
-                <div class="group relative interest-action-container overflow-hidden rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800/90 shadow-sm hover:shadow-md transition-all duration-200">
-                  <div class="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-purple-500 via-indigo-500 to-blue-500" />
-                  <div
-                    onClick={() => {
-                      if (interest.source === 'custom' && window.innerWidth < 640) {
-                        setActiveInterestForActions(activeInterestForActions() === interest.id ? null : interest.id);
-                      }
-                    }}
-                    class={`p-4 space-y-3 ${activeInterestForActions() === interest.id ? 'ring-2 ring-purple-200 dark:ring-purple-700' : ''}`}
-                  >
-                    <div class="flex items-start justify-between mb-2 gap-3">
-                      <div class="space-y-1">
-                        <div class="flex items-center gap-2">
-                          <h4 class="font-semibold text-gray-900 dark:text-white">{interest.name}</h4>
-                          <Switch
-                            checked={interest.active ?? false}
-                            onChange={() => props.onToggleActive(interest)}
-                            disabled={props.isToggling}
-                          />
+              <Show
+                when={editingInterest()?.id === interest.id}
+                fallback={
+                  <div class="group relative interest-action-container overflow-hidden rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800/90 shadow-sm hover:shadow-md transition-all duration-200">
+                    <div class="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-purple-500 via-indigo-500 to-blue-500" />
+                    <div
+                      onClick={() => {
+                        if (interest.source === "custom" && window.innerWidth < 640) {
+                          setActiveInterestForActions(
+                            activeInterestForActions() === interest.id ? null : interest.id,
+                          );
+                        }
+                      }}
+                      class={`p-4 space-y-3 ${activeInterestForActions() === interest.id ? "ring-2 ring-purple-200 dark:ring-purple-700" : ""}`}
+                    >
+                      <div class="flex items-start justify-between mb-2 gap-3">
+                        <div class="space-y-1">
+                          <div class="flex items-center gap-2">
+                            <h4 class="font-semibold text-gray-900 dark:text-white">
+                              {interest.name}
+                            </h4>
+                            <Switch
+                              checked={interest.active ?? false}
+                              onChange={() => props.onToggleActive(interest)}
+                              disabled={props.isToggling}
+                            />
+                          </div>
+                          <Show when={interest.description}>
+                            <p class="text-sm text-gray-600 dark:text-gray-300 line-clamp-2">
+                              {interest.description || "No description"}
+                            </p>
+                          </Show>
                         </div>
-                        <Show when={interest.description}>
-                          <p class="text-sm text-gray-600 dark:text-gray-300 line-clamp-2">{interest.description || 'No description'}</p>
-                        </Show>
-                      </div>
-                      <div class="flex flex-col items-end gap-2">
-                        <Show when={interest.source === 'global'}>
-                          <span class="px-2 py-1 bg-blue-50 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 rounded-full text-xs font-semibold border border-blue-100 dark:border-blue-800">Global</span>
-                        </Show>
-                        <span class={`px-2 py-1 rounded-full text-xs font-semibold border ${(interest.active ?? false)
-                          ? 'bg-purple-50 dark:bg-purple-900/30 text-purple-800 dark:text-purple-300 border-purple-100 dark:border-purple-700'
-                          : 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300 border-gray-200 dark:border-gray-600'
-                          }`}>
-                          {(interest.active ?? false) ? 'Active' : 'Inactive'}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Actions for custom interests only */}
-                  <Show when={interest.source === 'custom'}>
-                    <div class="hidden sm:flex items-center justify-end gap-2 px-4 pb-4">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          startEditingInterest(interest);
-                        }}
-                        class="px-3 py-2 rounded-lg bg-gray-50 dark:bg-gray-700/80 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600 text-xs font-semibold border border-gray-200 dark:border-gray-600"
-                      >
-                        Edit
-                      </button>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          props.onDeleteInterest(interest);
-                        }}
-                        class="px-3 py-2 rounded-lg bg-red-50 text-red-700 hover:bg-red-100 text-xs font-semibold border border-red-100"
-                      >
-                        Delete
-                      </button>
-                    </div>
-
-                    {/* Mobile: Show action buttons below when active */}
-                    <Show when={activeInterestForActions() === interest.id}>
-                      <div class="sm:hidden px-3 pb-3 space-y-2">
-                        <div class="flex gap-2">
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              props.onToggleActive(interest);
-                              setActiveInterestForActions(null);
-                            }}
-                            disabled={props.isToggling}
-                            class={`flex-1 px-3 py-2 rounded text-sm font-medium ${(interest.active ?? false)
-                              ? 'bg-red-50 text-red-700 hover:bg-red-100'
-                              : 'bg-purple-50 text-purple-700 hover:bg-purple-100'
-                              } ${props.isToggling ? 'opacity-50' : ''}`}
+                        <div class="flex flex-col items-end gap-2">
+                          <Show when={interest.source === "global"}>
+                            <span class="px-2 py-1 bg-blue-50 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 rounded-full text-xs font-semibold border border-blue-100 dark:border-blue-800">
+                              Global
+                            </span>
+                          </Show>
+                          <span
+                            class={`px-2 py-1 rounded-full text-xs font-semibold border ${
+                              (interest.active ?? false)
+                                ? "bg-purple-50 dark:bg-purple-900/30 text-purple-800 dark:text-purple-300 border-purple-100 dark:border-purple-700"
+                                : "bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300 border-gray-200 dark:border-gray-600"
+                            }`}
                           >
-                            {(interest.active ?? false) ? 'Deactivate' : 'Activate'}
-                          </button>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              startEditingInterest(interest);
-                              setActiveInterestForActions(null);
-                            }}
-                            class="flex-1 px-3 py-2 bg-gray-100 text-gray-800 rounded text-sm font-medium hover:bg-gray-200"
-                          >
-                            Edit
-                          </button>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              props.onDeleteInterest(interest);
-                              setActiveInterestForActions(null);
-                            }}
-                            class="flex-1 px-3 py-2 bg-red-50 text-red-700 rounded text-sm font-medium hover:bg-red-100"
-                          >
-                            Delete
-                          </button>
+                            {(interest.active ?? false) ? "Active" : "Inactive"}
+                          </span>
                         </div>
                       </div>
+                    </div>
+
+                    {/* Actions for custom interests only */}
+                    <Show when={interest.source === "custom"}>
+                      <div class="hidden sm:flex items-center justify-end gap-2 px-4 pb-4">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            startEditingInterest(interest);
+                          }}
+                          class="px-3 py-2 rounded-lg bg-gray-50 dark:bg-gray-700/80 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600 text-xs font-semibold border border-gray-200 dark:border-gray-600"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            props.onDeleteInterest(interest);
+                          }}
+                          class="px-3 py-2 rounded-lg bg-red-50 text-red-700 hover:bg-red-100 text-xs font-semibold border border-red-100"
+                        >
+                          Delete
+                        </button>
+                      </div>
+
+                      {/* Mobile: Show action buttons below when active */}
+                      <Show when={activeInterestForActions() === interest.id}>
+                        <div class="sm:hidden px-3 pb-3 space-y-2">
+                          <div class="flex gap-2">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                props.onToggleActive(interest);
+                                setActiveInterestForActions(null);
+                              }}
+                              disabled={props.isToggling}
+                              class={`flex-1 px-3 py-2 rounded text-sm font-medium ${
+                                (interest.active ?? false)
+                                  ? "bg-red-50 text-red-700 hover:bg-red-100"
+                                  : "bg-purple-50 text-purple-700 hover:bg-purple-100"
+                              } ${props.isToggling ? "opacity-50" : ""}`}
+                            >
+                              {(interest.active ?? false) ? "Deactivate" : "Activate"}
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                startEditingInterest(interest);
+                                setActiveInterestForActions(null);
+                              }}
+                              class="flex-1 px-3 py-2 bg-gray-100 text-gray-800 rounded text-sm font-medium hover:bg-gray-200"
+                            >
+                              Edit
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                props.onDeleteInterest(interest);
+                                setActiveInterestForActions(null);
+                              }}
+                              class="flex-1 px-3 py-2 bg-red-50 text-red-700 rounded text-sm font-medium hover:bg-red-100"
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        </div>
+                      </Show>
                     </Show>
-                  </Show>
-                </div>
-              }>
+                  </div>
+                }
+              >
                 {/* Edit Form */}
                 <div class="p-4 bg-gray-50 dark:bg-gray-700 rounded-2xl border-2 border-gray-300 dark:border-gray-600 shadow-inner">
                   <div class="space-y-3">
@@ -367,13 +396,14 @@ export default function InterestsComponent(props: InterestsUIProps) {
                         value={editInterestName()}
                         onInput={(e) => {
                           setEditInterestName(e.target.value);
-                          if (editInterestError()) setEditInterestError('');
+                          if (editInterestError()) setEditInterestError("");
                         }}
                         placeholder="Interest name..."
-                        class={`w-full px-3 py-2.5 border rounded-xl text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white transition-colors ${editInterestError()
-                          ? 'border-red-500 focus:ring-red-500'
-                          : 'border-gray-300 dark:border-gray-600'
-                          }`}
+                        class={`w-full px-3 py-2.5 border rounded-xl text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white transition-colors ${
+                          editInterestError()
+                            ? "border-red-500 focus:ring-red-500"
+                            : "border-gray-300 dark:border-gray-600"
+                        }`}
                       />
                       <Show when={editInterestError()}>
                         <p class="text-sm text-red-500 dark:text-red-400">{editInterestError()}</p>
@@ -393,7 +423,7 @@ export default function InterestsComponent(props: InterestsUIProps) {
                         class="px-3 py-2 bg-gradient-to-r from-purple-500 to-indigo-500 hover:brightness-105 text-white rounded-xl text-sm font-semibold flex items-center gap-1 disabled:opacity-50"
                       >
                         <Save class="w-3 h-3" />
-                        {props.isUpdating ? 'Saving...' : 'Save'}
+                        {props.isUpdating ? "Saving..." : "Save"}
                       </button>
                       <button
                         onClick={cancelEditing}
@@ -412,7 +442,9 @@ export default function InterestsComponent(props: InterestsUIProps) {
 
         <Show when={props.interests.length === 0}>
           <div class="text-center py-10">
-            <p class="text-gray-500 dark:text-gray-400">No interests found. Create your first interest above!</p>
+            <p class="text-gray-500 dark:text-gray-400">
+              No interests found. Create your first interest above!
+            </p>
           </div>
         </Show>
 
@@ -423,16 +455,21 @@ export default function InterestsComponent(props: InterestsUIProps) {
               Active Interests ({activeInterests().length})
             </h4>
             <Show when={activeInterests().length === 0}>
-              <p class="text-gray-500 dark:text-gray-400 text-sm">No active interests. Activate some interests above to see them here.</p>
+              <p class="text-gray-500 dark:text-gray-400 text-sm">
+                No active interests. Activate some interests above to see them here.
+              </p>
             </Show>
             <Show when={activeInterests().length > 0}>
               <div class="flex flex-wrap gap-2">
                 <For each={activeInterests()}>
                   {(interest) => (
-                    <span class={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium ${interest.source === 'global'
-                      ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300'
-                      : 'bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-300'
-                      }`}>
+                    <span
+                      class={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium ${
+                        interest.source === "global"
+                          ? "bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300"
+                          : "bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-300"
+                      }`}
+                    >
                       <Heart class="w-3 h-3 fill-current" />
                       {interest.name}
                     </span>
@@ -443,6 +480,6 @@ export default function InterestsComponent(props: InterestsUIProps) {
           </div>
         </Show>
       </div>
-    </div >
+    </div>
   );
 }

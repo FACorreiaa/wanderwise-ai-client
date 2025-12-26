@@ -1,11 +1,11 @@
-import { createSignal, onMount, Show } from 'solid-js';
-import { Button } from '@/ui/button';
-import { Download, X } from 'lucide-solid';
+import { createSignal, onMount, Show } from "solid-js";
+import { Button } from "@/ui/button";
+import { Download, X } from "lucide-solid";
 
 interface BeforeInstallPromptEvent extends Event {
   readonly platforms: string[];
   readonly userChoice: Promise<{
-    outcome: 'accepted' | 'dismissed';
+    outcome: "accepted" | "dismissed";
     platform: string;
   }>;
   prompt(): Promise<void>;
@@ -19,7 +19,10 @@ export default function PWAInstall() {
 
   onMount(() => {
     // Check if app is already installed
-    if (window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone) {
+    if (
+      window.matchMedia("(display-mode: standalone)").matches ||
+      (window.navigator as any).standalone
+    ) {
       setIsInstalled(true);
       return;
     }
@@ -31,7 +34,7 @@ export default function PWAInstall() {
       // Save the event so it can be triggered later
       setDeferredPrompt(e as BeforeInstallPromptEvent);
       setShowInstallButton(true);
-      
+
       // Show install banner after a delay
       setTimeout(() => {
         setShowInstallBanner(true);
@@ -43,16 +46,16 @@ export default function PWAInstall() {
       setIsInstalled(true);
       setShowInstallButton(false);
       setShowInstallBanner(false);
-      console.log('Loci PWA was installed');
+      console.log("Loci PWA was installed");
     };
 
-    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-    window.addEventListener('appinstalled', handleAppInstalled);
+    window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
+    window.addEventListener("appinstalled", handleAppInstalled);
 
     // Cleanup
     return () => {
-      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-      window.removeEventListener('appinstalled', handleAppInstalled);
+      window.removeEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
+      window.removeEventListener("appinstalled", handleAppInstalled);
     };
   });
 
@@ -62,16 +65,16 @@ export default function PWAInstall() {
 
     // Show the install prompt
     await prompt.prompt();
-    
+
     // Wait for the user to respond to the prompt
     const { outcome } = await prompt.userChoice;
-    
-    if (outcome === 'accepted') {
-      console.log('User accepted the install prompt');
+
+    if (outcome === "accepted") {
+      console.log("User accepted the install prompt");
     } else {
-      console.log('User dismissed the install prompt');
+      console.log("User dismissed the install prompt");
     }
-    
+
     // Clear the deferred prompt
     setDeferredPrompt(null);
     setShowInstallButton(false);
@@ -81,12 +84,12 @@ export default function PWAInstall() {
   const dismissBanner = () => {
     setShowInstallBanner(false);
     // Remember user dismissed banner
-    localStorage.setItem('pwa-install-banner-dismissed', 'true');
+    localStorage.setItem("pwa-install-banner-dismissed", "true");
   };
 
   // Don't show if dismissed recently
   const wasDismissed = () => {
-    return localStorage.getItem('pwa-install-banner-dismissed') === 'true';
+    return localStorage.getItem("pwa-install-banner-dismissed") === "true";
   };
 
   return (
@@ -113,11 +116,10 @@ export default function PWAInstall() {
               <span class="text-white font-bold text-lg">L</span>
             </div>
             <div class="flex-1 min-w-0">
-              <h3 class="text-sm font-semibold text-gray-900 dark:text-white">
-                Install Loci App
-              </h3>
+              <h3 class="text-sm font-semibold text-gray-900 dark:text-white">Install Loci App</h3>
               <p class="text-xs text-gray-600 dark:text-gray-400 mt-1">
-                Get the best experience with our mobile app. Install now for offline access and push notifications.
+                Get the best experience with our mobile app. Install now for offline access and push
+                notifications.
               </p>
               <div class="flex gap-2 mt-3">
                 <Button

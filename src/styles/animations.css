@@ -37,29 +37,69 @@
 }
 
 /* Stagger delays for first 20 items */
-.stagger-animation:nth-child(1) { animation-delay: 0.05s; }
-.stagger-animation:nth-child(2) { animation-delay: 0.1s; }
-.stagger-animation:nth-child(3) { animation-delay: 0.15s; }
-.stagger-animation:nth-child(4) { animation-delay: 0.2s; }
-.stagger-animation:nth-child(5) { animation-delay: 0.25s; }
-.stagger-animation:nth-child(6) { animation-delay: 0.3s; }
-.stagger-animation:nth-child(7) { animation-delay: 0.35s; }
-.stagger-animation:nth-child(8) { animation-delay: 0.4s; }
-.stagger-animation:nth-child(9) { animation-delay: 0.45s; }
-.stagger-animation:nth-child(10) { animation-delay: 0.5s; }
-.stagger-animation:nth-child(11) { animation-delay: 0.55s; }
-.stagger-animation:nth-child(12) { animation-delay: 0.6s; }
-.stagger-animation:nth-child(13) { animation-delay: 0.65s; }
-.stagger-animation:nth-child(14) { animation-delay: 0.7s; }
-.stagger-animation:nth-child(15) { animation-delay: 0.75s; }
-.stagger-animation:nth-child(16) { animation-delay: 0.8s; }
-.stagger-animation:nth-child(17) { animation-delay: 0.85s; }
-.stagger-animation:nth-child(18) { animation-delay: 0.9s; }
-.stagger-animation:nth-child(19) { animation-delay: 0.95s; }
-.stagger-animation:nth-child(20) { animation-delay: 1s; }
+.stagger-animation:nth-child(1) {
+  animation-delay: 0.05s;
+}
+.stagger-animation:nth-child(2) {
+  animation-delay: 0.1s;
+}
+.stagger-animation:nth-child(3) {
+  animation-delay: 0.15s;
+}
+.stagger-animation:nth-child(4) {
+  animation-delay: 0.2s;
+}
+.stagger-animation:nth-child(5) {
+  animation-delay: 0.25s;
+}
+.stagger-animation:nth-child(6) {
+  animation-delay: 0.3s;
+}
+.stagger-animation:nth-child(7) {
+  animation-delay: 0.35s;
+}
+.stagger-animation:nth-child(8) {
+  animation-delay: 0.4s;
+}
+.stagger-animation:nth-child(9) {
+  animation-delay: 0.45s;
+}
+.stagger-animation:nth-child(10) {
+  animation-delay: 0.5s;
+}
+.stagger-animation:nth-child(11) {
+  animation-delay: 0.55s;
+}
+.stagger-animation:nth-child(12) {
+  animation-delay: 0.6s;
+}
+.stagger-animation:nth-child(13) {
+  animation-delay: 0.65s;
+}
+.stagger-animation:nth-child(14) {
+  animation-delay: 0.7s;
+}
+.stagger-animation:nth-child(15) {
+  animation-delay: 0.75s;
+}
+.stagger-animation:nth-child(16) {
+  animation-delay: 0.8s;
+}
+.stagger-animation:nth-child(17) {
+  animation-delay: 0.85s;
+}
+.stagger-animation:nth-child(18) {
+  animation-delay: 0.9s;
+}
+.stagger-animation:nth-child(19) {
+  animation-delay: 0.95s;
+}
+.stagger-animation:nth-child(20) {
+  animation-delay: 1s;
+}
 
 /* For items beyond 20, use a default delay */
-.stagger-animation:nth-child(n+21) {
+.stagger-animation:nth-child(n + 21) {
   animation-delay: 1.05s;
 }
 
@@ -75,7 +115,8 @@
 
 /* Pulse animation for loading indicators */
 @keyframes pulse-slow {
-  0%, 100% {
+  0%,
+  100% {
     opacity: 1;
   }
   50% {

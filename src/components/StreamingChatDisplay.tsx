@@ -1,7 +1,7 @@
-import { createEffect, Show } from 'solid-js';
-import { MessageCircle, Bot, Loader2, CheckCircle } from 'lucide-solid';
-import type { StreamingSession } from '~/lib/api/types';
-import { useChatRPC } from '~/lib/hooks/useChatRPC';
+import { createEffect, Show } from "solid-js";
+import { MessageCircle, Bot, Loader2, CheckCircle } from "lucide-solid";
+import type { StreamingSession } from "~/lib/api/types";
+import { useChatRPC } from "~/lib/hooks/useChatRPC";
 
 interface StreamingChatDisplayProps {
   session: () => StreamingSession | null;
@@ -19,7 +19,13 @@ export default function StreamingChatDisplay(props: StreamingChatDisplayProps) {
   createEffect(() => {
     const session = props.session();
     const initMsg = props.initialMessage || "Planning trip...";
-    if (session && !state.isConnected && !state.isStreaming && !state.error && state.progress === 0) {
+    if (
+      session &&
+      !state.isConnected &&
+      !state.isStreaming &&
+      !state.error &&
+      state.progress === 0
+    ) {
       // We need to know what message to send.
       // In the previous flow, the session object might have held this or local storage.
       // Here we'll rely on a prop or default.
@@ -28,7 +34,7 @@ export default function StreamingChatDisplay(props: StreamingChatDisplayProps) {
   });
 
   return (
-    <div class={`h-full flex flex-col ${props.className || ''}`}>
+    <div class={`h-full flex flex-col ${props.className || ""}`}>
       {/* Header */}
       <div class="flex items-center gap-3 p-4 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
         <div class="w-10 h-10 rounded-full bg-[#0c7df2] flex items-center justify-center text-white shadow ring-2 ring-white/50 dark:ring-slate-800">
@@ -84,4 +90,3 @@ export default function StreamingChatDisplay(props: StreamingChatDisplayProps) {
     </div>
   );
 }
-

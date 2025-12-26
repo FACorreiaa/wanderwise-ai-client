@@ -55,10 +55,7 @@ export const clearAuthToken = (): void => {
  */
 export const isPersistentSession = (): boolean => {
   if (typeof window === "undefined") return false;
-  return (
-    !!localStorage.getItem("access_token") ||
-    !!localStorage.getItem("refresh_token")
-  );
+  return !!localStorage.getItem("access_token") || !!localStorage.getItem("refresh_token");
 };
 
 /**

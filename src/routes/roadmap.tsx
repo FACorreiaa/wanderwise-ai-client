@@ -1,15 +1,6 @@
 import { For } from "solid-js";
 import { Title, Meta } from "@solidjs/meta";
-import {
-  CheckCircle2,
-  Rocket,
-  Zap,
-  Globe,
-  Share2,
-  Download,
-  Mic,
-  Calendar
-} from "lucide-solid";
+import { CheckCircle2, Rocket, Zap, Globe, Share2, Download, Mic, Calendar } from "lucide-solid";
 import { A } from "@solidjs/router";
 
 interface Phase {
@@ -31,8 +22,8 @@ export default function Roadmap() {
         "Gemini-powered recommendation engine",
         "Interactive map & routing",
         "User accounts & basic bookmarks",
-        "Itinerary personalization"
-      ]
+        "Itinerary personalization",
+      ],
     },
     {
       number: 2,
@@ -43,8 +34,8 @@ export default function Roadmap() {
         "Vector database (pgvector) context",
         "Speech-to-text hands-free planning",
         "PDF/Markdown itinerary downloads",
-        "Premium subscription tier"
-      ]
+        "Premium subscription tier",
+      ],
     },
     {
       number: 3,
@@ -55,9 +46,9 @@ export default function Roadmap() {
         "Native iOS & Android Apps",
         "Collaborative trip planning",
         "Offline maps & guides",
-        "Community curated lists"
-      ]
-    }
+        "Community curated lists",
+      ],
+    },
   ];
 
   return (
@@ -67,7 +58,6 @@ export default function Roadmap() {
 
       {/* Main Page Container - Adaptive Theme */}
       <div class="min-h-screen bg-white dark:bg-[#111111] text-gray-900 dark:text-white selection:bg-blue-500/30 font-sans transition-colors duration-300">
-
         {/* HERO SECTION with Diagonal Cut */}
         <section class="relative bg-gradient-to-r from-blue-900 via-indigo-900 to-purple-900 overflow-hidden pb-32 lg:pb-48">
           {/* Diagonal Cut Effect - matches the body background */}
@@ -82,7 +72,8 @@ export default function Roadmap() {
                 Roadmap
               </h1>
               <p class="text-xl sm:text-2xl text-blue-100 max-w-2xl font-light leading-relaxed">
-                We love travel and mad science. Here is what powers Loci and where we are heading next.
+                We love travel and mad science. Here is what powers Loci and where we are heading
+                next.
               </p>
             </div>
 
@@ -99,7 +90,6 @@ export default function Roadmap() {
         {/* PHASES GRID */}
         <section class="container mx-auto px-4 py-12 -mt-10 relative z-20">
           <div class="grid grid-cols-1 lg:grid-cols-2 gap-x-12 gap-y-16">
-
             {/* COMPLETED */}
             <div class="group">
               <div class="flex items-start gap-6">
@@ -107,7 +97,9 @@ export default function Roadmap() {
                   <CheckCircle2 class="w-16 h-16 text-emerald-500 hover:scale-110 transition-transform" />
                 </div>
                 <div>
-                  <h2 class="text-3xl font-bold mb-3 text-gray-900 dark:text-white">MVP Foundation</h2>
+                  <h2 class="text-3xl font-bold mb-3 text-gray-900 dark:text-white">
+                    MVP Foundation
+                  </h2>
                   <p class="text-gray-600 dark:text-gray-400 leading-relaxed mb-4 text-lg">
                     {phases[0].description}
                   </p>
@@ -132,7 +124,9 @@ export default function Roadmap() {
                   <Zap class="w-16 h-16 text-amber-500 hover:scale-110 transition-transform" />
                 </div>
                 <div>
-                  <h2 class="text-3xl font-bold mb-3 text-gray-900 dark:text-white">Enhanced Intelligence</h2>
+                  <h2 class="text-3xl font-bold mb-3 text-gray-900 dark:text-white">
+                    Enhanced Intelligence
+                  </h2>
                   <p class="text-gray-600 dark:text-gray-400 leading-relaxed mb-4 text-lg">
                     {phases[1].description}
                   </p>
@@ -157,7 +151,9 @@ export default function Roadmap() {
                   <Globe class="w-16 h-16 text-blue-500 hover:scale-110 transition-transform" />
                 </div>
                 <div>
-                  <h2 class="text-3xl font-bold mb-3 text-gray-900 dark:text-white">Global Scale</h2>
+                  <h2 class="text-3xl font-bold mb-3 text-gray-900 dark:text-white">
+                    Global Scale
+                  </h2>
                   <p class="text-gray-600 dark:text-gray-400 leading-relaxed mb-4 text-lg">
                     {phases[2].description}
                   </p>
@@ -174,14 +170,15 @@ export default function Roadmap() {
                 </div>
               </div>
             </div>
-
           </div>
         </section>
 
         {/* FEATURE DETAILS STACK */}
         <section class="container mx-auto px-4 py-24">
           <div class="mb-12">
-            <h3 class="text-2xl font-bold text-gray-900 dark:text-gray-200 mb-2">Upcoming Highlights</h3>
+            <h3 class="text-2xl font-bold text-gray-900 dark:text-gray-200 mb-2">
+              Upcoming Highlights
+            </h3>
             <div class="h-1 w-20 bg-blue-500 rounded-full" />
           </div>
 
@@ -192,8 +189,13 @@ export default function Roadmap() {
                 <Mic class="w-8 h-8 text-purple-500 dark:text-purple-400" />
               </div>
               <div>
-                <h4 class="text-xl font-bold text-gray-900 dark:text-white mb-2">Voice Interaction</h4>
-                <p class="text-gray-600 dark:text-gray-400">Speak to Loci naturally to refine plans while on the go. Perfect for when you need quick answers without typing.</p>
+                <h4 class="text-xl font-bold text-gray-900 dark:text-white mb-2">
+                  Voice Interaction
+                </h4>
+                <p class="text-gray-600 dark:text-gray-400">
+                  Speak to Loci naturally to refine plans while on the go. Perfect for when you need
+                  quick answers without typing.
+                </p>
               </div>
             </div>
 
@@ -203,8 +205,13 @@ export default function Roadmap() {
                 <Share2 class="w-8 h-8 text-pink-500 dark:text-pink-400" />
               </div>
               <div>
-                <h4 class="text-xl font-bold text-gray-900 dark:text-white mb-2">Social Itineraries</h4>
-                <p class="text-gray-600 dark:text-gray-400">Share your perfect trip with friends or publish it to the Loci community to help others discover hidden gems.</p>
+                <h4 class="text-xl font-bold text-gray-900 dark:text-white mb-2">
+                  Social Itineraries
+                </h4>
+                <p class="text-gray-600 dark:text-gray-400">
+                  Share your perfect trip with friends or publish it to the Loci community to help
+                  others discover hidden gems.
+                </p>
               </div>
             </div>
 
@@ -215,7 +222,10 @@ export default function Roadmap() {
               </div>
               <div>
                 <h4 class="text-xl font-bold text-gray-900 dark:text-white mb-2">Offline Mode</h4>
-                <p class="text-gray-600 dark:text-gray-400">Download your city guides and maps for use without data roaming. Essential for international travel.</p>
+                <p class="text-gray-600 dark:text-gray-400">
+                  Download your city guides and maps for use without data roaming. Essential for
+                  international travel.
+                </p>
               </div>
             </div>
 
@@ -225,8 +235,13 @@ export default function Roadmap() {
                 <Calendar class="w-8 h-8 text-indigo-500 dark:text-indigo-400" />
               </div>
               <div>
-                <h4 class="text-xl font-bold text-gray-900 dark:text-white mb-2">Smart Scheduling</h4>
-                <p class="text-gray-600 dark:text-gray-400">AI that understands opening hours and travel time to build realistically playable itineraries.</p>
+                <h4 class="text-xl font-bold text-gray-900 dark:text-white mb-2">
+                  Smart Scheduling
+                </h4>
+                <p class="text-gray-600 dark:text-gray-400">
+                  AI that understands opening hours and travel time to build realistically playable
+                  itineraries.
+                </p>
               </div>
             </div>
           </div>
@@ -255,7 +270,11 @@ export default function Roadmap() {
                 </button>
               </A>
               <div class="flex items-center gap-4 opacity-75 grayscale hover:grayscale-0 transition-all cursor-not-allowed">
-                <img src="https://upload.wikimedia.org/wikipedia/commons/7/78/Google_Play_Store_badge_EN.svg" class="h-12" alt="Play Store" />
+                <img
+                  src="https://upload.wikimedia.org/wikipedia/commons/7/78/Google_Play_Store_badge_EN.svg"
+                  class="h-12"
+                  alt="Play Store"
+                />
                 {/* Placeholder for App Store */}
               </div>
             </div>
@@ -266,7 +285,6 @@ export default function Roadmap() {
         <section class="bg-gray-100 dark:bg-[#0b0b0f] pt-12 pb-20 transition-colors duration-300">
           {/* This area just blends into the main footer component if it exists, or acts as a buffer */}
         </section>
-
       </div>
     </>
   );

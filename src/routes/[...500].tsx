@@ -1,5 +1,5 @@
 import { A } from "@solidjs/router";
-import { AlertTriangle, Home, Compass, RefreshCw } from 'lucide-solid';
+import { AlertTriangle, Home, Compass, RefreshCw } from "lucide-solid";
 import { Button } from "~/ui/button";
 
 export default function ServerError() {
@@ -21,31 +21,22 @@ export default function ServerError() {
         </div>
 
         {/* Error Message */}
-        <h1 class="text-4xl sm:text-5xl font-bold text-gray-900 dark:text-white mb-4">
-          500
-        </h1>
+        <h1 class="text-4xl sm:text-5xl font-bold text-gray-900 dark:text-white mb-4">500</h1>
         <h2 class="text-xl sm:text-2xl font-semibold text-gray-700 dark:text-gray-300 mb-4">
           Server Error
         </h2>
         <p class="text-gray-600 dark:text-gray-400 mb-8 leading-relaxed">
-          Our travel servers are experiencing some turbulence. Don't worry - our team is working to get everything back on track!
+          Our travel servers are experiencing some turbulence. Don't worry - our team is working to
+          get everything back on track!
         </p>
 
         {/* Action Buttons */}
         <div class="space-y-3 sm:space-y-0 sm:space-x-4 sm:flex sm:justify-center">
-          <Button
-            onClick={handleRefresh}
-            class="w-full sm:w-auto gap-2"
-          >
+          <Button onClick={handleRefresh} class="w-full sm:w-auto gap-2">
             <RefreshCw class="w-4 h-4" />
             Try Again
           </Button>
-          <Button
-            variant="outline"
-            as={A}
-            href="/"
-            class="w-full sm:w-auto gap-2"
-          >
+          <Button variant="outline" as={A} href="/" class="w-full sm:w-auto gap-2">
             <Home class="w-4 h-4" />
             Back to Home
           </Button>
@@ -85,7 +76,8 @@ export default function ServerError() {
             <span class="text-sm font-medium text-orange-900 dark:text-orange-100">Travel Tip</span>
           </div>
           <p class="text-xs text-slate-700 dark:text-slate-200">
-            Even the best travel plans hit unexpected delays. Sometimes the best stories come from the unplanned moments!
+            Even the best travel plans hit unexpected delays. Sometimes the best stories come from
+            the unplanned moments!
           </p>
         </div>
       </div>

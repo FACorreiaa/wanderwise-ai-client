@@ -1,5 +1,5 @@
 import { A } from "@solidjs/router";
-import { MapPin, Home, Search, Compass } from 'lucide-solid';
+import { MapPin, Home, Search, Compass } from "lucide-solid";
 
 export default function NotFound() {
   return (
@@ -16,14 +16,13 @@ export default function NotFound() {
         </div>
 
         {/* Error Message */}
-        <h1 class="text-4xl sm:text-5xl font-bold text-gray-900 dark:text-white mb-4">
-          404
-        </h1>
+        <h1 class="text-4xl sm:text-5xl font-bold text-gray-900 dark:text-white mb-4">404</h1>
         <h2 class="text-xl sm:text-2xl font-semibold text-gray-700 dark:text-gray-300 mb-4">
           Destination Not Found
         </h2>
         <p class="text-gray-600 dark:text-gray-400 mb-8 leading-relaxed">
-          Looks like this location doesn't exist on our travel map. Let's get you back on track to discover amazing places!
+          Looks like this location doesn't exist on our travel map. Let's get you back on track to
+          discover amazing places!
         </p>
 
         {/* Action Buttons */}
@@ -78,7 +77,8 @@ export default function NotFound() {
             <span class="text-sm font-medium text-blue-900 dark:text-blue-100">Travel Tip</span>
           </div>
           <p class="text-xs text-slate-700 dark:text-slate-200">
-            Lost pages are like hidden destinations - sometimes the best adventures happen when you're off the beaten path!
+            Lost pages are like hidden destinations - sometimes the best adventures happen when
+            you're off the beaten path!
           </p>
         </div>
       </div>

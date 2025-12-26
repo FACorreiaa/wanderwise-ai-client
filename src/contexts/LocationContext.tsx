@@ -1,6 +1,6 @@
 // LocationContext.tsx
-import { createContext, useContext, createSignal, onMount } from 'solid-js';
-import type { JSX } from 'solid-js';
+import { createContext, useContext, createSignal, onMount } from "solid-js";
+import type { JSX } from "solid-js";
 
 export interface UserLocation {
   latitude: number;
@@ -21,7 +21,7 @@ const LocationContext = createContext<LocationContextValue>();
 export function useUserLocation() {
   const context = useContext(LocationContext);
   if (!context) {
-    throw new Error('useLocation must be used within a LocationProvider');
+    throw new Error("useLocation must be used within a LocationProvider");
   }
   return context;
 }
@@ -36,12 +36,12 @@ export function LocationProvider(props: LocationProviderProps) {
   const [error, setError] = createSignal<string | null>(null);
   const [permissionStatus, setPermissionStatus] = createSignal<string | null>(null);
 
-  const isGeolocationSupported = 'geolocation' in navigator;
+  const isGeolocationSupported = "geolocation" in navigator;
 
   // Function to request location and trigger the browser prompt
   const requestLocation = async () => {
     if (!isGeolocationSupported) {
-      setError('Geolocation is not supported by your browser.');
+      setError("Geolocation is not supported by your browser.");
       return;
     }
 
@@ -64,20 +64,20 @@ export function LocationProvider(props: LocationProviderProps) {
       };
 
       setUserLocation(userLocation);
-      setPermissionStatus('granted');
+      setPermissionStatus("granted");
     } catch (err) {
-      let errorMessage = 'Failed to get location.';
+      let errorMessage = "Failed to get location.";
       if (err instanceof GeolocationPositionError) {
         switch (err.code) {
           case err.PERMISSION_DENIED:
-            setError('Location access was denied by the user.');
-            setPermissionStatus('denied');
+            setError("Location access was denied by the user.");
+            setPermissionStatus("denied");
             break;
           case err.POSITION_UNAVAILABLE:
-            errorMessage = 'Location information is unavailable.';
+            errorMessage = "Location information is unavailable.";
             break;
           case err.TIMEOUT:
-            errorMessage = 'The request to get your location timed out.';
+            errorMessage = "The request to get your location timed out.";
             break;
         }
       }
@@ -90,23 +90,23 @@ export function LocationProvider(props: LocationProviderProps) {
   // Initialize permission status and listen for changes (without auto-requesting)
   onMount(() => {
     if (!isGeolocationSupported) {
-      setError('Geolocation is not supported by your browser.');
+      setError("Geolocation is not supported by your browser.");
       return;
     }
 
-    if ('permissions' in navigator) {
-      navigator.permissions.query({ name: 'geolocation' }).then((permission) => {
+    if ("permissions" in navigator) {
+      navigator.permissions.query({ name: "geolocation" }).then((permission) => {
         setPermissionStatus(permission.state);
         // Only auto-fetch if permission was already granted previously
         // This avoids triggering the browser prompt on page load
-        if (permission.state === 'granted') {
+        if (permission.state === "granted") {
           requestLocation();
         }
 
         // Listen for permission changes
         permission.onchange = () => {
           setPermissionStatus(permission.state);
-          if (permission.state === 'granted') {
+          if (permission.state === "granted") {
             requestLocation();
           }
         };
@@ -122,9 +122,5 @@ export function LocationProvider(props: LocationProviderProps) {
     permissionStatus,
   };
 
-  return (
-    <LocationContext.Provider value={contextValue}>
-      {props.children}
-    </LocationContext.Provider>
-  );
+  return <LocationContext.Provider value={contextValue}>{props.children}</LocationContext.Provider>;
 }

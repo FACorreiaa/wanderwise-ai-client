@@ -9,8 +9,8 @@ import {
   ChevronUp,
   Share2,
 } from "lucide-solid";
-import FavoriteButton from '~/components/shared/FavoriteButton';
-import { POIDetailedInfo, AIItineraryResponse } from '~/lib/api/types';
+import FavoriteButton from "~/components/shared/FavoriteButton";
+import { POIDetailedInfo, AIItineraryResponse } from "~/lib/api/types";
 
 interface ItineraryResultsProps {
   pois?: POIDetailedInfo[];
@@ -39,9 +39,7 @@ export default function ItineraryResults(props: ItineraryResultsProps) {
   const displayPOIs = () => {
     const pois = props.pois || props.itinerary?.points_of_interest || [];
     // Sort by priority if available
-    const sortedPOIs = [...pois].sort(
-      (a, b) => (a.priority || 999) - (b.priority || 999),
-    );
+    const sortedPOIs = [...pois].sort((a, b) => (a.priority || 999) - (b.priority || 999));
 
     // If a fixed limit is provided (from parent), use it
     if (props.limit && !props.showToggle) {
@@ -112,21 +110,13 @@ export default function ItineraryResults(props: ItineraryResultsProps) {
   const getCategoryEmoji = (category: string) => {
     const categoryLower = category.toLowerCase();
     if (categoryLower.includes("museum")) return "🏛️";
-    if (categoryLower.includes("park") || categoryLower.includes("garden"))
-      return "🌳";
+    if (categoryLower.includes("park") || categoryLower.includes("garden")) return "🌳";
     if (categoryLower.includes("beach")) return "🏖️";
-    if (categoryLower.includes("historic") || categoryLower.includes("castle"))
-      return "🏰";
-    if (categoryLower.includes("church") || categoryLower.includes("cathedral"))
-      return "⛪";
+    if (categoryLower.includes("historic") || categoryLower.includes("castle")) return "🏰";
+    if (categoryLower.includes("church") || categoryLower.includes("cathedral")) return "⛪";
     if (categoryLower.includes("market")) return "🛒";
-    if (categoryLower.includes("restaurant") || categoryLower.includes("food"))
-      return "🍽️";
-    if (
-      categoryLower.includes("viewpoint") ||
-      categoryLower.includes("lookout")
-    )
-      return "👁️";
+    if (categoryLower.includes("restaurant") || categoryLower.includes("food")) return "🍽️";
+    if (categoryLower.includes("viewpoint") || categoryLower.includes("lookout")) return "👁️";
     if (categoryLower.includes("landmark")) return "📍";
     if (categoryLower.includes("shopping")) return "🛍️";
     return "📍";
@@ -145,9 +135,7 @@ export default function ItineraryResults(props: ItineraryResultsProps) {
         </div>
 
         <Show when={description() && !props.compact}>
-          <p class="text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
-            {description()}
-          </p>
+          <p class="text-sm text-gray-600 dark:text-gray-300 leading-relaxed">{description()}</p>
         </Show>
       </div>
 
@@ -155,10 +143,11 @@ export default function ItineraryResults(props: ItineraryResultsProps) {
         <For each={displayPOIs()}>
           {(poi, index) => (
             <div
-              class={`rounded-lg border border-gray-200 dark:border-gray-700 ${props.compact
-                ? "p-3 bg-gray-50 dark:bg-gray-800"
-                : "p-4 bg-white dark:bg-gray-800 shadow-sm hover:shadow-md transition-shadow"
-                } ${props.onItemClick ? "cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700" : ""}`}
+              class={`rounded-lg border border-gray-200 dark:border-gray-700 ${
+                props.compact
+                  ? "p-3 bg-gray-50 dark:bg-gray-800"
+                  : "p-4 bg-white dark:bg-gray-800 shadow-sm hover:shadow-md transition-shadow"
+              } ${props.onItemClick ? "cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700" : ""}`}
               onClick={() => props.onItemClick?.(poi)}
             >
               <div class="flex items-start gap-3">
@@ -185,8 +174,9 @@ export default function ItineraryResults(props: ItineraryResultsProps) {
                     <div class="flex-1 min-w-0">
                       <div class="flex items-center gap-2">
                         <h4
-                          class={`font-medium text-gray-900 dark:text-white truncate ${props.compact ? "text-sm" : "text-base"
-                            }`}
+                          class={`font-medium text-gray-900 dark:text-white truncate ${
+                            props.compact ? "text-sm" : "text-base"
+                          }`}
                         >
                           {poi.name}
                         </h4>
@@ -197,9 +187,7 @@ export default function ItineraryResults(props: ItineraryResultsProps) {
                         </Show>
                       </div>
                       <Show when={poi.category}>
-                        <p class="text-xs text-gray-500 dark:text-gray-400">
-                          {poi.category}
-                        </p>
+                        <p class="text-xs text-gray-500 dark:text-gray-400">{poi.category}</p>
                       </Show>
                     </div>
 
@@ -235,9 +223,7 @@ export default function ItineraryResults(props: ItineraryResultsProps) {
                     </Show>
 
                     <Show when={poi.budget}>
-                      <span class="text-blue-600 dark:text-blue-400 font-medium">
-                        {poi.budget}
-                      </span>
+                      <span class="text-blue-600 dark:text-blue-400 font-medium">{poi.budget}</span>
                     </Show>
 
                     <Show when={poi.opening_hours && !props.compact}>
@@ -256,8 +242,8 @@ export default function ItineraryResults(props: ItineraryResultsProps) {
                         item={{
                           id: poi.name,
                           name: poi.name,
-                          contentType: 'poi',
-                          description: poi.description || '',
+                          contentType: "poi",
+                          description: poi.description || "",
                           llmInteractionId: poi.llm_interaction_id,
                         }}
                         size="sm"
@@ -272,11 +258,18 @@ export default function ItineraryResults(props: ItineraryResultsProps) {
                           }
                         }}
                         disabled={!props.onShareClick}
-                        class={`p-2 rounded-lg transition-colors ${!props.onShareClick
-                          ? "text-gray-300 dark:text-gray-600 cursor-not-allowed bg-gray-50 dark:bg-gray-800"
-                          : "text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20"
-                          }`}
-                        title={props.onShareClick ? "Share this place" : props.showAuthMessage ? "Sign in to share this place" : "Share this place"}
+                        class={`p-2 rounded-lg transition-colors ${
+                          !props.onShareClick
+                            ? "text-gray-300 dark:text-gray-600 cursor-not-allowed bg-gray-50 dark:bg-gray-800"
+                            : "text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20"
+                        }`}
+                        title={
+                          props.onShareClick
+                            ? "Share this place"
+                            : props.showAuthMessage
+                              ? "Sign in to share this place"
+                              : "Share this place"
+                        }
                       >
                         <Share2 class="w-4 h-4" />
                       </button>
@@ -311,11 +304,7 @@ export default function ItineraryResults(props: ItineraryResultsProps) {
             class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-700 transition-colors"
           >
             <span>{getToggleText()}</span>
-            {showAll() ? (
-              <ChevronUp class="w-4 h-4" />
-            ) : (
-              <ChevronDown class="w-4 h-4" />
-            )}
+            {showAll() ? <ChevronUp class="w-4 h-4" /> : <ChevronDown class="w-4 h-4" />}
           </button>
         </div>
       </Show>
@@ -325,18 +314,13 @@ export default function ItineraryResults(props: ItineraryResultsProps) {
         when={
           props.limit &&
           !props.showToggle &&
-          (props.pois?.length ||
-            props.itinerary?.points_of_interest?.length ||
-            0) > props.limit
+          (props.pois?.length || props.itinerary?.points_of_interest?.length || 0) > props.limit
         }
       >
         <div class="text-center py-2">
           <span class="text-sm text-gray-500 dark:text-gray-400">
             Showing {props.limit} of{" "}
-            {props.pois?.length ||
-              props.itinerary?.points_of_interest?.length ||
-              0}{" "}
-            places
+            {props.pois?.length || props.itinerary?.points_of_interest?.length || 0} places
           </span>
         </div>
       </Show>

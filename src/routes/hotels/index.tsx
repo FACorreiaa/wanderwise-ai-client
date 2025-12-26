@@ -13,9 +13,7 @@ import { Card, CardContent, CardHeader } from "~/ui/card";
 
 export default function HotelsPage() {
   const [searchParams] = useSearchParams();
-  const [message] = createSignal(
-    (searchParams.message as string) || "Show me hotels"
-  );
+  const [message] = createSignal((searchParams.message as string) || "Show me hotels");
   const [cityName] = createSignal((searchParams.cityName as string) || "London");
 
   const { state, startStream } = useChatRPC();
@@ -47,19 +45,22 @@ export default function HotelsPage() {
     const sessionIdFromUrl = searchParams.sessionId as string;
 
     if (sessionIdFromUrl) {
-      const completedSession = sessionStorage.getItem('completedStreamingSession');
+      const completedSession = sessionStorage.getItem("completedStreamingSession");
       if (completedSession) {
         try {
           const parsed = JSON.parse(completedSession);
           const parsedData = parsed.data || parsed;
 
-          if (parsedData && (parsed.sessionId === sessionIdFromUrl || parsedData.session_id === sessionIdFromUrl)) {
+          if (
+            parsedData &&
+            (parsed.sessionId === sessionIdFromUrl || parsedData.session_id === sessionIdFromUrl)
+          ) {
             const normalizedData = normalizeStoredData(parsedData);
             setRestoredData(normalizedData);
             return;
           }
         } catch (e) {
-          console.warn('Failed to parse completed streaming session:', e);
+          console.warn("Failed to parse completed streaming session:", e);
         }
       }
       return;
@@ -76,16 +77,17 @@ export default function HotelsPage() {
   const hotels = createMemo(() => {
     const data = effectiveData();
     if (!data) return [];
-    const list = data.hotels || data.accommodation_response?.hotels || data.points_of_interest || [];
+    const list =
+      data.hotels || data.accommodation_response?.hotels || data.points_of_interest || [];
     return Array.isArray(list) ? list : [];
   });
 
   const allPois = createMemo(() => {
-    return hotels().map(h => ({
+    return hotels().map((h) => ({
       ...h,
       id: h.name,
-      latitude: typeof h.latitude === 'string' ? parseFloat(h.latitude) : h.latitude,
-      longitude: typeof h.longitude === 'string' ? parseFloat(h.longitude) : h.longitude,
+      latitude: typeof h.latitude === "string" ? parseFloat(h.latitude) : h.latitude,
+      longitude: typeof h.longitude === "string" ? parseFloat(h.longitude) : h.longitude,
     })) as unknown as POIDetailedInfo[];
   });
 
@@ -102,11 +104,13 @@ export default function HotelsPage() {
 
   const handleShare = () => {
     if (navigator.share) {
-      navigator.share({
-        title: `Hotels in ${cityName()}`,
-        text: `Check out these hotels in ${cityName()}!`,
-        url: window.location.href,
-      }).catch(console.error);
+      navigator
+        .share({
+          title: `Hotels in ${cityName()}`,
+          text: `Check out these hotels in ${cityName()}!`,
+          url: window.location.href,
+        })
+        .catch(console.error);
     }
   };
 
@@ -116,10 +120,8 @@ export default function HotelsPage() {
 
   const handleItemFavorite = (hotel: any) => {
     const name = hotel.name;
-    setFavorites(prev =>
-      prev.includes(name)
-        ? prev.filter(n => n !== name)
-        : [...prev, name]
+    setFavorites((prev) =>
+      prev.includes(name) ? prev.filter((n) => n !== name) : [...prev, name],
     );
     console.log(`Toggled favorite for: ${name}`);
   };
@@ -127,15 +129,18 @@ export default function HotelsPage() {
   // Map Content
   const MapContent = (
     <div class="h-full w-full bg-slate-100 dark:bg-slate-900 relative">
-      <Show when={allPois().length > 0} fallback={
-        <div class="h-full w-full flex items-center justify-center text-muted-foreground p-4 text-center">
-          {state.isStreaming ? "Loading map data..." : "No items to display on map"}
-        </div>
-      }>
+      <Show
+        when={allPois().length > 0}
+        fallback={
+          <div class="h-full w-full flex items-center justify-center text-muted-foreground p-4 text-center">
+            {state.isStreaming ? "Loading map data..." : "No items to display on map"}
+          </div>
+        }
+      >
         <MapComponent
           center={[
             (allPois()[0]?.longitude as number) || 0,
-            (allPois()[0]?.latitude as number) || 0
+            (allPois()[0]?.latitude as number) || 0,
           ]}
           pointsOfInterest={allPois()}
           zoom={12}
@@ -188,16 +193,12 @@ export default function HotelsPage() {
 
   return (
     <>
-      <SplitView
-        listContent={ListContent}
-        mapContent={MapContent}
-        initialMode="split"
-      />
+      <SplitView listContent={ListContent} mapContent={MapContent} initialMode="split" />
       <FloatingChat
         getStreamingData={() => effectiveData()}
         setStreamingData={(fn) => {
           const currentData = effectiveData();
-          const newData = typeof fn === 'function' ? fn(currentData) : fn;
+          const newData = typeof fn === "function" ? fn(currentData) : fn;
           setRestoredData(newData);
         }}
         initialSessionId={searchParams.sessionId as string}
