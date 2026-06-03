@@ -4,6 +4,8 @@ import ReviewCard from "~/components/ReviewCard";
 const ReviewForm = lazy(() => import("~/components/ReviewForm"));
 import { Button } from "~/ui/button";
 import { TextField, TextFieldRoot } from "~/ui/textfield";
+import { useUserReviews, useCreateReview, useLikeReview, type ReviewItem } from "~/lib/api/reviews";
+import { ErrorView } from "~/components/ErrorView";
 
 interface Place {
   id: string;
@@ -130,7 +132,37 @@ export default function ReviewsPage() {
     },
   ]);
 
-  const [myReviews] = createSignal<Review[]>([
+  // Real "My Reviews" data from the ReviewService.
+  const userReviewsQuery = useUserReviews();
+  const createReview = useCreateReview();
+  const likeReview = useLikeReview();
+
+  const apiToPageReview = (r: ReviewItem): Review => ({
+    id: r.id,
+    userId: r.userId,
+    userName: r.reviewerName || "You",
+    userAvatar: r.reviewerAvatar || undefined,
+    poiId: r.poiId,
+    poiName: r.poiName || "Place",
+    rating: r.rating,
+    title: r.title,
+    content: r.content,
+    date: (r.createdAt ?? "").split("T")[0],
+    visitDate: (r.visitDate ?? "").split("T")[0],
+    helpful: r.helpful,
+    notHelpful: 0,
+    verified: r.verified,
+    photos: r.photos,
+    location: "",
+    travelType: "",
+    userReaction: null,
+  });
+
+  const myReviews = (): Review[] => (userReviewsQuery.data ?? []).map(apiToPageReview);
+
+  // Retained sample for the global "All Reviews" feed until GetRecentReviews
+  // ships (see deploy/OPS.md known follow-ups).
+  const _sampleMyReviews: Review[] = [
     {
       id: "my-rev-1",
       userId: "current-user",
@@ -152,7 +184,8 @@ export default function ReviewsPage() {
       travelType: "solo",
       userReaction: null,
     },
-  ]);
+  ];
+  void _sampleMyReviews;
 
   const ratingFilters = () => [
     { value: "all", label: "All Ratings", count: reviews().length },
@@ -243,6 +276,8 @@ export default function ReviewsPage() {
   };
 
   const handleReaction = (reviewId: string, reaction: "helpful" | "not-helpful") => {
+    // Persist the helpful/unhelpful vote (best-effort); UI updates optimistically.
+    likeReview.mutate({ reviewId, isLike: reaction === "helpful" });
     setReviews((prev) =>
       prev.map((review) => {
         if (review.id === reviewId) {
@@ -275,7 +310,19 @@ export default function ReviewsPage() {
   };
 
   const handleSubmitReview = async (reviewData: any) => {
-    // Simulate API call
+    // Persist via ReviewService; the My Reviews query refetches on success.
+    try {
+      await createReview.mutateAsync({
+        poiId: reviewData.poiId,
+        rating: reviewData.rating,
+        title: reviewData.title,
+        content: reviewData.content,
+        photoUrls: reviewData.photos,
+      });
+    } catch (err) {
+      console.error("Failed to submit review:", err);
+    }
+
     const newReview = {
       id: `rev-${Date.now()}`,
       userId: "current-user",
@@ -466,18 +513,31 @@ export default function ReviewsPage() {
           <Show
             when={filteredReviews().length > 0}
             fallback={
-              <div class="text-center py-12">
-                <Star class="w-12 h-12 text-gray-300 mx-auto mb-4" />
-                <h3 class="text-lg font-semibold text-gray-900 mb-2">No reviews found</h3>
-                <p class="text-gray-600 mb-4">
-                  {activeTab() === "my-reviews"
-                    ? "You haven't written any reviews yet"
-                    : "No reviews match your current filters"}
-                </p>
-                <Show when={activeTab() === "my-reviews"}>
-                  <Button onClick={() => setShowReviewForm(true)}>Write Your First Review</Button>
-                </Show>
-              </div>
+              <Show
+                when={activeTab() === "my-reviews" && userReviewsQuery.isError}
+                fallback={
+                  <div class="text-center py-12">
+                    <Star class="w-12 h-12 text-gray-300 mx-auto mb-4" />
+                    <h3 class="text-lg font-semibold text-gray-900 mb-2">No reviews found</h3>
+                    <p class="text-gray-600 mb-4">
+                      {activeTab() === "my-reviews"
+                        ? "You haven't written any reviews yet"
+                        : "No reviews match your current filters"}
+                    </p>
+                    <Show when={activeTab() === "my-reviews"}>
+                      <Button onClick={() => setShowReviewForm(true)}>
+                        Write Your First Review
+                      </Button>
+                    </Show>
+                  </div>
+                }
+              >
+                <ErrorView
+                  error={userReviewsQuery.error}
+                  onRetry={() => userReviewsQuery.refetch()}
+                  class="my-6"
+                />
+              </Show>
             }
           >
             <div class="space-y-6">
