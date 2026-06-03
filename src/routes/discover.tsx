@@ -1,5 +1,7 @@
-import { createSignal, For, Show, onCleanup, createEffect } from "solid-js";
+import { createSignal, For, Show, onCleanup, createEffect, onMount } from "solid-js";
+import { useSearchParams } from "@solidjs/router";
 import { Title, Meta } from "@solidjs/meta";
+import { useUserLocation } from "~/contexts/LocationContext";
 import {
   Search,
   TrendingUp,
@@ -24,9 +26,12 @@ import { exportPOIsToPDF } from "~/lib/utils/pdf-export";
 
 export default function DiscoverPage() {
   const { isAuthenticated } = useAuth();
+  const [searchParams] = useSearchParams();
+  const { userLocation, requestLocation } = useUserLocation();
   const localResultCache = new Map<string, POI[]>();
   const [searchQuery, setSearchQuery] = createSignal("");
   const [searchLocation, setSearchLocation] = createSignal("");
+  const [isNearbyMode, setIsNearbyMode] = createSignal(false);
   const [searchResults, setSearchResults] = createSignal<POI[]>([]);
   const [isSearching, setIsSearching] = createSignal(false);
   const [searchError, setSearchError] = createSignal<string | null>(null);
@@ -176,8 +181,8 @@ export default function DiscoverPage() {
     return [];
   };
 
-  const handleSearch = async (e: Event) => {
-    e.preventDefault();
+  const handleSearch = async (e?: Event) => {
+    e?.preventDefault();
     if (!searchQuery().trim()) return;
     const cacheKey = `${streamDomain()}:${searchQuery().trim().toLowerCase()}:${searchLocation().trim().toLowerCase()}`;
 
@@ -201,11 +206,15 @@ export default function DiscoverPage() {
     setSearchResults([]);
 
     try {
+      const loc = userLocation();
       const response = await sendUnifiedChatMessageStream({
         profileId: "",
         cityName: searchLocation().trim() || undefined,
         message: searchQuery().trim(),
         contextType: "general",
+        // Pass location when available so the server can serve the "nearby"
+        // domain (it requires user coordinates).
+        userLocation: loc ? { userLat: loc.latitude, userLon: loc.longitude } : undefined,
       });
 
       const reader = response.body?.getReader();
@@ -263,10 +272,15 @@ export default function DiscoverPage() {
               case "general_pois":
               case "restaurants":
               case "hotels":
-              case "activities": {
+              case "activities":
+              case "nearby": {
                 const list = extractPois(parsedData);
                 setSearchResults(list);
-                setProgressMessage("Found places you might like");
+                setProgressMessage(
+                  event.type === "nearby"
+                    ? "Found places near you"
+                    : "Found places you might like",
+                );
                 break;
               }
               case "itinerary":
@@ -397,6 +411,35 @@ export default function DiscoverPage() {
       searchInput.focus();
     }
   };
+
+  // Geolocation-driven "near me" search. Reused by the ?category=nearby entry
+  // point (e.g. the dashboard "Discover Nearby" button).
+  const triggerNearbySearch = async () => {
+    setIsNearbyMode(true);
+    if (!userLocation()) {
+      setProgressMessage("Getting your location…");
+      try {
+        await requestLocation();
+      } catch {
+        // fall through to the guard below
+      }
+    }
+    if (!userLocation()) {
+      setSearchError(
+        "Location access is needed to find places near you. Please enable location services and try again.",
+      );
+      setProgressMessage(null);
+      return;
+    }
+    setSearchQuery("Interesting places near me");
+    await handleSearch();
+  };
+
+  onMount(() => {
+    if (searchParams.category === "nearby") {
+      void triggerNearbySearch();
+    }
+  });
 
   onCleanup(() => {
     if (abortController) {
@@ -601,7 +644,9 @@ export default function DiscoverPage() {
                     when={searchResults().length > 0}
                     fallback={
                       <div class="md:col-span-2 lg:col-span-3 text-center py-6 text-muted-foreground">
-                        No results yet. Try another query.
+                        {isNearbyMode()
+                          ? "No places found near you. Try a wider area or a specific city."
+                          : "No results yet. Try another query."}
                       </div>
                     }
                   >
