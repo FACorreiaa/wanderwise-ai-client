@@ -27,8 +27,13 @@ const MobileAppAnnouncement = lazy(
   () => import("~/components/features/Home/MobileAppAnnouncement"),
 );
 const LocationPermissionPrompt = lazy(() => import("~/components/LocationPermissionPrompt"));
-import { sendUnifiedChatMessageStream, detectDomain } from "~/lib/api/llm";
-import { streamingService, createStreamingSession, getDomainRoute } from "~/lib/streaming-service";
+import { detectDomain } from "~/lib/api/llm";
+import {
+  createStreamingSession,
+  getDomainRoute,
+  sendUnifiedChatMessageStream,
+  streamingService,
+} from "~/lib/chat-stream";
 
 const statsData = {
   badgeText: "Seen in beta",

@@ -1,0 +1,238 @@
+/* ============================================================
+   Editorial "loci" layer — magazine-grade travel UI primitives.
+   Token-driven (works across classic / modern / loci / dark).
+   Imported by the itinerary stream view; safe to import anywhere.
+   ============================================================ */
+
+/* ---- Typographic accents ---------------------------------- */
+
+/* Small uppercase label that sits above titles — the editorial
+   "kicker". Uses the accent token so it pops on any theme. */
+.kicker {
+  font-size: 0.6875rem; /* 11px */
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: hsl(var(--accent));
+  line-height: 1;
+}
+
+/* Oversized editorial headline. Pairs the display font from the
+   active theme (Space Grotesk on loci) with tight tracking. */
+.editorial-title {
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.05;
+  text-wrap: balance;
+}
+
+/* Drop-cap-ish lead paragraph for itinerary summaries. */
+.editorial-lead {
+  color: hsl(var(--muted-foreground));
+  line-height: 1.6;
+  text-wrap: pretty;
+}
+
+/* ---- Cards ------------------------------------------------- */
+
+.editorial-card {
+  background: hsl(var(--card));
+  border: 1px solid hsl(var(--border) / 0.7);
+  border-radius: var(--radius);
+  transition:
+    transform 0.32s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.32s cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 0.32s ease;
+  will-change: transform;
+}
+
+@media (hover: hover) {
+  .editorial-card:hover {
+    transform: translateY(-3px);
+    border-color: hsl(var(--border));
+    box-shadow:
+      0 1px 2px hsl(var(--foreground) / 0.04),
+      0 12px 28px -12px hsl(var(--foreground) / 0.18);
+  }
+}
+
+/* Numbered index "stamp" on each stop. */
+.stop-stamp {
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  letter-spacing: -0.04em;
+}
+
+/* ---- Progressive image (blur-up + LQIP) ------------------- */
+
+.pi-frame {
+  position: relative;
+  overflow: hidden;
+  background: hsl(var(--muted));
+  isolation: isolate;
+}
+
+/* Deterministic colored placeholder shown until the real image
+   decodes. Hue is injected per-card via --pi-hue. */
+.pi-lqip {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(
+      120% 120% at 20% 15%,
+      hsl(var(--pi-hue, 210) 55% 62% / 0.9),
+      hsl(var(--pi-hue, 210) 45% 38% / 0.95) 70%
+    );
+  z-index: 0;
+}
+
+.pi-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: 1;
+  opacity: 0;
+  transform: scale(1.04);
+  transition:
+    opacity 0.5s ease,
+    transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.pi-img[data-loaded="true"] {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.pi-error {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: hsl(var(--muted-foreground));
+  background: hsl(var(--muted));
+}
+
+/* ---- Shimmer (skeleton) ----------------------------------- */
+
+.shimmer {
+  position: relative;
+  overflow: hidden;
+  background: hsl(var(--muted));
+}
+
+.shimmer::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    hsl(var(--foreground) / 0.06) 45%,
+    hsl(var(--foreground) / 0.1) 50%,
+    hsl(var(--foreground) / 0.06) 55%,
+    transparent 100%
+  );
+  animation: editorial-shimmer 1.5s ease-in-out infinite;
+}
+
+@keyframes editorial-shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+/* ---- Skeleton → enriched transition ----------------------- */
+
+/* Fires once when a card receives its enrichment payload. A soft
+   accent ring blooms and fades, signalling "this got real". */
+.enrich-bloom {
+  animation: enrich-bloom 0.9s ease-out;
+}
+
+@keyframes enrich-bloom {
+  0% {
+    box-shadow: 0 0 0 0 hsl(var(--accent) / 0);
+  }
+  25% {
+    box-shadow: 0 0 0 3px hsl(var(--accent) / 0.35);
+  }
+  100% {
+    box-shadow: 0 0 0 0 hsl(var(--accent) / 0);
+  }
+}
+
+/* New rows slide+fade in (staggered via inline --i delay). */
+.stop-enter {
+  animation: stop-enter 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: calc(var(--i, 0) * 55ms);
+}
+
+@keyframes stop-enter {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ---- Streaming status rail -------------------------------- */
+
+.stream-rail {
+  height: 3px;
+  background: hsl(var(--muted));
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.stream-rail-fill {
+  height: 100%;
+  background: linear-gradient(90deg, hsl(var(--primary)), hsl(var(--accent)));
+  border-radius: 999px;
+  transition: width 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Indeterminate sweep used before any item is enriched. */
+.stream-rail-indeterminate .stream-rail-fill {
+  width: 40% !important;
+  animation: rail-sweep 1.2s ease-in-out infinite;
+}
+
+@keyframes rail-sweep {
+  0% {
+    margin-left: -40%;
+  }
+  100% {
+    margin-left: 100%;
+  }
+}
+
+/* ---- Respect reduced motion ------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+  .editorial-card,
+  .pi-img {
+    transition: none;
+  }
+  .shimmer::after,
+  .enrich-bloom,
+  .stop-enter,
+  .stream-rail-indeterminate .stream-rail-fill {
+    animation: none;
+  }
+  .pi-img {
+    opacity: 1;
+    transform: none;
+  }
+  .stop-enter {
+    opacity: 1;
+    transform: none;
+  }
+}

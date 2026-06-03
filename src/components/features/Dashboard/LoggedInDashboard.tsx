@@ -17,8 +17,13 @@ import {
   Settings,
   Clock,
 } from "lucide-solid";
-import { sendUnifiedChatMessageStream, detectDomain, domainToContextType } from "~/lib/api/llm";
-import { streamingService, createStreamingSession, getDomainRoute } from "~/lib/streaming-service";
+import { detectDomain, domainToContextType } from "~/lib/api/llm";
+import {
+  createStreamingSession,
+  getDomainRoute,
+  sendUnifiedChatMessageStream,
+  streamingService,
+} from "~/lib/chat-stream";
 import type { StreamingSession, AiCityResponse, CityInteractions } from "~/lib/api/types";
 import { useUserLocation } from "~/contexts/LocationContext";
 import { useDefaultSearchProfile } from "~/lib/api/profiles";

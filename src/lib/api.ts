@@ -16,50 +16,21 @@ import {
   RefreshTokenRequestSchema,
 } from "@buf/loci_loci-proto.bufbuild_es/loci/auth/auth_pb.js";
 import { transport } from "./connect-transport";
+import {
+  clearAuthToken,
+  getAuthToken,
+  getRefreshToken,
+  isAuthenticated,
+  setAuthToken,
+} from "./auth/tokens";
+
+export { clearAuthToken, getAuthToken, getRefreshToken, isAuthenticated, setAuthToken };
 
 const API_BASE_URL = import.meta.env.VITE_CONNECT_BASE_URL || "http://localhost:8000";
 
 // Create auth client once
 const authClient = createClient(AuthService, transport);
 export const chatService = createClient(ChatService, transport);
-
-// Token management functions - moved to top to avoid circular dependency
-export const getAuthToken = (): string | null => {
-  // Check localStorage first (persistent), then sessionStorage (temporary)
-  return localStorage.getItem("access_token") || sessionStorage.getItem("access_token");
-};
-
-export const getRefreshToken = (): string | null => {
-  return localStorage.getItem("refresh_token") || sessionStorage.getItem("refresh_token");
-};
-
-export const setAuthToken = (
-  token: string,
-  rememberMe: boolean = false,
-  refreshToken?: string,
-): void => {
-  const primaryStorage = rememberMe ? localStorage : sessionStorage;
-  const secondaryStorage = rememberMe ? sessionStorage : localStorage;
-
-  primaryStorage.setItem("access_token", token);
-  if (refreshToken) {
-    primaryStorage.setItem("refresh_token", refreshToken);
-  }
-
-  secondaryStorage.removeItem("access_token");
-  secondaryStorage.removeItem("refresh_token");
-};
-
-export const clearAuthToken = (): void => {
-  localStorage.removeItem("access_token");
-  sessionStorage.removeItem("access_token");
-  localStorage.removeItem("refresh_token");
-  sessionStorage.removeItem("refresh_token");
-};
-
-export const isAuthenticated = (): boolean => {
-  return !!getAuthToken();
-};
 
 // Helper to parse JWT
 const parseJwt = (token: string) => {

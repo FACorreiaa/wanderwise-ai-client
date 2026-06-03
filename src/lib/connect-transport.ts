@@ -1,7 +1,11 @@
 // Connect RPC transport configuration for the Loci app
 import { createConnectTransport } from "@connectrpc/connect-web";
+import { createClient } from "@connectrpc/connect";
 import type { Interceptor, Transport } from "@connectrpc/connect";
 import { ConnectError, Code } from "@connectrpc/connect";
+import { create } from "@bufbuild/protobuf";
+import { AuthService } from "@buf/loci_loci-proto.bufbuild_es/loci/auth/auth_pb.js";
+import { RefreshTokenRequestSchema } from "@buf/loci_loci-proto.bufbuild_es/loci/auth/auth_pb.js";
 import {
   getAuthToken,
   getRefreshToken,
@@ -9,12 +13,21 @@ import {
   isPersistentSession,
   clearAuthToken,
 } from "./auth/tokens";
+import { notifyAuthExpired } from "./auth/auth-events";
+import { logger } from "./logger";
 
 // Connect RPC base URL (without /api/v1 prefix - Connect appends service paths)
 const API_BASE_URL = import.meta.env.VITE_CONNECT_BASE_URL;
 
-// Track if we're currently refreshing to prevent multiple refresh attempts
-let isRefreshing = false;
+// Bare transport WITHOUT the refresh interceptor, used only to refresh tokens.
+// Using the main authenticated transport here would recurse: a 401 from the
+// refresh call would re-enter the refresh interceptor.
+const refreshTransport = createConnectTransport({ baseUrl: API_BASE_URL });
+const refreshClient = createClient(AuthService, refreshTransport);
+
+// Single in-flight refresh shared across all concurrent callers. A search fires
+// several RPCs at once; without sharing, each 401 would trigger its own refresh
+// (or, worse, race on a nulled promise and be read as "refresh failed").
 let refreshPromise: Promise<boolean> | null = null;
 
 /**
@@ -24,40 +37,42 @@ let refreshPromise: Promise<boolean> | null = null;
 async function refreshAccessToken(): Promise<boolean> {
   const refreshToken = getRefreshToken();
   if (!refreshToken) {
-    console.warn("No refresh token available for token refresh");
+    logger.warn("No refresh token available for token refresh");
     return false;
   }
 
   try {
-    // Make a direct fetch to the refresh endpoint to avoid circular interceptor calls
-    const response = await fetch(`${API_BASE_URL}/loci.auth.AuthService/RefreshToken`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ refreshToken }),
-    });
+    const response = await refreshClient.refreshToken(
+      create(RefreshTokenRequestSchema, { refreshToken }),
+    );
 
-    if (!response.ok) {
-      console.error("Token refresh failed with status:", response.status);
-      return false;
-    }
-
-    const data = (await response.json()) as { accessToken?: string; refreshToken?: string };
-
-    if (data.accessToken) {
+    if (response.accessToken) {
       // Preserve the remember me preference
       const shouldPersist = isPersistentSession();
-      setAuthToken(data.accessToken, shouldPersist, data.refreshToken || refreshToken);
-      console.log("Token refreshed successfully");
+      setAuthToken(response.accessToken, shouldPersist, response.refreshToken || refreshToken);
+      logger.debug("Token refreshed successfully");
       return true;
     }
 
     return false;
   } catch (error) {
-    console.error("Token refresh error:", error);
+    logger.error("Token refresh error:", error);
     return false;
   }
+}
+
+/**
+ * Return the shared in-flight refresh promise, starting one if none is running.
+ * Capturing the returned promise into a local (rather than re-reading a module
+ * flag after an await) is what makes concurrent 401s safe.
+ */
+function getRefreshPromise(): Promise<boolean> {
+  if (!refreshPromise) {
+    refreshPromise = refreshAccessToken().finally(() => {
+      refreshPromise = null;
+    });
+  }
+  return refreshPromise;
 }
 
 /**
@@ -79,42 +94,31 @@ const tokenRefreshInterceptor: Interceptor = (next) => async (req) => {
   try {
     return await next(req);
   } catch (error) {
-    // Only handle ConnectError with Unauthenticated code
+    // Only handle ConnectError with Unauthenticated code.
     if (error instanceof ConnectError && error.code === Code.Unauthenticated) {
-      // Check if the error indicates an expired token (not invalid credentials)
-      const message = error.message.toLowerCase();
-      if (
-        message.includes("expired") ||
-        message.includes("invalid token") ||
-        message.includes("token")
-      ) {
-        // Prevent multiple simultaneous refresh attempts
-        if (!isRefreshing) {
-          isRefreshing = true;
-          refreshPromise = refreshAccessToken().finally(() => {
-            isRefreshing = false;
-            refreshPromise = null;
-          });
-        }
-
-        // Wait for the refresh to complete
-        const refreshed = await refreshPromise;
+      // Attempt a refresh whenever we hold a refresh token. We no longer match
+      // on the error message: a transient 401 mid-search must never fall through
+      // to logout just because the server's wording didn't contain "token". If
+      // the user isn't logged in there is no refresh token, so we skip and let
+      // the original error (e.g. bad credentials on login) propagate untouched.
+      if (getRefreshToken()) {
+        const refreshed = await getRefreshPromise();
 
         if (refreshed) {
-          // Retry the original request with the new token
+          // Retry the original request once with the new token.
           const newToken = getAuthToken();
           if (newToken) {
             req.header.set("Authorization", `Bearer ${newToken}`);
           }
           return await next(req);
-        } else {
-          // Refresh failed - clear tokens and let the error propagate
-          clearAuthToken();
-          // Redirect to login
-          if (typeof window !== "undefined" && !window.location.pathname.includes("/auth/")) {
-            window.location.href = "/auth/signin";
-          }
         }
+
+        // Refresh genuinely failed - the session is dead. Clear tokens and
+        // signal a soft logout. AuthProvider handles the SPA navigation; we do
+        // NOT touch window.location (a full reload wipes in-memory state and is
+        // what was logging users out mid-search).
+        clearAuthToken();
+        notifyAuthExpired();
       }
     }
 

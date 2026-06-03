@@ -3,7 +3,7 @@ import { useNavigate } from "@solidjs/router";
 import { ArrowRight, MapPin, Sparkles } from "lucide-solid";
 import StreamingChatDisplay from "./StreamingChatDisplay";
 import type { StreamingSession } from "~/lib/api/types";
-import { getDomainRoute } from "~/lib/streaming-service";
+import { getDomainRoute } from "~/lib/chat-stream";
 
 interface StreamingTransitionProps {
   session: () => StreamingSession | null;

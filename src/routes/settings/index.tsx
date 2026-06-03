@@ -229,7 +229,7 @@ export default function SettingsPage() {
     return (
       <div class="space-y-6">
         {/* Header card inspired by go-templui */}
-        <div class="relative overflow-hidden rounded-3xl border border-white/30 bg-gradient-to-br from-[#0c7df2] via-[#6aa5ff] to-[#0c1747] text-white shadow-2xl">
+        <div class="relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-primary via-primary to-foreground text-white shadow-2xl">
           <div class="absolute inset-0 opacity-30 bg-[radial-gradient(circle_at_20%_20%,rgba(255,255,255,0.45),transparent_35%),radial-gradient(circle_at_80%_0%,rgba(255,255,255,0.35),transparent_30%),radial-gradient(circle_at_50%_80%,rgba(255,255,255,0.25),transparent_32%)]" />
           <div class="relative p-6 sm:p-8 flex flex-col lg:flex-row gap-6 lg:items-center">
             <div class="flex flex-1 items-start gap-4">
@@ -330,13 +330,13 @@ export default function SettingsPage() {
         <div class="grid lg:grid-cols-3 gap-6">
           <div class="lg:col-span-2 space-y-6">
             {/* Personal Information */}
-            <div class="rounded-3xl bg-white/80 dark:bg-slate-800/80 backdrop-blur border border-gray-200 dark:border-slate-700 shadow-sm p-6 sm:p-8">
+            <div class="rounded-3xl bg-card/80 backdrop-blur border border-border shadow-sm p-6 sm:p-8">
               <div class="flex items-start justify-between mb-4">
                 <div>
-                  <h3 class="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white">
+                  <h3 class="text-lg sm:text-xl font-semibold text-foreground">
                     Personal Information
                   </h3>
-                  <p class="text-sm text-gray-500 dark:text-gray-400">
+                  <p class="text-sm text-muted-foreground">
                     Keep your profile details sharp so teammates and the AI know who you are.
                   </p>
                 </div>
@@ -352,43 +352,43 @@ export default function SettingsPage() {
 
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                 <div class="sm:col-span-2 pb-2">
-                  <label class="block text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                  <label class="block text-xs sm:text-sm font-semibold text-foreground mb-2">
                     Username
                   </label>
                   <input
                     type="text"
                     value={userProfile().username}
                     onInput={(e) => updateProfile("username", e.target.value)}
-                    class="w-full px-3 sm:px-4 py-2.5 rounded-xl border border-gray-200 dark:border-slate-600 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base bg-white dark:bg-slate-700 dark:text-white shadow-inner"
+                    class="w-full px-3 sm:px-4 py-2.5 rounded-xl border border-border focus:ring-2 focus:ring-ring focus:border-transparent text-sm sm:text-base bg-background text-foreground shadow-inner"
                     placeholder="Your public handle"
                   />
                 </div>
                 <div class="pb-2">
-                  <label class="block text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                  <label class="block text-xs sm:text-sm font-semibold text-foreground mb-2">
                     First Name
                   </label>
                   <input
                     type="text"
                     value={userProfile().firstname}
                     onInput={(e) => updateProfile("firstname", e.target.value)}
-                    class="w-full px-3 sm:px-4 py-2.5 rounded-xl border border-gray-200 dark:border-slate-600 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base bg-white dark:bg-slate-700 dark:text-white shadow-inner"
+                    class="w-full px-3 sm:px-4 py-2.5 rounded-xl border border-border focus:ring-2 focus:ring-ring focus:border-transparent text-sm sm:text-base bg-background text-foreground shadow-inner"
                     placeholder="Jane"
                   />
                 </div>
                 <div class="pb-2">
-                  <label class="block text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                  <label class="block text-xs sm:text-sm font-semibold text-foreground mb-2">
                     Last Name
                   </label>
                   <input
                     type="text"
                     value={userProfile().lastname}
                     onInput={(e) => updateProfile("lastname", e.target.value)}
-                    class="w-full px-3 sm:px-4 py-2.5 rounded-xl border border-gray-200 dark:border-slate-600 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base bg-white dark:bg-slate-700 dark:text-white shadow-inner"
+                    class="w-full px-3 sm:px-4 py-2.5 rounded-xl border border-border focus:ring-2 focus:ring-ring focus:border-transparent text-sm sm:text-base bg-background text-foreground shadow-inner"
                     placeholder="Doe"
                   />
                 </div>
                 <div class="pb-2">
-                  <label class="block text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                  <label class="block text-xs sm:text-sm font-semibold text-foreground mb-2">
                     Email
                   </label>
                   <div class="relative">
@@ -397,13 +397,13 @@ export default function SettingsPage() {
                       type="email"
                       value={userProfile().email}
                       onInput={(e) => updateProfile("email", e.target.value)}
-                      class="w-full pl-9 sm:pl-10 pr-3 sm:pr-4 py-2.5 rounded-xl border border-gray-200 dark:border-slate-600 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base bg-white dark:bg-slate-700 dark:text-white shadow-inner"
+                      class="w-full pl-9 sm:pl-10 pr-3 sm:pr-4 py-2.5 rounded-xl border border-border focus:ring-2 focus:ring-ring focus:border-transparent text-sm sm:text-base bg-background text-foreground shadow-inner"
                       placeholder="you@example.com"
                     />
                   </div>
                 </div>
                 <div class="pb-2">
-                  <label class="block text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                  <label class="block text-xs sm:text-sm font-semibold text-foreground mb-2">
                     Phone
                   </label>
                   <div class="relative">
@@ -412,13 +412,13 @@ export default function SettingsPage() {
                       type="tel"
                       value={userProfile().phone}
                       onInput={(e) => updateProfile("phone", e.target.value)}
-                      class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 dark:border-slate-600 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base bg-white dark:bg-slate-700 dark:text-white shadow-inner"
+                      class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-border focus:ring-2 focus:ring-ring focus:border-transparent text-sm sm:text-base bg-background text-foreground shadow-inner"
                       placeholder="+1 555 123 4567"
                     />
                   </div>
                 </div>
                 <div class="pb-2">
-                  <label class="block text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                  <label class="block text-xs sm:text-sm font-semibold text-foreground mb-2">
                     City
                   </label>
                   <div class="relative">
@@ -427,13 +427,13 @@ export default function SettingsPage() {
                       type="text"
                       value={userProfile().city}
                       onInput={(e) => updateProfile("city", e.target.value)}
-                      class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 dark:border-slate-600 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base bg-white dark:bg-slate-700 dark:text-white shadow-inner"
+                      class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-border focus:ring-2 focus:ring-ring focus:border-transparent text-sm sm:text-base bg-background text-foreground shadow-inner"
                       placeholder="Barcelona"
                     />
                   </div>
                 </div>
                 <div class="pb-2">
-                  <label class="block text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                  <label class="block text-xs sm:text-sm font-semibold text-foreground mb-2">
                     Country
                   </label>
                   <div class="relative">
@@ -442,20 +442,20 @@ export default function SettingsPage() {
                       type="text"
                       value={userProfile().country}
                       onInput={(e) => updateProfile("country", e.target.value)}
-                      class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 dark:border-slate-600 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base bg-white dark:bg-slate-700 dark:text-white shadow-inner"
+                      class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-border focus:ring-2 focus:ring-ring focus:border-transparent text-sm sm:text-base bg-background text-foreground shadow-inner"
                       placeholder="Spain"
                     />
                   </div>
                 </div>
                 <div class="sm:col-span-2 pb-2">
-                  <label class="block text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                  <label class="block text-xs sm:text-sm font-semibold text-foreground mb-2">
                     Bio
                   </label>
                   <textarea
                     value={userProfile().bio}
                     onInput={(e) => updateProfile("bio", e.target.value)}
                     rows={3}
-                    class="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-slate-600 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base bg-white dark:bg-slate-700 dark:text-white shadow-inner"
+                    class="w-full px-4 py-3 rounded-xl border border-border focus:ring-2 focus:ring-ring focus:border-transparent text-sm sm:text-base bg-background text-foreground shadow-inner"
                     placeholder="Tell us about your travel interests..."
                   />
                 </div>
@@ -464,25 +464,25 @@ export default function SettingsPage() {
           </div>
 
           <div class="space-y-6">
-            <div class="rounded-3xl bg-white/80 dark:bg-slate-800/80 backdrop-blur border border-gray-200 dark:border-slate-700 shadow-sm p-6 sm:p-8">
+            <div class="rounded-3xl bg-card/80 backdrop-blur border border-border shadow-sm p-6 sm:p-8">
               <div class="flex items-center justify-between mb-3">
                 <div>
-                  <p class="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                  <p class="text-xs uppercase tracking-wide text-muted-foreground">
                     Profile strength
                   </p>
-                  <h4 class="text-lg font-semibold text-gray-900 dark:text-white">Completion</h4>
+                  <h4 class="text-lg font-semibold text-foreground">Completion</h4>
                 </div>
-                <div class="px-3 py-1 rounded-full bg-blue-50 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 text-xs font-semibold border border-blue-100 dark:border-blue-800">
+                <div class="px-3 py-1 rounded-full bg-accent/10 text-accent text-xs font-semibold border border-accent/20">
                   Smart Fill
                 </div>
               </div>
-              <div class="w-full h-2.5 rounded-full bg-gray-100 dark:bg-slate-700 overflow-hidden">
+              <div class="w-full h-2.5 rounded-full bg-muted overflow-hidden">
                 <div
-                  class="h-full rounded-full bg-gradient-to-r from-[#0c7df2] via-[#5fa3ff] to-[#0f4eea]"
+                  class="h-full rounded-full bg-gradient-to-r from-primary via-primary to-accent"
                   style={{ width: "78%" }}
                 />
               </div>
-              <p class="text-xs text-gray-500 dark:text-gray-400 mt-2">
+              <p class="text-xs text-muted-foreground mt-2">
                 Complete your details and tune interests/tags for sharper recommendations.
               </p>
             </div>
@@ -490,12 +490,12 @@ export default function SettingsPage() {
             <div class="rounded-3xl bg-gradient-to-br from-white to-blue-50 dark:from-slate-800 dark:to-slate-700 border border-blue-100 dark:border-slate-600 shadow p-6 sm:p-8 space-y-3">
               <div class="flex items-center gap-2">
                 <Bell class="w-5 h-5 text-blue-600 dark:text-blue-400" />
-                <h4 class="text-sm font-semibold text-gray-900 dark:text-white">Quick actions</h4>
+                <h4 class="text-sm font-semibold text-foreground">Quick actions</h4>
               </div>
               <div class="grid grid-cols-1 gap-2">
                 <button
                   onClick={triggerFileInput}
-                  class="w-full flex items-center justify-between px-4 py-3 rounded-xl bg-white dark:bg-slate-700 text-gray-800 dark:text-gray-200 border border-gray-100 dark:border-slate-600 hover:border-blue-200 dark:hover:border-blue-500 hover:shadow-sm transition-all"
+                  class="w-full flex items-center justify-between px-4 py-3 rounded-xl bg-background text-foreground border border-border hover:border-accent hover:shadow-sm transition-all"
                 >
                   <span class="flex items-center gap-2 text-sm font-medium">
                     <Camera class="w-4 h-4 text-blue-600 dark:text-blue-400" /> Update profile photo
@@ -504,7 +504,7 @@ export default function SettingsPage() {
                 </button>
                 <button
                   onClick={() => setActiveTab("tags")}
-                  class="w-full flex items-center justify-between px-4 py-3 rounded-xl bg-white dark:bg-slate-700 text-gray-800 dark:text-gray-200 border border-gray-100 dark:border-slate-600 hover:border-blue-200 dark:hover:border-blue-500 hover:shadow-sm transition-all"
+                  class="w-full flex items-center justify-between px-4 py-3 rounded-xl bg-background text-foreground border border-border hover:border-accent hover:shadow-sm transition-all"
                 >
                   <span class="flex items-center gap-2 text-sm font-medium">
                     <Tag class="w-4 h-4 text-blue-600 dark:text-blue-400" /> Curate tags
@@ -513,7 +513,7 @@ export default function SettingsPage() {
                 </button>
                 <button
                   onClick={() => setActiveTab("interests")}
-                  class="w-full flex items-center justify-between px-4 py-3 rounded-xl bg-white dark:bg-slate-700 text-gray-800 dark:text-gray-200 border border-gray-100 dark:border-slate-600 hover:border-blue-200 dark:hover:border-blue-500 hover:shadow-sm transition-all"
+                  class="w-full flex items-center justify-between px-4 py-3 rounded-xl bg-background text-foreground border border-border hover:border-accent hover:shadow-sm transition-all"
                 >
                   <span class="flex items-center gap-2 text-sm font-medium">
                     <Heart class="w-4 h-4 text-blue-600 dark:text-blue-400" /> Update interests
@@ -682,8 +682,8 @@ export default function SettingsPage() {
   };
 
   return (
-    <div class="min-h-screen relative bg-gradient-to-b from-slate-50 via-white to-blue-50/60 dark:from-slate-900 dark:via-slate-900 dark:to-slate-800">
-      <div class="absolute inset-0 pointer-events-none bg-[radial-gradient(circle_at_20%_20%,rgba(12,125,242,0.08),transparent_35%),radial-gradient(circle_at_80%_0%,rgba(99,179,237,0.08),transparent_28%)] dark:bg-[radial-gradient(circle_at_20%_20%,rgba(12,125,242,0.15),transparent_35%),radial-gradient(circle_at_80%_0%,rgba(99,179,237,0.1),transparent_28%)]" />
+    <div class="min-h-screen relative bg-background">
+      <div class="absolute inset-0 pointer-events-none bg-[radial-gradient(circle_at_15%_10%,hsl(var(--accent)/0.07),transparent_40%),radial-gradient(circle_at_85%_0%,hsl(var(--primary)/0.06),transparent_32%)]" />
       {/* Mobile-friendly notification */}
       <Show when={notification()}>
         <div
@@ -706,7 +706,7 @@ export default function SettingsPage() {
         <div class="flex flex-col lg:flex-row gap-4 lg:gap-8">
           {/* Mobile Tab Navigation */}
           <div class="lg:hidden">
-            <div class="bg-white/80 dark:bg-slate-800/80 backdrop-blur rounded-2xl border border-gray-200/80 dark:border-slate-700/80 p-2 shadow-sm">
+            <div class="bg-card/80 backdrop-blur rounded-2xl border border-border p-2 shadow-sm">
               <div class="flex overflow-x-auto space-x-2">
                 <For each={tabs}>
                   {(tab) => {
@@ -716,8 +716,8 @@ export default function SettingsPage() {
                         onClick={() => setActiveTab(tab.id)}
                         class={`flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-xl transition-all duration-200 whitespace-nowrap border ${
                           activeTab() === tab.id
-                            ? "bg-gradient-to-r from-[#0c7df2] to-[#0a6ed6] text-white shadow-lg border-blue-500/40"
-                            : "text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-slate-700 border-transparent"
+                            ? "bg-primary text-primary-foreground shadow-lg border-primary/40"
+                            : "text-muted-foreground hover:bg-muted hover:text-foreground border-transparent"
                         }`}
                       >
                         <Icon class="w-4 h-4" />
@@ -732,7 +732,7 @@ export default function SettingsPage() {
 
           {/* Desktop Tab Navigation */}
           <div class="hidden lg:block w-64 flex-shrink-0">
-            <div class="bg-white/85 dark:bg-slate-800/85 backdrop-blur rounded-2xl border border-gray-200/90 dark:border-slate-700/90 p-3 sticky top-8 shadow-sm">
+            <div class="bg-card/80 backdrop-blur rounded-2xl border border-border p-3 sticky top-8 shadow-sm">
               <nav class="space-y-1.5">
                 <For each={tabs}>
                   {(tab) => {
@@ -742,8 +742,8 @@ export default function SettingsPage() {
                         onClick={() => setActiveTab(tab.id)}
                         class={`w-full flex items-center gap-3 px-4 py-3 text-left rounded-xl transition-all duration-200 font-semibold border ${
                           activeTab() === tab.id
-                            ? "bg-gradient-to-r from-[#0c7df2] to-[#0a6ed6] text-white shadow-lg border-blue-500/40"
-                            : "text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-slate-700 border-transparent"
+                            ? "bg-primary text-primary-foreground shadow-lg border-primary/40"
+                            : "text-muted-foreground hover:bg-muted hover:text-foreground border-transparent"
                         }`}
                       >
                         <Icon class="w-5 h-5" />

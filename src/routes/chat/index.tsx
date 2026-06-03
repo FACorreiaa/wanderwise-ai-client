@@ -14,19 +14,23 @@ import {
   ChevronUp,
 } from "lucide-solid";
 import {
-  sendUnifiedChatMessageStream,
   ContinueChatStream,
   detectDomain,
   useGetChatSessionsQuery,
   domainToContextType,
 } from "~/lib/api/llm";
-import { streamingService, createStreamingSession } from "~/lib/streaming-service";
+import {
+  createStreamingSession,
+  sendUnifiedChatMessageStream,
+  streamingService,
+} from "~/lib/chat-stream";
 import type { DomainType } from "~/lib/api/types";
 import { useUserLocation } from "~/contexts/LocationContext";
 import HotelResults from "~/components/results/HotelResults";
 import RestaurantResults from "~/components/results/RestaurantResults";
 import ActivityResults from "~/components/results/ActivityResults";
-import ItineraryResults from "~/components/results/ItineraryResults";
+import ItineraryStreamView from "~/components/itinerary/ItineraryStreamView";
+import { stopsFromCityResponse } from "~/lib/itinerary/createItineraryStream";
 const DetailedItemModal = lazy(() => import("~/components/DetailedItemModal"));
 import { useQuery, useQueryClient } from "@tanstack/solid-query";
 import { useDefaultSearchProfile } from "~/lib/api/profiles";
@@ -652,17 +656,25 @@ export default function ChatPage() {
 
           return (
             <Show when={shouldRenderItinerary}>
-              <ItineraryResults
-                pois={poisToRender}
-                itinerary={
-                  hasItineraryResponse ? (streamingData as any).itinerary_response : undefined
-                }
-                compact={actualCompact}
-                showToggle={false}
-                initialLimit={5}
-                limit={actualCompact ? 5 : undefined}
-                onItemClick={(poi: any) => handleItemClick(poi, "poi")}
-              />
+              {(() => {
+                const model = stopsFromCityResponse(streamingData as any);
+                const phase =
+                  model.enrichedCount >= model.stops.length
+                    ? ("done" as const)
+                    : ("enriching" as const);
+                return (
+                  <ItineraryStreamView
+                    phase={phase}
+                    title={model.title}
+                    summary={model.summary}
+                    stops={model.stops}
+                    enrichedCount={model.enrichedCount}
+                    onStopClick={(s) =>
+                      handleItemClick({ name: s.name, id: s.placeId } as any, "poi")
+                    }
+                  />
+                );
+              })()}
             </Show>
           );
         })()}
@@ -978,7 +990,7 @@ export default function ChatPage() {
   const renderMessage = (message: any) => (
     <div class={`flex gap-2 sm:gap-3 ${message.type === "user" ? "justify-end" : "justify-start"}`}>
       {message.type === "assistant" && (
-        <div class="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center flex-shrink-0">
+        <div class="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-gradient-to-br from-blue-500 to-accent flex items-center justify-center flex-shrink-0">
           <Bot class="w-3 h-3 sm:w-4 sm:h-4 text-white" />
         </div>
       )}
@@ -990,7 +1002,7 @@ export default function ChatPage() {
               ? "bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-blue-500/20"
               : message.type === "error"
                 ? "bg-red-50/80 dark:bg-red-900/30 text-red-800 dark:text-red-200 border border-red-200/50 dark:border-red-800/50 backdrop-blur-sm"
-                : "bg-white/80 dark:bg-slate-800/80 text-gray-800 dark:text-gray-200 backdrop-blur-sm border border-gray-200/50 dark:border-white/10"
+                : "bg-card/80 text-foreground backdrop-blur-sm border border-border"
           }`}
         >
           <div class="text-sm whitespace-pre-wrap">
@@ -1000,12 +1012,12 @@ export default function ChatPage() {
 
         {/* Streaming data preview */}
         <Show when={message.streamingData}>
-          <div class="mt-2 sm:mt-3 bg-white/90 dark:bg-slate-800/90 backdrop-blur-xl border border-gray-200/50 dark:border-white/10 rounded-xl p-3 sm:p-4 shadow-lg shadow-gray-500/5 dark:shadow-black/20">
+          <div class="mt-2 sm:mt-3 bg-card/90 backdrop-blur-xl border border-border rounded-xl p-3 sm:p-4 shadow-lg shadow-gray-500/5 dark:shadow-black/20">
             {/* Header section */}
             <Show when={message.streamingData.general_city_data}>
               <div class="flex items-center justify-between mb-2 sm:mb-3">
                 <div class="min-w-0 flex-1 pr-2">
-                  <h4 class="font-semibold text-gray-900 dark:text-white text-sm sm:text-base truncate">
+                  <h4 class="font-semibold text-foreground text-sm sm:text-base truncate">
                     {(() => {
                       const rawName = message.streamingData.itinerary_response?.itinerary_name;
                       if (!rawName) return `${message.streamingData.general_city_data.city} Guide`;
@@ -1030,20 +1042,20 @@ export default function ChatPage() {
                       return rawName || `${message.streamingData.general_city_data.city} Guide`;
                     })()}
                   </h4>
-                  <p class="text-xs sm:text-sm text-gray-600 dark:text-gray-300 truncate">
+                  <p class="text-xs sm:text-sm text-muted-foreground truncate">
                     {message.streamingData.general_city_data.city},{" "}
                     {message.streamingData.general_city_data.country}
                   </p>
                 </div>
                 <div class="flex items-center gap-1 sm:gap-2 flex-shrink-0">
                   <button
-                    class="p-1.5 sm:p-2 text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg"
+                    class="p-1.5 sm:p-2 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-lg"
                     title="Save"
                   >
                     <Heart class="w-3 h-3 sm:w-4 sm:h-4" />
                   </button>
                   <button
-                    class="p-1.5 sm:p-2 text-gray-600 dark:text-gray-300 hover:text-green-600 dark:hover:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg"
+                    class="p-1.5 sm:p-2 text-muted-foreground hover:text-green-600 dark:hover:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg"
                     title="Share"
                   >
                     <Share2 class="w-3 h-3 sm:w-4 sm:h-4" />
@@ -1058,7 +1070,7 @@ export default function ChatPage() {
             {/* Expand/Collapse button */}
             <Show when={message.showResults}>
               <button
-                class="w-full mt-2 sm:mt-3 flex items-center justify-center gap-1 sm:gap-2 py-2 text-xs sm:text-sm text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-700 transition-colors"
+                class="w-full mt-2 sm:mt-3 flex items-center justify-center gap-1 sm:gap-2 py-2 text-xs sm:text-sm text-primary hover:bg-primary/10 rounded-lg border border-primary/30 transition-colors"
                 onClick={() => toggleResultExpansion(message.id)}
               >
                 <span>{expandedResults().has(message.id) ? "Show Less" : "Show All Details"}</span>
@@ -1073,15 +1085,15 @@ export default function ChatPage() {
         </Show>
 
         <p
-          class={`text-xs mt-1 sm:mt-2 ${message.type === "user" ? "text-blue-100 text-right" : "text-gray-500 dark:text-gray-400"}`}
+          class={`text-xs mt-1 sm:mt-2 ${message.type === "user" ? "text-blue-100 text-right" : "text-muted-foreground"}`}
         >
           {formatTimestamp(message.timestamp)}
         </p>
       </div>
 
       {message.type === "user" && (
-        <div class="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-gray-300 dark:bg-gray-600 flex items-center justify-center flex-shrink-0">
-          <User class="w-3 h-3 sm:w-4 sm:h-4 text-gray-600 dark:text-gray-300" />
+        <div class="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
+          <User class="w-3 h-3 sm:w-4 sm:h-4 text-muted-foreground" />
         </div>
       )}
     </div>
@@ -1092,17 +1104,15 @@ export default function ChatPage() {
       {/* Background decorative effects */}
       <div class="absolute inset-0 domain-grid pointer-events-none opacity-40" />
       <div class="absolute inset-0 domain-veil pointer-events-none" />
-      <div class="absolute top-0 right-0 w-96 h-96 bg-blue-400/10 dark:bg-blue-500/5 rounded-full blur-3xl pointer-events-none" />
-      <div class="absolute bottom-0 left-0 w-80 h-80 bg-purple-400/10 dark:bg-purple-500/5 rounded-full blur-3xl pointer-events-none" />
+      <div class="absolute top-0 right-0 w-96 h-96 bg-primary/10 dark:bg-primary/5 rounded-full blur-3xl pointer-events-none" />
+      <div class="absolute bottom-0 left-0 w-80 h-80 bg-accent/10 dark:bg-accent/5 rounded-full blur-3xl pointer-events-none" />
 
       {/* Sidebar - Chat History - Mobile First */}
       <div class="w-full lg:w-80 glass-panel lg:rounded-none lg:rounded-r-2xl flex flex-col order-2 lg:order-1 relative z-10">
         {/* Sidebar Header - Mobile First */}
-        <div class="p-3 sm:p-4 border-b border-gray-200/50 dark:border-white/10">
+        <div class="p-3 sm:p-4 border-b border-border">
           <div class="flex items-center justify-between mb-3 sm:mb-4">
-            <h2 class="text-base sm:text-lg font-semibold text-gray-900 dark:text-white">
-              AI Assistant
-            </h2>
+            <h2 class="text-base sm:text-lg font-semibold text-foreground">AI Assistant</h2>
             <Button onClick={newChat} size="icon" title="New chat">
               <Plus class="w-4 h-4" />
             </Button>
@@ -1112,23 +1122,21 @@ export default function ChatPage() {
           <div class="relative">
             <button
               onClick={() => setShowProfileSelector(!showProfileSelector())}
-              class="w-full flex items-center gap-2 p-2 sm:p-3 bg-white/70 dark:bg-slate-800/70 backdrop-blur-sm rounded-lg hover:bg-white/90 dark:hover:bg-slate-700/90 transition-all border border-gray-300 dark:border-gray-600"
+              class="w-full flex items-center gap-2 p-2 sm:p-3 bg-card/70 backdrop-blur-sm rounded-lg hover:bg-card/90 dark:hover:bg-slate-700/90 transition-all border border-border"
             >
-              <div class="w-6 h-6 sm:w-8 sm:h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-xs sm:text-sm">
+              <div class="w-6 h-6 sm:w-8 sm:h-8 bg-gradient-to-br from-blue-500 to-accent rounded-full flex items-center justify-center text-white text-xs sm:text-sm">
                 🎒
               </div>
               <div class="flex-1 text-left min-w-0">
-                <p class="text-xs sm:text-sm font-medium text-gray-900 dark:text-white truncate">
+                <p class="text-xs sm:text-sm font-medium text-foreground truncate">
                   {activeProfile()}
                 </p>
-                <p class="text-xs text-gray-500 dark:text-gray-400 hidden sm:block">
-                  Active profile
-                </p>
+                <p class="text-xs text-muted-foreground hidden sm:block">Active profile</p>
               </div>
             </button>
 
             <Show when={showProfileSelector()}>
-              <div class="absolute top-full left-0 right-0 mt-2 bg-white/95 dark:bg-slate-800/95 backdrop-blur-xl border border-gray-200/50 dark:border-white/10 rounded-xl shadow-xl shadow-gray-500/10 dark:shadow-black/30 z-10 max-h-60 overflow-y-auto">
+              <div class="absolute top-full left-0 right-0 mt-2 bg-card/95 backdrop-blur-xl border border-border rounded-xl shadow-xl shadow-gray-500/10 dark:shadow-black/30 z-10 max-h-60 overflow-y-auto">
                 <For each={profiles}>
                   {(profile) => (
                     <button
@@ -1136,16 +1144,16 @@ export default function ChatPage() {
                         setActiveProfile(profile.name);
                         setShowProfileSelector(false);
                       }}
-                      class={`w-full flex items-center gap-2 sm:gap-3 p-2 sm:p-3 hover:bg-gray-50 dark:hover:bg-gray-700 dark:bg-gray-700 transition-colors first:rounded-t-lg last:rounded-b-lg ${
+                      class={`w-full flex items-center gap-2 sm:gap-3 p-2 sm:p-3 hover:bg-muted transition-colors first:rounded-t-lg last:rounded-b-lg ${
                         activeProfile() === profile.name
-                          ? "bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400"
-                          : "text-gray-700 dark:text-gray-300"
+                          ? "bg-primary/10 text-primary"
+                          : "text-foreground"
                       }`}
                     >
                       <span class="text-base sm:text-lg">{profile.icon}</span>
                       <div class="flex-1 text-left min-w-0">
                         <p class="text-xs sm:text-sm font-medium truncate">{profile.name}</p>
-                        <p class="text-xs text-gray-500 dark:text-gray-400 hidden sm:block">
+                        <p class="text-xs text-muted-foreground hidden sm:block">
                           {profile.description}
                         </p>
                       </div>
@@ -1160,13 +1168,13 @@ export default function ChatPage() {
         {/* Chat Sessions - Mobile First */}
         <div class="flex-1 overflow-y-auto">
           <div class="p-3 sm:p-4">
-            <h3 class="text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 sm:mb-3">
+            <h3 class="text-xs sm:text-sm font-medium text-foreground mb-2 sm:mb-3">
               Recent Conversations
             </h3>
 
             <Show when={chatSessionsQuery.isLoading}>
               <div class="flex items-center justify-center py-8">
-                <Loader2 class="w-5 h-5 animate-spin text-gray-400" />
+                <Loader2 class="w-5 h-5 animate-spin text-muted-foreground" />
               </div>
             </Show>
 
@@ -1178,13 +1186,13 @@ export default function ChatPage() {
                 <p class="text-xs text-red-600 dark:text-red-400 font-medium mb-1">
                   Chat History Unavailable
                 </p>
-                <p class="text-xs text-gray-500 dark:text-gray-400 mb-3 leading-relaxed">
+                <p class="text-xs text-muted-foreground mb-3 leading-relaxed">
                   There's a temporary issue loading your chat history. You can still start new
                   conversations.
                 </p>
                 <button
                   onClick={() => chatSessionsQuery.refetch()}
-                  class="text-xs text-blue-600 dark:text-blue-400 hover:underline"
+                  class="text-xs text-primary hover:underline"
                 >
                   Try again
                 </button>
@@ -1195,27 +1203,25 @@ export default function ChatPage() {
               <div class="space-y-1 sm:space-y-2">
                 <Show when={sessions().length === 0}>
                   <div class="text-center py-8 px-4">
-                    <div class="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-blue-100 to-purple-100 dark:from-blue-900/20 dark:to-purple-900/20 rounded-full flex items-center justify-center">
-                      <MessageCircle class="w-8 h-8 text-blue-500 dark:text-blue-400" />
+                    <div class="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-blue-100 to-accent dark:from-blue-900/20 dark:to-accent/20 rounded-full flex items-center justify-center">
+                      <MessageCircle class="w-8 h-8 text-primary" />
                     </div>
-                    <h3 class="text-sm font-medium text-gray-900 dark:text-white mb-2">
-                      No chat history yet
-                    </h3>
-                    <p class="text-xs text-gray-500 dark:text-gray-400 mb-4 leading-relaxed">
+                    <h3 class="text-sm font-medium text-foreground mb-2">No chat history yet</h3>
+                    <p class="text-xs text-muted-foreground mb-4 leading-relaxed">
                       Start a conversation to explore destinations, get recommendations, and create
                       personalized itineraries.
                     </p>
                     <div class="space-y-2">
-                      <div class="flex items-center gap-2 text-xs text-gray-400 dark:text-gray-500">
+                      <div class="flex items-center gap-2 text-xs text-muted-foreground">
                         <div class="w-2 h-2 bg-green-500 rounded-full" />
                         <span>Ask about any destination</span>
                       </div>
-                      <div class="flex items-center gap-2 text-xs text-gray-400 dark:text-gray-500">
-                        <div class="w-2 h-2 bg-blue-500 rounded-full" />
+                      <div class="flex items-center gap-2 text-xs text-muted-foreground">
+                        <div class="w-2 h-2 bg-primary rounded-full" />
                         <span>Get personalized recommendations</span>
                       </div>
-                      <div class="flex items-center gap-2 text-xs text-gray-400 dark:text-gray-500">
-                        <div class="w-2 h-2 bg-purple-500 rounded-full" />
+                      <div class="flex items-center gap-2 text-xs text-muted-foreground">
+                        <div class="w-2 h-2 bg-accent rounded-full" />
                         <span>Create custom itineraries</span>
                       </div>
                     </div>
@@ -1227,16 +1233,16 @@ export default function ChatPage() {
                     <button
                       onClick={() => loadSession(session)}
                       disabled={isLoading()}
-                      class={`w-full text-left p-2 sm:p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                      class={`w-full text-left p-2 sm:p-3 rounded-lg hover:bg-muted dark:hover:bg-gray-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
                         (selectedSession() as any)?.id === session.id
-                          ? "bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700"
+                          ? "bg-primary/10 border border-primary/30"
                           : "border border-transparent"
                       }`}
                     >
                       <div class="flex items-start justify-between mb-1">
                         <div class="flex-1 min-w-0">
                           <div class="flex items-center gap-1">
-                            <h4 class="text-xs sm:text-sm font-medium text-gray-900 dark:text-white truncate">
+                            <h4 class="text-xs sm:text-sm font-medium text-foreground truncate">
                               {session.title}
                             </h4>
                             {session.isLocal && (
@@ -1250,17 +1256,17 @@ export default function ChatPage() {
                           </div>
                           <Show when={session.cityName}>
                             <div class="flex items-center gap-1 mt-0.5">
-                              <MapPin class="w-3 h-3 text-gray-400 flex-shrink-0" />
-                              <span class="text-xs text-gray-500 dark:text-gray-400 truncate">
+                              <MapPin class="w-3 h-3 text-muted-foreground flex-shrink-0" />
+                              <span class="text-xs text-muted-foreground truncate">
                                 {session.cityName}
                               </span>
                             </div>
                           </Show>
                           {/* Content metrics summary */}
                           <Show when={session.contentMetrics}>
-                            <div class="flex items-center gap-2 mt-1 text-xs text-gray-500 dark:text-gray-400">
+                            <div class="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
                               <Show when={session.contentMetrics!.total_pois > 0}>
-                                <span class="bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 px-1 py-0.5 rounded text-xs">
+                                <span class="bg-primary/10 text-primary px-1 py-0.5 rounded text-xs">
                                   {session.contentMetrics!.total_pois} POIs
                                 </span>
                               </Show>
@@ -1279,7 +1285,7 @@ export default function ChatPage() {
                         </div>
                         <div class="flex items-center gap-1 flex-shrink-0 ml-1">
                           <Show when={session.hasItinerary}>
-                            <Sparkles class="w-3 h-3 text-purple-500 dark:text-purple-400" />
+                            <Sparkles class="w-3 h-3 text-accent dark:text-accent" />
                           </Show>
                           {/* Engagement level indicator */}
                           <Show when={session.engagementMetrics}>
@@ -1301,16 +1307,16 @@ export default function ChatPage() {
                             }
                           >
                             <div
-                              class="w-1.5 h-1.5 bg-blue-500 rounded-full"
+                              class="w-1.5 h-1.5 bg-primary rounded-full"
                               title="Complex session"
                             />
                           </Show>
                         </div>
                       </div>
-                      <p class="text-xs text-gray-600 dark:text-gray-300 truncate mb-1 sm:mb-2 leading-relaxed">
+                      <p class="text-xs text-muted-foreground truncate mb-1 sm:mb-2 leading-relaxed">
                         {session.preview}
                       </p>
-                      <div class="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
+                      <div class="flex items-center justify-between text-xs text-muted-foreground">
                         <span class="text-xs">{formatTimestamp(session.timestamp)}</span>
                         <div class="flex items-center gap-2">
                           {/* Performance indicator */}
@@ -1333,7 +1339,7 @@ export default function ChatPage() {
                           </span>
                           <span class="text-xs sm:hidden">{session.messageCount}m</span>
                           <Show when={session.hasItinerary}>
-                            <span class="text-xs text-purple-600 dark:text-purple-400 hidden sm:inline">
+                            <span class="text-xs text-accent dark:text-accent hidden sm:inline">
                               • Itinerary
                             </span>
                           </Show>
@@ -1351,25 +1357,25 @@ export default function ChatPage() {
       {/* Main Chat Area - Mobile First */}
       <div class="flex-1 flex flex-col order-1 lg:order-2 relative z-10">
         {/* Chat Header - Mobile First */}
-        <div class="bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl border-b border-gray-300 dark:border-gray-700 p-3 sm:p-4 shadow-sm z-20">
+        <div class="bg-card/90 backdrop-blur-xl border-b border-border p-3 sm:p-4 shadow-sm z-20">
           <div class="flex items-center justify-between">
             <div class="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
-              <div class="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center flex-shrink-0">
+              <div class="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-blue-500 to-accent rounded-full flex items-center justify-center flex-shrink-0">
                 <Bot class="w-4 h-4 sm:w-5 sm:h-5 text-white" />
               </div>
               <div class="min-w-0 flex-1">
-                <h1 class="text-base sm:text-lg font-semibold text-gray-900 dark:text-white truncate">
+                <h1 class="text-base sm:text-lg font-semibold text-foreground truncate">
                   AI Travel Assistant
                 </h1>
-                <p class="text-xs sm:text-sm text-gray-600 dark:text-gray-300 hidden sm:block">
+                <p class="text-xs sm:text-sm text-muted-foreground hidden sm:block">
                   Get personalized travel recommendations
                 </p>
               </div>
             </div>
 
             <div class="flex items-center gap-1 sm:gap-2 flex-shrink-0">
-              <span class="text-xs text-gray-500 dark:text-gray-400 hidden sm:inline">Using:</span>
-              <span class="text-xs font-medium text-blue-600 dark:text-blue-400 truncate max-w-20 sm:max-w-none">
+              <span class="text-xs text-muted-foreground hidden sm:inline">Using:</span>
+              <span class="text-xs font-medium text-primary truncate max-w-20 sm:max-w-none">
                 {activeProfile()}
               </span>
               {/* Session indicator and controls */}
@@ -1393,17 +1399,17 @@ export default function ChatPage() {
         </div>
 
         {/* Messages - Mobile First */}
-        <div class="flex-1 overflow-y-auto p-3 sm:p-4 space-y-3 sm:space-y-4 bg-white/30 dark:bg-slate-900/30 backdrop-blur-sm">
+        <div class="flex-1 overflow-y-auto p-3 sm:p-4 space-y-3 sm:space-y-4 bg-white/30 backdrop-blur-sm">
           <For each={messages()}>{(message) => renderMessage(message)}</For>
 
           {/* Loading indicator with streaming progress - Mobile First */}
           <Show when={isLoading()}>
             <div class="flex gap-2 sm:gap-3 justify-start">
-              <div class="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center flex-shrink-0">
+              <div class="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-gradient-to-br from-blue-500 to-accent flex items-center justify-center flex-shrink-0">
                 <Bot class="w-3 h-3 sm:w-4 sm:h-4 text-white" />
               </div>
-              <div class="bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm border border-gray-200/50 dark:border-white/10 rounded-2xl px-3 py-2 sm:px-4 sm:py-3 max-w-xs sm:max-w-md shadow-sm">
-                <div class="flex items-center gap-1 sm:gap-2 text-gray-600 dark:text-gray-300 mb-2">
+              <div class="bg-card/80 backdrop-blur-sm border border-border rounded-2xl px-3 py-2 sm:px-4 sm:py-3 max-w-xs sm:max-w-md shadow-sm">
+                <div class="flex items-center gap-1 sm:gap-2 text-muted-foreground mb-2">
                   <Loader2 class="w-3 h-3 sm:w-4 sm:h-4 animate-spin flex-shrink-0" />
                   <span class="text-xs sm:text-sm">
                     {streamProgress() || "Processing your request..."}
@@ -1412,9 +1418,9 @@ export default function ChatPage() {
 
                 {/* Streaming session progress - Mobile First */}
                 <Show when={streamingSession()}>
-                  <div class="text-xs text-gray-500 dark:text-gray-400 space-y-1">
+                  <div class="text-xs text-muted-foreground space-y-1">
                     <div class="flex items-center gap-1 sm:gap-2">
-                      <span class="inline-block w-2 h-2 bg-blue-500 rounded-full flex-shrink-0" />
+                      <span class="inline-block w-2 h-2 bg-primary rounded-full flex-shrink-0" />
                       <span class="truncate">Domain: {streamingSession()?.domain}</span>
                     </div>
                     <Show when={streamingSession()?.city}>
@@ -1438,7 +1444,7 @@ export default function ChatPage() {
           {/* Quick Prompts - Mobile First */}
           <Show when={messages().length <= 1 && !isLoading()}>
             <div class="max-w-4xl mx-auto">
-              <h3 class="text-base sm:text-lg font-semibold text-gray-900 dark:text-white mb-3 sm:mb-4">
+              <h3 class="text-base sm:text-lg font-semibold text-foreground mb-3 sm:mb-4">
                 Try asking about:
               </h3>
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
@@ -1446,15 +1452,15 @@ export default function ChatPage() {
                   {(prompt) => (
                     <button
                       onClick={() => useQuickPrompt(prompt)}
-                      class="bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm border border-gray-300/70 dark:border-gray-600/70 rounded-xl hover:bg-white dark:hover:bg-slate-700 hover:shadow-lg hover:shadow-blue-500/10 hover:border-blue-400/50 dark:hover:border-blue-500/50 transition-all duration-300 p-3 sm:p-4 text-left group"
+                      class="bg-card/80 backdrop-blur-sm border border-border rounded-xl hover:bg-card dark:hover:bg-slate-700 hover:shadow-lg hover:shadow-blue-500/10 hover:border-blue-400/50 dark:hover:border-blue-500/50 transition-all duration-300 p-3 sm:p-4 text-left group"
                     >
                       <div class="flex items-start gap-2 sm:gap-3">
                         <span class="text-xl sm:text-2xl flex-shrink-0">{prompt.icon}</span>
                         <div class="min-w-0 flex-1">
-                          <h4 class="font-medium text-gray-900 dark:text-white mb-1 text-sm sm:text-base">
+                          <h4 class="font-medium text-foreground mb-1 text-sm sm:text-base">
                             {prompt.text}
                           </h4>
-                          <p class="text-xs sm:text-sm text-gray-600 dark:text-gray-300">
+                          <p class="text-xs sm:text-sm text-muted-foreground">
                             {prompt.description}
                           </p>
                         </div>
@@ -1468,7 +1474,7 @@ export default function ChatPage() {
         </div>
 
         {/* Message Input - Mobile First */}
-        <div class="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-t border-gray-200/50 dark:border-white/10 p-3 sm:p-4 shadow-[0_-4px_20px_rgba(0,0,0,0.05)]">
+        <div class="bg-card/80 backdrop-blur-xl border-t border-border p-3 sm:p-4 shadow-[0_-4px_20px_rgba(0,0,0,0.05)]">
           <div class="max-w-4xl mx-auto">
             <div class="flex items-end gap-2 sm:gap-3">
               <div class="flex-1">
@@ -1477,7 +1483,7 @@ export default function ChatPage() {
                   onInput={(e) => setCurrentMessage(e.target.value)}
                   onKeyPress={handleKeyPress}
                   placeholder="Ask me about destinations, activities, or let me create an itinerary for you..."
-                  class="w-full resize-none border border-gray-300 dark:border-gray-600 bg-white/90 dark:bg-slate-800/90 backdrop-blur-sm text-gray-900 dark:text-white rounded-xl px-3 py-2 sm:px-4 sm:py-3 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-400 dark:focus:border-blue-500 focus:bg-white dark:focus:bg-slate-800 placeholder-gray-600 dark:placeholder-gray-400 text-sm sm:text-base transition-all shadow-sm"
+                  class="w-full resize-none border border-border bg-card/90 backdrop-blur-sm text-foreground rounded-xl px-3 py-2 sm:px-4 sm:py-3 focus:ring-2 focus:ring-ring/50 focus:border-blue-400 dark:focus:border-ring focus:bg-card dark:focus:bg-slate-800 placeholder-gray-600 dark:placeholder-gray-400 text-sm sm:text-base transition-all shadow-sm"
                   rows="2"
                   disabled={isLoading()}
                 />
@@ -1491,7 +1497,7 @@ export default function ChatPage() {
                 <span class="hidden sm:inline">Send</span>
               </Button>
             </div>
-            <p class="text-xs text-gray-500 dark:text-gray-400 mt-2 text-center">
+            <p class="text-xs text-muted-foreground mt-2 text-center">
               Press Enter to send, Shift+Enter for new line
             </p>
           </div>

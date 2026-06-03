@@ -1,4 +1,12 @@
-import { createContext, useContext, createSignal, createEffect, onMount, JSX } from "solid-js";
+import {
+  createContext,
+  useContext,
+  createSignal,
+  createEffect,
+  onCleanup,
+  onMount,
+  JSX,
+} from "solid-js";
 import { useNavigate } from "@solidjs/router";
 import {
   getAuthToken,
@@ -7,6 +15,7 @@ import {
   clearAuthToken,
   isPersistentSession,
 } from "~/lib/auth/tokens";
+import { onAuthExpired } from "~/lib/auth/auth-events";
 import { authAPI } from "~/lib/api";
 
 interface User {
@@ -164,6 +173,21 @@ export const AuthProvider = (props: AuthProviderProps) => {
 
     window.addEventListener("storage", handleStorageChange);
     return () => window.removeEventListener("storage", handleStorageChange);
+  });
+
+  // Soft logout: the Connect transport signals this when a token refresh has
+  // genuinely failed. Clear in-memory state and navigate via the router (no
+  // full page reload) so we don't drop session/streaming state mid-flow.
+  createEffect(() => {
+    const off = onAuthExpired(() => {
+      clearAuthToken();
+      setUser(null);
+      setIsLoading(false);
+      if (typeof window !== "undefined" && !window.location.pathname.includes("/auth/")) {
+        navigate("/auth/signin");
+      }
+    });
+    onCleanup(off);
   });
 
   const login = async (

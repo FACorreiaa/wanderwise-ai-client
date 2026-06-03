@@ -1,12 +1,16 @@
 import { onMount, onCleanup, createEffect, mergeProps } from "solid-js";
 import mapboxgl from "mapbox-gl";
 
-interface POI {
+export interface POI {
   id: string;
   name: string;
   category: string;
   latitude: number | string;
   longitude: number | string;
+  /** itinerary day index (0-based). Drives marker/route colour. */
+  day?: number;
+  /** 1-based stop number within the itinerary; falls back to array order. */
+  seq?: number;
   priority?: number;
   rating?: number;
   timeToSpend?: string;
@@ -21,670 +25,480 @@ interface MapComponentProps {
   maxZoom?: number;
   pointsOfInterest: POI[];
   style?: string;
-  showRoutes?: boolean; // New prop to control route lines
-  onMarkerClick?: (poi: POI, index: number) => void; // New prop for marker click handling
+  showRoutes?: boolean;
+  /** Selected POI id — flies to + opens its popup + enlarges the marker. */
+  selectedId?: string;
+  /** Fired on single click of a point (light selection — syncs the list). */
+  onSelect?: (poi: POI, index: number) => void;
+  /** Fired on a deliberate "open" action (popup button) — opens detail. */
+  onActivate?: (poi: POI, index: number) => void;
 }
+
+// One stable colour per itinerary day. Index past the end wraps.
+const DAY_COLORS = [
+  "#ef4444", // red
+  "#3b82f6", // blue
+  "#10b981", // green
+  "#f59e0b", // amber
+  "#8b5cf6", // violet
+  "#ec4899", // pink
+  "#14b8a6", // teal
+  "#f97316", // orange
+];
+const colorForDay = (day?: number) =>
+  typeof day === "number" ? DAY_COLORS[day % DAY_COLORS.length] : "#64748b"; // slate for ungrouped
+
+const SOURCE_POIS = "loci-pois";
+const SOURCE_ROUTES = "loci-routes";
+const LAYER_CLUSTERS = "loci-clusters";
+const LAYER_CLUSTER_COUNT = "loci-cluster-count";
+const LAYER_POINTS = "loci-points";
+const LAYER_POINT_NUMBER = "loci-point-number";
+const LAYER_ROUTES = "loci-routes-line";
+
+const toNum = (v: number | string): number => (typeof v === "string" ? parseFloat(v) : v);
+
+const isValidPoi = (poi: POI): boolean => {
+  if (!poi) return false;
+  const lat = toNum(poi.latitude);
+  const lng = toNum(poi.longitude);
+  if (lat == null || lng == null || isNaN(lat) || isNaN(lng)) return false;
+  if (lat < -90 || lat > 90 || lng < -180 || lng > 180) return false;
+  return true;
+};
 
 const MapComponent = (_props: MapComponentProps) => {
   const props = mergeProps({ style: "mapbox://styles/mapbox/standard", showRoutes: true }, _props);
   let mapContainer: HTMLDivElement | undefined;
   let map: mapboxgl.Map | undefined;
-  let currentMarkers: mapboxgl.Marker[] = [];
+  let popup: mapboxgl.Popup | undefined;
+  let updateTimer: ReturnType<typeof setTimeout> | undefined;
+  let handlersBound = false;
+  // name -> numeric feature id, so we can drive feature-state for selection.
+  const featureIdByName = new Map<string, number>();
+  // numeric feature id -> POI, for click + selection lookups.
+  const poiByFeatureId = new Map<number, { poi: POI; index: number }>();
+  let selectedFeatureId: number | null = null;
 
-  // Function to optimize route order (simple nearest neighbor algorithm)
-  const optimizeRoute = (pois: POI[]): POI[] => {
-    if (pois.length <= 1) return pois;
+  const buildPopupContent = (poi: POI, index: number) => {
+    const isMobile = mapContainer ? mapContainer.offsetWidth < 768 : true;
+    const container = document.createElement("div");
+    container.className = `p-3 ${isMobile ? "min-w-[180px] max-w-[250px]" : "min-w-[200px] max-w-[300px]"}`;
 
-    const optimized = [pois[0]]; // Start with first POI
-    const remaining = [...pois.slice(1)];
+    const title = document.createElement("h3");
+    title.className = `font-semibold text-gray-900 mb-1 ${isMobile ? "text-sm" : "text-base"}`;
+    title.textContent = poi.name;
+    container.appendChild(title);
 
-    while (remaining.length > 0) {
-      const current = optimized[optimized.length - 1];
-      const currentLat =
-        typeof current.latitude === "string" ? parseFloat(current.latitude) : current.latitude;
-      const currentLng =
-        typeof current.longitude === "string" ? parseFloat(current.longitude) : current.longitude;
+    const category = document.createElement("p");
+    category.className = `${isMobile ? "text-xs" : "text-sm"} text-gray-600 mb-2`;
+    category.textContent = poi.category;
+    container.appendChild(category);
 
-      let nearestIndex = 0;
-      let nearestDistance = Infinity;
+    const meta = document.createElement("div");
+    meta.className = `flex items-center justify-between ${isMobile ? "text-xs" : "text-sm"} text-gray-500`;
+    if (poi.rating != null) {
+      const rating = document.createElement("span");
+      rating.textContent = `⭐ ${poi.rating}`;
+      meta.appendChild(rating);
+    }
+    if (poi.timeToSpend) {
+      const time = document.createElement("span");
+      time.textContent = poi.timeToSpend;
+      meta.appendChild(time);
+    }
+    if (poi.budget) {
+      const budget = document.createElement("span");
+      budget.className = "font-medium";
+      budget.textContent = poi.budget;
+      meta.appendChild(budget);
+    }
+    container.appendChild(meta);
 
-      remaining.forEach((poi, index) => {
-        const poiLat = typeof poi.latitude === "string" ? parseFloat(poi.latitude) : poi.latitude;
-        const poiLng =
-          typeof poi.longitude === "string" ? parseFloat(poi.longitude) : poi.longitude;
-
-        const distance = Math.sqrt(
-          Math.pow(poiLat - currentLat, 2) + Math.pow(poiLng - currentLng, 2),
-        );
-        if (distance < nearestDistance) {
-          nearestDistance = distance;
-          nearestIndex = index;
-        }
-      });
-
-      optimized.push(remaining[nearestIndex]);
-      remaining.splice(nearestIndex, 1);
+    if (poi.dogFriendly) {
+      const badge = document.createElement("div");
+      badge.className = `mt-2 ${isMobile ? "text-xs" : "text-sm"} bg-green-100 text-green-800 px-2 py-1 rounded-full inline-block`;
+      badge.textContent = "🐕 Dog Friendly";
+      container.appendChild(badge);
     }
 
-    return optimized;
+    if (props.onActivate) {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className =
+        "mt-3 w-full text-sm font-medium bg-blue-600 text-white rounded-md px-3 py-1.5 hover:bg-blue-700 transition-colors";
+      btn.textContent = "View details";
+      btn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        props.onActivate?.(poi, index);
+      });
+      container.appendChild(btn);
+    }
+
+    return container;
   };
 
-  const clearMapFeatures = () => {
-    console.log("Clearing map features...");
+  /** Build the FeatureCollections for points and per-day route lines. */
+  const buildData = (pois: POI[]) => {
+    featureIdByName.clear();
+    poiByFeatureId.clear();
 
-    // Remove DOM markers
-    try {
-      currentMarkers.forEach((marker) => {
-        if (marker && typeof marker.remove === "function") {
-          marker.remove();
-        }
-      });
-      currentMarkers = [];
-      console.log("Cleared all markers");
-    } catch (error) {
-      console.error("Error clearing markers:", error);
-      currentMarkers = []; // Reset array even if cleanup failed
-    }
+    const valid = pois.filter(isValidPoi);
+    const pointFeatures: GeoJSON.Feature[] = valid.map((poi, i) => {
+      const fid = i + 1;
+      featureIdByName.set(poi.name, fid);
+      poiByFeatureId.set(fid, { poi, index: i });
+      return {
+        type: "Feature",
+        id: fid,
+        properties: {
+          name: poi.name,
+          color: colorForDay(poi.day),
+          label: String(poi.seq ?? i + 1),
+        },
+        geometry: { type: "Point", coordinates: [toNum(poi.longitude), toNum(poi.latitude)] },
+      };
+    });
 
-    // Safely remove map layers and sources
-    if (map && map.isStyleLoaded()) {
-      try {
-        // Remove layer first, then source
-        if (map.getLayer("route")) {
-          console.log("Removing route layer");
-          map.removeLayer("route");
-        }
-        if (map.getSource("route")) {
-          console.log("Removing route source");
-          map.removeSource("route");
-        }
-      } catch (error) {
-        console.error("Error clearing map layers/sources:", error);
-        // Continue execution - don't let this break the app
+    // Route lines: one LineString per day (or a single line if no day info),
+    // following itinerary order so the path reads as the planned sequence.
+    const byDay = new Map<number, [number, number][]>();
+    valid.forEach((poi) => {
+      const day = typeof poi.day === "number" ? poi.day : 0;
+      if (!byDay.has(day)) byDay.set(day, []);
+      byDay.get(day)!.push([toNum(poi.longitude), toNum(poi.latitude)]);
+    });
+    const routeFeatures: GeoJSON.Feature[] = [];
+    byDay.forEach((coords, day) => {
+      if (coords.length > 1) {
+        routeFeatures.push({
+          type: "Feature",
+          properties: { color: colorForDay(day) },
+          geometry: { type: "LineString", coordinates: coords },
+        });
       }
-    } else {
-      console.log("Map not ready for layer/source removal");
-    }
+    });
+
+    return {
+      points: { type: "FeatureCollection", features: pointFeatures } as GeoJSON.FeatureCollection,
+      routes: { type: "FeatureCollection", features: routeFeatures } as GeoJSON.FeatureCollection,
+      valid,
+    };
   };
 
-  // Function to add markers to the map
-  const addMarkers = (pois: POI[]) => {
-    console.log("=== MAP COMPONENT addMarkers ===");
-    console.log("Input POIs:", pois);
-    console.log("POIs length:", pois?.length);
-    console.log("Map instance:", map);
-    if (!map || !map.isStyleLoaded() || !map.loaded()) {
-      console.log("Map not fully loaded, skipping marker update");
-      return;
-    }
-
-    if (!pois || !Array.isArray(pois) || pois.length === 0) {
-      console.log("No valid POIs provided");
-      clearMapFeatures();
-      return;
-    }
-
-    // Filter out POIs with invalid coordinates before processing
-    const validPOIs = pois.filter((poi) => {
-      if (!poi) {
-        console.warn("🚫 Filtering out null/undefined POI");
-        return false;
-      }
-
-      console.log(
-        `🔍 Checking POI: ${poi.name} - lat: ${poi.latitude} (${typeof poi.latitude}), lng: ${poi.longitude} (${typeof poi.longitude})`,
-      );
-
-      // Handle missing coordinate properties
-      if (!Object.hasOwn(poi, "latitude") || !Object.hasOwn(poi, "longitude")) {
-        console.warn(`🚫 POI ${poi.name} missing latitude or longitude properties`);
-        return false;
-      }
-
-      const lat = typeof poi.latitude === "string" ? parseFloat(poi.latitude) : poi.latitude;
-      const lng = typeof poi.longitude === "string" ? parseFloat(poi.longitude) : poi.longitude;
-
-      // Check for null, undefined, or empty values
-      if (
-        poi.latitude === null ||
-        poi.latitude === undefined ||
-        poi.longitude === null ||
-        poi.longitude === undefined
-      ) {
-        console.warn(
-          `🚫 POI ${poi.name} has null/undefined coordinates: lat=${poi.latitude}, lng=${poi.longitude}`,
-        );
-        return false;
-      }
-
-      // Check for empty strings
-      if (poi.latitude === "" || poi.longitude === "") {
-        console.warn(
-          `🚫 POI ${poi.name} has empty string coordinates: lat='${poi.latitude}', lng='${poi.longitude}'`,
-        );
-        return false;
-      }
-
-      // Check for NaN after parsing
-      if (isNaN(lat) || isNaN(lng)) {
-        console.warn(
-          `🚫 POI ${poi.name} has NaN coordinates after parsing: lat=${lat}, lng=${lng} (original: lat=${poi.latitude}, lng=${poi.longitude})`,
-        );
-        return false;
-      }
-
-      // Check for reasonable coordinate ranges
-      if (lat < -90 || lat > 90 || lng < -180 || lng > 180) {
-        console.warn(`🚫 POI ${poi.name} has out-of-range coordinates: lat=${lat}, lng=${lng}`);
-        return false;
-      }
-
-      // Check for suspicious zero coordinates
-      if (lat === 0 && lng === 0) {
-        console.warn(
-          `⚠️  POI ${poi.name} has suspicious (0,0) coordinates - might indicate missing location data`,
-        );
-        // Still allow (0,0) but log it as suspicious
-      }
-
-      console.log(`✅ POI ${poi.name} has valid coordinates: lat=${lat}, lng=${lng}`);
-      return true;
-    });
-
-    if (validPOIs.length === 0) {
-      console.log("No POIs with valid coordinates found");
-      clearMapFeatures();
-      return;
-    }
-
-    console.log(`Filtered ${pois.length} POIs down to ${validPOIs.length} valid POIs`);
-
-    clearMapFeatures();
-
-    const optimizedPOIs = optimizeRoute(validPOIs);
-    console.log("Optimized POIs for markers:", optimizedPOIs);
-
-    // Add markers for each POI
-    optimizedPOIs.forEach((poi: POI, index: number) => {
-      console.log(`Creating marker ${index + 1}:`, poi);
-      console.log(`  - Name: ${poi.name}`);
-      console.log(`  - Coordinates: [${poi.longitude}, ${poi.latitude}]`);
-      console.log(`  - Lat type: ${typeof poi.latitude}, Lng type: ${typeof poi.longitude}`);
-
-      // Convert coordinates to numbers if they're strings (already validated above)
-      const lat = typeof poi.latitude === "string" ? parseFloat(poi.latitude) : poi.latitude;
-      const lng = typeof poi.longitude === "string" ? parseFloat(poi.longitude) : poi.longitude;
-
-      console.log(`  - Converted coordinates: [${lng}, ${lat}]`);
-
-      const markerElement = document.createElement("div");
-      markerElement.className = "custom-marker";
-
-      // Responsive marker sizing
-      const isMobile = mapContainer ? mapContainer.offsetWidth < 768 : true;
-      const markerSize = isMobile ? 28 : 32;
-      const fontSize = isMobile ? 12 : 14;
-      const borderWidth = isMobile ? 2 : 3;
-
-      markerElement.style.cssText = `
-                width: ${markerSize}px;
-                height: ${markerSize}px;
-                border-radius: 50%;
-                background-color: ${poi.priority === 1 ? "#ef4444" : "#3b82f6"};
-                border: ${borderWidth}px solid white;
-                box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                color: white;
-                font-weight: bold;
-                font-size: ${fontSize}px;
-                cursor: pointer;
-                transition: transform 0.2s ease;
-            `;
-      markerElement.textContent = String(index + 1);
-
-      // Add hover effect
-      markerElement.addEventListener("mouseenter", () => {
-        markerElement.style.transform = "scale(1.1)";
-      });
-      markerElement.addEventListener("mouseleave", () => {
-        markerElement.style.transform = "scale(1)";
-      });
-
-      // Add click event to trigger callback
-      const onMarkerClick = props.onMarkerClick;
-      if (onMarkerClick) {
-        markerElement.addEventListener("click", (e) => {
-          e.stopPropagation();
-          onMarkerClick(poi, index);
-        });
-      }
-
-      const marker = new mapboxgl.Marker(markerElement).setLngLat([lng, lat]).addTo(map!);
-
-      console.log(`  - Marker created and added to map`);
-      currentMarkers.push(marker);
-
-      // Responsive popup content
-      const popupWidth = isMobile ? "min-w-[180px] max-w-[250px]" : "min-w-[200px] max-w-[300px]";
-      const textSize = isMobile ? "text-xs" : "text-sm";
-      const titleSize = isMobile ? "text-sm" : "text-base";
-
-      const popup = new mapboxgl.Popup({
-        offset: isMobile ? 20 : 25,
-        closeButton: true,
-        closeOnClick: false,
-        maxWidth: isMobile ? "250px" : "300px",
-      }).setHTML(`
-                    <div class="p-3 ${popupWidth}">
-                        <h3 class="font-semibold text-gray-900 mb-1 ${titleSize}">${poi.name}</h3>
-                        <p class="${textSize} text-gray-600 mb-2">${poi.category}</p>
-                        <div class="flex items-center justify-between ${textSize} text-gray-500">
-                            <span>⭐ ${poi.rating}</span>
-                            <span>${poi.timeToSpend}</span>
-                            <span class="font-medium">${poi.budget}</span>
-                        </div>
-                        ${poi.dogFriendly ? `<div class="mt-2 ${textSize} bg-green-100 text-green-800 px-2 py-1 rounded-full">🐕 Dog Friendly</div>` : ""}
-                    </div>
-                `);
-
-      marker.setPopup(popup);
-    });
-
-    console.log(`Total markers created: ${currentMarkers.length}`);
-
-    // Create optimized route line (only if showRoutes is true)
-    if (props.showRoutes && optimizedPOIs.length > 1) {
-      try {
-        const isMobile = mapContainer ? mapContainer.offsetWidth < 768 : true;
-
-        const coordinates = optimizedPOIs.map((poi: POI) => {
-          const lat = typeof poi.latitude === "string" ? parseFloat(poi.latitude) : poi.latitude;
-          const lng = typeof poi.longitude === "string" ? parseFloat(poi.longitude) : poi.longitude;
-          return [lng, lat];
-        });
-
-        console.log("Route coordinates:", coordinates);
-
-        // Only add route if map is ready and style is loaded
-        if (map.isStyleLoaded()) {
-          // Double-check that source doesn't exist (defensive programming)
-          if (map.getSource("route")) {
-            console.warn("Route source already exists, skipping route creation");
-            return;
-          }
-
-          map.addSource("route", {
-            type: "geojson",
-            data: {
-              type: "Feature",
-              properties: {},
-              geometry: {
-                type: "LineString",
-                coordinates: coordinates,
-              },
-            },
-          });
-
-          // Add the route layer with responsive styling - FIX: use correct source name
-          const routeWidth = isMobile ? 2 : 3;
-          const dashArray = isMobile ? [2, 2] : [3, 3];
-
-          map.addLayer({
-            id: "route",
-            type: "line",
-            source: "route", // FIX: was 'trace', should be 'route'
-            layout: {
-              "line-join": "round",
-              "line-cap": "round",
-            },
-            paint: {
-              "line-color": "#3b82f6",
-              "line-width": routeWidth,
-              "line-dasharray": dashArray,
-              "line-opacity": 0.7,
-            },
-          });
-        } else {
-          console.warn("Map style not loaded, skipping route creation");
-        }
-      } catch (error) {
-        console.error("Error creating route:", error);
-      }
-    }
-
-    // Fit map to show all markers with padding
-    if (optimizedPOIs.length > 0) {
-      try {
-        const bounds = new mapboxgl.LngLatBounds();
-        optimizedPOIs.forEach((poi: POI) => {
-          const lat = typeof poi.latitude === "string" ? parseFloat(poi.latitude) : poi.latitude;
-          const lng = typeof poi.longitude === "string" ? parseFloat(poi.longitude) : poi.longitude;
-          bounds.extend([lng, lat]);
-        });
-
-        // Responsive padding based on container size
-        const isMobile = mapContainer ? mapContainer.offsetWidth < 768 : true;
-        const padding = isMobile
-          ? { top: 20, bottom: 20, left: 20, right: 20 }
-          : { top: 50, bottom: 50, left: 50, right: 50 };
-
-        map.fitBounds(bounds, {
-          padding: padding,
-          maxZoom: isMobile ? 14 : 16,
-        });
-        console.log("Map bounds fitted to show all markers");
-      } catch (error) {
-        console.error("Error fitting map bounds:", error);
-      }
-    }
-  };
-
-  const _addFeaturesToMap = (pois: POI[]) => {
-    if (!map || !map.isStyleLoaded() || !pois || pois.length === 0) {
-      console.log("Map not ready or no POIs provided to addFeaturesToMap");
-      return;
-    }
-
-    // Filter out POIs with invalid coordinates
-    const validPOIs = pois.filter((poi: POI) => {
-      if (!poi) return false;
-
-      const lat = typeof poi.latitude === "string" ? parseFloat(poi.latitude) : poi.latitude;
-      const lng = typeof poi.longitude === "string" ? parseFloat(poi.longitude) : poi.longitude;
-
-      if (
-        isNaN(lat) ||
-        isNaN(lng) ||
-        lat === null ||
-        lng === null ||
-        lat === undefined ||
-        lng === undefined
-      ) {
-        console.warn(`Filtering out POI with invalid coordinates in addFeaturesToMap: ${poi.name}`);
-        return false;
-      }
-
-      if (lat < -90 || lat > 90 || lng < -180 || lng > 180) {
-        console.warn(
-          `Filtering out POI with out-of-range coordinates in addFeaturesToMap: ${poi.name}`,
-        );
-        return false;
-      }
-
-      return true;
-    });
-
-    if (validPOIs.length === 0) {
-      console.log("No valid POIs found in addFeaturesToMap");
-      clearMapFeatures();
-      return;
-    }
-
-    const optimizedPOIs = optimizeRoute(validPOIs);
-    console.log("addFeaturesToMap: Processing", optimizedPOIs.length, "valid POIs");
-
-    // Add markers for each POI
-    optimizedPOIs.forEach((poi: POI, index: number) => {
-      const lat = typeof poi.latitude === "string" ? parseFloat(poi.latitude) : poi.latitude;
-      const lng = typeof poi.longitude === "string" ? parseFloat(poi.longitude) : poi.longitude;
-
-      const markerElement = document.createElement("div");
-      // ... (your existing marker styling is fine)
-      markerElement.className = "custom-marker";
-      const markerSize = 32;
-      markerElement.style.cssText = `
-                width: ${markerSize}px; height: ${markerSize}px; border-radius: 50%;
-                background-color: ${poi.priority === 1 ? "#ef4444" : "#3b82f6"};
-                border: 3px solid white; box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-                display: flex; align-items: center; justify-content: center;
-                color: white; font-weight: bold; font-size: 14px; cursor: pointer;
-            `;
-      markerElement.textContent = String(index + 1);
-
-      const marker = new mapboxgl.Marker(markerElement).setLngLat([lng, lat]).addTo(map!);
-
-      currentMarkers.push(marker);
-
-      const popup = new mapboxgl.Popup({ offset: 25, closeButton: false }).setHTML(`
-                    <div class="p-2 min-w-[200px]">
-                        <h3 class="font-semibold text-gray-900 mb-1 text-base">${poi.name}</h3>
-                        <p class="text-sm text-gray-600">${poi.category}</p>
-                    </div>
-                `);
-      marker.setPopup(popup);
-    });
-
-    // Create optimized route line
-    if (optimizedPOIs.length > 1) {
-      try {
-        const coordinates = optimizedPOIs.map((poi: POI) => {
-          const lat = typeof poi.latitude === "string" ? parseFloat(poi.latitude) : poi.latitude;
-          const lng = typeof poi.longitude === "string" ? parseFloat(poi.longitude) : poi.longitude;
-          return [lng, lat];
-        });
-
-        // Defensive check to prevent adding source if it somehow still exists
-        if (map.getSource("route")) {
-          console.warn("Route source already exists in addFeaturesToMap, skipping");
-          return;
-        }
-
-        map.addSource("route", {
-          type: "geojson",
-          data: {
-            type: "Feature",
-            properties: {},
-            geometry: { type: "LineString", coordinates },
-          },
-        });
-
-        map.addLayer({
-          id: "route",
-          type: "line",
-          source: "route",
-          layout: {
-            "line-join": "round",
-            "line-cap": "round",
-          },
-          paint: {
-            "line-color": "#3b82f6",
-            "line-width": 3,
-            "line-dasharray": [2, 2],
-            "line-opacity": 0.8,
-          },
-        });
-      } catch (error) {
-        console.error("Error creating route in addFeaturesToMap:", error);
-      }
-    }
-
-    // Fit map to show all markers
+  const fitToData = (valid: POI[]) => {
+    if (!map || valid.length === 0) return;
     try {
       const bounds = new mapboxgl.LngLatBounds();
-      optimizedPOIs.forEach((poi: POI) => {
-        const lat = typeof poi.latitude === "string" ? parseFloat(poi.latitude) : poi.latitude;
-        const lng = typeof poi.longitude === "string" ? parseFloat(poi.longitude) : poi.longitude;
-        bounds.extend([lng, lat]);
+      valid.forEach((poi) => bounds.extend([toNum(poi.longitude), toNum(poi.latitude)]));
+      const isMobile = mapContainer ? mapContainer.offsetWidth < 768 : true;
+      map.fitBounds(bounds, {
+        padding: isMobile ? 30 : 60,
+        maxZoom: isMobile ? 14 : 16,
       });
-      map.fitBounds(bounds, { padding: 60, maxZoom: 15 });
     } catch (error) {
-      console.error("Error fitting bounds in addFeaturesToMap:", error);
+      console.error("Error fitting bounds:", error);
     }
   };
 
-  // Initialize map on mount
+  /** Update source data in place — no marker teardown/rebuild churn. */
+  const updateData = (pois: POI[], fit = true) => {
+    if (!map) return;
+    // Standard style reports isStyleLoaded() === false while imports finish, so
+    // we gate on the source existing (ensureLayers re-creates it if dropped)
+    // rather than on isStyleLoaded — that gate was eating the markers.
+    ensureLayers();
+    const source = map.getSource(SOURCE_POIS) as mapboxgl.GeoJSONSource | undefined;
+    if (!source) return;
+    const { points, routes, valid } = buildData(pois);
+    source.setData(points);
+    (map.getSource(SOURCE_ROUTES) as mapboxgl.GeoJSONSource | undefined)?.setData(routes);
+    if (fit) fitToData(valid);
+    // Re-apply selection if the selected POI is still present.
+    applySelection(props.selectedId);
+  };
+
+  const setFeatureSelected = (fid: number | null, selected: boolean) => {
+    if (!map || fid == null) return;
+    try {
+      map.setFeatureState({ source: SOURCE_POIS, id: fid }, { selected });
+    } catch {
+      /* source may not be ready yet */
+    }
+  };
+
+  const applySelection = (selectedId?: string) => {
+    if (!map) return;
+    const nextId = selectedId ? (featureIdByName.get(selectedId) ?? null) : null;
+    if (selectedFeatureId === nextId) return;
+    setFeatureSelected(selectedFeatureId, false);
+    selectedFeatureId = nextId;
+    setFeatureSelected(selectedFeatureId, true);
+
+    if (nextId != null) {
+      const entry = poiByFeatureId.get(nextId);
+      if (entry) {
+        const lngLat: [number, number] = [toNum(entry.poi.longitude), toNum(entry.poi.latitude)];
+        map.flyTo({ center: lngLat, zoom: Math.max(map.getZoom(), 14), speed: 1.2 });
+        popup
+          ?.setLngLat(lngLat)
+          .setDOMContent(buildPopupContent(entry.poi, entry.index))
+          .addTo(map);
+      }
+    } else {
+      popup?.remove();
+    }
+  };
+
+  // Idempotent: (re)creates sources + layers if missing. Safe to call on every
+  // style.load / styledata and before each data update — Mapbox Standard can
+  // finish (or re-emit) its style after `load`, dropping anything we added too
+  // early, so we re-ensure rather than assume one-shot setup.
+  const ensureLayers = () => {
+    if (!map) return;
+    // `slot: "top"` keeps custom layers above the Standard basemap. Ignored
+    // (harmless) on classic styles.
+    const SLOT = "top";
+    // Font from the mapbox glyph stack so symbol text renders on any style.
+    const TEXT_FONT = ["Open Sans Bold", "Arial Unicode MS Bold"];
+
+    if (!map.getSource(SOURCE_ROUTES)) {
+      map.addSource(SOURCE_ROUTES, {
+        type: "geojson",
+        data: { type: "FeatureCollection", features: [] },
+      });
+    }
+    if (!map.getSource(SOURCE_POIS)) {
+      map.addSource(SOURCE_POIS, {
+        type: "geojson",
+        data: { type: "FeatureCollection", features: [] },
+        cluster: true,
+        clusterRadius: 50,
+        clusterMaxZoom: 14,
+      });
+    }
+
+    // Route lines (below points).
+    if (!map.getLayer(LAYER_ROUTES)) {
+      map.addLayer({
+        id: LAYER_ROUTES,
+        type: "line",
+        source: SOURCE_ROUTES,
+        slot: SLOT,
+        layout: { "line-join": "round", "line-cap": "round" },
+        paint: {
+          "line-color": ["get", "color"],
+          "line-width": 3,
+          "line-opacity": 0.6,
+          "line-dasharray": [2, 1.5],
+        },
+      });
+    }
+
+    // Clustered circles.
+    if (!map.getLayer(LAYER_CLUSTERS)) {
+      map.addLayer({
+        id: LAYER_CLUSTERS,
+        type: "circle",
+        source: SOURCE_POIS,
+        slot: SLOT,
+        filter: ["has", "point_count"],
+        paint: {
+          "circle-color": "#3b82f6",
+          "circle-opacity": 0.85,
+          "circle-stroke-width": 2,
+          "circle-stroke-color": "#ffffff",
+          "circle-radius": ["step", ["get", "point_count"], 16, 10, 22, 30, 28],
+        },
+      });
+    }
+    if (!map.getLayer(LAYER_CLUSTER_COUNT)) {
+      map.addLayer({
+        id: LAYER_CLUSTER_COUNT,
+        type: "symbol",
+        source: SOURCE_POIS,
+        slot: SLOT,
+        filter: ["has", "point_count"],
+        layout: {
+          "text-field": ["get", "point_count_abbreviated"],
+          "text-font": TEXT_FONT,
+          "text-size": 13,
+        },
+        paint: { "text-color": "#ffffff" },
+      });
+    }
+
+    // Unclustered points — colour by day, enlarge when selected.
+    if (!map.getLayer(LAYER_POINTS)) {
+      map.addLayer({
+        id: LAYER_POINTS,
+        type: "circle",
+        source: SOURCE_POIS,
+        slot: SLOT,
+        filter: ["!", ["has", "point_count"]],
+        paint: {
+          "circle-color": ["get", "color"],
+          "circle-stroke-color": "#ffffff",
+          "circle-stroke-width": ["case", ["boolean", ["feature-state", "selected"], false], 4, 2],
+          "circle-radius": ["case", ["boolean", ["feature-state", "selected"], false], 16, 12],
+        },
+      });
+    }
+    if (!map.getLayer(LAYER_POINT_NUMBER)) {
+      map.addLayer({
+        id: LAYER_POINT_NUMBER,
+        type: "symbol",
+        source: SOURCE_POIS,
+        slot: SLOT,
+        filter: ["!", ["has", "point_count"]],
+        layout: {
+          "text-field": ["get", "label"],
+          "text-font": TEXT_FONT,
+          "text-size": 12,
+          "text-allow-overlap": true,
+        },
+        paint: { "text-color": "#ffffff" },
+      });
+    }
+
+    bindHandlers();
+  };
+
+  const bindHandlers = () => {
+    if (!map || handlersBound) return;
+    handlersBound = true;
+
+    // Click a cluster -> zoom into it.
+    map.on("click", LAYER_CLUSTERS, (e) => {
+      const feature = e.features?.[0];
+      const clusterId = feature?.properties?.cluster_id;
+      const source = map!.getSource(SOURCE_POIS) as mapboxgl.GeoJSONSource;
+      if (clusterId == null) return;
+      source.getClusterExpansionZoom(clusterId, (err, zoom) => {
+        if (err) return;
+        map!.easeTo({
+          center: (feature!.geometry as GeoJSON.Point).coordinates as [number, number],
+          zoom: zoom ?? map!.getZoom() + 1,
+        });
+      });
+    });
+
+    // Click a point -> select + popup.
+    map.on("click", LAYER_POINTS, (e) => {
+      const feature = e.features?.[0];
+      const fid = feature?.id as number | undefined;
+      if (fid == null) return;
+      const entry = poiByFeatureId.get(fid);
+      if (!entry) return;
+      props.onSelect?.(entry.poi, entry.index);
+      applySelection(entry.poi.name);
+    });
+
+    const pointer = (layer: string) => {
+      map!.on("mouseenter", layer, () => (map!.getCanvas().style.cursor = "pointer"));
+      map!.on("mouseleave", layer, () => (map!.getCanvas().style.cursor = ""));
+    };
+    pointer(LAYER_POINTS);
+    pointer(LAYER_CLUSTERS);
+  };
+
   onMount(() => {
     mapboxgl.accessToken = (import.meta as any).env.VITE_MAPBOX_API_KEY;
 
-    // *** DEFENSIVE CENTER COORDINATE VALIDATION ***
-    let validCenter = props.center;
-
-    // Validate and sanitize center coordinates before map creation
-    if (!props.center || !Array.isArray(props.center) || props.center.length !== 2) {
-      console.warn("🚫 Invalid center prop provided to Map:", props.center);
-      validCenter = [-8.6291, 41.1579]; // Default to Porto coordinates
-    } else {
+    let validCenter: [number, number] = [-8.6291, 41.1579]; // Porto fallback
+    if (Array.isArray(props.center) && props.center.length === 2) {
       const [lng, lat] = props.center;
-
-      // Check for null, undefined, or NaN values
       if (
-        lng === null ||
-        lng === undefined ||
-        lat === null ||
-        lat === undefined ||
-        isNaN(lng) ||
-        isNaN(lat) ||
-        typeof lng !== "number" ||
-        typeof lat !== "number"
+        typeof lng === "number" &&
+        typeof lat === "number" &&
+        !isNaN(lng) &&
+        !isNaN(lat) &&
+        lat >= -90 &&
+        lat <= 90 &&
+        lng >= -180 &&
+        lng <= 180 &&
+        !(lat === 0 && lng === 0)
       ) {
-        console.warn(
-          `🚫 Invalid center coordinates: lng=${lng} (${typeof lng}), lat=${lat} (${typeof lat})`,
-        );
-        validCenter = [-8.6291, 41.1579]; // Default to Porto coordinates
-      }
-
-      // Check coordinate ranges
-      else if (lat < -90 || lat > 90 || lng < -180 || lng > 180) {
-        console.warn(`🚫 Center coordinates out of range: lng=${lng}, lat=${lat}`);
-        validCenter = [-8.6291, 41.1579]; // Default to Porto coordinates
-      }
-
-      // Log valid coordinates
-      else {
-        console.log(`✅ Valid center coordinates: lng=${lng}, lat=${lat}`);
         validCenter = props.center;
       }
     }
-
-    console.log("🗺️ Initializing map with center:", validCenter);
 
     map = new mapboxgl.Map({
       container: mapContainer!,
       style: props.style,
       center: validCenter,
-      zoom: props.zoom || 20,
-      bearing: 30,
-      minZoom: props.minZoom || 10,
-      maxZoom: props.maxZoom || 22,
-      config: {
-        basemap: {
-          colorPlaceLabelHighlight: "red",
-          colorPlaceLabelSelect: "blue",
-        },
-      },
+      zoom: props.zoom || 12,
+      minZoom: props.minZoom || 2,
+      maxZoom: props.maxZoom || 20,
     });
+    map.getContainer().setAttribute("aria-label", "Map of itinerary points of interest");
 
     map.addControl(new mapboxgl.NavigationControl(), "top-right");
+    map.addControl(
+      new mapboxgl.GeolocateControl({
+        positionOptions: { enableHighAccuracy: true },
+        trackUserLocation: true,
+        showUserHeading: true,
+      }),
+      "top-right",
+    );
 
-    map.on("load", () => {
-      console.log("Map loaded. Adding initial markers.");
-      // Use the main addMarkers function instead of addFeaturesToMap
-      addMarkers(props.pointsOfInterest);
+    popup = new mapboxgl.Popup({ offset: 18, closeButton: true, closeOnClick: false });
+
+    // style.load fires once the style (including Standard's imported fragments)
+    // is ready — `load` alone is too early on Standard and left layers empty.
+    map.on("style.load", () => {
+      if (!map) return;
+      ensureLayers();
+      updateData(props.pointsOfInterest, true);
+    });
+
+    // If Standard re-emits style data and drops our layers, re-add them and
+    // re-push the current data (no auto-fit, to avoid yanking the viewport).
+    map.on("styledata", () => {
+      if (!map || !map.isStyleLoaded()) return;
+      if (!map.getSource(SOURCE_POIS)) {
+        ensureLayers();
+        updateData(props.pointsOfInterest, false);
+      }
     });
 
     const resizeObserver = new ResizeObserver(() => map && map.resize());
     resizeObserver.observe(mapContainer!);
-
-    onCleanup(() => {
-      resizeObserver.disconnect();
-    });
+    onCleanup(() => resizeObserver.disconnect());
   });
 
-  // React to POI changes with improved error handling and debouncing
+  // React to POI changes — debounced, in-place source update (no churn).
   createEffect(() => {
-    const pois = props.pointsOfInterest; // Get the latest POIs
-    console.log("Map createEffect triggered with POIs:", pois?.length);
+    const pois = props.pointsOfInterest;
+    if (!map) return;
+    if (updateTimer) clearTimeout(updateTimer);
+    updateTimer = setTimeout(() => {
+      if (!map) return;
+      updateData(Array.isArray(pois) ? pois : [], true);
+    }, 80);
+  });
 
-    if (!map || !map.isStyleLoaded()) {
-      console.log("Map not ready for POI updates, deferring to load event");
-      return;
-    }
-
-    // Early return if POIs are empty or invalid
-    if (!pois || !Array.isArray(pois)) {
-      console.log("No valid POIs array provided, clearing map features");
-      clearMapFeatures();
-      return;
-    }
-
-    // Check if POIs have valid coordinates before proceeding
-    const hasValidPOIs = pois.some((poi: POI) => {
-      if (!poi) return false;
-
-      // More comprehensive coordinate validation
-      const lat = typeof poi.latitude === "string" ? parseFloat(poi.latitude) : poi.latitude;
-      const lng = typeof poi.longitude === "string" ? parseFloat(poi.longitude) : poi.longitude;
-
-      // Check for null, undefined, empty string, NaN
-      if (
-        lat === null ||
-        lat === undefined ||
-        lng === null ||
-        lng === undefined ||
-        isNaN(lat) ||
-        isNaN(lng)
-      ) {
-        console.warn(
-          `🚫 POI ${poi.name} has invalid coordinates in hasValidPOIs check: lat=${lat}, lng=${lng}`,
-        );
-        return false;
-      }
-
-      // Check coordinate ranges
-      if (lat < -90 || lat > 90 || lng < -180 || lng > 180) {
-        console.warn(
-          `🚫 POI ${poi.name} has out-of-range coordinates in hasValidPOIs check: lat=${lat}, lng=${lng}`,
-        );
-        return false;
-      }
-
-      return true;
-    });
-
-    if (!hasValidPOIs) {
-      console.log("No POIs with valid coordinates found, clearing map features");
-      clearMapFeatures();
-      return;
-    }
-
-    // *** IMPROVED MAP UPDATE STRATEGY ***
-    try {
-      // 1. Clear everything from the map immediately.
-      clearMapFeatures();
-
-      // 2. Use a small timeout to let the map settle before adding new features
-      //    This is more reliable than waiting for 'idle' event in some cases
-      setTimeout(() => {
-        // 3. Double-check map is still valid and ready
-        if (!map || !map.getStyle() || !map.isStyleLoaded()) {
-          console.warn("Map became invalid during POI update, skipping");
-          return;
-        }
-
-        console.log("Adding features to map after clearing");
-        addMarkers(pois);
-      }, 100); // Small delay to ensure map has processed the clearing
-    } catch (error) {
-      console.error("Error during POI update effect:", error);
-      // Fallback: try to clear features to prevent broken state
-      try {
-        clearMapFeatures();
-      } catch (clearError) {
-        console.error("Error during fallback clear:", clearError);
-      }
-    }
+  // React to external selection (list -> map).
+  createEffect(() => {
+    const sel = props.selectedId;
+    if (!map || !map.getSource(SOURCE_POIS)) return;
+    applySelection(sel);
   });
 
   onCleanup(() => {
-    console.log("Cleaning up map component");
-    if (map) {
-      clearMapFeatures();
-      map.remove();
-    }
+    if (updateTimer) clearTimeout(updateTimer);
+    popup?.remove();
+    if (map) map.remove();
   });
 
-  return <div ref={mapContainer} class="w-full h-full min-h-[300px] rounded-lg overflow-hidden" />;
+  return (
+    <div
+      ref={mapContainer}
+      role="application"
+      aria-label="Itinerary map"
+      class="w-full h-full min-h-[300px] rounded-lg overflow-hidden"
+    />
+  );
 };
 export default MapComponent;

@@ -1,4 +1,13 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/solid-query";
+import { createClient } from "@connectrpc/connect";
+import { PaymentService } from "@buf/loci_loci-proto.bufbuild_es/loci/payment/v1/payment_pb.js";
+import type {
+  Invoice as PaymentInvoice,
+  Payment,
+  Subscription,
+} from "@buf/loci_loci-proto.bufbuild_es/loci/payment/v1/payment_pb.js";
+import type { Timestamp } from "@bufbuild/protobuf/wkt";
+import { transport } from "../connect-transport";
 
 // Types
 export interface SubscriptionData {
@@ -31,32 +40,63 @@ export interface Invoice {
   createdAt: string;
 }
 
-// Mock data for now - will be replaced with actual RPC calls when proto is ready
-const mockSubscription: SubscriptionData = {
-  plan: "free",
-  status: "active",
-  usage: {
-    requestsToday: 3,
-    requestsLimit: 5,
-  },
-};
+const paymentClient = createClient(PaymentService, transport);
 
-const mockPaymentHistory: PaymentHistoryItem[] = [];
-const mockInvoices: Invoice[] = [];
+function timestampToISOString(timestamp?: Timestamp): string {
+  if (!timestamp) return "";
+  const seconds = Number(timestamp.seconds);
+  return new Date(seconds * 1000 + timestamp.nanos / 1_000_000).toISOString();
+}
+
+function mapSubscription(
+  subscription?: Subscription,
+  usage?: SubscriptionData["usage"],
+): SubscriptionData {
+  return {
+    plan: (subscription?.planId || "free") as SubscriptionData["plan"],
+    status: subscription?.status || "active",
+    currentPeriodEnd: timestampToISOString(subscription?.currentPeriodEnd),
+    cancelAtPeriodEnd: subscription?.cancelAtPeriodEnd,
+    usage: usage || {
+      requestsToday: 0,
+      requestsLimit: 5,
+    },
+  };
+}
+
+function mapPayment(payment: Payment): PaymentHistoryItem {
+  return {
+    id: payment.id,
+    amount: Number(payment.amount),
+    currency: payment.currency,
+    status: payment.status,
+    description: payment.description || undefined,
+    createdAt: timestampToISOString(payment.createdAt),
+  };
+}
+
+function mapInvoice(invoice: PaymentInvoice): Invoice {
+  return {
+    id: invoice.id,
+    invoiceNumber: invoice.invoiceNumber || undefined,
+    amount: Number(invoice.amount),
+    currency: invoice.currency,
+    status: invoice.status,
+    pdfUrl: invoice.pdfUrl || undefined,
+    createdAt: timestampToISOString(invoice.issuedAt),
+  };
+}
 
 // Queries
 export function useUserSubscription() {
   return useQuery(() => ({
     queryKey: ["user-subscription"],
     queryFn: async (): Promise<SubscriptionData> => {
-      // TODO: Replace with actual RPC call when proto is generated
-      // const client = getGrpcClient();
-      // const response = await client.billing.getUserSubscription({});
-      // return response;
-
-      // Mock for now
-      await new Promise((resolve) => setTimeout(resolve, 500));
-      return mockSubscription;
+      const response = await paymentClient.getSubscription({});
+      return mapSubscription(response.subscription, {
+        requestsToday: response.usage?.requestsToday || 0,
+        requestsLimit: response.usage?.requestsLimit || 5,
+      });
     },
     staleTime: 60000, // 1 minute
   }));
@@ -66,9 +106,8 @@ export function usePaymentHistory(limit: number = 10) {
   return useQuery(() => ({
     queryKey: ["payment-history", limit],
     queryFn: async (): Promise<PaymentHistoryItem[]> => {
-      // TODO: Replace with actual RPC call
-      await new Promise((resolve) => setTimeout(resolve, 500));
-      return mockPaymentHistory;
+      const response = await paymentClient.getUserPayments({ page: 1, pageSize: limit });
+      return response.payments.map(mapPayment);
     },
     staleTime: 300000, // 5 minutes
   }));
@@ -78,9 +117,8 @@ export function useUserInvoices(limit: number = 10) {
   return useQuery(() => ({
     queryKey: ["user-invoices", limit],
     queryFn: async (): Promise<Invoice[]> => {
-      // TODO: Replace with actual RPC call
-      await new Promise((resolve) => setTimeout(resolve, 500));
-      return mockInvoices;
+      const response = await paymentClient.getUserInvoices({ page: 1, pageSize: limit });
+      return response.invoices.map(mapInvoice);
     },
     staleTime: 300000, // 5 minutes
   }));
@@ -91,15 +129,18 @@ export function useCreateCheckoutSession() {
   const queryClient = useQueryClient();
 
   return useMutation(() => ({
-    mutationFn: async (_params: { priceId: string; successUrl: string; cancelUrl: string }) => {
-      // TODO: Replace with actual RPC call
-      // const client = getGrpcClient();
-      // const response = await client.billing.createCheckoutSession(params);
-      // return response;
-
-      // Mock - in real implementation, this would return a Stripe checkout URL
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      return { url: "https://checkout.stripe.com/mock" };
+    mutationFn: async (params: {
+      priceId: string;
+      successUrl: string;
+      cancelUrl: string;
+      mode?: string;
+    }) => {
+      return paymentClient.createCheckoutSession({
+        priceId: params.priceId,
+        successUrl: params.successUrl,
+        cancelUrl: params.cancelUrl,
+        mode: params.mode || "subscription",
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["user-subscription"] });
@@ -109,10 +150,8 @@ export function useCreateCheckoutSession() {
 
 export function useCreateCustomerPortalSession() {
   return useMutation(() => ({
-    mutationFn: async (_params: { returnUrl: string }) => {
-      // TODO: Replace with actual RPC call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      return { url: "https://billing.stripe.com/mock" };
+    mutationFn: async (params: { returnUrl: string }) => {
+      return paymentClient.createCustomerPortalSession(params);
     },
   }));
 }
@@ -121,9 +160,11 @@ export function useCancelSubscription() {
   const queryClient = useQueryClient();
 
   return useMutation(() => ({
-    mutationFn: async (_params: { cancelAtPeriodEnd: boolean }) => {
-      // TODO: Replace with actual RPC call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+    mutationFn: async (params: { cancelAtPeriodEnd: boolean; subscriptionId?: string }) => {
+      await paymentClient.cancelSubscription({
+        subscriptionId: params.subscriptionId || "",
+        cancelAtPeriodEnd: params.cancelAtPeriodEnd,
+      });
       return { success: true };
     },
     onSuccess: () => {

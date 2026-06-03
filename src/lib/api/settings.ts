@@ -1,17 +1,23 @@
-// Settings queries and mutations - STUB (REST removed, awaiting RPC implementation)
 import { useQuery, useMutation, useQueryClient } from "@tanstack/solid-query";
 import { queryKeys } from "./shared";
+import { fetchPreferenceProfilesRPC, useUpdateSearchProfileMutation } from "./profiles";
+import { useUserProfileQuery, useUpdateProfileMutation } from "./user";
 
 // ==================
 // SETTINGS QUERIES - STUB
 // ==================
 
 export const useSettings = () => {
+  const userProfile = useUserProfileQuery();
+
   return useQuery(() => ({
     queryKey: queryKeys.settings,
     queryFn: async () => {
-      console.warn("⚠️ useSettings: REST API removed - needs RPC implementation");
-      return {}; // Return empty settings until RPC is implemented
+      const profiles = await fetchPreferenceProfilesRPC();
+      return {
+        profile: userProfile.data || null,
+        preferenceProfiles: profiles,
+      };
     },
     staleTime: 10 * 60 * 1000,
   }));
@@ -19,18 +25,17 @@ export const useSettings = () => {
 
 export const useUpdateSettingsMutation = () => {
   const queryClient = useQueryClient();
+  const updateProfile = useUpdateProfileMutation();
+  const updateSearchProfile = useUpdateSearchProfileMutation();
 
   return useMutation(() => ({
-    mutationFn: async ({
-      profileId: _profileId,
-      settings: _settings,
-    }: {
-      profileId: string;
-      settings: any;
-    }) => {
-      console.warn("⚠️ useUpdateSettingsMutation: REST API removed - needs RPC implementation");
-      // TODO: Implement via ProfileService.UpdateUserPreferenceProfile
-      return { success: false, message: "Not implemented" };
+    mutationFn: async ({ profileId, settings }: { profileId: string; settings: any }) => {
+      if (profileId) {
+        await updateSearchProfile.mutateAsync({ profileId, data: settings });
+      } else {
+        await updateProfile.mutateAsync(settings);
+      }
+      return { success: true };
     },
     onSuccess: (_, { profileId }) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.userSettings(profileId) });

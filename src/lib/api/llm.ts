@@ -7,9 +7,11 @@ import {
   ChatService,
   ChatRequestSchema,
   ChatResponse as ProtoChatResponse,
-  ContinueChatRequestSchema as ContinueChatRequestSchema,
+  ChatSession as ProtoChatSession,
+  ContinueChatRequestSchema,
   DomainType as ChatDomainType,
-  StartChatRequestSchema as StartChatRequestSchema,
+  MessageRole,
+  StartChatRequestSchema,
 } from "@buf/loci_loci-proto.bufbuild_es/loci/chat/chat_pb.js";
 import {
   AIItineraryResponse as ProtoAIItineraryResponse,
@@ -21,6 +23,7 @@ import {
   RestaurantDetailedInfo as ProtoRestaurantDetailedInfo,
 } from "@buf/loci_loci-proto.bufbuild_es/loci/poi/poi_pb.js";
 import { transport } from "../connect-transport";
+import type { Timestamp } from "@bufbuild/protobuf/wkt";
 //import { createGraphQLClient, gql } from '@solid-primitives/graphql';
 import type {
   ChatMessage,
@@ -43,6 +46,14 @@ import type {
 export type ChatContextType = "hotels" | "restaurants" | "itineraries" | "general";
 
 const chatClient = createClient(ChatService, transport);
+
+const timestampToDate = (timestamp?: Timestamp): Date => {
+  if (!timestamp) return new Date(0);
+  return new Date(Number(timestamp.seconds) * 1000 + timestamp.nanos / 1_000_000);
+};
+
+const timestampToISOString = (timestamp?: Timestamp): string =>
+  timestampToDate(timestamp).toISOString();
 
 const EMPTY_ITINERARY: AIItineraryResponse = {
   itinerary_name: "",
@@ -851,11 +862,50 @@ export interface ChatSessionSummary {
 }
 
 // Get chat sessions for a user
-export const getUserChatSessions = async (_profileId: string): Promise<ChatSessionSummary[]> => {
-  // NOTE: This endpoint has been removed from the legacy REST API.
-  // We return an empty array until a proper History Service RPC is implemented.
-  console.warn("getUserChatSessions: REST API removed. Returning empty session list.");
-  return [];
+const mapProtoChatSession = (session: ProtoChatSession): ChatSessionSummary => {
+  const messages = session.conversationHistory.map((message) => ({
+    id: message.id,
+    type:
+      message.role === MessageRole.USER
+        ? "user"
+        : message.role === MessageRole.SYSTEM
+          ? "system"
+          : "assistant",
+    role:
+      message.role === MessageRole.USER
+        ? "user"
+        : message.role === MessageRole.SYSTEM
+          ? "system"
+          : "assistant",
+    content: message.content,
+    timestamp: timestampToDate(message.timestamp),
+  })) as ChatMessage[];
+  const lastMessage = messages[messages.length - 1];
+
+  return {
+    id: session.id,
+    title: session.cityName ? `Trip to ${session.cityName}` : "Chat session",
+    preview: lastMessage?.content || "",
+    timestamp: timestampToISOString(session.updatedAt || session.createdAt),
+    messageCount: messages.length,
+    hasItinerary: Boolean(session.currentItinerary),
+    lastMessage: lastMessage?.content,
+    cityName: session.cityName || undefined,
+    conversationHistory: messages,
+    created_at: timestampToISOString(session.createdAt),
+    updated_at: timestampToISOString(session.updatedAt),
+  };
+};
+
+export const getUserChatSessions = async (profileId: string): Promise<ChatSessionSummary[]> => {
+  const response = await chatClient.getChatSessions({
+    userId: profileId,
+    pagination: {
+      page: 1,
+      pageSize: 25,
+    },
+  });
+  return response.sessions.map(mapProtoChatSession);
 };
 
 // Query hook for getting chat sessions

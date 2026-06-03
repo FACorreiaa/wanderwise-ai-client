@@ -237,13 +237,13 @@ export default function ListsPage() {
 
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-16">
           {/* Tabs */}
-          <div class="flex items-center gap-2 mb-6 border-b border-gray-200 dark:border-gray-700">
+          <div class="flex items-center gap-2 mb-6 border-b border-border">
             <button
               onClick={() => setActiveTab("all")}
               class={`px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
                 activeTab() === "all"
-                  ? "border-blue-500 text-blue-600 dark:text-blue-400"
-                  : "border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                  ? "border-blue-500 text-primary"
+                  : "border-transparent text-muted-foreground hover:text-muted-foreground"
               }`}
             >
               All Lists ({lists().length})
@@ -252,8 +252,8 @@ export default function ListsPage() {
               onClick={() => setActiveTab("custom")}
               class={`px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
                 activeTab() === "custom"
-                  ? "border-blue-500 text-blue-600 dark:text-blue-400"
-                  : "border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                  ? "border-blue-500 text-primary"
+                  : "border-transparent text-muted-foreground hover:text-muted-foreground"
               }`}
             >
               Custom Lists
@@ -262,8 +262,8 @@ export default function ListsPage() {
               onClick={() => setActiveTab("itineraries")}
               class={`px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
                 activeTab() === "itineraries"
-                  ? "border-blue-500 text-blue-600 dark:text-blue-400"
-                  : "border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                  ? "border-blue-500 text-primary"
+                  : "border-transparent text-muted-foreground hover:text-muted-foreground"
               }`}
             >
               Itineraries
@@ -273,23 +273,23 @@ export default function ListsPage() {
           {/* Loading State */}
           <Show when={isLoading()}>
             <div class="flex items-center justify-center py-16">
-              <Loader2 class="w-8 h-8 animate-spin text-blue-500" />
-              <span class="ml-3 text-gray-600 dark:text-gray-400">Loading your lists...</span>
+              <Loader2 class="w-8 h-8 animate-spin text-primary" />
+              <span class="ml-3 text-muted-foreground">Loading your lists...</span>
             </div>
           </Show>
 
           {/* Empty State */}
           <Show when={!isLoading() && filteredLists().length === 0}>
             <div class="text-center py-16">
-              <div class="w-20 h-20 mx-auto mb-6 rounded-full bg-gradient-to-br from-purple-100 to-pink-100 dark:from-purple-900/30 dark:to-pink-900/30 flex items-center justify-center">
-                <FolderPlus class="w-10 h-10 text-purple-500" />
+              <div class="w-20 h-20 mx-auto mb-6 rounded-full bg-gradient-to-br from-accent to-pink-100 dark:from-accent/30 dark:to-pink-900/30 flex items-center justify-center">
+                <FolderPlus class="w-10 h-10 text-accent" />
               </div>
-              <h3 class="text-xl font-semibold text-gray-800 dark:text-white mb-2">
+              <h3 class="text-xl font-semibold text-foreground mb-2">
                 {activeTab() === "all"
                   ? "No Lists Yet"
                   : `No ${activeTab() === "custom" ? "Custom Lists" : "Itineraries"} Yet`}
               </h3>
-              <p class="text-gray-600 dark:text-gray-400 mb-6 max-w-md mx-auto">
+              <p class="text-muted-foreground mb-6 max-w-md mx-auto">
                 Create your first list to start organizing your favorite places and travel plans.
               </p>
               <Button onClick={openCreateModal} class="gap-2">
@@ -307,14 +307,14 @@ export default function ListsPage() {
                   <div class="glass-panel rounded-2xl p-5 hover:shadow-xl transition-all duration-200 group relative">
                     {/* Delete Confirmation Overlay */}
                     <Show when={deleteConfirmId() === list.id}>
-                      <div class="absolute inset-0 bg-white/95 dark:bg-gray-900/95 backdrop-blur rounded-2xl flex flex-col items-center justify-center z-10 p-4">
-                        <p class="text-sm text-gray-700 dark:text-gray-300 mb-4 text-center">
+                      <div class="absolute inset-0 bg-card/95 backdrop-blur rounded-2xl flex flex-col items-center justify-center z-10 p-4">
+                        <p class="text-sm text-foreground mb-4 text-center">
                           Delete "{list.name}"?
                         </p>
                         <div class="flex gap-2">
                           <button
                             onClick={() => setDeleteConfirmId(null)}
-                            class="px-3 py-1.5 text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg"
+                            class="px-3 py-1.5 text-sm text-muted-foreground hover:bg-muted dark:hover:bg-gray-800 rounded-lg"
                           >
                             Cancel
                           </button>
@@ -332,7 +332,7 @@ export default function ListsPage() {
                     <div class="flex items-start justify-between mb-3">
                       <div class="flex-1 min-w-0">
                         <div class="flex items-center gap-2 mb-1">
-                          <h3 class="text-lg font-semibold text-gray-900 dark:text-white truncate">
+                          <h3 class="text-lg font-semibold text-foreground truncate">
                             {list.name}
                           </h3>
                           {list.isPublic ? (
@@ -341,12 +341,12 @@ export default function ListsPage() {
                             </span>
                           ) : (
                             <span title="Private">
-                              <Lock class="w-4 h-4 text-gray-400 flex-shrink-0" />
+                              <Lock class="w-4 h-4 text-muted-foreground flex-shrink-0" />
                             </span>
                           )}
                         </div>
                         <Show when={list.isItinerary}>
-                          <span class="inline-block px-2 py-0.5 text-xs font-medium bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300 rounded-full">
+                          <span class="inline-block px-2 py-0.5 text-xs font-medium bg-accent/20 dark:bg-accent/20 text-accent dark:text-accent rounded-full">
                             Itinerary
                           </span>
                         </Show>
@@ -356,11 +356,11 @@ export default function ListsPage() {
                       <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                         <button
                           onClick={(e) => handleListSelect(list, e)}
-                          class="p-2 text-gray-400 hover:text-blue-500 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/20"
+                          class="p-2 text-muted-foreground hover:text-primary rounded-lg hover:bg-primary/10"
                           title={selection.isSelected(list.id) ? "Deselect" : "Select"}
                         >
                           {selection.isSelected(list.id) ? (
-                            <CheckSquare class="w-4 h-4 text-blue-600" />
+                            <CheckSquare class="w-4 h-4 text-primary" />
                           ) : (
                             <Square class="w-4 h-4" />
                           )}
@@ -368,7 +368,7 @@ export default function ListsPage() {
                         <Show when={list.isPublic}>
                           <button
                             onClick={(e) => handleShare(list, e)}
-                            class="p-2 text-gray-400 hover:text-green-500 rounded-lg hover:bg-green-50 dark:hover:bg-green-900/20"
+                            class="p-2 text-muted-foreground hover:text-green-500 rounded-lg hover:bg-green-50 dark:hover:bg-green-900/20"
                             title="Share"
                           >
                             <Share2 class="w-4 h-4" />
@@ -376,14 +376,14 @@ export default function ListsPage() {
                         </Show>
                         <button
                           onClick={() => openEditModal(list)}
-                          class="p-2 text-gray-400 hover:text-blue-500 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/20"
+                          class="p-2 text-muted-foreground hover:text-primary rounded-lg hover:bg-primary/10"
                           title="Edit"
                         >
                           <Edit3 class="w-4 h-4" />
                         </button>
                         <button
                           onClick={() => setDeleteConfirmId(list.id)}
-                          class="p-2 text-gray-400 hover:text-red-500 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20"
+                          class="p-2 text-muted-foreground hover:text-red-500 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20"
                           title="Delete"
                         >
                           <Trash2 class="w-4 h-4" />
@@ -392,12 +392,12 @@ export default function ListsPage() {
                     </div>
 
                     <Show when={list.description}>
-                      <p class="text-sm text-gray-600 dark:text-gray-300 line-clamp-2 mb-3">
+                      <p class="text-sm text-muted-foreground line-clamp-2 mb-3">
                         {list.description}
                       </p>
                     </Show>
 
-                    <div class="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400 mb-4">
+                    <div class="flex items-center justify-between text-xs text-muted-foreground mb-4">
                       <div class="flex items-center gap-3">
                         <Show when={list.cityId}>
                           <span class="flex items-center gap-1">
@@ -417,7 +417,7 @@ export default function ListsPage() {
 
                     <A
                       href={`/lists/${list.id}`}
-                      class="flex items-center justify-center gap-2 w-full py-2.5 bg-gray-100 dark:bg-white/5 hover:bg-blue-50 dark:hover:bg-blue-900/20 text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 rounded-xl font-medium text-sm transition-colors"
+                      class="flex items-center justify-center gap-2 w-full py-2.5 bg-muted dark:bg-white/5 hover:bg-primary/10 text-foreground hover:text-primary rounded-xl font-medium text-sm transition-colors"
                     >
                       View List
                       <ChevronRight class="w-4 h-4" />
@@ -432,14 +432,14 @@ export default function ListsPage() {
         {/* Create/Edit Modal */}
         <Show when={showModal()}>
           <div class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-            <div class="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
-              <div class="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-                <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
+            <div class="bg-card rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+              <div class="flex items-center justify-between px-6 py-4 border-b border-border">
+                <h2 class="text-lg font-semibold text-foreground">
                   {editingList() ? "Edit List" : "Create New List"}
                 </h2>
                 <button
                   onClick={closeModal}
-                  class="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800"
+                  class="p-2 text-muted-foreground hover:text-foreground rounded-lg hover:bg-muted dark:hover:bg-gray-800"
                 >
                   <X class="w-5 h-5" />
                 </button>
@@ -447,29 +447,25 @@ export default function ListsPage() {
 
               <form onSubmit={handleSubmit} class="p-6 space-y-4">
                 <div>
-                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Name *
-                  </label>
+                  <label class="block text-sm font-medium text-foreground mb-1">Name *</label>
                   <input
                     type="text"
                     value={formName()}
                     onInput={(e) => setFormName(e.currentTarget.value)}
                     placeholder="My Travel List"
-                    class="w-full px-4 py-2.5 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    class="w-full px-4 py-2.5 rounded-xl border border-border bg-card text-foreground focus:ring-2 focus:ring-ring focus:border-ring"
                     required
                   />
                 </div>
 
                 <div>
-                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Description
-                  </label>
+                  <label class="block text-sm font-medium text-foreground mb-1">Description</label>
                   <textarea
                     value={formDescription()}
                     onInput={(e) => setFormDescription(e.currentTarget.value)}
                     placeholder="Optional description..."
                     rows={3}
-                    class="w-full px-4 py-2.5 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
+                    class="w-full px-4 py-2.5 rounded-xl border border-border bg-card text-foreground focus:ring-2 focus:ring-ring focus:border-ring resize-none"
                   />
                 </div>
 
@@ -479,11 +475,9 @@ export default function ListsPage() {
                       type="checkbox"
                       checked={formIsItinerary()}
                       onChange={(e) => setFormIsItinerary(e.currentTarget.checked)}
-                      class="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                      class="w-4 h-4 rounded border-border text-primary focus:ring-ring"
                     />
-                    <span class="text-sm text-gray-700 dark:text-gray-300">
-                      This is an itinerary
-                    </span>
+                    <span class="text-sm text-foreground">This is an itinerary</span>
                   </label>
 
                   <label class="flex items-center gap-2 cursor-pointer">
@@ -491,9 +485,9 @@ export default function ListsPage() {
                       type="checkbox"
                       checked={formIsPublic()}
                       onChange={(e) => setFormIsPublic(e.currentTarget.checked)}
-                      class="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                      class="w-4 h-4 rounded border-border text-primary focus:ring-ring"
                     />
-                    <span class="text-sm text-gray-700 dark:text-gray-300">Make public</span>
+                    <span class="text-sm text-foreground">Make public</span>
                   </label>
                 </div>
 

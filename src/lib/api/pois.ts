@@ -1,12 +1,42 @@
 // POI and favorites queries and mutations - Using RPC (REST removed)
+import { createResource } from "solid-js";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/solid-query";
 import { createClient } from "@connectrpc/connect";
 import { FavoritesService } from "@buf/loci_loci-proto.bufbuild_es/loci/favorites/v1/favorites_pb.js";
+import { POIService } from "@buf/loci_loci-proto.bufbuild_es/loci/poi/poi_pb.js";
+import type { POIDetailedInfo as ProtoPOI } from "@buf/loci_loci-proto.bufbuild_es/loci/poi/poi_pb.js";
 import { transport } from "../connect-transport";
+import { logger } from "../logger";
 import { queryKeys } from "./shared";
 import type { POI, POIDetailedInfo } from "./types";
 
 const favoritesClient = createClient(FavoritesService, transport);
+const poiClient = createClient(POIService, transport);
+
+function mapProtoPOI(poi: ProtoPOI): POI {
+  return {
+    id: poi.id,
+    name: poi.name,
+    category: poi.category,
+    description: poi.description || poi.descriptionPoi,
+    description_poi: poi.descriptionPoi,
+    latitude: poi.latitude || 0,
+    longitude: poi.longitude || 0,
+    rating: poi.rating,
+    tags: poi.tags,
+    priority: poi.priority,
+    address: poi.address,
+    website: poi.website,
+    phone_number: poi.phoneNumber,
+    opening_hours: Object.keys(poi.openingHours).length ? JSON.stringify(poi.openingHours) : null,
+    price_level: poi.priceLevel,
+    price_range: poi.priceRange,
+    distance: poi.distance,
+    city: poi.city,
+    city_id: poi.cityId,
+    llm_interaction_id: poi.llmInteractionId,
+  };
+}
 
 // ===============
 // POI QUERIES - RPC
@@ -16,7 +46,7 @@ export const useFavorites = () => {
   return useQuery(() => ({
     queryKey: queryKeys.favorites,
     queryFn: async (): Promise<POIDetailedInfo[]> => {
-      console.log("🔄 Fetching user favorites via RPC...");
+      logger.debug("Fetching user favorites via RPC...");
       try {
         const response = await favoritesClient.getFavorites({});
         const favorites = (response.favorites || []).map((f) => ({
@@ -31,10 +61,10 @@ export const useFavorites = () => {
           city: f.cityName || "",
           imageUrl: "",
         })) as POIDetailedInfo[];
-        console.log("✅ Favorites fetched via RPC:", favorites.length);
+        logger.debug("Favorites fetched via RPC:", favorites.length);
         return favorites;
       } catch (error) {
-        console.error("❌ Failed to fetch favorites via RPC:", error);
+        logger.error("Failed to fetch favorites via RPC:", error);
         return [];
       }
     },
@@ -47,7 +77,7 @@ export const useAddToFavoritesMutation = () => {
 
   return useMutation(() => ({
     mutationFn: async (params: { poiId: string; poiData?: POIDetailedInfo }) => {
-      console.log("🔄 Adding POI to favorites via RPC:", params);
+      logger.debug("Adding POI to favorites via RPC:", params);
       try {
         await favoritesClient.addToFavorites({
           itemId: params.poiId,
@@ -59,10 +89,10 @@ export const useAddToFavoritesMutation = () => {
           rating: params.poiData?.rating || 0,
           category: params.poiData?.category || "",
         });
-        console.log("✅ Added to favorites via RPC");
+        logger.debug("Added to favorites via RPC");
         return { message: "Added to favorites" };
       } catch (error) {
-        console.error("❌ Add to favorites failed:", error);
+        logger.error("Add to favorites failed:", error);
         throw error;
       }
     },
@@ -77,7 +107,7 @@ export const useAddToFavoritesMutation = () => {
       return { previousFavorites };
     },
     onError: (error, params, context) => {
-      console.error("❌ Add to favorites failed:", error);
+      logger.error("Add to favorites failed:", error);
       queryClient.setQueryData(queryKeys.favorites, context?.previousFavorites);
     },
     onSuccess: () => {
@@ -91,15 +121,15 @@ export const useRemoveFromFavoritesMutation = () => {
 
   return useMutation(() => ({
     mutationFn: async (params: { poiId: string; poiData?: POIDetailedInfo }) => {
-      console.log("🔄 Removing POI from favorites via RPC:", params);
+      logger.debug("Removing POI from favorites via RPC:", params);
       try {
         await favoritesClient.removeFromFavorites({
           itemId: params.poiId,
         });
-        console.log("✅ Removed from favorites via RPC");
+        logger.debug("Removed from favorites via RPC");
         return { message: "Removed from favorites" };
       } catch (error) {
-        console.error("❌ Remove from favorites failed:", error);
+        logger.error("Remove from favorites failed:", error);
         throw error;
       }
     },
@@ -113,7 +143,7 @@ export const useRemoveFromFavoritesMutation = () => {
       return { previousFavorites };
     },
     onError: (err, params, context) => {
-      console.error("❌ Remove from favorites failed:", err);
+      logger.error("Remove from favorites failed:", err);
       if (context?.previousFavorites) {
         queryClient.setQueryData(queryKeys.favorites, context.previousFavorites);
       }
@@ -128,28 +158,45 @@ export const usePOIDetails = (poiId: string) => {
   return useQuery(() => ({
     queryKey: queryKeys.poiDetails(poiId),
     queryFn: async (): Promise<POI | null> => {
-      console.warn("⚠️ usePOIDetails: REST API removed - needs RPC implementation");
-      // TODO: Implement via a dedicated POI details RPC
-      return null;
+      const response = await poiClient.getPOI({ poiId });
+      return response.poi ? mapProtoPOI(response.poi) : null;
     },
     enabled: !!poiId,
     staleTime: 30 * 60 * 1000,
   }));
 };
 
-export const useNearbyPOIs = () => {
-  // STUB - Nearby POIs requires RPC implementation
-  console.warn("⚠️ useNearbyPOIs: REST API removed - needs RPC implementation");
-  return [() => [], { loading: false, error: null }] as const;
+export const useNearbyPOIs = (params?: {
+  latitude?: number;
+  longitude?: number;
+  radiusKm?: number;
+}) => {
+  const [data, state] = createResource(async () => {
+    if (!params?.latitude || !params?.longitude) return [];
+    const response = await poiClient.searchPOI({
+      latitude: params.latitude,
+      longitude: params.longitude,
+      radiusKm: params.radiusKm || 10,
+      searchType: "hybrid",
+    });
+    return response.pois.map(mapProtoPOI);
+  });
+  return [() => data() || [], state] as const;
 };
 
 export const useSearchPOIs = (query: string, filters?: any) => {
   return useQuery(() => ({
     queryKey: queryKeys.searchPois(query, filters),
     queryFn: async (): Promise<POI[]> => {
-      console.warn("⚠️ useSearchPOIs: REST API removed - needs RPC implementation");
-      // TODO: Implement via a dedicated POI search RPC
-      return [];
+      const response = await poiClient.searchPOI({
+        query,
+        cityName: filters?.cityName || filters?.city || "",
+        latitude: filters?.latitude || 0,
+        longitude: filters?.longitude || 0,
+        radiusKm: filters?.radiusKm,
+        searchType: filters?.searchType || "semantic",
+      });
+      return response.pois.map(mapProtoPOI);
     },
     enabled: !!query,
     staleTime: 5 * 60 * 1000,

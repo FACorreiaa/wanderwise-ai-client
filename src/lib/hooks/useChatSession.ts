@@ -1,27 +1,22 @@
 import { createSignal, batch } from "solid-js";
 import { useNavigate } from "@solidjs/router";
 import { useAuth } from "~/contexts/AuthContext";
-import {
-  ContinueChatStream,
-  detectDomain,
-  domainToContextType,
-  sendUnifiedChatMessageStream,
-} from "~/lib/api/llm";
+import { ContinueChatStream, detectDomain, domainToContextType } from "~/lib/api/llm";
 import {
   setStreamingSession,
   updateStreamingData,
   markStreamingComplete,
 } from "~/lib/streaming-state";
 
-// Import shared utilities from centralized location
 import {
   deriveDomainLists as deriveDomainListsUtil,
+  sendUnifiedChatMessageStream,
   mergeUniqueById as mergeUniqueByIdUtil,
   decodeEventData as decodeEventDataUtil,
   normalizeItineraryData as normalizeItineraryDataUtil,
   isIncrementalUpdate as isIncrementalUpdateUtil,
   persistCompletedSession as persistCompletedSessionUtil,
-} from "~/lib/utils/chatUtils";
+} from "~/lib/chat-stream";
 
 export interface ChatMessage {
   type: "user" | "assistant" | "error";
@@ -308,7 +303,7 @@ export function useChatSession(options: UseChatSessionOptions = {}) {
                       );
 
                       const mergedDataForPersistence = {
-                        ...(options.getStreamingData?.() || {}),
+                        ...options.getStreamingData?.(),
                         ...itineraryData2,
                         hotels: mergedHotels,
                         restaurants: mergedRestaurants,
@@ -794,7 +789,7 @@ export function useChatSession(options: UseChatSessionOptions = {}) {
                       // Persist for deep links
                       const snapshot = {
                         session_id: currentSession,
-                        ...(options.getStreamingData?.() || {}),
+                        ...options.getStreamingData?.(),
                         restaurants: mergedRestaurants,
                       };
                       persistCompletedSession(currentSession || sessionId(), snapshot);
@@ -835,7 +830,7 @@ export function useChatSession(options: UseChatSessionOptions = {}) {
                       );
                       const snapshot = {
                         session_id: currentSession,
-                        ...(options.getStreamingData?.() || {}),
+                        ...options.getStreamingData?.(),
                         hotels: mergedHotels,
                       };
                       persistCompletedSession(currentSession || sessionId(), snapshot);
@@ -877,7 +872,7 @@ export function useChatSession(options: UseChatSessionOptions = {}) {
                       // Persist for deep links
                       const snapshot = {
                         session_id: currentSession,
-                        ...(options.getStreamingData?.() || {}),
+                        ...options.getStreamingData?.(),
                         activities: mergedActivities,
                       };
                       persistCompletedSession(currentSession || sessionId(), snapshot);

@@ -283,42 +283,34 @@ function ProfilePageContent() {
 
     return (
       <div class="space-y-6">
-        {/* Stats Grid */}
-        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <div class="bg-white dark:bg-gray-800 rounded-lg p-4 text-center border border-gray-200 dark:border-gray-700">
-            <div class="text-2xl font-bold text-blue-600 dark:text-blue-400">
-              {profile.stats.places_visited}
-            </div>
-            <div class="text-sm text-gray-600 dark:text-gray-400">Places Visited</div>
+        {/* Stats Grid (social/follower counts omitted — not backed by the API) */}
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div class="bg-card rounded-lg p-4 text-center border border-border">
+            <div class="text-2xl font-bold text-primary">{profile.stats.places_visited}</div>
+            <div class="text-sm text-muted-foreground">Places Visited</div>
           </div>
-          <div class="bg-white dark:bg-gray-800 rounded-lg p-4 text-center border border-gray-200 dark:border-gray-700">
+          <div class="bg-card rounded-lg p-4 text-center border border-border">
             <div class="text-2xl font-bold text-green-600 dark:text-green-400">
               {profile.stats.reviews_written}
             </div>
-            <div class="text-sm text-gray-600 dark:text-gray-400">Reviews</div>
+            <div class="text-sm text-muted-foreground">Reviews</div>
           </div>
-          <div class="bg-white dark:bg-gray-800 rounded-lg p-4 text-center border border-gray-200 dark:border-gray-700">
-            <div class="text-2xl font-bold text-purple-600 dark:text-purple-400">
+          <div class="bg-card rounded-lg p-4 text-center border border-border">
+            <div class="text-2xl font-bold text-accent dark:text-accent">
               {profile.stats.lists_created}
             </div>
-            <div class="text-sm text-gray-600 dark:text-gray-400">Lists Created</div>
-          </div>
-          <div class="bg-white dark:bg-gray-800 rounded-lg p-4 text-center border border-gray-200 dark:border-gray-700">
-            <div class="text-2xl font-bold text-orange-600 dark:text-orange-400">
-              {profile.stats.followers}
-            </div>
-            <div class="text-sm text-gray-600 dark:text-gray-400">Followers</div>
+            <div class="text-sm text-muted-foreground">Lists Created</div>
           </div>
         </div>
 
         {/* Interests */}
         <Show when={profile.interests && profile.interests.length > 0}>
-          <div class="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
-            <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Interests</h3>
+          <div class="bg-card rounded-lg p-6 border border-border">
+            <h3 class="text-lg font-semibold text-foreground mb-4">Interests</h3>
             <div class="flex flex-wrap gap-2">
               <For each={profile.interests}>
                 {(interest) => (
-                  <span class="px-3 py-1 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded-full text-sm font-medium">
+                  <span class="px-3 py-1 bg-primary/10 text-blue-800 dark:text-blue-200 rounded-full text-sm font-medium">
                     {interest}
                   </span>
                 )}
@@ -329,11 +321,11 @@ function ProfilePageContent() {
 
         {/* Badges */}
         <div class="glass-panel gradient-border rounded-lg p-6 border-0">
-          <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Badges</h3>
+          <h3 class="text-lg font-semibold text-foreground mb-4">Badges</h3>
           <div class="flex flex-wrap gap-3">
             <For each={profile.badges}>
               {(badge) => (
-                <div class="flex items-center gap-2 px-3 py-2 bg-white/70 dark:bg-slate-900/60 rounded-lg border border-white/60 dark:border-slate-800/70">
+                <div class="flex items-center gap-2 px-3 py-2 bg-card/70 rounded-lg border border-white/60">
                   <div class="w-6 h-6 bg-amber-400 rounded-full" />
                   <span class="text-sm font-medium text-slate-900 dark:text-white">{badge}</span>
                 </div>
@@ -343,28 +335,28 @@ function ProfilePageContent() {
         </div>
 
         {/* Recent Activity */}
-        <div class="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
-          <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Recent Activity</h3>
+        <div class="bg-card rounded-lg p-6 border border-border">
+          <h3 class="text-lg font-semibold text-foreground mb-4">Recent Activity</h3>
           <div class="space-y-4">
             <For each={recentActivity()}>
               {(activity) => (
-                <div class="flex items-start gap-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                  <div class="w-8 h-8 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center flex-shrink-0">
+                <div class="flex items-start gap-3 p-3 bg-muted rounded-lg">
+                  <div class="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center flex-shrink-0">
                     <Show when={activity.type === "review"}>
-                      <User class="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                      <User class="w-4 h-4 text-primary" />
                     </Show>
                     <Show when={activity.type === "list"}>
-                      <Tag class="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                      <Tag class="w-4 h-4 text-primary" />
                     </Show>
                     <Show when={activity.type === "favorite"}>
-                      <Heart class="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                      <Heart class="w-4 h-4 text-primary" />
                     </Show>
                   </div>
                   <div class="flex-1">
-                    <h4 class="font-medium text-gray-900 dark:text-white">{activity.title}</h4>
-                    <p class="text-sm text-gray-600 dark:text-gray-400">{activity.description}</p>
+                    <h4 class="font-medium text-foreground">{activity.title}</h4>
+                    <p class="text-sm text-muted-foreground">{activity.description}</p>
                     <div class="flex items-center gap-2 mt-1">
-                      <span class="text-xs text-gray-500 dark:text-gray-500">{activity.date}</span>
+                      <span class="text-xs text-muted-foreground">{activity.date}</span>
                       <Show when={activity.rating}>
                         <div class="flex items-center gap-1">
                           <For each={Array.from({ length: activity.rating || 0 }, (_, i) => i)}>
@@ -384,20 +376,20 @@ function ProfilePageContent() {
   };
 
   const renderActivity = () => (
-    <div class="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
-      <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Activity Feed</h3>
+    <div class="bg-card rounded-lg p-6 border border-border">
+      <h3 class="text-lg font-semibold text-foreground mb-4">Activity Feed</h3>
       <div class="space-y-4">
         <For each={recentActivity()}>
           {(activity) => (
-            <div class="border-b border-gray-200 dark:border-gray-700 pb-4 last:border-b-0">
+            <div class="border-b border-border pb-4 last:border-b-0">
               <div class="flex items-start gap-3">
-                <div class="w-10 h-10 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center">
-                  <User class="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                <div class="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
+                  <User class="w-5 h-5 text-primary" />
                 </div>
                 <div class="flex-1">
-                  <h4 class="font-medium text-gray-900 dark:text-white">{activity.title}</h4>
-                  <p class="text-gray-600 dark:text-gray-400 mt-1">{activity.description}</p>
-                  <span class="text-sm text-gray-500 dark:text-gray-500">{activity.date}</span>
+                  <h4 class="font-medium text-foreground">{activity.title}</h4>
+                  <p class="text-muted-foreground mt-1">{activity.description}</p>
+                  <span class="text-sm text-muted-foreground">{activity.date}</span>
                 </div>
               </div>
             </div>
@@ -411,12 +403,12 @@ function ProfilePageContent() {
     <div class="space-y-4">
       <For each={getUserLists()}>
         {(list) => (
-          <div class="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
+          <div class="bg-card rounded-lg p-6 border border-border">
             <div class="flex items-start justify-between">
               <div class="flex-1">
-                <h3 class="font-semibold text-gray-900 dark:text-white">{list.name}</h3>
-                <p class="text-gray-600 dark:text-gray-400 mt-1">{list.description}</p>
-                <div class="flex items-center gap-4 mt-3 text-sm text-gray-500 dark:text-gray-500">
+                <h3 class="font-semibold text-foreground">{list.name}</h3>
+                <p class="text-muted-foreground mt-1">{list.description}</p>
+                <div class="flex items-center gap-4 mt-3 text-sm text-muted-foreground">
                   <span>{list.itemCount} places</span>
                   <span>{list.isPublic ? "Public" : "Private"}</span>
                   <Show when={list.likes > 0}>
@@ -435,21 +427,19 @@ function ProfilePageContent() {
   return (
     <Switch>
       <Match when={profileQuery.isLoading && !user()}>
-        <div class="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors flex items-center justify-center">
+        <div class="min-h-screen bg-muted transition-colors flex items-center justify-center">
           <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600" />
         </div>
       </Match>
       <Match when={profileQuery.isError && !user()}>
-        <div class="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors flex items-center justify-center">
+        <div class="min-h-screen bg-muted transition-colors flex items-center justify-center">
           <div class="text-center max-w-md mx-auto p-6">
-            <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-2">
-              Error Loading Profile
-            </h2>
-            <p class="text-gray-600 dark:text-gray-400 mb-4">
+            <h2 class="text-xl font-semibold text-foreground mb-2">Error Loading Profile</h2>
+            <p class="text-muted-foreground mb-4">
               {(profileQuery.error as any)?.message ||
                 "Unable to load profile data. Please try again."}
             </p>
-            <div class="text-sm text-gray-500 dark:text-gray-400 mb-4">
+            <div class="text-sm text-muted-foreground mb-4">
               Status: {(profileQuery.error as any)?.status || "Unknown"}
             </div>
             <Button onClick={() => profileQuery.refetch()} class="mt-4">
@@ -540,7 +530,7 @@ function ProfilePageContent() {
                     fallback={
                       <div class="space-y-4">
                         <div>
-                          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                          <label class="block text-sm font-medium text-foreground mb-1">
                             Username
                           </label>
                           <input
@@ -549,24 +539,22 @@ function ProfilePageContent() {
                             onInput={(e) =>
                               setEditForm((prev) => ({ ...prev, username: e.target.value }))
                             }
-                            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                            class="w-full px-3 py-2 border border-border rounded-lg bg-card text-foreground"
                           />
                         </div>
                         <div>
-                          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                            Bio
-                          </label>
+                          <label class="block text-sm font-medium text-foreground mb-1">Bio</label>
                           <textarea
                             value={editForm().bio}
                             onInput={(e) =>
                               setEditForm((prev) => ({ ...prev, bio: e.target.value }))
                             }
                             rows={3}
-                            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                            class="w-full px-3 py-2 border border-border rounded-lg bg-card text-foreground"
                           />
                         </div>
                         <div>
-                          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                          <label class="block text-sm font-medium text-foreground mb-1">
                             Location
                           </label>
                           <input
@@ -575,21 +563,21 @@ function ProfilePageContent() {
                             onInput={(e) =>
                               setEditForm((prev) => ({ ...prev, location: e.target.value }))
                             }
-                            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                            class="w-full px-3 py-2 border border-border rounded-lg bg-card text-foreground"
                           />
                         </div>
                         <div class="flex gap-2">
                           <button
                             onClick={saveProfile}
                             disabled={updateProfileMutation.isPending}
-                            class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2 disabled:opacity-50"
+                            class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 flex items-center gap-2 disabled:opacity-50"
                           >
                             <Save class="w-4 h-4" />
                             {updateProfileMutation.isPending ? "Saving..." : "Save"}
                           </button>
                           <button
                             onClick={cancelEditing}
-                            class="px-4 py-2 bg-gray-200 dark:bg-gray-600 text-gray-800 dark:text-gray-200 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-500 flex items-center gap-2"
+                            class="px-4 py-2 bg-muted text-foreground rounded-lg hover:bg-muted dark:hover:bg-gray-500 flex items-center gap-2"
                           >
                             <X class="w-4 h-4" />
                             Cancel
@@ -600,10 +588,10 @@ function ProfilePageContent() {
                   >
                     <div class="flex items-start justify-between">
                       <div class="flex-1">
-                        <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
+                        <h1 class="text-2xl font-bold text-foreground">
                           {profileData()?.username || "User"}
                         </h1>
-                        <div class="flex items-center gap-4 mt-2 text-gray-600 dark:text-gray-400">
+                        <div class="flex items-center gap-4 mt-2 text-muted-foreground">
                           <Show when={profileData()?.email}>
                             <div class="flex items-center gap-1">
                               <Mail class="w-4 h-4" />
@@ -628,7 +616,7 @@ function ProfilePageContent() {
                           </Show>
                         </div>
                         <Show when={profileData()?.bio}>
-                          <p class="text-gray-700 dark:text-gray-300 mt-3">{profileData()?.bio}</p>
+                          <p class="text-foreground mt-3">{profileData()?.bio}</p>
                         </Show>
                       </div>
                       <Button onClick={startEditing} class="gap-2">
@@ -642,8 +630,8 @@ function ProfilePageContent() {
             </div>
 
             {/* Tabs */}
-            <div class="bg-white dark:bg-gray-800 rounded-lg mb-6 border border-gray-200 dark:border-gray-700">
-              <div class="border-b border-gray-200 dark:border-gray-700">
+            <div class="bg-card rounded-lg mb-6 border border-border">
+              <div class="border-b border-border">
                 <div class="flex space-x-8 px-6">
                   <For each={tabs}>
                     {(tab) => (
@@ -651,8 +639,8 @@ function ProfilePageContent() {
                         onClick={() => setActiveTab(tab.id)}
                         class={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
                           activeTab() === tab.id
-                            ? "border-blue-500 text-blue-600 dark:text-blue-400"
-                            : "border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
+                            ? "border-blue-500 text-primary"
+                            : "border-transparent text-muted-foreground hover:text-foreground"
                         }`}
                       >
                         {tab.label}
@@ -668,9 +656,9 @@ function ProfilePageContent() {
             <Show when={activeTab() === "activity"}>{renderActivity()}</Show>
             <Show when={activeTab() === "lists"}>{renderLists()}</Show>
             <Show when={activeTab() === "reviews"}>
-              <div class="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
-                <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">My Reviews</h3>
-                <p class="text-gray-600 dark:text-gray-400">Your reviews will appear here.</p>
+              <div class="bg-card rounded-lg p-6 border border-border">
+                <h3 class="text-lg font-semibold text-foreground mb-4">My Reviews</h3>
+                <p class="text-muted-foreground">Your reviews will appear here.</p>
               </div>
             </Show>
           </div>
