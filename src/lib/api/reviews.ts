@@ -46,6 +46,10 @@ export interface ReviewItem {
   verified: boolean;
   visitDate?: string;
   createdAt?: string;
+  // Enrichment from the server (joins): POI + reviewer display info.
+  poiName: string;
+  reviewerName: string;
+  reviewerAvatar: string;
 }
 
 export interface CreateReviewInput {
@@ -75,6 +79,9 @@ function toReview(r: ProtoReview): ReviewItem {
     verified: r.isVerified,
     visitDate: tsToISO(r.visitDate as any),
     createdAt: tsToISO(r.createdAt as any),
+    poiName: r.contentName ?? "",
+    reviewerName: r.reviewer?.displayName ?? "",
+    reviewerAvatar: r.reviewer?.avatarUrl ?? "",
   };
 }
 
