@@ -1,10 +1,12 @@
 import { Component, Show } from "solid-js";
-import { Bot } from "lucide-solid";
+import { Bot, Menu } from "lucide-solid";
 
 export interface ChatHeaderProps {
   activeProfile: string;
   sessionId: string | null;
   onNewChat: () => void;
+  /** Opens the chat-history drawer on mobile. */
+  onToggleSidebar?: () => void;
 }
 
 const ChatHeader: Component<ChatHeaderProps> = (props) => {
@@ -12,6 +14,14 @@ const ChatHeader: Component<ChatHeaderProps> = (props) => {
     <div class="bg-card/80 backdrop-blur-xl border-b border-border p-3 sm:p-4 shadow-sm">
       <div class="flex items-center justify-between">
         <div class="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
+          <button
+            onClick={props.onToggleSidebar}
+            class="p-2 -ml-1 text-muted-foreground hover:bg-muted rounded-lg lg:hidden"
+            title="Chat history"
+            aria-label="Open chat history"
+          >
+            <Menu class="w-5 h-5" />
+          </button>
           <div class="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-blue-500 to-accent rounded-full flex items-center justify-center flex-shrink-0">
             <Bot class="w-4 h-4 sm:w-5 sm:h-5 text-white" />
           </div>

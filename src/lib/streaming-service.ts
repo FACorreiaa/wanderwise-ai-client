@@ -29,6 +29,8 @@ export interface StreamingSessionManager {
 export class StreamingChatService {
   private eventSource: EventSource | null = null;
   private manager: StreamingSessionManager | null = null;
+  private reader: ReadableStreamDefaultReader<Uint8Array> | null = null;
+  private aborted = false;
   private chunkBuffer: {
     general_pois: string;
     itinerary: string;
@@ -66,10 +68,20 @@ export class StreamingChatService {
       return;
     }
 
+    this.aborted = false;
     const reader = response.body.getReader();
+    this.reader = reader;
     const decoder = new TextDecoder();
 
     this.processStream(reader, decoder);
+  }
+
+  /** Stop the in-flight stream. Finalizes the partial session (onComplete),
+   *  does not surface an error. */
+  public stop(): void {
+    if (!this.reader) return;
+    this.aborted = true;
+    this.reader.cancel().catch(() => {});
   }
 
   private async processStream(
@@ -80,6 +92,11 @@ export class StreamingChatService {
 
     try {
       while (true) {
+        if (this.aborted) {
+          this.handleStreamComplete();
+          break;
+        }
+
         const { done, value } = await reader.read();
 
         if (done) {
@@ -109,8 +126,16 @@ export class StreamingChatService {
         }
       }
     } catch (error) {
+      // A cancel() during an in-flight read() rejects — treat intentional stops
+      // as a clean finalize, not an error.
+      if (this.aborted) {
+        this.handleStreamComplete();
+        return;
+      }
       console.error("Stream processing error:", error);
       this.manager?.onError(`Stream error: ${error}`);
+    } finally {
+      this.reader = null;
     }
   }
 
