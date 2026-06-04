@@ -8,13 +8,7 @@ import {
   JSX,
 } from "solid-js";
 import { useNavigate } from "@solidjs/router";
-import {
-  getAuthToken,
-  getRefreshToken,
-  setAuthToken,
-  clearAuthToken,
-  isPersistentSession,
-} from "~/lib/auth/tokens";
+import { getAuthToken, setAuthToken, clearAuthToken, isPersistentSession } from "~/lib/auth/tokens";
 import { onAuthExpired } from "~/lib/auth/auth-events";
 import { authAPI } from "~/lib/api";
 
@@ -118,32 +112,16 @@ export const AuthProvider = (props: AuthProviderProps) => {
     try {
       await loadUserProfile();
     } catch (error) {
+      // The Connect transport is the single refresh authority: its
+      // tokenRefreshInterceptor already attempts one token refresh + retry on a
+      // 401 before this throws. Doing a SECOND manual refresh here raced that
+      // rotation — both paths spent the same refresh token, the loser was
+      // rejected (the server deletes the old session on rotation), and the user
+      // was logged out mid-navigation. So if we land here the session is
+      // genuinely dead: just clear and let the app route to sign-in.
       console.error("AuthProvider: Session restoration failed:", error);
-
-      const refreshToken = getRefreshToken();
-      if (!refreshToken) {
-        clearAuthToken();
-        setUser(null);
-        setIsLoading(false);
-        console.log("AuthProvider: Initialization complete");
-        return;
-      }
-
-      try {
-        console.log("AuthProvider: Attempting token refresh for session restoration...");
-        const refreshed = await authAPI.refreshToken();
-        setAuthToken(
-          refreshed.access_token,
-          useLocalStorage,
-          refreshed.refresh_token || refreshToken,
-        );
-        await loadUserProfile();
-        console.log("AuthProvider: Session restored after token refresh");
-      } catch (refreshError) {
-        console.error("AuthProvider: Token refresh failed during restore:", refreshError);
-        clearAuthToken();
-        setUser(null);
-      }
+      clearAuthToken();
+      setUser(null);
     }
 
     setIsLoading(false);
