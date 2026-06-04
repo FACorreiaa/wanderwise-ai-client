@@ -76,6 +76,16 @@ function getRefreshPromise(): Promise<boolean> {
 }
 
 /**
+ * Shared, deduplicated token refresh. Use from places the unary interceptor
+ * can't cover — e.g. server-streaming RPCs, whose 401 surfaces during stream
+ * iteration rather than at the initial call. Returns true if the access token
+ * was refreshed.
+ */
+export function refreshSession(): Promise<boolean> {
+  return getRefreshPromise();
+}
+
+/**
  * Interceptor that adds authentication headers to requests.
  */
 const authInterceptor: Interceptor = (next) => async (req) => {

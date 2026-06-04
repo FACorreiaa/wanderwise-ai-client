@@ -1,7 +1,7 @@
 // LLM and chat queries and mutations
 import { useMutation } from "@tanstack/solid-query";
 import { create } from "@bufbuild/protobuf";
-import { createClient } from "@connectrpc/connect";
+import { createClient, ConnectError, Code } from "@connectrpc/connect";
 import { defaultLLMRateLimiter, RateLimitError, showRateLimitNotification } from "../rate-limiter";
 import {
   ChatService,
@@ -22,7 +22,7 @@ import {
   POIDetailedInfo as ProtoPOIDetailedInfo,
   RestaurantDetailedInfo as ProtoRestaurantDetailedInfo,
 } from "@buf/loci_loci-proto.bufbuild_es/loci/poi/poi_pb.js";
-import { transport } from "../connect-transport";
+import { transport, refreshSession } from "../connect-transport";
 import type { Timestamp } from "@bufbuild/protobuf/wkt";
 //import { createGraphQLClient, gql } from '@solid-primitives/graphql';
 import type {
@@ -46,6 +46,34 @@ import type {
 export type ChatContextType = "hotels" | "restaurants" | "itineraries" | "general";
 
 const chatClient = createClient(ChatService, transport);
+
+/**
+ * Consume a server-streaming RPC with a one-shot auth recovery. The unary
+ * token-refresh interceptor can't help streams (their 401 surfaces during
+ * iteration, and a retried stream is a new object the caller never reads). If
+ * the stream fails with Unauthenticated BEFORE emitting anything, refresh the
+ * token once and reopen — the auth interceptor attaches the fresh token to the
+ * new call. We only reopen when nothing was emitted yet, to avoid re-running
+ * the LLM and duplicating output on a mid-stream expiry.
+ */
+async function* streamWithAuthRetry<T>(makeStream: () => AsyncIterable<T>): AsyncIterable<T> {
+  let emitted = false;
+  try {
+    for await (const ev of makeStream()) {
+      emitted = true;
+      yield ev;
+    }
+  } catch (err) {
+    const isAuth = err instanceof ConnectError && err.code === Code.Unauthenticated;
+    if (!emitted && isAuth && (await refreshSession())) {
+      for await (const ev of makeStream()) {
+        yield ev;
+      }
+      return;
+    }
+    throw err;
+  }
+}
 
 const timestampToDate = (timestamp?: Timestamp): Date => {
   if (!timestamp) return new Date(0);
@@ -482,19 +510,21 @@ export const StartChatStreamReal = async (
   const endpoint = "loci.chat.ChatService/StreamChat";
   await enforceRateLimit(endpoint);
 
-  // Use the real streamChat RPC method
-  const stream = chatClient.streamChat(
-    create(ChatRequestSchema, {
-      message: request.initialMessage || "",
-      cityName: request.cityName || "",
-    }),
-  );
+  // Use the real streamChat RPC method. Wrapped so a token expiry at stream
+  // open refreshes + reopens once instead of dropping the chat.
+  const makeStream = () =>
+    chatClient.streamChat(
+      create(ChatRequestSchema, {
+        message: request.initialMessage || "",
+        cityName: request.cityName || "",
+      }),
+    );
 
   // Convert AsyncIterable to ReadableStream for easier consumption
   const readableStream = new ReadableStream({
     async start(controller) {
       try {
-        for await (const event of stream) {
+        for await (const event of streamWithAuthRetry(makeStream)) {
           controller.enqueue(event);
         }
         controller.close();
