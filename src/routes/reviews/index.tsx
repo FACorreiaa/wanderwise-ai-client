@@ -4,7 +4,13 @@ import ReviewCard from "~/components/ReviewCard";
 const ReviewForm = lazy(() => import("~/components/ReviewForm"));
 import { Button } from "~/ui/button";
 import { TextField, TextFieldRoot } from "~/ui/textfield";
-import { useUserReviews, useCreateReview, useLikeReview, type ReviewItem } from "~/lib/api/reviews";
+import {
+  useUserReviews,
+  useRecentReviews,
+  useCreateReview,
+  useLikeReview,
+  type ReviewItem,
+} from "~/lib/api/reviews";
 import { ErrorView } from "~/components/ErrorView";
 
 interface Place {
@@ -134,6 +140,7 @@ export default function ReviewsPage() {
 
   // Real "My Reviews" data from the ReviewService.
   const userReviewsQuery = useUserReviews();
+  const recentReviewsQuery = useRecentReviews();
   const createReview = useCreateReview();
   const likeReview = useLikeReview();
 
@@ -159,6 +166,9 @@ export default function ReviewsPage() {
   });
 
   const myReviews = (): Review[] => (userReviewsQuery.data ?? []).map(apiToPageReview);
+
+  // Global "All Reviews" feed from GetRecentReviews.
+  const allReviews = (): Review[] => (recentReviewsQuery.data ?? []).map(apiToPageReview);
 
   // Retained sample for the global "All Reviews" feed until GetRecentReviews
   // ships (see deploy/OPS.md known follow-ups).
@@ -212,14 +222,14 @@ export default function ReviewsPage() {
   ];
 
   const tabs = () => [
-    { id: "all", label: "All Reviews", count: reviews().length },
+    { id: "all", label: "All Reviews", count: allReviews().length },
     { id: "my-reviews", label: "My Reviews", count: myReviews().length },
     { id: "places", label: "Places to Review", count: 3 },
   ];
 
   // Filter and sort reviews
   const filteredReviews = () => {
-    let filtered = [...(activeTab() === "my-reviews" ? myReviews() : reviews())];
+    let filtered = [...(activeTab() === "my-reviews" ? myReviews() : allReviews())];
 
     // Search filter
     if (searchQuery()) {
@@ -514,7 +524,10 @@ export default function ReviewsPage() {
             when={filteredReviews().length > 0}
             fallback={
               <Show
-                when={activeTab() === "my-reviews" && userReviewsQuery.isError}
+                when={
+                  (activeTab() === "my-reviews" && userReviewsQuery.isError) ||
+                  (activeTab() === "all" && recentReviewsQuery.isError)
+                }
                 fallback={
                   <div class="text-center py-12">
                     <Star class="w-12 h-12 text-gray-300 mx-auto mb-4" />
@@ -533,8 +546,12 @@ export default function ReviewsPage() {
                 }
               >
                 <ErrorView
-                  error={userReviewsQuery.error}
-                  onRetry={() => userReviewsQuery.refetch()}
+                  error={activeTab() === "all" ? recentReviewsQuery.error : userReviewsQuery.error}
+                  onRetry={() =>
+                    activeTab() === "all"
+                      ? recentReviewsQuery.refetch()
+                      : userReviewsQuery.refetch()
+                  }
                   class="my-6"
                 />
               </Show>

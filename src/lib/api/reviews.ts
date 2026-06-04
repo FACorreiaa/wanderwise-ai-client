@@ -7,6 +7,7 @@ import {
   CreateReviewRequestSchema,
   GetPOIReviewsRequestSchema,
   GetUserReviewsRequestSchema,
+  GetRecentReviewsRequestSchema,
   LikeReviewRequestSchema,
   DeleteReviewRequestSchema,
   type Review as ProtoReview,
@@ -121,6 +122,20 @@ export function useUserReviews() {
   }));
 }
 
+export function useRecentReviews() {
+  return useQuery(() => ({
+    queryKey: ["reviews", "recent"],
+    queryFn: async (): Promise<ReviewItem[]> => {
+      const res = await reviewClient.getRecentReviews(
+        create(GetRecentReviewsRequestSchema, {
+          pagination: create(PaginationRequestSchema, { page: 1, pageSize: 50 }),
+        }),
+      );
+      return res.reviews.map(toReview);
+    },
+  }));
+}
+
 // --- mutations ---
 
 export function useCreateReview() {
@@ -138,9 +153,9 @@ export function useCreateReview() {
       );
       return res.review ? toReview(res.review) : null;
     },
-    onSuccess: (_data, input) => {
-      queryClient.invalidateQueries({ queryKey: ["reviews", "poi", input.poiId] });
-      queryClient.invalidateQueries({ queryKey: ["reviews", "me"] });
+    onSuccess: () => {
+      // Refresh every review list (POI, my-reviews, recent feed).
+      queryClient.invalidateQueries({ queryKey: ["reviews"] });
     },
   }));
 }
