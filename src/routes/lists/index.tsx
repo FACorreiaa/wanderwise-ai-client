@@ -31,6 +31,7 @@ import { Button } from "~/ui/button";
 import { useSelection, type SelectionItem } from "~/lib/hooks/useSelection";
 import { SelectionToolbar } from "~/components/ui/SelectionToolbar";
 import { exportListToPDF } from "~/lib/api/export";
+import { ErrorView } from "~/components/ErrorView";
 
 export default function ListsPage() {
   // State
@@ -278,8 +279,13 @@ export default function ListsPage() {
             </div>
           </Show>
 
+          {/* Error State */}
+          <Show when={!isLoading() && listsQuery.isError}>
+            <ErrorView error={listsQuery.error} onRetry={() => listsQuery.refetch()} class="my-6" />
+          </Show>
+
           {/* Empty State */}
-          <Show when={!isLoading() && filteredLists().length === 0}>
+          <Show when={!isLoading() && !listsQuery.isError && filteredLists().length === 0}>
             <div class="text-center py-16">
               <div class="w-20 h-20 mx-auto mb-6 rounded-full bg-gradient-to-br from-accent to-pink-100 dark:from-accent/30 dark:to-pink-900/30 flex items-center justify-center">
                 <FolderPlus class="w-10 h-10 text-accent" />

@@ -15,6 +15,7 @@ import {
 } from "lucide-solid";
 import { useFavoritesList, useRemoveFromFavorites } from "~/lib/api/favorites";
 import { Button } from "~/ui/button";
+import { ErrorView } from "~/components/ErrorView";
 import { TextField, TextFieldRoot } from "~/ui/textfield";
 
 // Local type for favorites with additional UI fields
@@ -547,16 +548,27 @@ export default function FavoritesPage() {
         <Show
           when={filteredFavorites().length > 0}
           fallback={
-            <div class="text-center py-12">
-              <Heart class="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-              <h3 class="text-lg font-semibold text-foreground mb-2">No favorites found</h3>
-              <p class="text-muted-foreground mb-4">
-                {searchQuery() || selectedCategory() !== "all"
-                  ? "Try adjusting your search or filters"
-                  : "Start exploring and save places you love!"}
-              </p>
-              <Button>Discover Places</Button>
-            </div>
+            <Show
+              when={favoritesQuery.isError}
+              fallback={
+                <div class="text-center py-12">
+                  <Heart class="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                  <h3 class="text-lg font-semibold text-foreground mb-2">No favorites found</h3>
+                  <p class="text-muted-foreground mb-4">
+                    {searchQuery() || selectedCategory() !== "all"
+                      ? "Try adjusting your search or filters"
+                      : "Start exploring and save places you love!"}
+                  </p>
+                  <Button>Discover Places</Button>
+                </div>
+              }
+            >
+              <ErrorView
+                error={favoritesQuery.error}
+                onRetry={() => favoritesQuery.refetch()}
+                class="my-6"
+              />
+            </Show>
           }
         >
           <div
