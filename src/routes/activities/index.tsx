@@ -126,7 +126,7 @@ export default function ActivitiesPage() {
   const _isFavorite = (name: string) => favorites().includes(name);
 
   const MapContent = (
-    <div class="h-full w-full bg-slate-100 dark:bg-slate-900 relative">
+    <div class="h-full w-full bg-muted relative">
       <Show
         when={allPois().length > 0}
         fallback={
@@ -156,12 +156,12 @@ export default function ActivitiesPage() {
   );
 
   const ListContent = (
-    <div class="h-full overflow-y-auto p-4 md:p-6 bg-slate-50/50 dark:bg-slate-950/50 backdrop-blur-sm">
+    <div class="h-full overflow-y-auto p-4 md:p-6 bg-background/50 backdrop-blur-sm">
       <div class="max-w-3xl mx-auto pb-20">
         <CityInfoHeader cityData={cityData()} isLoading={state.isStreaming && !cityData()} />
 
         <Show when={state.error}>
-          <div class="mb-6 p-4 rounded-xl bg-red-50 border border-red-200 text-red-600 dark:bg-red-900/20 dark:border-red-900/50 dark:text-red-400">
+          <div class="mb-6 p-4 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive">
             <p class="font-bold">Unable to load activities</p>
             <p class="text-sm opacity-90">{state.error}</p>
           </div>
@@ -173,13 +173,13 @@ export default function ActivitiesPage() {
 
         <Show when={activities().length > 0}>
           <div class="mb-8">
-            <h3 class="text-xl font-bold mb-4 text-gray-800 dark:text-white flex items-center gap-2">
+            <h3 class="text-xl font-bold mb-4 text-foreground flex items-center gap-2">
               <span class="text-2xl">🎯</span> Activities ({activities().length})
             </h3>
             <div class="space-y-4">
               <For each={activities()}>
                 {(item) => (
-                  <Card class="hover:shadow-md transition-all cursor-pointer bg-white/80 dark:bg-gray-800/80 backdrop-blur">
+                  <Card class="hover:shadow-md transition-all cursor-pointer bg-card/80 backdrop-blur border-border">
                     <CardHeader>
                       <div class="flex justify-between items-start">
                         <CardTitle class="text-lg">{item.name}</CardTitle>
@@ -198,10 +198,10 @@ export default function ActivitiesPage() {
                       </div>
                     </CardHeader>
                     <CardContent>
-                      <p class="text-sm text-gray-600 dark:text-gray-300 line-clamp-3 mb-2">
+                      <p class="text-sm text-muted-foreground line-clamp-3 mb-2">
                         {item.description_poi || item.description}
                       </p>
-                      <div class="text-xs text-gray-500">
+                      <div class="text-xs text-muted-foreground">
                         <p>{item.address}</p>
                       </div>
                     </CardContent>
@@ -234,9 +234,9 @@ export default function ActivitiesPage() {
 function ActivitiesSkeleton() {
   return (
     <div class="space-y-6">
-      <div class="rounded-2xl bg-gray-200 dark:bg-gray-800 h-64 animate-pulse" />
+      <div class="rounded-2xl bg-muted h-64 animate-pulse" />
       <div class="space-y-4">
-        <Card class="bg-white/50 dark:bg-slate-900/50">
+        <Card class="bg-card/50 border-border">
           <CardHeader>
             <Skeleton class="h-6 w-1/3 mb-2" />
             <Skeleton class="h-4 w-1/4" />
@@ -245,7 +245,7 @@ function ActivitiesSkeleton() {
             <Skeleton class="h-16 w-full" />
           </CardContent>
         </Card>
-        <Card class="bg-white/50 dark:bg-slate-900/50">
+        <Card class="bg-card/50 border-border">
           <CardHeader>
             <Skeleton class="h-6 w-1/3 mb-2" />
             <Skeleton class="h-4 w-1/4" />

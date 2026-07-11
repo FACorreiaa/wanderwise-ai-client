@@ -368,7 +368,7 @@ export default function TravelProfiles(props: TravelProfilesProps) {
     <div class="space-y-6">
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+          <label class="block text-sm font-medium text-foreground mb-2">
             Profile Name
           </label>
           <input
@@ -380,24 +380,24 @@ export default function TravelProfiles(props: TravelProfilesProps) {
             }}
             class={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:border-transparent transition-colors ${
               profileNameError()
-                ? "border-red-500 focus:ring-red-500"
-                : "border-gray-300 focus:ring-blue-500"
+                ? "border-destructive focus:ring-destructive"
+                : "border-border focus:ring-ring"
             }`}
             placeholder="e.g., Solo Explorer"
           />
           <Show when={profileNameError()}>
-            <p class="mt-1 text-sm text-red-500 dark:text-red-400">{profileNameError()}</p>
+            <p class="mt-1 text-sm text-destructive">{profileNameError()}</p>
           </Show>
         </div>
         <div>
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+          <label class="block text-sm font-medium text-foreground mb-2">
             Search Radius (km)
           </label>
           <input
             type="number"
             value={formData().search_radius_km}
             onInput={(e) => updateField("search_radius_km", parseInt(e.target.value))}
-            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            class="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground focus:ring-2 focus:ring-ring focus:border-transparent"
             min="1"
           />
         </div>
@@ -405,13 +405,13 @@ export default function TravelProfiles(props: TravelProfilesProps) {
 
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+          <label class="block text-sm font-medium text-foreground mb-2">
             Preferred Time
           </label>
           <select
             value={formData().preferred_time}
             onChange={(e) => updateField("preferred_time", e.target.value)}
-            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            class="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground focus:ring-2 focus:ring-ring focus:border-transparent"
           >
             <option value="any">Any Time</option>
             <option value="morning">Morning</option>
@@ -420,7 +420,7 @@ export default function TravelProfiles(props: TravelProfilesProps) {
           </select>
         </div>
         <div>
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+          <label class="block text-sm font-medium text-foreground mb-2">
             Budget Level (1-5)
           </label>
           <input
@@ -431,7 +431,7 @@ export default function TravelProfiles(props: TravelProfilesProps) {
             onInput={(e) => updateField("budget_level", parseInt(e.target.value))}
             class="w-full"
           />
-          <div class="flex justify-between text-xs text-gray-500 mt-1">
+          <div class="flex justify-between text-xs text-muted-foreground mt-1">
             <span>Budget</span>
             <span>Luxury</span>
           </div>
@@ -440,11 +440,11 @@ export default function TravelProfiles(props: TravelProfilesProps) {
 
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-2">Travel Pace</label>
+          <label class="block text-sm font-medium text-foreground mb-2">Travel Pace</label>
           <select
             value={formData().preferred_pace}
             onChange={(e) => updateField("preferred_pace", e.target.value)}
-            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            class="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground focus:ring-2 focus:ring-ring focus:border-transparent"
           >
             <option value="slow">Slow & Relaxed</option>
             <option value="moderate">Moderate</option>
@@ -452,11 +452,11 @@ export default function TravelProfiles(props: TravelProfilesProps) {
           </select>
         </div>
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-2">Transport</label>
+          <label class="block text-sm font-medium text-foreground mb-2">Transport</label>
           <select
             value={formData().preferred_transport}
             onChange={(e) => updateField("preferred_transport", e.target.value)}
-            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            class="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground focus:ring-2 focus:ring-ring focus:border-transparent"
           >
             <option value="any">Any</option>
             <option value="walking">Walking</option>
@@ -509,7 +509,7 @@ export default function TravelProfiles(props: TravelProfilesProps) {
       </div>
 
       <div>
-        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Tags</label>
+        <label class="block text-sm font-medium text-foreground mb-2">Tags</label>
         <div class="flex flex-wrap gap-2">
           <For each={activeTags()}>
             {(tag) => (
@@ -517,8 +517,8 @@ export default function TravelProfiles(props: TravelProfilesProps) {
                 onClick={() => toggleArrayValue("tags", tag.name)}
                 class={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${
                   formData().tags.includes(tag.name)
-                    ? "bg-blue-600 text-white"
-                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-muted text-foreground hover:bg-muted/80"
                 }`}
               >
                 {tag.name}
@@ -529,7 +529,7 @@ export default function TravelProfiles(props: TravelProfilesProps) {
       </div>
 
       <div>
-        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+        <label class="block text-sm font-medium text-foreground mb-2">
           Interests
         </label>
         <div class="flex flex-wrap gap-2">
@@ -539,8 +539,8 @@ export default function TravelProfiles(props: TravelProfilesProps) {
                 onClick={() => toggleArrayValue("interests", interest.name)}
                 class={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${
                   formData().interests.includes(interest.name)
-                    ? "bg-green-600 text-white"
-                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                    ? "bg-accent text-accent-foreground"
+                    : "bg-muted text-foreground hover:bg-muted/80"
                 }`}
               >
                 {interest.name}
@@ -555,7 +555,7 @@ export default function TravelProfiles(props: TravelProfilesProps) {
   const renderAccommodationSection = () => (
     <div class="space-y-6">
       <div>
-        <label class="block text-sm font-medium text-gray-700 mb-2">Accommodation Types</label>
+        <label class="block text-sm font-medium text-foreground mb-2">Accommodation Types</label>
         <div class="flex flex-wrap gap-2">
           <For each={["hotel", "hostel", "apartment", "guesthouse", "resort", "boutique"]}>
             {(type) => (
@@ -565,8 +565,8 @@ export default function TravelProfiles(props: TravelProfilesProps) {
                 }
                 class={`px-3 py-1 rounded-full text-sm font-medium capitalize transition-colors ${
                   formData().accommodation_preferences?.accommodation_type.includes(type)
-                    ? "bg-blue-600 text-white"
-                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-muted text-foreground hover:bg-muted/80"
                 }`}
               >
                 {type}
@@ -578,7 +578,7 @@ export default function TravelProfiles(props: TravelProfilesProps) {
 
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-2">Star Rating Range</label>
+          <label class="block text-sm font-medium text-foreground mb-2">Star Rating Range</label>
           <div class="flex gap-2 items-center">
             <input
               type="number"
@@ -591,7 +591,7 @@ export default function TravelProfiles(props: TravelProfilesProps) {
                   min: parseInt(e.target.value),
                 })
               }
-              class="w-20 px-2 py-1 border border-gray-300 rounded"
+              class="w-20 px-2 py-1 border border-border rounded bg-background"
             />
             <span>to</span>
             <input
@@ -605,13 +605,13 @@ export default function TravelProfiles(props: TravelProfilesProps) {
                   max: parseInt(e.target.value),
                 })
               }
-              class="w-20 px-2 py-1 border border-gray-300 rounded"
+              class="w-20 px-2 py-1 border border-border rounded bg-background"
             />
             <span>stars</span>
           </div>
         </div>
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-2">
+          <label class="block text-sm font-medium text-foreground mb-2">
             Price Range (per night)
           </label>
           <div class="flex gap-2 items-center">
@@ -625,7 +625,7 @@ export default function TravelProfiles(props: TravelProfilesProps) {
                   min: parseInt(e.target.value),
                 })
               }
-              class="w-24 px-2 py-1 border border-gray-300 rounded"
+              class="w-24 px-2 py-1 border border-border rounded bg-background"
             />
             <span>to</span>
             <input
@@ -638,7 +638,7 @@ export default function TravelProfiles(props: TravelProfilesProps) {
                   max: parseInt(e.target.value),
                 })
               }
-              class="w-24 px-2 py-1 border border-gray-300 rounded"
+              class="w-24 px-2 py-1 border border-border rounded bg-background"
             />
             <span>$</span>
           </div>
@@ -646,7 +646,7 @@ export default function TravelProfiles(props: TravelProfilesProps) {
       </div>
 
       <div>
-        <label class="block text-sm font-medium text-gray-700 mb-2">Amenities</label>
+        <label class="block text-sm font-medium text-foreground mb-2">Amenities</label>
         <div class="flex flex-wrap gap-2">
           <For
             each={[
@@ -668,8 +668,8 @@ export default function TravelProfiles(props: TravelProfilesProps) {
                 }
                 class={`px-3 py-1 rounded-full text-sm font-medium capitalize transition-colors ${
                   formData().accommodation_preferences?.amenities.includes(amenity)
-                    ? "bg-blue-600 text-white"
-                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-muted text-foreground hover:bg-muted/80"
                 }`}
               >
                 {amenity.replace("_", " ")}
@@ -684,7 +684,7 @@ export default function TravelProfiles(props: TravelProfilesProps) {
   const renderDiningSection = () => (
     <div class="space-y-6">
       <div>
-        <label class="block text-sm font-medium text-gray-700 mb-2">Cuisine Types</label>
+        <label class="block text-sm font-medium text-foreground mb-2">Cuisine Types</label>
         <div class="flex flex-wrap gap-2">
           <For
             each={[
@@ -705,8 +705,8 @@ export default function TravelProfiles(props: TravelProfilesProps) {
                 }
                 class={`px-3 py-1 rounded-full text-sm font-medium capitalize transition-colors ${
                   formData().dining_preferences?.cuisine_types.includes(cuisine)
-                    ? "bg-green-600 text-white"
-                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                    ? "bg-accent text-accent-foreground"
+                    : "bg-muted text-foreground hover:bg-muted/80"
                 }`}
               >
                 {cuisine.replace("_", " ")}
@@ -717,7 +717,7 @@ export default function TravelProfiles(props: TravelProfilesProps) {
       </div>
 
       <div>
-        <label class="block text-sm font-medium text-gray-700 mb-2">Service Style</label>
+        <label class="block text-sm font-medium text-foreground mb-2">Service Style</label>
         <div class="flex flex-wrap gap-2">
           <For each={["fine_dining", "casual", "fast_casual", "street_food", "buffet", "takeaway"]}>
             {(style) => (
@@ -725,8 +725,8 @@ export default function TravelProfiles(props: TravelProfilesProps) {
                 onClick={() => toggleNestedArrayValue("dining_preferences", "service_style", style)}
                 class={`px-3 py-1 rounded-full text-sm font-medium capitalize transition-colors ${
                   formData().dining_preferences?.service_style.includes(style)
-                    ? "bg-green-600 text-white"
-                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                    ? "bg-accent text-accent-foreground"
+                    : "bg-muted text-foreground hover:bg-muted/80"
                 }`}
               >
                 {style.replace("_", " ")}
@@ -738,7 +738,7 @@ export default function TravelProfiles(props: TravelProfilesProps) {
 
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-2">
+          <label class="block text-sm font-medium text-foreground mb-2">
             Price Range (per person)
           </label>
           <div class="flex gap-2 items-center">
@@ -752,7 +752,7 @@ export default function TravelProfiles(props: TravelProfilesProps) {
                   min: parseInt(e.target.value),
                 })
               }
-              class="w-24 px-2 py-1 border border-gray-300 rounded"
+              class="w-24 px-2 py-1 border border-border rounded bg-background"
             />
             <span>to</span>
             <input
@@ -765,19 +765,19 @@ export default function TravelProfiles(props: TravelProfilesProps) {
                   max: parseInt(e.target.value),
                 })
               }
-              class="w-24 px-2 py-1 border border-gray-300 rounded"
+              class="w-24 px-2 py-1 border border-border rounded bg-background"
             />
             <span>$</span>
           </div>
         </div>
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-2">Dining Preferences</label>
+          <label class="block text-sm font-medium text-foreground mb-2">Dining Preferences</label>
           <select
             value={formData().dining_preferences?.chain_vs_local}
             onChange={(e) =>
               updateNestedField("dining_preferences", "chain_vs_local", e.target.value)
             }
-            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            class="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground focus:ring-2 focus:ring-ring focus:border-transparent"
           >
             <option value="any">Any</option>
             <option value="local_only">Local Only</option>
@@ -828,7 +828,7 @@ export default function TravelProfiles(props: TravelProfilesProps) {
   const renderActivitiesSection = () => (
     <div class="space-y-6">
       <div>
-        <label class="block text-sm font-medium text-gray-700 mb-2">Activity Categories</label>
+        <label class="block text-sm font-medium text-foreground mb-2">Activity Categories</label>
         <div class="flex flex-wrap gap-2">
           <For
             each={[
@@ -850,8 +850,8 @@ export default function TravelProfiles(props: TravelProfilesProps) {
                 }
                 class={`px-3 py-1 rounded-full text-sm font-medium capitalize transition-colors ${
                   formData().activity_preferences?.activity_categories.includes(category)
-                    ? "bg-purple-600 text-white"
-                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-muted text-foreground hover:bg-muted/80"
                 }`}
               >
                 {category.replace("_", " ")}
@@ -863,7 +863,7 @@ export default function TravelProfiles(props: TravelProfilesProps) {
 
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-2">
+          <label class="block text-sm font-medium text-foreground mb-2">
             Physical Activity Level
           </label>
           <select
@@ -871,7 +871,7 @@ export default function TravelProfiles(props: TravelProfilesProps) {
             onChange={(e) =>
               updateNestedField("activity_preferences", "physical_activity_level", e.target.value)
             }
-            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            class="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground focus:ring-2 focus:ring-ring focus:border-transparent"
           >
             <option value="low">Low</option>
             <option value="moderate">Moderate</option>
@@ -880,7 +880,7 @@ export default function TravelProfiles(props: TravelProfilesProps) {
           </select>
         </div>
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-2">
+          <label class="block text-sm font-medium text-foreground mb-2">
             Indoor/Outdoor Preference
           </label>
           <select
@@ -888,7 +888,7 @@ export default function TravelProfiles(props: TravelProfilesProps) {
             onChange={(e) =>
               updateNestedField("activity_preferences", "indoor_outdoor_preference", e.target.value)
             }
-            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            class="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground focus:ring-2 focus:ring-ring focus:border-transparent"
           >
             <option value="indoor">Indoor</option>
             <option value="outdoor">Outdoor</option>
@@ -944,13 +944,13 @@ export default function TravelProfiles(props: TravelProfilesProps) {
     <div class="space-y-6">
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-2">Planning Style</label>
+          <label class="block text-sm font-medium text-foreground mb-2">Planning Style</label>
           <select
             value={formData().itinerary_preferences?.planning_style}
             onChange={(e) =>
               updateNestedField("itinerary_preferences", "planning_style", e.target.value)
             }
-            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            class="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground focus:ring-2 focus:ring-ring focus:border-transparent"
           >
             <option value="structured">Structured</option>
             <option value="flexible">Flexible</option>
@@ -958,13 +958,13 @@ export default function TravelProfiles(props: TravelProfilesProps) {
           </select>
         </div>
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-2">Time Flexibility</label>
+          <label class="block text-sm font-medium text-foreground mb-2">Time Flexibility</label>
           <select
             value={formData().itinerary_preferences?.time_flexibility}
             onChange={(e) =>
               updateNestedField("itinerary_preferences", "time_flexibility", e.target.value)
             }
-            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            class="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground focus:ring-2 focus:ring-ring focus:border-transparent"
           >
             <option value="strict_schedule">Strict Schedule</option>
             <option value="loose_schedule">Loose Schedule</option>
@@ -974,7 +974,7 @@ export default function TravelProfiles(props: TravelProfilesProps) {
       </div>
 
       <div>
-        <label class="block text-sm font-medium text-gray-700 mb-2">Preferred Seasons</label>
+        <label class="block text-sm font-medium text-foreground mb-2">Preferred Seasons</label>
         <div class="flex flex-wrap gap-2">
           <For each={["spring", "summer", "fall", "winter"]}>
             {(season) => (
@@ -984,8 +984,8 @@ export default function TravelProfiles(props: TravelProfilesProps) {
                 }
                 class={`px-3 py-1 rounded-full text-sm font-medium capitalize transition-colors ${
                   formData().itinerary_preferences?.preferred_seasons.includes(season)
-                    ? "bg-orange-600 text-white"
-                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                    ? "bg-accent text-accent-foreground"
+                    : "bg-muted text-foreground hover:bg-muted/80"
                 }`}
               >
                 {season}
@@ -1031,8 +1031,8 @@ export default function TravelProfiles(props: TravelProfilesProps) {
   return (
     <div class="space-y-6">
       <div>
-        <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-2">Travel Profiles</h2>
-        <p class="text-gray-600 dark:text-gray-300 mb-6">
+        <h2 class="text-2xl font-bold text-foreground mb-2">Travel Profiles</h2>
+        <p class="text-muted-foreground mb-6">
           Create and manage different travel profiles for various types of trips. Each profile can
           have its own preferences for accommodations, dining, activities, and planning.
         </p>
@@ -1041,20 +1041,20 @@ export default function TravelProfiles(props: TravelProfilesProps) {
           <div class="space-y-4">
             <For each={profiles()}>
               {(profile) => (
-                <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+                <div class="bg-card rounded-lg border border-border p-6">
                   <div class="flex items-start justify-between">
                     <div class="flex-1">
                       <div class="flex items-center gap-3 mb-2">
-                        <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
+                        <h3 class="text-lg font-semibold text-foreground">
                           {profile.profile_name}
                         </h3>
                         <Show when={profile.is_default}>
-                          <span class="px-2 py-1 bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 rounded-full text-xs font-medium">
+                          <span class="px-2 py-1 bg-accent/10 text-accent rounded-full text-xs font-medium">
                             Default
                           </span>
                         </Show>
                       </div>
-                      <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm text-gray-600 dark:text-gray-300 mb-4">
+                      <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm text-muted-foreground mb-4">
                         <div class="flex items-center gap-1">
                           <MapPin class="w-4 h-4" />
                           <span>{profile.search_radius_km}km radius</span>
@@ -1076,14 +1076,14 @@ export default function TravelProfiles(props: TravelProfilesProps) {
                         <div class="flex flex-wrap gap-2">
                           <For each={profile.interests || []}>
                             {(interest) => (
-                              <span class="px-2 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 rounded-md text-sm">
+                              <span class="px-2 py-1 bg-accent/10 text-accent rounded-md text-sm">
                                 {interest}
                               </span>
                             )}
                           </For>
                           <For each={profile.tags || []}>
                             {(tag) => (
-                              <span class="px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-md text-sm">
+                              <span class="px-2 py-1 bg-primary/10 text-primary rounded-md text-sm">
                                 {tag}
                               </span>
                             )}
@@ -1095,7 +1095,7 @@ export default function TravelProfiles(props: TravelProfilesProps) {
                       <button
                         onClick={() => setDefaultProfile(profile.id, profile.profile_name)}
                         disabled={profile.is_default || setDefaultProfileMutation.isPending}
-                        class={`p-2 rounded-lg ${profile.is_default ? "text-green-500 dark:text-green-400" : "text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"} ${setDefaultProfileMutation.isPending ? "opacity-50 cursor-not-allowed" : ""}`}
+                        class={`p-2 rounded-lg ${profile.is_default ? "text-accent" : "text-muted-foreground hover:text-foreground"} ${setDefaultProfileMutation.isPending ? "opacity-50 cursor-not-allowed" : ""}`}
                         title={
                           profile.is_default
                             ? "This is the default profile"
@@ -1106,14 +1106,14 @@ export default function TravelProfiles(props: TravelProfilesProps) {
                       </button>
                       <button
                         onClick={() => startEditing(profile)}
-                        class="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded-lg"
+                        class="p-2 text-muted-foreground hover:text-foreground rounded-lg"
                       >
                         <Edit3 class="w-4 h-4" />
                       </button>
                       <Show when={!profile.is_default}>
                         <button
                           onClick={() => deleteProfile(profile.id, profile.profile_name)}
-                          class="p-2 text-red-400 hover:text-red-600 dark:hover:text-red-400 rounded-lg"
+                          class="p-2 text-destructive hover:text-destructive/80 rounded-lg"
                         >
                           <Trash2 class="w-4 h-4" />
                         </button>
@@ -1126,9 +1126,9 @@ export default function TravelProfiles(props: TravelProfilesProps) {
 
             <button
               onClick={startCreating}
-              class="w-full p-6 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg hover:border-blue-400 dark:hover:border-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors group"
+              class="w-full p-6 border-2 border-dashed border-border rounded-lg hover:border-primary hover:bg-primary/5 transition-colors group"
             >
-              <div class="flex items-center justify-center gap-2 text-gray-600 dark:text-gray-300 group-hover:text-blue-600 dark:group-hover:text-blue-400">
+              <div class="flex items-center justify-center gap-2 text-muted-foreground group-hover:text-primary">
                 <Plus class="w-5 h-5" />
                 <span class="font-medium">Create New Travel Profile</span>
               </div>
@@ -1137,21 +1137,21 @@ export default function TravelProfiles(props: TravelProfilesProps) {
         </Show>
 
         <Show when={isCreating() || editingProfile()}>
-          <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+          <div class="bg-card rounded-lg border border-border p-6">
             <div class="flex items-center justify-between mb-6">
-              <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
+              <h3 class="text-lg font-semibold text-foreground">
                 {editingProfile() ? "Edit Profile" : "Create New Profile"}
               </h3>
               <button
                 onClick={cancelEditing}
-                class="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded-lg"
+                class="p-2 text-muted-foreground hover:text-foreground rounded-lg"
               >
                 <X class="w-4 h-4" />
               </button>
             </div>
 
             {/* Section Navigation */}
-            <div class="flex flex-wrap gap-2 mb-6 border-b border-gray-200 dark:border-gray-700 pb-4">
+            <div class="flex flex-wrap gap-2 mb-6 border-b border-border pb-4">
               <For each={sections}>
                 {(section) => {
                   const Icon = section.icon;
@@ -1160,8 +1160,8 @@ export default function TravelProfiles(props: TravelProfilesProps) {
                       onClick={() => setActiveSection(section.id)}
                       class={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                         activeSection() === section.id
-                          ? "bg-blue-600 dark:bg-blue-500 text-white"
-                          : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
+                          ? "bg-primary text-primary-foreground"
+                          : "bg-muted text-foreground hover:bg-muted/80"
                       }`}
                     >
                       <Icon class="w-4 h-4" />
@@ -1176,17 +1176,17 @@ export default function TravelProfiles(props: TravelProfilesProps) {
             {renderCurrentSection()}
 
             {/* Form Actions */}
-            <div class="flex justify-end gap-3 mt-8 pt-6 border-t border-gray-200 dark:border-gray-700">
+            <div class="flex justify-end gap-3 mt-8 pt-6 border-t border-border">
               <button
                 onClick={cancelEditing}
-                class="px-4 py-2 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 font-medium"
+                class="px-4 py-2 text-foreground bg-muted rounded-lg hover:bg-muted/80 font-medium"
               >
                 Cancel
               </button>
               <button
                 onClick={saveProfile}
                 disabled={createProfileMutation.isPending || updateProfileMutation.isPending}
-                class="px-6 py-2 bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white rounded-lg font-medium flex items-center gap-2 disabled:opacity-50"
+                class="px-6 py-2 bg-primary hover:opacity-90 text-primary-foreground rounded-lg font-medium flex items-center gap-2 disabled:opacity-50"
               >
                 <Save class="w-4 h-4" />
                 {createProfileMutation.isPending || updateProfileMutation.isPending

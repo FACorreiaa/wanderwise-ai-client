@@ -368,18 +368,18 @@ export default function ReviewsPage() {
 
     return (
       <div class="space-y-4">
-        <p class="text-gray-600 mb-6">Help other travelers by reviewing places you've visited</p>
+        <p class="text-muted-foreground mb-6">Help other travelers by reviewing places you've visited</p>
         <For each={places}>
           {(place) => (
             <div class="cb-card hover:shadow-md transition-all duration-200">
               <div class="p-4 flex items-center justify-between">
                 <div class="flex items-center gap-3">
-                  <div class="w-12 h-12 bg-white/70 border border-white/60 rounded-lg flex items-center justify-center">
+                  <div class="w-12 h-12 bg-muted/50 border border-border rounded-lg flex items-center justify-center">
                     🏛️
                   </div>
                   <div>
-                    <h3 class="font-semibold text-gray-900">{place.name}</h3>
-                    <p class="text-sm text-gray-600 flex items-center gap-1">
+                    <h3 class="font-semibold text-foreground">{place.name}</h3>
+                    <p class="text-sm text-muted-foreground flex items-center gap-1">
                       <MapPin class="w-3 h-3" />
                       {place.location}
                     </p>
@@ -404,14 +404,14 @@ export default function ReviewsPage() {
   };
 
   return (
-    <div class="min-h-screen bg-gray-50">
+    <div class="min-h-screen bg-background relative transition-colors">
       {/* Header */}
-      <div class="bg-white border-b border-gray-200">
+      <div class="bg-card border-b border-border">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-              <h1 class="text-2xl font-bold text-gray-900">Reviews</h1>
-              <p class="text-gray-600 mt-1">Read and share travel experiences</p>
+              <h1 class="text-2xl font-bold text-foreground">Reviews</h1>
+              <p class="text-muted-foreground mt-1">Read and share travel experiences</p>
             </div>
             <Button onClick={() => setShowReviewForm(true)} class="gap-2">
               <Plus class="w-4 h-4" />
@@ -422,7 +422,7 @@ export default function ReviewsPage() {
       </div>
 
       {/* Tabs */}
-      <div class="bg-white border-b border-gray-200">
+      <div class="bg-card border-b border-border">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div class="flex space-x-8">
             <For each={tabs()}>
@@ -431,8 +431,8 @@ export default function ReviewsPage() {
                   onClick={() => setActiveTab(tab.id)}
                   class={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
                     activeTab() === tab.id
-                      ? "border-blue-500 text-blue-600"
-                      : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                      ? "border-primary text-primary"
+                      : "border-transparent text-muted-foreground hover:text-foreground"
                   }`}
                 >
                   {tab.label} ({tab.count})
@@ -445,7 +445,7 @@ export default function ReviewsPage() {
 
       {/* Filters - Only show for all reviews and my reviews */}
       <Show when={activeTab() !== "places"}>
-        <div class="bg-white border-b border-gray-200">
+        <div class="bg-card border-b border-border">
           <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
             <div class="flex flex-col lg:flex-row lg:items-center gap-4">
               {/* Search */}
@@ -466,7 +466,7 @@ export default function ReviewsPage() {
               <select
                 value={selectedRating()}
                 onChange={(e) => setSelectedRating(e.target.value)}
-                class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                class="px-4 py-2 border border-border rounded-lg bg-card text-foreground focus:ring-2 focus:ring-ring focus:border-transparent"
               >
                 <For each={ratingFilters()}>
                   {(filter) => (
@@ -481,7 +481,7 @@ export default function ReviewsPage() {
               <select
                 value={selectedTravelType()}
                 onChange={(e) => setSelectedTravelType(e.target.value)}
-                class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                class="px-4 py-2 border border-border rounded-lg bg-card text-foreground focus:ring-2 focus:ring-ring focus:border-transparent"
               >
                 <For each={travelTypeFilters}>
                   {(filter) => <option value={filter.value}>{filter.label}</option>}
@@ -493,7 +493,7 @@ export default function ReviewsPage() {
                 <select
                   value={sortBy()}
                   onChange={(e) => setSortBy(e.target.value)}
-                  class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  class="px-4 py-2 border border-border rounded-lg bg-card text-foreground focus:ring-2 focus:ring-ring focus:border-transparent"
                 >
                   <For each={sortOptions}>
                     {(option) => <option value={option.value}>{option.label}</option>}
@@ -501,7 +501,7 @@ export default function ReviewsPage() {
                 </select>
                 <button
                   onClick={() => setSortOrder((prev) => (prev === "asc" ? "desc" : "asc"))}
-                  class="p-2 border border-gray-300 rounded-lg hover:bg-gray-50"
+                  class="p-2 border border-border rounded-lg bg-card hover:bg-muted text-muted-foreground"
                 >
                   {sortOrder() === "asc" ? (
                     <SortAsc class="w-4 h-4" />
@@ -530,9 +530,9 @@ export default function ReviewsPage() {
                 }
                 fallback={
                   <div class="text-center py-12">
-                    <Star class="w-12 h-12 text-gray-300 mx-auto mb-4" />
-                    <h3 class="text-lg font-semibold text-gray-900 mb-2">No reviews found</h3>
-                    <p class="text-gray-600 mb-4">
+                    <Star class="w-12 h-12 text-muted-foreground/50 mx-auto mb-4" />
+                    <h3 class="text-lg font-semibold text-foreground mb-2">No reviews found</h3>
+                    <p class="text-muted-foreground mb-4">
                       {activeTab() === "my-reviews"
                         ? "You haven't written any reviews yet"
                         : "No reviews match your current filters"}

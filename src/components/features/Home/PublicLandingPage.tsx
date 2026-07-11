@@ -213,7 +213,7 @@ export default function PublicLandingPage() {
   };
 
   return (
-    <div class="min-h-screen relative overflow-hidden pb-16 bg-gradient-to-br from-gray-50 via-blue-50 to-gray-100 dark:from-[#050915] dark:via-[#0b1c36] dark:to-[#030712] text-gray-900 dark:text-white transition-colors">
+    <div class="min-h-screen relative overflow-hidden pb-16 bg-gradient-to-br from-background via-muted/30 to-background text-foreground transition-colors">
       <div class="absolute inset-0 opacity-40 dark:opacity-60">
         <div class="domain-grid" aria-hidden="true" />
         <div class="domain-veil" aria-hidden="true" />
@@ -222,20 +222,20 @@ export default function PublicLandingPage() {
 
       <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 sm:pt-24 lg:pt-28">
         {/* Hero */}
-        <section class="rounded-3xl border border-gray-200/80 dark:border-white/[0.08] bg-white/95 dark:bg-white/[0.02] backdrop-blur-xl shadow-lg dark:shadow-[0_20px_60px_rgba(0,0,0,0.35)] overflow-hidden">
+        <section class="rounded-3xl border border-border bg-card/95 backdrop-blur-xl shadow-lg overflow-hidden">
           <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 p-8 sm:p-10 lg:p-14">
             <div class="space-y-8">
-              <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm font-semibold bg-emerald-100 dark:bg-emerald-400/10 text-emerald-800 dark:text-emerald-200 border border-emerald-300 dark:border-emerald-300/30 w-fit">
+              <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm font-semibold bg-primary/10 text-primary border border-primary/30 w-fit">
                 <Sparkles class="w-4 h-4" />
                 Taste-first city intelligence
               </div>
-              <h1 class="text-4xl sm:text-5xl lg:text-6xl font-extrabold leading-tight tracking-tight text-gray-900 dark:text-white">
+              <h1 class="text-4xl sm:text-5xl lg:text-6xl font-extrabold leading-tight tracking-tight text-foreground">
                 Plan like a local.
-                <span class="block text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-cyan-600 to-teal-600 dark:from-cyan-300 dark:via-emerald-200 dark:to-blue-300">
+                <span class="block text-transparent bg-clip-text bg-gradient-to-r from-primary via-accent to-primary">
                   See it in action.
                 </span>
               </h1>
-              <p class="text-lg sm:text-xl text-gray-700 dark:text-slate-200/90 leading-relaxed max-w-xl">
+              <p class="text-lg sm:text-xl text-muted-foreground leading-relaxed max-w-xl">
                 Loci learns what you actually like — coffee strength, gallery pace, bedtime — then
                 curates itineraries, restaurants, activities, and hotels that feel handpicked.
               </p>
@@ -250,14 +250,14 @@ export default function PublicLandingPage() {
               </div>
               <div class="grid grid-cols-2 gap-5 text-sm">
                 <div class="glass-panel gradient-border rounded-2xl p-4">
-                  <p class="font-semibold text-gray-900 dark:text-white mb-1">Problem → Solution</p>
-                  <p class="text-gray-700 dark:text-slate-200/80">
+                  <p class="font-semibold text-foreground mb-1">Problem → Solution</p>
+                  <p class="text-muted-foreground">
                     Endless tabs? We compress everything into one AI co-pilot that cites sources.
                   </p>
                 </div>
                 <div class="glass-panel gradient-border rounded-2xl p-4">
-                  <p class="font-semibold text-gray-900 dark:text-white mb-1">Value stack</p>
-                  <p class="text-gray-700 dark:text-slate-200/80">
+                  <p class="font-semibold text-foreground mb-1">Value stack</p>
+                  <p class="text-muted-foreground">
                     Taste profiles, accessibility cues, and timeboxing baked into every suggestion.
                   </p>
                 </div>
@@ -271,14 +271,14 @@ export default function PublicLandingPage() {
                 class="glass-panel gradient-border rounded-2xl p-4 sm:p-5 space-y-4"
               >
                 <div class="flex items-center gap-3">
-                  <div class="p-3 rounded-2xl bg-emerald-100 dark:bg-white/10 border border-emerald-300 dark:border-white/15">
-                    <Mail class="w-5 h-5 text-emerald-700 dark:text-emerald-200" />
+                  <div class="p-3 rounded-2xl bg-primary/10 border border-primary/30">
+                    <Mail class="w-5 h-5 text-primary" />
                   </div>
                   <div>
-                    <p class="text-sm uppercase tracking-[0.2em] text-gray-600 dark:text-slate-200/70">
+                    <p class="text-sm uppercase tracking-[0.2em] text-muted-foreground">
                       Stay in the loop
                     </p>
-                    <p class="text-base text-gray-900 dark:text-white font-semibold">
+                    <p class="text-base text-foreground font-semibold">
                       Early updates + native app drop
                     </p>
                   </div>
@@ -306,11 +306,11 @@ export default function PublicLandingPage() {
                     <Button type="submit">Join updates</Button>
                   </div>
                   <Show when={emailError()}>
-                    <p class="text-sm text-red-500 dark:text-red-400">{emailError()}</p>
+                    <p class="text-sm text-destructive">{emailError()}</p>
                   </Show>
                 </div>
                 <Show when={emailSubmitted()}>
-                  <p class="text-sm text-emerald-700 dark:text-emerald-200 font-medium">
+                  <p class="text-sm text-primary font-medium">
                     Added — we'll only email when something real ships.
                   </p>
                 </Show>
@@ -319,11 +319,11 @@ export default function PublicLandingPage() {
               {/* Search preview */}
               <div class="glass-panel gradient-border rounded-2xl p-4 sm:p-5 space-y-4">
                 <div class="flex items-center justify-between gap-3">
-                  <div class="flex items-center gap-2 text-gray-700 dark:text-slate-200">
+                  <div class="flex items-center gap-2 text-muted-foreground">
                     <Smartphone class="w-4 h-4" />
                     <span class="text-sm font-medium">See Loci in action</span>
                   </div>
-                  <span class="text-xs px-2 py-1 rounded-full bg-emerald-100 dark:bg-white/10 border border-emerald-300 dark:border-white/15 text-emerald-800 dark:text-emerald-100 font-semibold">
+                  <span class="text-xs px-2 py-1 rounded-full bg-primary/10 border border-primary/30 text-primary font-semibold">
                     Live Demo
                   </span>
                 </div>
@@ -365,7 +365,7 @@ export default function PublicLandingPage() {
                     </Button>
                   </div>
                   <Show when={searchError()}>
-                    <p class="text-sm text-red-500 dark:text-red-400">{searchError()}</p>
+                    <p class="text-sm text-destructive">{searchError()}</p>
                   </Show>
                 </div>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -393,7 +393,7 @@ export default function PublicLandingPage() {
                   </Button>
                 </div>
                 <Show when={isLoading()}>
-                  <div class="flex items-center gap-3 text-gray-700 dark:text-slate-100">
+                  <div class="flex items-center gap-3 text-muted-foreground">
                     <Loader2 class="w-5 h-5 animate-spin" />
                     <span class="font-medium">Curating a mini-brief for you...</span>
                   </div>
@@ -412,26 +412,26 @@ export default function PublicLandingPage() {
                 <A
                   href={card.href}
                   onMouseEnter={() => handleLinkPreload(card.href)}
-                  class="group relative overflow-hidden rounded-2xl border border-gray-200 dark:border-white/10 bg-white/90 dark:bg-white/5 backdrop-blur-xl p-5 shadow-xl dark:shadow-[0_20px_80px_rgba(3,7,18,0.45)] hover:-translate-y-1 transition-all"
+                  class="group relative overflow-hidden rounded-2xl border border-border bg-card/90 backdrop-blur-xl p-5 shadow-xl hover:-translate-y-1 transition-all"
                 >
                   <div
                     class={`absolute inset-0 bg-gradient-to-br ${card.accent} opacity-20 dark:opacity-40`}
                     aria-hidden="true"
                   />
                   <div class="relative flex items-start gap-3">
-                    <div class="p-3 rounded-2xl bg-gray-100 dark:bg-white/15 border border-gray-300 dark:border-white/20 text-gray-900 dark:text-white">
+                    <div class="p-3 rounded-2xl bg-muted border border-border text-foreground">
                       <card.icon class="w-5 h-5" />
                     </div>
                     <div class="flex-1">
-                      <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
+                      <h3 class="text-lg font-semibold text-foreground">
                         {card.title}
                       </h3>
-                      <p class="text-sm text-gray-700 dark:text-slate-100/80 mt-1">
+                      <p class="text-sm text-muted-foreground mt-1">
                         {card.description}
                       </p>
                     </div>
                   </div>
-                  <div class="relative mt-4 flex items-center gap-2 text-sm text-emerald-700 dark:text-emerald-100 group-hover:text-emerald-800 dark:group-hover:text-white">
+                  <div class="relative mt-4 flex items-center gap-2 text-sm text-primary group-hover:text-primary/80">
                     <ShieldCheck class="w-4 h-4" />
                     Search available. Unlock chat when you register.
                   </div>
@@ -444,31 +444,31 @@ export default function PublicLandingPage() {
         {/* Value stack + social proof */}
         <section class="mt-20 lg:mt-28 grid grid-cols-1 lg:grid-cols-3 gap-10 lg:gap-12">
           <div class="lg:col-span-2 space-y-4">
-            <h2 class="text-2xl font-bold text-gray-900 dark:text-white">Why travelers stay</h2>
+            <h2 class="text-2xl font-bold text-foreground">Why travelers stay</h2>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               <For each={valueStack}>
                 {(item) => (
-                  <div class="glass-panel gradient-border rounded-2xl p-5 bg-white/95 dark:bg-white/[0.02]">
-                    <p class="text-xs tracking-wider text-emerald-600 dark:text-emerald-300 mb-2 font-medium">
+                  <div class="glass-panel gradient-border rounded-2xl p-5">
+                    <p class="text-xs tracking-wider text-primary mb-2 font-medium">
                       {item.label}
                     </p>
-                    <p class="text-sm text-gray-700 dark:text-slate-100/85">{item.copy}</p>
+                    <p class="text-sm text-muted-foreground">{item.copy}</p>
                   </div>
                 )}
               </For>
             </div>
           </div>
           <div class="space-y-4">
-            <h3 class="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-              <Star class="w-4 h-4 text-amber-500 dark:text-amber-300" />
+            <h3 class="text-lg font-semibold text-foreground flex items-center gap-2">
+              <Star class="w-4 h-4 text-accent" />
               Social proof
             </h3>
             <div class="space-y-3">
               <For each={socialProof}>
                 {(proof) => (
-                  <div class="glass-panel rounded-2xl p-5 bg-white/95 dark:bg-white/[0.02]">
-                    <p class="text-sm text-gray-900 dark:text-white/90">{proof.quote}</p>
-                    <p class="text-xs text-gray-600 dark:text-slate-200/70 mt-2">{proof.name}</p>
+                  <div class="glass-panel rounded-2xl p-5">
+                    <p class="text-sm text-foreground">{proof.quote}</p>
+                    <p class="text-xs text-muted-foreground mt-2">{proof.name}</p>
                   </div>
                 )}
               </For>
@@ -482,29 +482,25 @@ export default function PublicLandingPage() {
 
         {/* Objection handling */}
         <section class="mt-16 lg:mt-20">
-          <div class="glass-panel gradient-border rounded-3xl p-8 sm:p-10 lg:p-12 grid grid-cols-1 md:grid-cols-3 gap-8 lg:gap-10 items-center bg-white/95 dark:bg-white/[0.02]">
+          <div class="glass-panel gradient-border rounded-3xl p-8 sm:p-10 lg:p-12 grid grid-cols-1 md:grid-cols-3 gap-8 lg:gap-10 items-center">
             <div class="space-y-3">
-              <p class="text-xs tracking-wider text-emerald-600 dark:text-emerald-300 font-medium">
-                Objections handled
-              </p>
-              <h2 class="text-2xl font-bold text-gray-900 dark:text-white">
-                Safe to try. Easy to leave.
-              </h2>
-              <p class="text-sm text-gray-700 dark:text-slate-100/80">
+              <p class="text-xs tracking-wider text-primary font-medium">Objections handled</p>
+              <h2 class="text-2xl font-bold text-foreground">Safe to try. Easy to leave.</h2>
+              <p class="text-sm text-muted-foreground">
                 Search free. No spam. Delete your data from settings anytime.
               </p>
             </div>
             <div class="space-y-3">
-              <div class="flex items-center gap-3 text-gray-700 dark:text-white/90">
-                <Clock3 class="w-4 h-4 text-emerald-600 dark:text-emerald-200" />
+              <div class="flex items-center gap-3 text-muted-foreground">
+                <Clock3 class="w-4 h-4 text-primary" />
                 <span class="text-sm">Twice-daily stat refresh — no flaky SSE calls.</span>
               </div>
-              <div class="flex items-center gap-3 text-gray-700 dark:text-white/90">
-                <ShieldCheck class="w-4 h-4 text-emerald-600 dark:text-emerald-200" />
+              <div class="flex items-center gap-3 text-muted-foreground">
+                <ShieldCheck class="w-4 h-4 text-primary" />
                 <span class="text-sm">Transparent recommendations with source notes.</span>
               </div>
-              <div class="flex items-center gap-3 text-gray-700 dark:text-white/90">
-                <Smartphone class="w-4 h-4 text-emerald-600 dark:text-emerald-200" />
+              <div class="flex items-center gap-3 text-muted-foreground">
+                <Smartphone class="w-4 h-4 text-primary" />
                 <span class="text-sm">Native iOS + Android in the works; join the drop list.</span>
               </div>
             </div>

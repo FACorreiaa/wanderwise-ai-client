@@ -2,7 +2,7 @@
   "name": "Loci - AI Travel Companion",
   "short_name": "Loci",
   "description": "Discover, plan, and explore your next adventure with AI-powered travel recommendations",
-  "theme_color": "#146AFF",
+  "theme_color": "#1a1a1a",
   "background_color": "#ffffff",
   "display": "standalone",
   "orientation": "portrait",

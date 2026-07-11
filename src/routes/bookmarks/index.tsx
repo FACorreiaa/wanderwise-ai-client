@@ -113,20 +113,20 @@ export default function BookmarksPage() {
                 <div class="flex items-center gap-3">
                   <div class="relative">
                     <div class="absolute -inset-1 hero-glow blur-md opacity-80" />
-                    <div class="relative w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center text-white shadow-lg ring-2 ring-white/60">
+                    <div class="loci-hero__icon">
                       <Bookmark class="w-6 h-6" />
                     </div>
                   </div>
                   <div>
                     <h1 class="text-3xl sm:text-4xl font-bold tracking-tight">Bookmarks</h1>
-                    <p class="text-white/80 text-sm mt-1">
+                    <p class="loci-hero__subtitle text-sm mt-1">
                       Your saved itineraries and travel plans
                     </p>
                   </div>
                 </div>
                 <A
                   href="/lists"
-                  class="flex items-center gap-2 px-4 py-2 bg-white/20 hover:bg-white/30 rounded-xl text-white font-medium transition-all border border-white/30"
+                  class="loci-hero__action--strong"
                 >
                   <Plus class="w-4 h-4" />
                   Create List
@@ -140,18 +140,18 @@ export default function BookmarksPage() {
           {/* Loading State */}
           <Show when={isLoading()}>
             <div class="flex items-center justify-center py-16">
-              <Loader2 class="w-8 h-8 animate-spin text-blue-500" />
-              <span class="ml-3 text-gray-600 dark:text-gray-400">Loading your bookmarks...</span>
+              <Loader2 class="w-8 h-8 animate-spin text-primary" />
+              <span class="ml-3 text-muted-foreground">Loading your bookmarks...</span>
             </div>
           </Show>
 
           {/* Error State */}
           <Show when={isError()}>
             <div class="text-center py-16">
-              <div class="text-red-500 mb-4">Failed to load bookmarks</div>
+              <div class="text-destructive mb-4">Failed to load bookmarks</div>
               <button
                 onClick={() => savedListsQuery.refetch()}
-                class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+                class="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90"
               >
                 Try Again
               </button>
@@ -161,19 +161,17 @@ export default function BookmarksPage() {
           {/* Empty State */}
           <Show when={!isLoading() && !isError() && lists().length === 0}>
             <div class="text-center py-16">
-              <div class="w-20 h-20 mx-auto mb-6 rounded-full bg-gradient-to-br from-blue-100 to-cyan-100 dark:from-blue-900/30 dark:to-cyan-900/30 flex items-center justify-center">
-                <Bookmark class="w-10 h-10 text-blue-500" />
+              <div class="w-20 h-20 mx-auto mb-6 rounded-full bg-primary/10 flex items-center justify-center">
+                <Bookmark class="w-10 h-10 text-primary" />
               </div>
-              <h3 class="text-xl font-semibold text-gray-800 dark:text-white mb-2">
-                No Bookmarks Yet
-              </h3>
-              <p class="text-gray-600 dark:text-gray-400 mb-6 max-w-md mx-auto">
+              <h3 class="text-xl font-semibold text-foreground mb-2">No Bookmarks Yet</h3>
+              <p class="text-muted-foreground mb-6 max-w-md mx-auto">
                 Save itineraries and travel plans to quickly access them later. Click the bookmark
                 icon on any itinerary to save it here.
               </p>
               <A
                 href="/discover"
-                class="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-cyan-600 text-white rounded-xl font-semibold hover:from-blue-700 hover:to-cyan-700 transition-all shadow-lg"
+                class="inline-flex items-center gap-2 px-6 py-3 bg-primary text-primary-foreground rounded-xl font-semibold hover:bg-primary/90 transition-all shadow-lg"
               >
                 <FolderOpen class="w-5 h-5" />
                 Discover Places
@@ -189,11 +187,11 @@ export default function BookmarksPage() {
                   <div class="glass-panel rounded-2xl p-5 hover:shadow-xl hover:scale-[1.02] transition-all duration-200 cursor-pointer group">
                     <div class="flex items-start justify-between mb-4">
                       <div class="flex-1">
-                        <h3 class="text-lg font-semibold text-gray-900 dark:text-white line-clamp-1">
+                        <h3 class="text-lg font-semibold text-foreground line-clamp-1">
                           {list.name || "Untitled"}
                         </h3>
                         <Show when={list.cityId}>
-                          <div class="flex items-center gap-1 text-sm text-gray-500 dark:text-gray-400 mt-1">
+                          <div class="flex items-center gap-1 text-sm text-muted-foreground mt-1">
                             <MapPin class="w-3 h-3" />
                             <span>{list.cityId}</span>
                           </div>
@@ -202,7 +200,7 @@ export default function BookmarksPage() {
                       <button
                         onClick={(e) => handleUnsave(list.id, e)}
                         disabled={unsaveMutation.isPending}
-                        class="p-2 text-gray-400 hover:text-red-500 dark:hover:text-red-400 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors opacity-0 group-hover:opacity-100"
+                        class="p-2 text-muted-foreground hover:text-destructive rounded-lg hover:bg-destructive/10 transition-colors opacity-0 group-hover:opacity-100"
                         title="Remove bookmark"
                       >
                         <Trash2 class="w-4 h-4" />
@@ -210,12 +208,12 @@ export default function BookmarksPage() {
                     </div>
 
                     <Show when={list.description}>
-                      <p class="text-sm text-gray-600 dark:text-gray-300 line-clamp-2 mb-4">
+                      <p class="text-sm text-muted-foreground line-clamp-2 mb-4">
                         {list.description}
                       </p>
                     </Show>
 
-                    <div class="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
+                    <div class="flex items-center justify-between text-xs text-muted-foreground">
                       <div class="flex items-center gap-3">
                         <span class="flex items-center gap-1">
                           <Calendar class="w-3 h-3" />
@@ -227,7 +225,7 @@ export default function BookmarksPage() {
                       </div>
                       <A
                         href={`/lists/${list.id}`}
-                        class="flex items-center gap-1 text-blue-600 dark:text-blue-400 hover:underline"
+                        class="flex items-center gap-1 text-primary hover:underline"
                         onClick={(e) => e.stopPropagation()}
                       >
                         View

@@ -22,8 +22,8 @@ const ChatHeader: Component<ChatHeaderProps> = (props) => {
           >
             <Menu class="w-5 h-5" />
           </button>
-          <div class="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-blue-500 to-accent rounded-full flex items-center justify-center flex-shrink-0">
-            <Bot class="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+          <div class="w-8 h-8 sm:w-10 sm:h-10 bg-primary rounded-full flex items-center justify-center flex-shrink-0">
+            <Bot class="w-4 h-4 sm:w-5 sm:h-5 text-primary-foreground" />
           </div>
           <div class="min-w-0 flex-1">
             <h1 class="text-base sm:text-lg font-semibold text-foreground truncate">
@@ -43,13 +43,11 @@ const ChatHeader: Component<ChatHeaderProps> = (props) => {
           {/* Session indicator and controls */}
           <Show when={props.sessionId}>
             <div class="flex items-center gap-1 text-xs">
-              <div class="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-              <span class="text-green-600 dark:text-green-400 font-medium hidden sm:inline">
-                Connected
-              </span>
+              <div class="w-2 h-2 bg-accent rounded-full animate-pulse" />
+              <span class="text-accent font-medium hidden sm:inline">Connected</span>
               <button
                 onClick={props.onNewChat}
-                class="ml-1 px-2 py-1 text-xs text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded border border-red-200 dark:border-red-700"
+                class="ml-1 px-2 py-1 text-xs text-destructive hover:bg-destructive/10 rounded border border-destructive/30"
                 title="Clear session and start fresh"
               >
                 Clear

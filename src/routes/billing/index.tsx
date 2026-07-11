@@ -107,16 +107,16 @@ export default function BillingPage() {
   };
 
   return (
-    <div class="min-h-screen relative bg-gradient-to-b from-slate-50 via-white to-blue-50/60 dark:from-slate-900 dark:via-slate-900 dark:to-slate-800">
+    <div class="min-h-screen relative bg-background transition-colors">
       <div class="absolute inset-0 pointer-events-none bg-[radial-gradient(circle_at_20%_20%,rgba(12,125,242,0.08),transparent_35%),radial-gradient(circle_at_80%_0%,rgba(99,179,237,0.08),transparent_28%)] dark:bg-[radial-gradient(circle_at_20%_20%,rgba(12,125,242,0.15),transparent_35%),radial-gradient(circle_at_80%_0%,rgba(99,179,237,0.1),transparent_28%)]" />
 
       <div class="relative max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div class="mb-8">
-          <h1 class="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+          <h1 class="text-3xl font-bold text-foreground mb-2">
             Billing & Subscription
           </h1>
-          <p class="text-gray-600 dark:text-gray-400">
+          <p class="text-muted-foreground">
             Manage your plan, usage, and payment methods
           </p>
         </div>
@@ -139,7 +139,7 @@ export default function BillingPage() {
                       <div class="flex items-center gap-2">
                         <h2 class="text-2xl font-bold">{planConfig().name} Plan</h2>
                         <Show when={currentPlan() !== "free"}>
-                          <span class="px-2.5 py-0.5 rounded-full bg-green-500/20 text-green-200 text-xs font-medium border border-green-400/30">
+                          <span class="px-2.5 py-0.5 rounded-full bg-accent/20 text-accent-foreground text-xs font-medium border border-accent/30">
                             Active
                           </span>
                         </Show>
@@ -177,7 +177,7 @@ export default function BillingPage() {
                     <div class="text-xs text-white/80">AI searches used</div>
                     <div class="mt-3 h-2 rounded-full bg-white/20 overflow-hidden">
                       <div
-                        class="h-full rounded-full bg-gradient-to-r from-green-400 to-emerald-300 transition-all duration-500"
+                        class="h-full rounded-full bg-accent transition-all duration-500"
                         style={{ width: `${usagePercentage()}%` }}
                       />
                     </div>
@@ -190,7 +190,7 @@ export default function BillingPage() {
                       <For each={planConfig().features.slice(0, 3)}>
                         {(feature) => (
                           <li class="flex items-center gap-2 text-sm">
-                            <CheckCircle class="w-3.5 h-3.5 text-green-300" />
+                            <CheckCircle class="w-3.5 h-3.5 text-accent" />
                             <span class="text-white/90">{feature}</span>
                           </li>
                         )}
@@ -203,13 +203,13 @@ export default function BillingPage() {
                 <Show when={currentPlan() === "free"}>
                   <div class="flex items-center justify-between p-4 rounded-2xl bg-white/10 border border-white/20 backdrop-blur">
                     <div class="flex items-center gap-3">
-                      <Sparkles class="w-5 h-5 text-yellow-300" />
+                      <Sparkles class="w-5 h-5 text-accent" />
                       <span class="text-sm font-medium">
                         Unlock unlimited AI searches and premium features
                       </span>
                     </div>
                     <Button
-                      class="bg-white text-blue-600 hover:bg-white/90"
+                      class="bg-primary-foreground text-primary hover:bg-primary-foreground/90"
                       onClick={() => handleUpgrade("paid")}
                       disabled={isUpgrading()}
                     >
@@ -223,56 +223,56 @@ export default function BillingPage() {
 
           {/* Quick Actions */}
           <div class="space-y-4">
-            <div class="rounded-2xl bg-white/80 dark:bg-slate-800/80 backdrop-blur border border-gray-200 dark:border-slate-700 p-6 shadow-sm">
-              <h3 class="font-semibold text-gray-900 dark:text-white mb-4">Quick Actions</h3>
+            <div class="rounded-2xl glass-panel border border-border p-6 shadow-sm">
+              <h3 class="font-semibold text-foreground mb-4">Quick Actions</h3>
               <div class="space-y-3">
                 <Show when={currentPlan() !== "free"}>
                   <button
                     onClick={handleManageBilling}
-                    class="w-full flex items-center justify-between px-4 py-3 rounded-xl bg-gray-50 dark:bg-slate-700 text-gray-800 dark:text-gray-200 border border-gray-100 dark:border-slate-600 hover:border-blue-200 dark:hover:border-blue-500 transition-all"
+                    class="w-full flex items-center justify-between px-4 py-3 rounded-xl bg-muted text-foreground border border-border hover:border-primary/30 transition-all"
                   >
                     <span class="flex items-center gap-2 text-sm font-medium">
-                      <CreditCard class="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                      <CreditCard class="w-4 h-4 text-primary" />
                       Update Payment Method
                     </span>
-                    <ArrowUpRight class="w-4 h-4 text-gray-400" />
+                    <ArrowUpRight class="w-4 h-4 text-muted-foreground" />
                   </button>
                   <button
                     onClick={handleManageBilling}
-                    class="w-full flex items-center justify-between px-4 py-3 rounded-xl bg-gray-50 dark:bg-slate-700 text-gray-800 dark:text-gray-200 border border-gray-100 dark:border-slate-600 hover:border-blue-200 dark:hover:border-blue-500 transition-all"
+                    class="w-full flex items-center justify-between px-4 py-3 rounded-xl bg-muted text-foreground border border-border hover:border-primary/30 transition-all"
                   >
                     <span class="flex items-center gap-2 text-sm font-medium">
-                      <FileText class="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                      <FileText class="w-4 h-4 text-primary" />
                       View Invoices
                     </span>
-                    <ArrowUpRight class="w-4 h-4 text-gray-400" />
+                    <ArrowUpRight class="w-4 h-4 text-muted-foreground" />
                   </button>
                 </Show>
                 <A
                   href="/pricing"
-                  class="w-full flex items-center justify-between px-4 py-3 rounded-xl bg-gray-50 dark:bg-slate-700 text-gray-800 dark:text-gray-200 border border-gray-100 dark:border-slate-600 hover:border-blue-200 dark:hover:border-blue-500 transition-all"
+                  class="w-full flex items-center justify-between px-4 py-3 rounded-xl bg-muted text-foreground border border-border hover:border-primary/30 transition-all"
                 >
                   <span class="flex items-center gap-2 text-sm font-medium">
-                    <Zap class="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                    <Zap class="w-4 h-4 text-primary" />
                     Compare Plans
                   </span>
-                  <ArrowUpRight class="w-4 h-4 text-gray-400" />
+                  <ArrowUpRight class="w-4 h-4 text-muted-foreground" />
                 </A>
               </div>
             </div>
 
             {/* Need Help */}
-            <div class="rounded-2xl bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-slate-800 dark:to-slate-700 border border-blue-100 dark:border-slate-600 p-6 shadow-sm">
+            <div class="rounded-2xl bg-primary/5 border border-primary/20 p-6 shadow-sm">
               <div class="flex items-center gap-2 mb-2">
-                <AlertCircle class="w-5 h-5 text-blue-600 dark:text-blue-400" />
-                <h4 class="font-semibold text-gray-900 dark:text-white">Need Help?</h4>
+                <AlertCircle class="w-5 h-5 text-primary" />
+                <h4 class="font-semibold text-foreground">Need Help?</h4>
               </div>
-              <p class="text-sm text-gray-600 dark:text-gray-300 mb-3">
+              <p class="text-sm text-muted-foreground mb-3">
                 Questions about billing or your subscription? We're here to help.
               </p>
               <a
                 href="mailto:support@loci.app"
-                class="text-sm text-blue-600 dark:text-blue-400 font-medium hover:underline"
+                class="text-sm text-primary font-medium hover:underline"
               >
                 Contact Support →
               </a>
@@ -283,28 +283,28 @@ export default function BillingPage() {
         {/* Available Plans (for upgrades) */}
         <Show when={currentPlan() !== "premium"}>
           <div class="mt-8">
-            <h2 class="text-xl font-bold text-gray-900 dark:text-white mb-4">Available Upgrades</h2>
+            <h2 class="text-xl font-bold text-foreground mb-4">Available Upgrades</h2>
             <div class="grid gap-4 sm:grid-cols-2">
               <Show when={currentPlan() === "free"}>
-                <div class="rounded-2xl bg-white/80 dark:bg-slate-800/80 backdrop-blur border-2 border-blue-200 dark:border-blue-700 p-6 shadow-sm relative">
+                <div class="rounded-2xl glass-panel border-2 border-primary/30 p-6 shadow-sm relative">
                   <div class="absolute -top-3 left-4">
-                    <span class="px-3 py-1 rounded-full bg-blue-600 text-white text-xs font-medium">
+                    <span class="px-3 py-1 rounded-full bg-primary text-primary-foreground text-xs font-medium">
                       Popular
                     </span>
                   </div>
                   <div class="flex items-center gap-3 mb-3">
-                    <CreditCard class="w-6 h-6 text-blue-600" />
-                    <h3 class="text-lg font-bold text-gray-900 dark:text-white">Explorer</h3>
+                    <CreditCard class="w-6 h-6 text-primary" />
+                    <h3 class="text-lg font-bold text-foreground">Explorer</h3>
                   </div>
                   <div class="flex items-baseline gap-1 mb-3">
-                    <span class="text-2xl font-bold text-gray-900 dark:text-white">$3.99</span>
-                    <span class="text-gray-500">/month</span>
+                    <span class="text-2xl font-bold text-foreground">$3.99</span>
+                    <span class="text-muted-foreground">/month</span>
                   </div>
                   <ul class="space-y-2 mb-4">
                     <For each={PLANS.paid.features}>
                       {(feature) => (
-                        <li class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
-                          <CheckCircle class="w-4 h-4 text-green-500" />
+                        <li class="flex items-center gap-2 text-sm text-muted-foreground">
+                          <CheckCircle class="w-4 h-4 text-accent" />
                           {feature}
                         </li>
                       )}
@@ -321,24 +321,24 @@ export default function BillingPage() {
               </Show>
 
               <div
-                class={`rounded-2xl bg-white/80 dark:bg-slate-800/80 backdrop-blur border border-purple-200 dark:border-purple-700 p-6 shadow-sm ${currentPlan() === "free" ? "" : "sm:col-span-2 max-w-md"}`}
+                class={`rounded-2xl glass-panel border border-border p-6 shadow-sm ${currentPlan() === "free" ? "" : "sm:col-span-2 max-w-md"}`}
               >
                 <div class="flex items-center gap-3 mb-3">
-                  <Crown class="w-6 h-6 text-purple-600" />
-                  <h3 class="text-lg font-bold text-gray-900 dark:text-white">Pro</h3>
-                  <span class="px-2 py-0.5 rounded bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 text-xs font-medium">
+                  <Crown class="w-6 h-6 text-primary" />
+                  <h3 class="text-lg font-bold text-foreground">Pro</h3>
+                  <span class="px-2 py-0.5 rounded bg-accent/10 text-accent text-xs font-medium">
                     Coming Soon
                   </span>
                 </div>
                 <div class="flex items-baseline gap-1 mb-3">
-                  <span class="text-2xl font-bold text-gray-900 dark:text-white">$9.99</span>
-                  <span class="text-gray-500">/month</span>
+                  <span class="text-2xl font-bold text-foreground">$9.99</span>
+                  <span class="text-muted-foreground">/month</span>
                 </div>
                 <ul class="space-y-2 mb-4">
                   <For each={PLANS.premium.features.slice(0, 4)}>
                     {(feature) => (
-                      <li class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
-                        <CheckCircle class="w-4 h-4 text-green-500" />
+                      <li class="flex items-center gap-2 text-sm text-muted-foreground">
+                        <CheckCircle class="w-4 h-4 text-accent" />
                         {feature}
                       </li>
                     )}

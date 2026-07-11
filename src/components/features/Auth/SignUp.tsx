@@ -7,7 +7,6 @@ import { FiCheck, FiX } from "solid-icons/fi";
 import { VsEyeClosed, VsEye } from "solid-icons/vs";
 import { useRegisterMutation } from "~/lib/api/auth";
 import { useGoogleLoginMutation, useAppleLoginMutation } from "~/lib/api/custom-auth";
-import { useTheme } from "~/contexts/ThemeContext";
 
 interface FormData {
   email: string;
@@ -16,9 +15,11 @@ interface FormData {
   username: string;
 }
 
+const inputClass =
+  "w-full px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg border border-border bg-background text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-ring focus:border-transparent transition-all text-sm sm:text-base backdrop-blur";
+
 const SignUp: Component = () => {
   const navigate = useNavigate();
-  const { isDark } = useTheme();
   const [formData, setFormData] = createSignal<Partial<FormData>>({
     username: "",
     email: "",
@@ -29,12 +30,10 @@ const SignUp: Component = () => {
   const [error, setError] = createSignal<string>("");
   const [socialLoading, setSocialLoading] = createSignal<string | null>(null);
 
-  // Use the register mutation
   const registerMutation = useRegisterMutation();
   const googleLoginMutation = useGoogleLoginMutation();
   const appleLoginMutation = useAppleLoginMutation();
 
-  // Social login handlers
   const handleGoogleLogin = async () => {
     setSocialLoading("google");
     setError("");
@@ -69,7 +68,6 @@ const SignUp: Component = () => {
 
     const data = formData();
 
-    // Validate form
     if (!data.username || !data.email || !data.password) {
       setError("Please fill in all required fields");
       return;
@@ -87,7 +85,6 @@ const SignUp: Component = () => {
         password: data.password,
       });
 
-      // Success! Navigate to sign in page
       navigate("/auth/signin");
     } catch (err: unknown) {
       const error = err as { message?: string };
@@ -106,7 +103,6 @@ const SignUp: Component = () => {
         ) {
           errorMessage = "The server encountered an error. Please try again later.";
         } else if (lowerCaseMessage.includes("password")) {
-          // Clean up password validation errors
           errorMessage = error.message.replace(/\[.*?\]\s*/, "");
           errorMessage = errorMessage.charAt(0).toUpperCase() + errorMessage.slice(1);
         } else {
@@ -129,50 +125,21 @@ const SignUp: Component = () => {
     },
   ]);
 
-  const labelClass = createMemo(() => (isDark() ? "text-white" : "text-slate-900"));
-  const inputClass = createMemo(() =>
-    isDark()
-      ? "w-full px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg border border-white/20 bg-white/10 text-white placeholder:text-slate-300/70 focus:ring-2 focus:ring-emerald-300 focus:border-transparent transition-all text-sm sm:text-base backdrop-blur"
-      : "w-full px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg border border-slate-200 bg-white text-slate-900 placeholder:text-slate-500 focus:ring-2 focus:ring-emerald-400 focus:border-transparent transition-all text-sm sm:text-base",
-  );
-  const helperTextClass = createMemo(() => (isDark() ? "text-slate-200/85" : "text-slate-700"));
-  const linkClass = createMemo(() =>
-    isDark()
-      ? "text-emerald-200 hover:text-emerald-100"
-      : "text-emerald-700 hover:text-emerald-600",
-  );
-  const errorClass = createMemo(() =>
-    isDark()
-      ? "p-3 rounded-lg bg-red-900/30 border border-red-500/40 text-red-100 backdrop-blur"
-      : "p-3 rounded-lg bg-red-50 border border-red-200 text-red-700",
-  );
-  const socialButtonClass = createMemo(() =>
-    isDark()
-      ? "py-2.5 sm:py-3 text-sm sm:text-base bg-white/5 border border-white/15 text-white hover:bg-white/10"
-      : "py-2.5 sm:py-3 text-sm sm:text-base bg-white border border-slate-200 text-slate-900 hover:bg-slate-50",
-  );
-
   return (
     <AuthLayout>
       <div class="text-left mb-6 space-y-2">
-        <p
-          class={`text-xs uppercase tracking-[0.2em] ${isDark() ? "text-emerald-200" : "text-emerald-700"}`}
-        >
-          Create account
-        </p>
-        <h1
-          class={`text-2xl sm:text-3xl font-bold tracking-tight leading-tight ${isDark() ? "text-white" : "text-slate-900"}`}
-        >
+        <p class="text-xs uppercase tracking-[0.2em] text-primary">Create account</p>
+        <h1 class="text-2xl sm:text-3xl font-bold tracking-tight leading-tight text-foreground">
           Build your travel operating profile.
         </h1>
-        <p class={`${helperTextClass()} text-sm sm:text-base`}>
+        <p class="text-muted-foreground text-sm sm:text-base">
           Save itineraries, sync devices, and keep refining your taste graph.
         </p>
       </div>
 
       <form onSubmit={handleSubmit} class="space-y-3 sm:space-y-4">
         <div>
-          <label class={`block text-xs sm:text-sm font-semibold mb-1 sm:mb-2 ${labelClass()}`}>
+          <label class="block text-xs sm:text-sm font-semibold mb-1 sm:mb-2 text-foreground">
             Username
           </label>
           <TextFieldRoot>
@@ -181,14 +148,14 @@ const SignUp: Component = () => {
               placeholder="John"
               value={formData().username || ""}
               onInput={(e) => setFormData((prev) => ({ ...prev, username: e.currentTarget.value }))}
-              class={inputClass()}
+              class={inputClass}
               required
             />
           </TextFieldRoot>
         </div>
 
         <div>
-          <label class={`block text-xs sm:text-sm font-semibold mb-1 sm:mb-2 ${labelClass()}`}>
+          <label class="block text-xs sm:text-sm font-semibold mb-1 sm:mb-2 text-foreground">
             Work email
           </label>
           <TextFieldRoot>
@@ -197,14 +164,14 @@ const SignUp: Component = () => {
               placeholder="john@company.com"
               value={formData().email || ""}
               onInput={(e) => setFormData((prev) => ({ ...prev, email: e.currentTarget.value }))}
-              class={inputClass()}
+              class={inputClass}
               required
             />
           </TextFieldRoot>
         </div>
 
         <div>
-          <label class={`block text-xs sm:text-sm font-semibold mb-1 sm:mb-2 ${labelClass()}`}>
+          <label class="block text-xs sm:text-sm font-semibold mb-1 sm:mb-2 text-foreground">
             Password
           </label>
           <div class="relative">
@@ -216,7 +183,7 @@ const SignUp: Component = () => {
                 onInput={(e) =>
                   setFormData((prev) => ({ ...prev, password: e.currentTarget.value }))
                 }
-                class={`${inputClass()} pr-10 sm:pr-12`}
+                class={`${inputClass} pr-10 sm:pr-12`}
                 required
               />
             </TextFieldRoot>
@@ -224,7 +191,7 @@ const SignUp: Component = () => {
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword())}
-              class={`absolute right-2 sm:right-3 top-1/2 -translate-y-1/2 ${isDark() ? "text-slate-400 hover:text-emerald-200" : "text-slate-500 hover:text-emerald-600"}`}
+              class="absolute right-2 sm:right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-primary"
             >
               {showPassword() ? (
                 <VsEyeClosed class="w-4 h-4 sm:w-5 sm:h-5" />
@@ -234,7 +201,7 @@ const SignUp: Component = () => {
             </button>
           </div>
 
-          <label class={`block text-xs sm:text-sm font-semibold mb-1 sm:mb-2 pt-2 ${labelClass()}`}>
+          <label class="block text-xs sm:text-sm font-semibold mb-1 sm:mb-2 pt-2 text-foreground">
             Confirm Password
           </label>
           <div class="relative">
@@ -246,7 +213,7 @@ const SignUp: Component = () => {
                 onInput={(e) =>
                   setFormData((prev) => ({ ...prev, confirmPassword: e.currentTarget.value }))
                 }
-                class={`${inputClass()} pr-10 sm:pr-12`}
+                class={`${inputClass} pr-10 sm:pr-12`}
                 required
               />
             </TextFieldRoot>
@@ -254,7 +221,7 @@ const SignUp: Component = () => {
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword())}
-              class={`absolute right-2 sm:right-3 top-1/2 -translate-y-1/2 ${isDark() ? "text-slate-400 hover:text-emerald-200" : "text-slate-500 hover:text-emerald-600"}`}
+              class="absolute right-2 sm:right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-primary"
             >
               {showPassword() ? (
                 <VsEyeClosed class="w-4 h-4 sm:w-5 sm:h-5" />
@@ -265,32 +232,28 @@ const SignUp: Component = () => {
           </div>
 
           <Show when={formData().password}>
-            <div class="mt-3 space-y-1.5 p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700">
-              <p class="text-xs font-semibold text-slate-600 dark:text-slate-300 mb-2">
-                Password Requirements
-              </p>
+            <div class="mt-3 space-y-1.5 p-3 rounded-xl bg-muted/50 border border-border">
+              <p class="text-xs font-semibold text-muted-foreground mb-2">Password Requirements</p>
               <For each={passwordRequirements()}>
                 {(req) => (
                   <div class="flex items-center gap-2 text-xs">
                     <div
                       class={`w-4 h-4 rounded-full flex items-center justify-center transition-colors ${
                         req.met
-                          ? "bg-emerald-100 dark:bg-emerald-900/50 border border-emerald-300 dark:border-emerald-700"
-                          : "bg-red-100 dark:bg-red-900/50 border border-red-300 dark:border-red-700"
+                          ? "bg-primary/10 border border-primary/30"
+                          : "bg-destructive/10 border border-destructive/30"
                       }`}
                     >
                       <Show
                         when={req.met}
-                        fallback={<FiX class="w-2.5 h-2.5 text-red-500 dark:text-red-400" />}
+                        fallback={<FiX class="w-2.5 h-2.5 text-destructive" />}
                       >
-                        <FiCheck class="w-2.5 h-2.5 text-emerald-600 dark:text-emerald-400" />
+                        <FiCheck class="w-2.5 h-2.5 text-primary" />
                       </Show>
                     </div>
                     <span
                       class={`transition-colors ${
-                        req.met
-                          ? "text-emerald-600 dark:text-emerald-400 font-medium"
-                          : "text-red-500 dark:text-red-400"
+                        req.met ? "text-primary font-medium" : "text-destructive"
                       }`}
                     >
                       {req.text}
@@ -302,9 +265,8 @@ const SignUp: Component = () => {
           </Show>
         </div>
 
-        {/* Error message */}
         <Show when={error()}>
-          <div class={errorClass()}>
+          <div class="p-3 rounded-lg bg-destructive/10 border border-destructive/30 text-destructive">
             <p class="text-sm">{error()}</p>
           </div>
         </Show>
@@ -312,19 +274,17 @@ const SignUp: Component = () => {
         <Button
           type="submit"
           disabled={registerMutation.isPending}
-          class="w-full py-3 bg-emerald-400 hover:bg-emerald-300 text-slate-950 font-semibold shadow-[0_18px_50px_rgba(52,211,153,0.35)]"
+          class="w-full py-3 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold shadow-lg"
         >
           {registerMutation.isPending ? "Creating account..." : "Create account"}
         </Button>
 
         <div class="relative my-6">
           <div class="absolute inset-0 flex items-center">
-            <div class={`w-full border-t ${isDark() ? "border-white/10" : "border-slate-200"}`} />
+            <div class="w-full border-t border-border" />
           </div>
           <div class="relative flex justify-center text-sm">
-            <span
-              class={`px-2 rounded-full backdrop-blur ${isDark() ? "bg-white/5 text-slate-200/80" : "bg-slate-100 text-slate-600"}`}
-            >
+            <span class="px-2 rounded-full backdrop-blur bg-muted text-muted-foreground">
               Or continue with
             </span>
           </div>
@@ -333,7 +293,7 @@ const SignUp: Component = () => {
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <Button
             variant="outline"
-            class={socialButtonClass()}
+            class="py-2.5 sm:py-3 text-sm sm:text-base bg-card border border-border text-foreground hover:bg-muted"
             onClick={handleGoogleLogin}
             disabled={socialLoading() !== null}
           >
@@ -359,7 +319,7 @@ const SignUp: Component = () => {
           </Button>
           <Button
             variant="outline"
-            class={socialButtonClass()}
+            class="py-2.5 sm:py-3 text-sm sm:text-base bg-card border border-border text-foreground hover:bg-muted"
             onClick={handleAppleLogin}
             disabled={socialLoading() !== null}
           >
@@ -376,10 +336,10 @@ const SignUp: Component = () => {
       </form>
 
       <div class="text-center mt-4 sm:mt-6">
-        <span class={`${helperTextClass()} text-sm sm:text-base`}>Already have an account? </span>
+        <span class="text-muted-foreground text-sm sm:text-base">Already have an account? </span>
         <A
           href="/auth/signin"
-          class={`${linkClass()} underline-offset-4 font-semibold text-sm sm:text-base`}
+          class="text-primary hover:text-primary/80 underline-offset-4 font-semibold text-sm sm:text-base"
         >
           Sign in
         </A>

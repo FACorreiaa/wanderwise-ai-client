@@ -170,8 +170,8 @@ const ChatMessage: Component<ChatMessageProps> = (props) => {
   return (
     <div class={`flex gap-2 sm:gap-3 ${isUser() ? "justify-end" : "justify-start"}`}>
       <Show when={!isUser()}>
-        <div class="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-gradient-to-br from-blue-500 to-accent flex items-center justify-center flex-shrink-0">
-          <Bot class="w-3 h-3 sm:w-4 sm:h-4 text-white" />
+        <div class="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
+          <Bot class="w-3 h-3 sm:w-4 sm:h-4 text-primary-foreground" />
         </div>
       </Show>
 
@@ -180,9 +180,9 @@ const ChatMessage: Component<ChatMessageProps> = (props) => {
           <div
             class={`rounded-2xl px-3 py-2 sm:px-4 sm:py-3 shadow-sm ${
               isUser()
-                ? "bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-blue-500/20"
+                ? "bg-primary text-primary-foreground shadow-primary/20"
                 : isError()
-                  ? "bg-red-50/80 dark:bg-red-900/30 text-red-800 dark:text-red-200 border border-red-200/50 dark:border-red-800/50 backdrop-blur-sm"
+                  ? "bg-destructive/10 text-destructive border border-destructive/30 backdrop-blur-sm"
                   : "bg-card/80 text-foreground backdrop-blur-sm border border-border"
             }`}
           >
@@ -196,7 +196,7 @@ const ChatMessage: Component<ChatMessageProps> = (props) => {
         </Show>
 
         <Show when={props.message.streamingData}>
-          <div class="mt-2 sm:mt-3 bg-card/90 backdrop-blur-xl border border-border rounded-xl p-3 sm:p-4 shadow-lg shadow-gray-500/5 dark:shadow-black/20">
+          <div class="mt-2 sm:mt-3 bg-card/90 backdrop-blur-xl border border-border rounded-xl p-3 sm:p-4 shadow-lg">
             <Show when={cityData()}>
               <div class="flex items-center justify-between mb-2 sm:mb-3">
                 <div class="min-w-0 flex-1 pr-2">
@@ -217,7 +217,7 @@ const ChatMessage: Component<ChatMessageProps> = (props) => {
                   </button>
                   <button
                     onClick={() => props.onShare?.(props.message)}
-                    class="p-1.5 sm:p-2 text-muted-foreground hover:text-green-600 dark:hover:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg"
+                    class="p-1.5 sm:p-2 text-muted-foreground hover:text-accent hover:bg-accent/10 rounded-lg"
                     title="Share"
                   >
                     <Share2 class="w-3 h-3 sm:w-4 sm:h-4" />
@@ -251,7 +251,7 @@ const ChatMessage: Component<ChatMessageProps> = (props) => {
         </Show>
 
         <p
-          class={`text-xs mt-1 sm:mt-2 ${isUser() ? "text-blue-100 text-right" : "text-muted-foreground"}`}
+          class={`text-xs mt-1 sm:mt-2 ${isUser() ? "text-primary-foreground/70 text-right" : "text-muted-foreground"}`}
         >
           {formatTimestamp(props.message.timestamp)}
         </p>

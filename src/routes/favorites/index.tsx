@@ -148,15 +148,15 @@ export default function FavoritesPage() {
 
   const getCategoryColor = (category: string) => {
     const colorMap: Record<string, string> = {
-      Restaurant: "text-orange-600 bg-orange-50",
-      Park: "text-green-600 bg-green-50",
-      Beach: "text-primary bg-blue-50",
-      Landmark: "text-purple-600 bg-purple-50",
-      "Religious Site": "text-indigo-600 bg-indigo-50",
-      Museum: "text-amber-600 bg-amber-50",
-      Shopping: "text-pink-600 bg-pink-50",
+      Restaurant: "text-accent bg-accent/10",
+      Park: "text-primary bg-primary/10",
+      Beach: "text-primary bg-primary/10",
+      Landmark: "text-accent bg-accent/10",
+      "Religious Site": "text-primary bg-primary/10",
+      Museum: "text-accent bg-accent/10",
+      Shopping: "text-primary bg-primary/10",
     };
-    return colorMap[category] || "text-muted-foreground bg-gray-50";
+    return colorMap[category] || "text-muted-foreground bg-muted";
   };
 
   const getCategoryIcon = (category: string) => {
@@ -220,12 +220,12 @@ export default function FavoritesPage() {
         {/* Action buttons */}
         <div class="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
           <div class="flex gap-1">
-            <button class="p-1.5 bg-card/90 text-foreground rounded-lg hover:bg-white">
+            <button class="p-1.5 bg-card/90 text-foreground rounded-lg hover:bg-muted">
               <Share2 class="w-3 h-3" />
             </button>
             <button
               onClick={() => removeFavorite(favorite.id)}
-              class="p-1.5 bg-red-500 text-white rounded-lg hover:bg-red-600"
+              class="p-1.5 bg-destructive text-destructive-foreground rounded-lg hover:bg-destructive/90"
             >
               <Trash2 class="w-3 h-3" />
             </button>
@@ -335,7 +335,7 @@ export default function FavoritesPage() {
                 </button>
                 <button
                   onClick={() => removeFavorite(favorite.id)}
-                  class="p-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg"
+                  class="p-2 text-destructive hover:bg-destructive/10 rounded-lg"
                 >
                   <Trash2 class="w-4 h-4" />
                 </button>
@@ -405,7 +405,7 @@ export default function FavoritesPage() {
   );
 
   return (
-    <div class="min-h-screen bg-gray-50">
+    <div class="min-h-screen relative transition-colors">
       {/* Header */}
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div class="loci-hero">
@@ -414,29 +414,26 @@ export default function FavoritesPage() {
               <div class="flex items-center gap-3">
                 <div class="relative">
                   <div class="absolute -inset-1 hero-glow blur-md opacity-80" />
-                  <div class="relative w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center text-white shadow-lg ring-2 ring-white/60">
+                  <div class="loci-hero__icon">
                     <Heart class="w-6 h-6 fill-current" />
                   </div>
                 </div>
                 <div>
-                  <h1 class="text-3xl sm:text-4xl font-bold tracking-tight text-white">
-                    My Favorites
-                  </h1>
-                  <p class="text-white/80 text-sm mt-1">{favorites().length} places you've saved</p>
+                  <h1 class="text-3xl sm:text-4xl font-bold tracking-tight">My Favorites</h1>
+                  <p class="loci-hero__subtitle text-sm mt-1">
+                    {favorites().length} places you've saved
+                  </p>
                 </div>
               </div>
               <div class="flex items-center gap-3">
-                <Button
-                  variant="outline"
-                  class="gap-2 bg-white/10 hover:bg-white/20 border-white/20 text-white hover:text-white"
-                >
+                <button type="button" class="loci-hero__action px-4 py-2">
                   <Download class="w-4 h-4" />
                   Export
-                </Button>
-                <Button class="gap-2 bg-white text-primary hover:bg-gray-100 border-none">
+                </button>
+                <button type="button" class="loci-hero__cta gap-2 px-4 py-2 rounded-xl">
                   <Plus class="w-4 h-4" />
                   Add Place
-                </Button>
+                </button>
               </div>
             </div>
           </div>
@@ -465,7 +462,7 @@ export default function FavoritesPage() {
             <select
               value={selectedCategory()}
               onChange={(e) => setSelectedCategory(e.target.value)}
-              class="px-4 py-2 border border-border rounded-lg bg-white text-foreground focus:ring-2 focus:ring-ring focus:border-transparent"
+              class="px-4 py-2 border border-border rounded-lg bg-card text-foreground focus:ring-2 focus:ring-ring focus:border-transparent"
             >
               <For each={categories()}>
                 {(category) => (
@@ -481,7 +478,7 @@ export default function FavoritesPage() {
               <select
                 value={sortBy()}
                 onChange={(e) => setSortBy(e.target.value)}
-                class="px-4 py-2 border border-border rounded-lg bg-white text-foreground focus:ring-2 focus:ring-ring focus:border-transparent"
+                class="px-4 py-2 border border-border rounded-lg bg-card text-foreground focus:ring-2 focus:ring-ring focus:border-transparent"
               >
                 <For each={sortOptions}>
                   {(option) => <option value={option.id}>{option.label}</option>}
@@ -496,16 +493,16 @@ export default function FavoritesPage() {
             </div>
 
             {/* View mode */}
-            <div class="flex items-center border border-border rounded-lg p-1 bg-white">
+            <div class="flex items-center border border-border rounded-lg p-1 bg-card">
               <button
                 onClick={() => setViewMode("grid")}
-                class={`p-2 rounded ${viewMode() === "grid" ? "bg-blue-600 text-white" : "text-muted-foreground hover:bg-gray-50"}`}
+                class={`p-2 rounded ${viewMode() === "grid" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"}`}
               >
                 <Grid class="w-4 h-4" />
               </button>
               <button
                 onClick={() => setViewMode("list")}
-                class={`p-2 rounded ${viewMode() === "list" ? "bg-blue-600 text-white" : "text-muted-foreground hover:bg-gray-50"}`}
+                class={`p-2 rounded ${viewMode() === "list" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"}`}
               >
                 <List class="w-4 h-4" />
               </button>
@@ -514,7 +511,7 @@ export default function FavoritesPage() {
 
           {/* Bulk actions */}
           <Show when={selectedPOIs().length > 0}>
-            <div class="mt-4 p-3 bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 rounded-lg">
+            <div class="mt-4 p-3 bg-primary/10 border border-primary/20 rounded-lg">
               <div class="flex items-center justify-between">
                 <span class="text-sm text-primary dark:text-primary">
                   {selectedPOIs().length} item
@@ -527,7 +524,7 @@ export default function FavoritesPage() {
                   <button class="text-sm text-primary hover:text-primary dark:text-primary dark:hover:text-primary">
                     Export Selected
                   </button>
-                  <button class="text-sm text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300">
+                  <button class="text-sm text-destructive hover:text-destructive/80">
                     Remove Selected
                   </button>
                   <button

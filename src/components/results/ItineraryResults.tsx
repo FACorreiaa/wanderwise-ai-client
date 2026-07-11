@@ -93,18 +93,11 @@ export default function ItineraryResults(props: ItineraryResultsProps) {
   };
   const description = () => props.itinerary?.overall_description;
 
-  const _getRatingColor = (rating: number) => {
-    if (rating >= 4.5) return "text-green-600 dark:text-green-400";
-    if (rating >= 4.0) return "text-blue-600 dark:text-blue-400";
-    if (rating >= 3.5) return "text-yellow-600 dark:text-yellow-400";
-    return "text-gray-600 dark:text-gray-400";
-  };
-
   const getPriorityColor = (priority: number) => {
-    if (priority === 1) return "bg-red-500 dark:bg-red-600";
-    if (priority === 2) return "bg-orange-500 dark:bg-orange-600";
-    if (priority === 3) return "bg-yellow-500 dark:bg-yellow-600";
-    return "bg-blue-500 dark:bg-blue-600";
+    if (priority === 1) return "bg-destructive";
+    if (priority === 2) return "bg-accent";
+    if (priority === 3) return "bg-primary/80";
+    return "bg-primary";
   };
 
   const getCategoryEmoji = (category: string) => {
@@ -126,16 +119,16 @@ export default function ItineraryResults(props: ItineraryResultsProps) {
     <div class="space-y-3">
       <div class="mb-4">
         <div class="flex items-center gap-2 mb-2">
-          <div class="w-6 h-6 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center text-white text-xs">
+          <div class="w-6 h-6 rounded-full bg-primary flex items-center justify-center text-primary-foreground text-xs">
             ✨
           </div>
-          <h3 class="font-semibold text-gray-900 dark:text-white">
+          <h3 class="font-semibold text-foreground">
             {itineraryName()} ({displayPOIs().length} stops)
           </h3>
         </div>
 
         <Show when={description() && !props.compact}>
-          <p class="text-sm text-gray-600 dark:text-gray-300 leading-relaxed">{description()}</p>
+          <p class="text-sm text-muted-foreground leading-relaxed">{description()}</p>
         </Show>
       </div>
 
@@ -143,11 +136,11 @@ export default function ItineraryResults(props: ItineraryResultsProps) {
         <For each={displayPOIs()}>
           {(poi, index) => (
             <div
-              class={`rounded-lg border border-gray-200 dark:border-gray-700 ${
+              class={`rounded-lg border border-border ${
                 props.compact
-                  ? "p-3 bg-gray-50 dark:bg-gray-800"
-                  : "p-4 bg-white dark:bg-gray-800 shadow-sm hover:shadow-md transition-shadow"
-              } ${props.onItemClick ? "cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700" : ""}`}
+                  ? "p-3 bg-muted"
+                  : "p-4 bg-card shadow-sm hover:shadow-md transition-shadow"
+              } ${props.onItemClick ? "cursor-pointer hover:bg-muted" : ""}`}
               onClick={() => props.onItemClick?.(poi)}
             >
               <div class="flex items-start gap-3">
@@ -156,13 +149,13 @@ export default function ItineraryResults(props: ItineraryResultsProps) {
                   <Show
                     when={poi.priority}
                     fallback={
-                      <div class="w-6 h-6 rounded-full bg-gray-400 dark:bg-gray-600 flex items-center justify-center text-white text-xs font-bold">
+                      <div class="w-6 h-6 rounded-full bg-muted-foreground flex items-center justify-center text-primary-foreground text-xs font-bold">
                         {index() + 1}
                       </div>
                     }
                   >
                     <div
-                      class={`w-6 h-6 rounded-full ${getPriorityColor(poi.priority!)} flex items-center justify-center text-white text-xs font-bold`}
+                      class={`w-6 h-6 rounded-full ${getPriorityColor(poi.priority!)} flex items-center justify-center text-primary-foreground text-xs font-bold`}
                     >
                       {poi.priority}
                     </div>
@@ -174,7 +167,7 @@ export default function ItineraryResults(props: ItineraryResultsProps) {
                     <div class="flex-1 min-w-0">
                       <div class="flex items-center gap-2">
                         <h4
-                          class={`font-medium text-gray-900 dark:text-white truncate ${
+                          class={`font-medium text-foreground truncate ${
                             props.compact ? "text-sm" : "text-base"
                           }`}
                         >
@@ -187,14 +180,14 @@ export default function ItineraryResults(props: ItineraryResultsProps) {
                         </Show>
                       </div>
                       <Show when={poi.category}>
-                        <p class="text-xs text-gray-500 dark:text-gray-400">{poi.category}</p>
+                        <p class="text-xs text-muted-foreground">{poi.category}</p>
                       </Show>
                     </div>
 
                     <Show when={poi.rating}>
                       <div class="flex items-center gap-1 ml-2 flex-shrink-0">
-                        <Star class="w-4 h-4 text-yellow-500 fill-current" />
-                        <span class="text-sm font-medium text-gray-900 dark:text-white">
+                        <Star class="w-4 h-4 text-accent fill-current" />
+                        <span class="text-sm font-medium text-foreground">
                           {poi.rating}
                         </span>
                       </div>
@@ -202,12 +195,12 @@ export default function ItineraryResults(props: ItineraryResultsProps) {
                   </div>
 
                   <Show when={poi.description_poi && !props.compact}>
-                    <p class="text-sm text-gray-600 dark:text-gray-300 mb-3 line-clamp-2">
+                    <p class="text-sm text-muted-foreground mb-3 line-clamp-2">
                       {poi.description_poi}
                     </p>
                   </Show>
 
-                  <div class="flex items-center gap-4 text-xs text-gray-500 dark:text-gray-400 flex-wrap">
+                  <div class="flex items-center gap-4 text-xs text-muted-foreground flex-wrap">
                     <Show when={poi.distance}>
                       <div class="flex items-center gap-1">
                         <MapPin class="w-3 h-3" />
@@ -223,7 +216,7 @@ export default function ItineraryResults(props: ItineraryResultsProps) {
                     </Show>
 
                     <Show when={poi.budget}>
-                      <span class="text-blue-600 dark:text-blue-400 font-medium">{poi.budget}</span>
+                      <span class="text-primary font-medium">{poi.budget}</span>
                     </Show>
 
                     <Show when={poi.opening_hours && !props.compact}>
@@ -260,8 +253,8 @@ export default function ItineraryResults(props: ItineraryResultsProps) {
                         disabled={!props.onShareClick}
                         class={`p-2 rounded-lg transition-colors ${
                           !props.onShareClick
-                            ? "text-gray-300 dark:text-gray-600 cursor-not-allowed bg-gray-50 dark:bg-gray-800"
-                            : "text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20"
+                            ? "text-muted-foreground/50 cursor-not-allowed bg-muted"
+                            : "text-muted-foreground hover:text-primary hover:bg-primary/10"
                         }`}
                         title={
                           props.onShareClick
@@ -277,12 +270,12 @@ export default function ItineraryResults(props: ItineraryResultsProps) {
                   </Show>
 
                   <Show when={poi.website && !props.compact}>
-                    <div class="mt-3 pt-3 border-t border-gray-100 dark:border-gray-700">
+                    <div class="mt-3 pt-3 border-t border-border">
                       <a
                         href={poi.website}
                         target="_blank"
                         rel="noopener noreferrer"
-                        class="text-sm text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
+                        class="text-sm text-primary hover:underline flex items-center gap-1"
                         onClick={(e) => e.stopPropagation()}
                       >
                         Learn More <ChevronRight class="w-3 h-3" />
@@ -301,7 +294,7 @@ export default function ItineraryResults(props: ItineraryResultsProps) {
         <div class="text-center py-3">
           <button
             onClick={() => setShowAll(!showAll())}
-            class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-700 transition-colors"
+            class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-primary hover:bg-primary/10 rounded-lg border border-primary/30 transition-colors"
           >
             <span>{getToggleText()}</span>
             {showAll() ? <ChevronUp class="w-4 h-4" /> : <ChevronDown class="w-4 h-4" />}
@@ -318,7 +311,7 @@ export default function ItineraryResults(props: ItineraryResultsProps) {
         }
       >
         <div class="text-center py-2">
-          <span class="text-sm text-gray-500 dark:text-gray-400">
+          <span class="text-sm text-muted-foreground">
             Showing {props.limit} of{" "}
             {props.pois?.length || props.itinerary?.points_of_interest?.length || 0} places
           </span>

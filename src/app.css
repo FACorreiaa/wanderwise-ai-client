@@ -113,88 +113,18 @@
     @apply px-4 sm:px-6 lg:px-8;
   }
 
-  /* VT News inspired styling - WCAG Compliant */
-  .vt-primary {
-    color: #1a1a1a;
-  }
-
-  .vt-accent {
-    color: #d4af37;
-    /* Gold - ensure used on dark backgrounds only */
-  }
-
-  .vt-text-light {
-    color: #999;
-    /* Lightened from #888 for 4.6:1 contrast (AA) */
-  }
-
-  .vt-card {
-    @apply rounded-xl shadow-sm border border-gray-700 bg-gray-900 text-white;
-  }
-
-  .vt-button {
-    @apply rounded-lg font-medium transition-all duration-200 hover:shadow-lg;
-  }
-
-  .vt-button-primary {
-    @apply bg-gray-800 text-white hover:bg-gray-700 border border-gray-600;
-  }
-
-  .vt-gradient {
-    background: linear-gradient(135deg, #1f1f1f 0%, #333333 100%);
-    /* Slightly lighter for better text contrast */
-  }
-
-  /* Valuetainment inspired styling - WCAG Compliant */
-  .val-primary {
-    color: #c71e24;
-    /* Darkened red for 4.6:1 contrast on white (AA) */
-  }
-
-  .val-text-dark {
-    color: #1a1a1a;
-    /* Slightly lighter black for perfect contrast */
-  }
-
-  .val-text-medium {
-    color: #5a5a5a;
-    /* Darkened from #666 for 7.2:1 contrast (AAA) */
-  }
-
-  .val-card {
-    @apply rounded-lg shadow-md border border-gray-300 bg-white;
-  }
-
-  .val-button {
-    @apply rounded-lg font-bold transition-all duration-200 hover:shadow-lg;
-  }
-
-  .val-button-primary {
-    @apply bg-red-700 text-white hover:bg-red-800;
-    /* Darker red for 4.5:1 contrast (AA) */
-  }
-
-  .val-button-secondary {
-    @apply bg-gray-100 text-gray-900 hover:bg-gray-200 border border-gray-400;
-  }
-
-  .val-gradient {
-    background: linear-gradient(135deg, #c71e24 0%, #a01828 100%);
-    /* Darker gradient for better text contrast */
-  }
-
   /* Loci profile-inspired surfaces */
   .loci-hero {
     position: relative;
     overflow: hidden;
-    color: #fff;
+    color: hsl(var(--hero-foreground, 0 0% 100%));
     background: var(
       --hero-gradient,
-      linear-gradient(135deg, #0c7df2 0%, #6aa5ff 45%, #0c1747 100%)
+      linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--accent)) 45%, hsl(var(--primary) / 0.5) 100%)
     );
     border-radius: 1.5rem;
-    border: 1px solid rgba(255, 255, 255, 0.3);
-    box-shadow: 0 20px 60px rgba(12, 125, 242, 0.25);
+    border: 1px solid hsl(var(--hero-foreground, 0 0% 100%) / 0.3);
+    box-shadow: 0 20px 60px hsl(var(--primary) / 0.25);
   }
 
   .loci-hero::before {
@@ -203,9 +133,9 @@
     inset: 0;
     opacity: 0.35;
     background:
-      radial-gradient(circle at 20% 20%, rgba(255, 255, 255, 0.45), transparent 35%),
-      radial-gradient(circle at 80% 0%, rgba(255, 255, 255, 0.35), transparent 30%),
-      radial-gradient(circle at 50% 80%, rgba(255, 255, 255, 0.25), transparent 32%);
+      radial-gradient(circle at 20% 20%, hsl(var(--hero-foreground, 0 0% 100%) / 0.45), transparent 35%),
+      radial-gradient(circle at 80% 0%, hsl(var(--hero-foreground, 0 0% 100%) / 0.35), transparent 30%),
+      radial-gradient(circle at 50% 80%, hsl(var(--hero-foreground, 0 0% 100%) / 0.25), transparent 32%);
   }
 
   .loci-hero__content {
@@ -213,12 +143,112 @@
     backdrop-filter: blur(2px);
   }
 
+  .loci-hero__subtitle {
+    color: hsl(var(--hero-foreground, 0 0% 100%) / 0.8);
+  }
+
+  .loci-hero__icon {
+    @apply relative w-12 h-12 rounded-xl flex items-center justify-center shadow-lg;
+    background: hsl(var(--hero-foreground, 0 0% 100%) / 0.2);
+    color: hsl(var(--hero-foreground, 0 0% 100%));
+    box-shadow: 0 0 0 2px hsl(var(--hero-foreground, 0 0% 100%) / 0.6);
+  }
+
+  .loci-hero__action {
+    @apply inline-flex items-center gap-2 rounded-lg text-sm font-medium transition-all;
+    background: hsl(var(--hero-foreground, 0 0% 100%) / 0.1);
+    border: 1px solid hsl(var(--hero-foreground, 0 0% 100%) / 0.2);
+    color: hsl(var(--hero-foreground, 0 0% 100%) / 0.9);
+  }
+
+  .loci-hero__action:hover {
+    background: hsl(var(--hero-foreground, 0 0% 100%) / 0.2);
+  }
+
+  .loci-hero__action--strong {
+    @apply rounded-xl font-medium px-4 py-2;
+    background: hsl(var(--hero-foreground, 0 0% 100%) / 0.2);
+    border: 1px solid hsl(var(--hero-foreground, 0 0% 100%) / 0.3);
+    color: hsl(var(--hero-foreground, 0 0% 100%));
+  }
+
+  .loci-hero__action--strong:hover {
+    background: hsl(var(--hero-foreground, 0 0% 100%) / 0.3);
+  }
+
+  .loci-hero__cta {
+    @apply inline-flex items-center gap-2 font-medium border-none;
+    background: hsl(var(--hero-foreground, 0 0% 100%));
+    color: hsl(var(--primary));
+  }
+
+  .loci-hero__cta:hover {
+    background: hsl(var(--hero-foreground, 0 0% 100%) / 0.9);
+  }
+
+  .loci-hero__stat {
+    @apply rounded-2xl p-4 shadow-lg backdrop-blur;
+    background: hsl(var(--hero-foreground, 0 0% 100%) / 0.1);
+    border: 1px solid hsl(var(--hero-foreground, 0 0% 100%) / 0.2);
+  }
+
+  .loci-hero__stat-label {
+    @apply text-xs uppercase tracking-wide mb-1;
+    color: hsl(var(--hero-foreground, 0 0% 100%) / 0.7);
+  }
+
+  .loci-hero__stat-detail {
+    @apply text-xs;
+    color: hsl(var(--hero-foreground, 0 0% 100%) / 0.8);
+  }
+
   .loci-card {
-    @apply rounded-2xl bg-white/85 backdrop-blur border border-gray-200 shadow-sm;
+    @apply rounded-2xl bg-card/85 backdrop-blur border border-border shadow-sm;
   }
 
   .loci-chip {
-    @apply inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-white/15 backdrop-blur border border-white/20 text-white;
+    @apply inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold backdrop-blur;
+    background: hsl(var(--hero-foreground, 0 0% 100%) / 0.15);
+    border: 1px solid hsl(var(--hero-foreground, 0 0% 100%) / 0.2);
+    color: hsl(var(--hero-foreground, 0 0% 100%));
+  }
+
+  .loci-chip--muted {
+    background: hsl(var(--hero-foreground, 0 0% 100%) / 0.25);
+  }
+
+  .loci-chip--destructive {
+    background: hsl(var(--destructive) / 0.3);
+    border-color: hsl(var(--destructive) / 0.4);
+    color: hsl(var(--destructive-foreground));
+  }
+
+  /* Mapbox popup — token-driven so it follows the active theme */
+  .map-popup {
+    color: hsl(var(--foreground));
+  }
+
+  .map-popup__title {
+    font-weight: 600;
+    color: hsl(var(--foreground));
+  }
+
+  .map-popup__meta {
+    color: hsl(var(--muted-foreground));
+  }
+
+  .map-popup__badge {
+    background: hsl(var(--accent) / 0.15);
+    color: hsl(var(--accent));
+  }
+
+  .map-popup__btn {
+    background: hsl(var(--primary));
+    color: hsl(var(--primary-foreground));
+  }
+
+  .map-popup__btn:hover {
+    filter: brightness(1.05);
   }
 
   /* Enhanced Catppuccin Latte palette for light mode with improved accessibility */
@@ -264,6 +294,9 @@
     /* Slightly darker green for focus ring */
 
     --radius: 1.25rem;
+
+    /* Hero banners always use dark gradients — foreground stays light across themes */
+    --hero-foreground: 0 0% 100%;
   }
 
   /* ========================================
@@ -303,6 +336,7 @@
     --border: 40 15% 78%;
     --input: 40 15% 80%;
     --ring: 30 60% 35%;
+    --theme-color: #8a6e2f;
 
     --hero-gradient: linear-gradient(135deg, #8a6e2f 0%, #d4af37 45%, #3d2b0f 100%);
     --hero-glow: linear-gradient(
@@ -347,6 +381,7 @@
     --border: 30 10% 22%;
     --input: 30 10% 22%;
     --ring: 35 70% 55%;
+    --theme-color: #5c4033;
 
     --hero-gradient: linear-gradient(135deg, #5c4033 0%, #78350f 45%, #451a03 100%);
     --hero-glow: linear-gradient(
@@ -394,6 +429,7 @@
     --border: 210 15% 82%;
     --input: 210 15% 85%;
     --ring: 220 90% 50%;
+    --theme-color: #0c7df2;
 
     /* Hero Theme vars */
     --hero-gradient: linear-gradient(135deg, #0c7df2 0%, #6aa5ff 45%, #0c1747 100%);
@@ -439,6 +475,7 @@
     --border: 220 18% 20%;
     --input: 220 18% 20%;
     --ring: 220 95% 65%;
+    --theme-color: #1e3a8a;
 
     --hero-gradient: linear-gradient(135deg, #0f172a 0%, #1e40af 45%, #020617 100%);
     --hero-glow: linear-gradient(
@@ -486,6 +523,7 @@
     --border: 0 0% 88%;
     --input: 0 0% 90%;
     --radius: 1rem;
+    --theme-color: #1a1a1a;
 
     --hero-gradient: linear-gradient(160deg, #0a0a0a 0%, #1a1a1a 50%, #0a0a0a 100%);
     --hero-glow: linear-gradient(
@@ -532,6 +570,7 @@
     --input: 0 0% 14%;
     --ring: 0 0% 96%;
     --radius: 1rem;
+    --theme-color: #0a0a0a;
 
     --hero-gradient: linear-gradient(160deg, #000000 0%, #0a0a0a 50%, #050505 100%);
     --hero-glow: linear-gradient(
@@ -707,12 +746,12 @@
   }
 
   .glass-panel {
-    @apply bg-white/95 dark:bg-white/[0.03] border border-gray-200/80 dark:border-white/[0.08] backdrop-blur-xl;
-    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
+    @apply bg-card/95 border border-border backdrop-blur-xl;
+    box-shadow: 0 4px 24px hsl(var(--foreground) / 0.06);
   }
 
   .dark .glass-panel {
-    box-shadow: 0 4px 32px rgba(0, 0, 0, 0.4);
+    box-shadow: 0 4px 32px hsl(var(--foreground) / 0.15);
   }
 
   .gradient-border {

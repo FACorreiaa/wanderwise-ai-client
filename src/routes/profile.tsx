@@ -290,7 +290,7 @@ function ProfilePageContent() {
             <div class="text-sm text-muted-foreground">Places Visited</div>
           </div>
           <div class="bg-card rounded-lg p-4 text-center border border-border">
-            <div class="text-2xl font-bold text-green-600 dark:text-green-400">
+            <div class="text-2xl font-bold text-accent">
               {profile.stats.reviews_written}
             </div>
             <div class="text-sm text-muted-foreground">Reviews</div>
@@ -310,7 +310,7 @@ function ProfilePageContent() {
             <div class="flex flex-wrap gap-2">
               <For each={profile.interests}>
                 {(interest) => (
-                  <span class="px-3 py-1 bg-primary/10 text-blue-800 dark:text-blue-200 rounded-full text-sm font-medium">
+                  <span class="loci-chip text-sm font-medium">
                     {interest}
                   </span>
                 )}
@@ -325,9 +325,9 @@ function ProfilePageContent() {
           <div class="flex flex-wrap gap-3">
             <For each={profile.badges}>
               {(badge) => (
-                <div class="flex items-center gap-2 px-3 py-2 bg-card/70 rounded-lg border border-white/60">
-                  <div class="w-6 h-6 bg-amber-400 rounded-full" />
-                  <span class="text-sm font-medium text-slate-900 dark:text-white">{badge}</span>
+                <div class="flex items-center gap-2 px-3 py-2 bg-card/70 rounded-lg border border-border">
+                  <div class="w-6 h-6 bg-accent rounded-full" />
+                  <span class="text-sm font-medium text-foreground">{badge}</span>
                 </div>
               )}
             </For>
@@ -360,7 +360,7 @@ function ProfilePageContent() {
                       <Show when={activity.rating}>
                         <div class="flex items-center gap-1">
                           <For each={Array.from({ length: activity.rating || 0 }, (_, i) => i)}>
-                            {() => <span class="text-yellow-500 text-xs">★</span>}
+                            {() => <span class="text-accent text-xs">★</span>}
                           </For>
                         </div>
                       </Show>
@@ -428,7 +428,7 @@ function ProfilePageContent() {
     <Switch>
       <Match when={profileQuery.isLoading && !user()}>
         <div class="min-h-screen bg-muted transition-colors flex items-center justify-center">
-          <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600" />
+          <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary" />
         </div>
       </Match>
       <Match when={profileQuery.isError && !user()}>
@@ -452,7 +452,7 @@ function ProfilePageContent() {
         <div class="min-h-screen relative transition-colors">
           {/* API Error notification - show if profile query failed but continue with auth data */}
           <Show when={profileQuery.isError && user()}>
-            <div class="fixed top-4 left-4 right-4 sm:left-auto sm:right-4 sm:w-96 z-50 p-4 rounded-lg shadow-lg border bg-yellow-50 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200 border-yellow-200 dark:border-yellow-700 animate-in slide-in-from-top-2 duration-300">
+            <div class="fixed top-4 left-4 right-4 sm:left-auto sm:right-4 sm:w-96 z-50 p-4 rounded-lg shadow-lg border bg-accent/10 text-accent border-accent/20 animate-in slide-in-from-top-2 duration-300">
               <div class="flex items-center justify-between">
                 <span class="text-sm font-medium">
                   Profile API unavailable - showing basic info
@@ -469,8 +469,8 @@ function ProfilePageContent() {
             <div
               class={`fixed top-16 left-4 right-4 sm:left-auto sm:right-4 sm:w-96 z-50 p-4 rounded-lg shadow-lg border ${
                 notification()?.type === "success"
-                  ? "bg-green-50 dark:bg-green-900 text-green-800 dark:text-green-200 border-green-200 dark:border-green-700"
-                  : "bg-red-50 dark:bg-red-900 text-red-800 dark:text-red-200 border-red-200 dark:border-red-700"
+                  ? "bg-accent/10 text-accent border-accent/20"
+                  : "bg-destructive/10 text-destructive border-destructive/20"
               } animate-in slide-in-from-top-2 duration-300`}
             >
               <div class="flex items-center justify-between">
@@ -494,7 +494,7 @@ function ProfilePageContent() {
                 {/* Avatar Section */}
                 <div class="flex flex-col items-center md:items-start">
                   <div class="relative">
-                    <div class="w-24 h-24 rounded-full bg-[#0c7df2] flex items-center justify-center text-white text-2xl font-bold shadow-lg ring-2 ring-white/60 dark:ring-slate-800">
+                    <div class="w-24 h-24 rounded-full bg-primary flex items-center justify-center text-primary-foreground text-2xl font-bold shadow-lg ring-2 ring-border">
                       {profileData()?.username?.charAt(0)?.toUpperCase() || "T"}
                     </div>
                     <Button
@@ -577,7 +577,7 @@ function ProfilePageContent() {
                           </button>
                           <button
                             onClick={cancelEditing}
-                            class="px-4 py-2 bg-muted text-foreground rounded-lg hover:bg-muted dark:hover:bg-gray-500 flex items-center gap-2"
+                            class="px-4 py-2 bg-muted text-foreground rounded-lg hover:bg-muted/80 flex items-center gap-2"
                           >
                             <X class="w-4 h-4" />
                             Cancel
@@ -639,7 +639,7 @@ function ProfilePageContent() {
                         onClick={() => setActiveTab(tab.id)}
                         class={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
                           activeTab() === tab.id
-                            ? "border-blue-500 text-primary"
+                            ? "border-primary text-primary"
                             : "border-transparent text-muted-foreground hover:text-foreground"
                         }`}
                       >

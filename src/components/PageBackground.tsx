@@ -109,7 +109,7 @@ export default function PageBackground() {
       />
       <div class="domain-grid" style={{ "--grid-accent": theme().grid }} />
       <div class="domain-halo" style={{ "--halo": theme().halo }} />
-      <div class="absolute inset-0 bg-gradient-to-b from-white/80 via-white/60 to-white/90 dark:from-slate-950/75 dark:via-slate-950/55 dark:to-slate-950/85 backdrop-blur" />
+      <div class="absolute inset-0 bg-gradient-to-b from-background/80 via-background/60 to-background/90 backdrop-blur" />
       <div class="domain-noise opacity-70" />
     </div>
   );

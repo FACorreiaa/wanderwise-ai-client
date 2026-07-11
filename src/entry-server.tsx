@@ -44,7 +44,7 @@ export default createHandler(() => (
           />
           <meta name="format-detection" content="telephone=no" />
           <meta name="mobile-web-app-capable" content="yes" />
-          <meta name="theme-color" content="#146AFF" />
+          <meta name="theme-color" content="#1a1a1a" />
 
           {/* Apple Touch Icons */}
           <link rel="apple-touch-icon" href="/images/loci.png" />
@@ -61,7 +61,7 @@ export default createHandler(() => (
           <link rel="manifest" href="/manifest.json" />
 
           {/* Microsoft */}
-          <meta name="msapplication-TileColor" content="#146AFF" />
+          <meta name="msapplication-TileColor" content="#1a1a1a" />
           <meta name="msapplication-TileImage" content="/images/loci.png" />
           <meta name="msapplication-config" content="/browserconfig.xml" />
 
@@ -97,20 +97,32 @@ export default createHandler(() => (
                 try {
                   var localTheme = localStorage.getItem('theme');
                   var supportDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches;
-                  if (localTheme === 'dark' || (!localTheme && supportDarkMode)) {
+                  var useDark = localTheme === 'dark' || (localTheme === 'system' && supportDarkMode) || (!localTheme && supportDarkMode);
+                  if (useDark) {
                     document.documentElement.classList.add('dark');
                     document.documentElement.setAttribute('data-kb-theme', 'dark');
                   } else {
                     document.documentElement.classList.remove('dark');
                     document.documentElement.setAttribute('data-kb-theme', 'light');
                   }
-                  
-                  var designTheme = localStorage.getItem('designTheme');
-                  if (designTheme) {
-                    document.documentElement.setAttribute('data-theme', designTheme);
-                  } else {
-                    document.documentElement.setAttribute('data-theme', 'loci');
+
+                  var localLanguage = localStorage.getItem('language');
+                  if (localLanguage) {
+                    document.documentElement.lang = localLanguage;
                   }
+                  
+                  var designTheme = localStorage.getItem('designTheme') || 'loci';
+                  document.documentElement.setAttribute('data-theme', designTheme);
+
+                  var palette = {
+                    loci: { light: '#1a1a1a', dark: '#0a0a0a' },
+                    classic: { light: '#8a6e2f', dark: '#5c4033' },
+                    modern: { light: '#0c7df2', dark: '#1e3a8a' }
+                  };
+                  var colors = palette[designTheme] || palette.loci;
+                  var themeColor = useDark ? colors.dark : colors.light;
+                  var themeMeta = document.querySelector('meta[name="theme-color"]');
+                  if (themeMeta) themeMeta.setAttribute('content', themeColor);
                 } catch (e) {
                   console.error('Theme init failed', e);
                 }

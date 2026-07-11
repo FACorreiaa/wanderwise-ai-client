@@ -77,8 +77,8 @@ export default defineConfig({
           short_name: "Loci",
           description:
             "Discover, plan, and explore your next adventure with AI-powered travel recommendations",
-          theme_color: "#146AFF",
-          background_color: "#ffffff",
+          theme_color: "#1a1a1a",
+          background_color: "#fafafa",
           display: "standalone",
           orientation: "portrait",
           scope: "/",

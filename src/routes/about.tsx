@@ -59,14 +59,12 @@ export default function About() {
         <div class="max-w-5xl mx-auto px-4 py-12 space-y-12">
           {/* Hero Section */}
           <header class="text-center">
-            <div class="rounded-3xl bg-gradient-to-br from-[#1e66f5]/10 via-[#04a5e5]/12 to-[#40a02b]/10 border border-[hsl(223,16%,83%)]/70 dark:border-white/10 shadow-[0_30px_80px_rgba(4,165,229,0.18)] p-10">
-              <p class="text-sm uppercase tracking-[0.2em] text-[hsl(11,59%,67%)] dark:text-emerald-200 mb-3">
-                About Loci
-              </p>
-              <h1 class="text-4xl md:text-6xl font-bold text-foreground dark:text-white mb-4">
+            <div class="rounded-3xl bg-gradient-to-br from-primary/10 via-accent/10 to-primary/5 border border-border shadow-lg p-10">
+              <p class="text-sm uppercase tracking-[0.2em] text-primary mb-3">About Loci</p>
+              <h1 class="text-4xl md:text-6xl font-bold text-foreground mb-4">
                 The taste-aware travel OS.
               </h1>
-              <p class="text-xl text-[hsl(233,13%,41%)] dark:text-slate-200/85 max-w-3xl mx-auto leading-relaxed">
+              <p class="text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
                 Personalized City Discovery 🗺️✨ powered by Catppuccin Latte hues for clarity in
                 light mode.
               </p>
@@ -95,12 +93,10 @@ export default function About() {
             >
               {(item) => (
                 <div
-                  class={`rounded-2xl p-5 border border-[hsl(223,16%,83%)]/80 dark:border-white/10 bg-gradient-to-br ${item.tone} backdrop-blur`}
+                  class={`rounded-2xl p-5 border border-border bg-gradient-to-br ${item.tone} backdrop-blur`}
                 >
-                  <h3 class="text-lg font-semibold text-foreground dark:text-white mb-2">
-                    {item.title}
-                  </h3>
-                  <p class="text-[hsl(233,10%,47%)] dark:text-slate-200/85 text-sm leading-relaxed">
+                  <h3 class="text-lg font-semibold text-foreground mb-2">{item.title}</h3>
+                  <p class="text-muted-foreground text-sm leading-relaxed">
                     {item.body}
                   </p>
                 </div>
@@ -146,7 +142,7 @@ export default function About() {
 
             {/* Technology Section */}
             <section
-              class="bg-blue-50/50 dark:bg-blue-950/30 border border-blue-100 dark:border-blue-900/50 rounded-lg p-8 mb-12"
+              class="bg-primary/5 border border-primary/20 rounded-lg p-8 mb-12"
               aria-labelledby="technology"
             >
               <h2 id="technology" class="text-2xl font-semibold text-foreground mb-4">
@@ -192,14 +188,14 @@ export default function About() {
                 What's Coming Next
               </h2>
               <div class="space-y-6" role="list">
-                <div class="border-l-4 border-blue-500 dark:border-blue-400 pl-6" role="listitem">
+                <div class="border-l-4 border-primary pl-6" role="listitem">
                   <h3 class="text-xl font-semibold text-foreground mb-2">Phase 1 (MVP)</h3>
                   <p class="text-foreground/80">
                     Core recommendation engine powered by Gemini, user accounts, interactive map
                     view, and personalized itinerary creation.
                   </p>
                 </div>
-                <div class="border-l-4 border-green-500 dark:border-green-400 pl-6" role="listitem">
+                <div class="border-l-4 border-accent pl-6" role="listitem">
                   <h3 class="text-xl font-semibold text-foreground mb-2">Phase 2</h3>
                   <p class="text-foreground/80">
                     Premium tier launch, enhanced AI with embeddings, speech-to-text capabilities,
@@ -207,7 +203,7 @@ export default function About() {
                   </p>
                 </div>
                 <div
-                  class="border-l-4 border-purple-500 dark:border-purple-400 pl-6"
+                  class="border-l-4 border-primary/60 pl-6"
                   role="listitem"
                 >
                   <h3 class="text-xl font-semibold text-foreground mb-2">Phase 3</h3>

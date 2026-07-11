@@ -9,36 +9,33 @@ import { VsEye, VsEyeClosed } from "solid-icons/vs";
 import AuthLayout from "~/components/layout/Auth";
 import { useAuth } from "~/contexts/AuthContext";
 import { useGoogleLoginMutation, useAppleLoginMutation } from "~/lib/api/custom-auth";
-import { useTheme } from "~/contexts/ThemeContext";
 
-// Define the FormData interface
 interface FormData {
   email: string;
   password: string;
   rememberMe: boolean;
 }
 
+const inputBase =
+  "w-full px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg transition-all text-sm sm:text-base border bg-background text-foreground placeholder:text-muted-foreground backdrop-blur";
+
 const SignIn: Component = () => {
   const { login } = useAuth();
-  const { isDark } = useTheme();
   const navigate = useNavigate();
   const [formData, setFormData] = createSignal<Partial<FormData>>({
     email: "",
     password: "",
-    rememberMe: true, // Default to true for better UX during testing
+    rememberMe: true,
   });
   const [error, setError] = createSignal<string>("");
-  const [hasAuthError, setHasAuthError] = createSignal(false); // Track if there's an authentication error
-
+  const [hasAuthError, setHasAuthError] = createSignal(false);
   const [showPassword, setShowPassword] = createSignal(false);
   const [isLoading, setIsLoading] = createSignal(false);
   const [socialLoading, setSocialLoading] = createSignal<string | null>(null);
 
-  // Social login mutations
   const googleLoginMutation = useGoogleLoginMutation();
   const appleLoginMutation = useAppleLoginMutation();
 
-  // Social login handlers
   const handleGoogleLogin = async () => {
     setSocialLoading("google");
     setError("");
@@ -79,7 +76,6 @@ const SignIn: Component = () => {
 
     const data = formData();
 
-    // Validate form
     if (!data.email || !data.password) {
       setError("Please fill in all required fields");
       setHasAuthError(true);
@@ -89,7 +85,6 @@ const SignIn: Component = () => {
 
     try {
       await login(data.email, data.password, data.rememberMe || false);
-      // On successful login, AuthContext will handle navigation
     } catch (err: any) {
       let errorMessage = "An unexpected error occurred. Please try again.";
 
@@ -115,9 +110,7 @@ const SignIn: Component = () => {
         } else if (lowerCaseMessage.includes("account is deactivated")) {
           errorMessage = "Your account has been deactivated. Please contact support.";
         } else {
-          // Clean up other ConnectRPC error messages (e.g., "[unauthenticated] token is expired")
           errorMessage = err.message.replace(/\[.*?\]\s*/, "");
-          // Capitalize the first letter for better presentation
           errorMessage = errorMessage.charAt(0).toUpperCase() + errorMessage.slice(1);
         }
       }
@@ -129,66 +122,31 @@ const SignIn: Component = () => {
     }
   };
 
-  const labelClass = () => (isDark() ? "text-white" : "text-slate-900");
-
-  // Input class with error state - adds red borders when there's an auth error
-  const getInputClass = () => {
-    const baseClass =
-      "w-full px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg transition-all text-sm sm:text-base";
-
-    if (hasAuthError()) {
-      // Error state with red borders
-      return isDark()
-        ? `${baseClass} border-2 border-red-400 bg-white/10 text-white placeholder:text-slate-300/70 focus:ring-2 focus:ring-red-400 backdrop-blur`
-        : `${baseClass} border-2 border-red-500 bg-white text-slate-900 placeholder:text-slate-500 focus:ring-2 focus:ring-red-400`;
-    }
-
-    // Normal state
-    return isDark()
-      ? `${baseClass} border border-white/20 bg-white/10 text-white placeholder:text-slate-300/70 focus:ring-2 focus:ring-emerald-300 focus:border-transparent backdrop-blur`
-      : `${baseClass} border border-slate-200 bg-white text-slate-900 placeholder:text-slate-500 focus:ring-2 focus:ring-emerald-400 focus:border-transparent`;
-  };
-
-  const helperTextClass = () => (isDark() ? "text-slate-200/85" : "text-slate-700");
-  const linkClass = () =>
-    isDark()
-      ? "text-emerald-200 hover:text-emerald-100"
-      : "text-emerald-700 hover:text-emerald-600";
-  const errorClass = () =>
-    isDark()
-      ? "p-3 rounded-lg bg-red-900/30 border border-red-500/40 text-red-100 backdrop-blur"
-      : "p-3 rounded-lg bg-red-50 border border-red-200 text-red-700";
-  const socialButtonClass = () =>
-    isDark()
-      ? "py-2.5 sm:py-3 text-sm sm:text-base bg-white/5 border border-white/15 text-white hover:bg-white/10"
-      : "py-2.5 sm:py-3 text-sm sm:text-base bg-white border border-slate-200 text-slate-900 hover:bg-slate-50";
+  const getInputClass = () =>
+    hasAuthError()
+      ? `${inputBase} border-2 border-destructive focus:ring-2 focus:ring-destructive`
+      : `${inputBase} border-border focus:ring-2 focus:ring-ring focus:border-transparent`;
 
   return (
     <AuthLayout>
       <div class="text-left mb-6 space-y-2">
-        <p
-          class={`text-xs uppercase tracking-[0.2em] ${isDark() ? "text-emerald-200" : "text-emerald-700"}`}
-        >
-          Sign back in
-        </p>
-        <h1
-          class={`text-2xl sm:text-3xl font-bold tracking-tight leading-tight ${isDark() ? "text-white" : "text-slate-900"}`}
-        >
+        <p class="text-xs uppercase tracking-[0.2em] text-primary">Sign back in</p>
+        <h1 class="text-2xl sm:text-3xl font-bold tracking-tight leading-tight text-foreground">
           Continue planning with your taste profile.
         </h1>
-        <p class={`${helperTextClass()} text-sm sm:text-base`}>
+        <p class="text-muted-foreground text-sm sm:text-base">
           Search stays free. Chat, saves, and sync unlock here.
         </p>
       </div>
 
       <form onSubmit={handleSubmit} class="space-y-3 sm:space-y-4">
         <Show when={error()}>
-          <div class={errorClass()}>
+          <div class="p-3 rounded-lg bg-destructive/10 border border-destructive/30 text-destructive">
             <p class="text-sm">{error()}</p>
           </div>
         </Show>
         <div>
-          <Label class={`block text-xs sm:text-sm font-semibold mb-1 sm:mb-2 ${labelClass()}`}>
+          <Label class="block text-xs sm:text-sm font-semibold mb-1 sm:mb-2 text-foreground">
             Email address
           </Label>
           <TextFieldRoot>
@@ -198,7 +156,6 @@ const SignIn: Component = () => {
               value={formData().email || ""}
               onInput={(e) => {
                 setFormData((prev) => ({ ...prev, email: e.currentTarget.value }));
-                // Clear error state when user starts typing
                 if (hasAuthError()) {
                   setHasAuthError(false);
                   setError("");
@@ -211,7 +168,7 @@ const SignIn: Component = () => {
         </div>
 
         <div>
-          <Label class={`block text-xs sm:text-sm font-semibold mb-1 sm:mb-2 ${labelClass()}`}>
+          <Label class="block text-xs sm:text-sm font-semibold mb-1 sm:mb-2 text-foreground">
             Password
           </Label>
           <div class="relative">
@@ -222,7 +179,6 @@ const SignIn: Component = () => {
                 value={formData().password || ""}
                 onInput={(e) => {
                   setFormData((prev) => ({ ...prev, password: e.currentTarget.value }));
-                  // Clear error state when user starts typing
                   if (hasAuthError()) {
                     setHasAuthError(false);
                     setError("");
@@ -237,7 +193,7 @@ const SignIn: Component = () => {
               size="icon"
               type="button"
               onClick={() => setShowPassword(!showPassword())}
-              class={`absolute right-2 sm:right-3 top-1/2 -translate-y-1/2 h-8 w-8 ${isDark() ? "text-muted-foreground hover:text-primary" : "text-muted-foreground hover:text-primary"}`}
+              class="absolute right-2 sm:right-3 top-1/2 -translate-y-1/2 h-8 w-8 text-muted-foreground hover:text-primary"
             >
               {showPassword() ? (
                 <VsEyeClosed class="w-4 h-4 sm:w-5 sm:h-5" />
@@ -255,9 +211,9 @@ const SignIn: Component = () => {
             class="flex items-center gap-2"
           >
             <CheckboxControl />
-            <span class={helperTextClass()}>Remember me</span>
+            <span class="text-muted-foreground">Remember me</span>
           </Checkbox>
-          <A href="/auth/forgot-password" class={`${linkClass()} underline-offset-4`}>
+          <A href="/auth/forgot-password" class="text-primary hover:text-primary/80 underline-offset-4">
             Forgot password?
           </A>
         </div>
@@ -265,19 +221,17 @@ const SignIn: Component = () => {
         <Button
           type="submit"
           disabled={isLoading()}
-          class="w-full py-3 bg-emerald-400 hover:bg-emerald-300 text-slate-950 font-semibold shadow-[0_18px_50px_rgba(52,211,153,0.35)]"
+          class="w-full py-3 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold shadow-lg"
         >
           {isLoading() ? "Signing in..." : "Sign in"}
         </Button>
 
         <div class="relative my-6">
           <div class="absolute inset-0 flex items-center">
-            <div class={`w-full border-t ${isDark() ? "border-white/10" : "border-slate-200"}`} />
+            <div class="w-full border-t border-border" />
           </div>
           <div class="relative flex justify-center text-sm">
-            <span
-              class={`px-2 rounded-full backdrop-blur ${isDark() ? "bg-white/5 text-slate-200/80" : "bg-slate-100 text-slate-600"}`}
-            >
+            <span class="px-2 rounded-full backdrop-blur bg-muted text-muted-foreground">
               Or continue with
             </span>
           </div>
@@ -286,7 +240,7 @@ const SignIn: Component = () => {
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <Button
             variant="outline"
-            class={socialButtonClass()}
+            class="py-2.5 sm:py-3 text-sm sm:text-base bg-card border border-border text-foreground hover:bg-muted"
             onClick={handleGoogleLogin}
             disabled={socialLoading() !== null || isLoading()}
           >
@@ -312,7 +266,7 @@ const SignIn: Component = () => {
           </Button>
           <Button
             variant="outline"
-            class={socialButtonClass()}
+            class="py-2.5 sm:py-3 text-sm sm:text-base bg-card border border-border text-foreground hover:bg-muted"
             onClick={handleAppleLogin}
             disabled={socialLoading() !== null || isLoading()}
           >
@@ -329,10 +283,10 @@ const SignIn: Component = () => {
       </form>
 
       <div class="text-center mt-4 sm:mt-6">
-        <span class={`${helperTextClass()} text-sm sm:text-base`}>Don't have an account? </span>
+        <span class="text-muted-foreground text-sm sm:text-base">Don't have an account? </span>
         <A
           href="/auth/signup"
-          class={`${linkClass()} underline-offset-4 font-semibold text-sm sm:text-base`}
+          class="text-primary hover:text-primary/80 underline-offset-4 font-semibold text-sm sm:text-base"
         >
           Sign up
         </A>

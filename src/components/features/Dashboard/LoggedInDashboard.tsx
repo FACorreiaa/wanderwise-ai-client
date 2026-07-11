@@ -302,7 +302,7 @@ export default function LoggedInDashboard() {
     currentUser?.display_name || currentUser?.firstname || currentUser?.username || "Explorer";
 
   return (
-    <div class="min-h-screen relative bg-gradient-to-br from-gray-50 via-blue-50 to-gray-100 dark:from-[#050915] dark:via-[#0b1c36] dark:to-[#030712] text-gray-900 dark:text-white overflow-hidden">
+    <div class="min-h-screen relative bg-gradient-to-br from-background via-muted/30 to-background text-foreground overflow-hidden">
       <div class="absolute inset-0 opacity-40 dark:opacity-60">
         <div class="domain-grid" aria-hidden="true" />
         <div class="domain-veil" aria-hidden="true" />
@@ -313,17 +313,17 @@ export default function LoggedInDashboard() {
         <div class="mb-10">
           <div class="flex items-center justify-between mb-6">
             <div>
-              <h1 class="text-3xl font-bold text-gray-900 dark:text-white tracking-tight">
+              <h1 class="text-3xl font-bold text-foreground tracking-tight">
                 Welcome back, {displayName}! 👋
               </h1>
-              <p class="text-gray-700 dark:text-slate-200/80 mt-1">
+              <p class="text-muted-foreground mt-1">
                 Ready to discover something amazing today?
               </p>
             </div>
             <div class="flex items-center gap-3">
               <button
                 onClick={() => setIsQuickSettingsOpen(true)}
-                class="p-2 text-gray-900 dark:text-white hover:text-emerald-600 dark:hover:text-emerald-200 rounded-lg hover:bg-gray-100 dark:hover:bg-white/10 border border-gray-300 dark:border-white/10 transition-colors"
+                class="p-2 text-foreground hover:text-primary rounded-lg hover:bg-muted border border-border transition-colors"
                 title="Quick Settings"
               >
                 <Settings class="w-5 h-5" />
@@ -333,48 +333,48 @@ export default function LoggedInDashboard() {
 
           {/* Quick Stats */}
           <div class="grid grid-cols-1 md:grid-cols-4 gap-5 mb-10">
-            <div class="rounded-xl p-5 bg-white/95 dark:bg-white/[0.03] border border-gray-200/80 dark:border-white/[0.08] backdrop-blur-xl shadow-md dark:shadow-[0_4px_32px_rgba(0,0,0,0.3)]">
+            <div class="rounded-xl p-5 bg-card/95 border border-border backdrop-blur-xl shadow-md">
               <div class="flex items-center justify-between">
                 <div>
-                  <p class="text-sm text-gray-600 dark:text-slate-200/80">Saved Places</p>
-                  <p class="text-2xl font-bold text-gray-900 dark:text-white">
+                  <p class="text-sm text-muted-foreground">Saved Places</p>
+                  <p class="text-2xl font-bold text-foreground">
                     {userStatsQuery.isLoading && favoritesQuery.isLoading
                       ? "--"
                       : savedPlacesCount()}
                   </p>
                 </div>
-                <Bookmark class="w-8 h-8 text-emerald-600 dark:text-emerald-200" />
+                <Bookmark class="w-8 h-8 text-primary" />
               </div>
             </div>
-            <div class="rounded-xl p-5 bg-white/95 dark:bg-white/[0.03] border border-gray-200/80 dark:border-white/[0.08] backdrop-blur-xl shadow-md dark:shadow-[0_4px_32px_rgba(0,0,0,0.3)]">
+            <div class="rounded-xl p-5 bg-card/95 border border-border backdrop-blur-xl shadow-md">
               <div class="flex items-center justify-between">
                 <div>
-                  <p class="text-sm text-gray-600 dark:text-slate-200/80">Itineraries</p>
-                  <p class="text-2xl font-bold text-gray-900 dark:text-white">
+                  <p class="text-sm text-muted-foreground">Itineraries</p>
+                  <p class="text-2xl font-bold text-foreground">
                     {userStatsQuery.isLoading ? "--" : (userStatsQuery.data?.itineraries ?? "0")}
                   </p>
                 </div>
-                <Calendar class="w-8 h-8 text-emerald-600 dark:text-emerald-200" />
+                <Calendar class="w-8 h-8 text-primary" />
               </div>
             </div>
-            <div class="rounded-xl p-5 bg-white/95 dark:bg-white/[0.03] border border-gray-200/80 dark:border-white/[0.08] backdrop-blur-xl shadow-md dark:shadow-[0_4px_32px_rgba(0,0,0,0.3)]">
+            <div class="rounded-xl p-5 bg-card/95 border border-border backdrop-blur-xl shadow-md">
               <div class="flex items-center justify-between">
                 <div>
-                  <p class="text-sm text-gray-600 dark:text-slate-200/80">Cities Explored</p>
-                  <p class="text-2xl font-bold text-gray-900 dark:text-white">
+                  <p class="text-sm text-muted-foreground">Cities Explored</p>
+                  <p class="text-2xl font-bold text-foreground">
                     {userStatsQuery.isLoading
                       ? "--"
                       : (userStatsQuery.data?.cities_explored ?? "0")}
                   </p>
                 </div>
-                <Globe class="w-8 h-8 text-blue-600 dark:text-blue-200" />
+                <Globe class="w-8 h-8 text-primary" />
               </div>
             </div>
-            <div class="rounded-xl p-5 bg-white/95 dark:bg-white/[0.03] border border-gray-200/80 dark:border-white/[0.08] backdrop-blur-xl shadow-md dark:shadow-[0_4px_32px_rgba(0,0,0,0.3)]">
+            <div class="rounded-xl p-5 bg-card/95 border border-border backdrop-blur-xl shadow-md">
               <div class="flex items-center justify-between">
                 <div>
-                  <p class="text-sm text-gray-600 dark:text-slate-200/80">Discoveries</p>
-                  <p class="text-2xl font-bold text-gray-900 dark:text-white">
+                  <p class="text-sm text-muted-foreground">Discoveries</p>
+                  <p class="text-2xl font-bold text-foreground">
                     {userStatsQuery.isLoading ? "--" : (userStatsQuery.data?.discoveries ?? "0")}
                   </p>
                 </div>
@@ -386,9 +386,9 @@ export default function LoggedInDashboard() {
 
         {/* Main Search */}
         <div class="mb-10">
-          <div class="rounded-2xl p-6 sm:p-8 shadow-lg dark:shadow-[0_8px_40px_rgba(0,0,0,0.35)] bg-white/95 dark:bg-white/[0.03] border border-gray-200/80 dark:border-white/[0.08] backdrop-blur-xl">
-            <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-              <Sparkles class="w-5 h-5 text-emerald-600 dark:text-emerald-200" />
+          <div class="rounded-2xl p-6 sm:p-8 shadow-lg bg-card/95 border border-border backdrop-blur-xl">
+            <h2 class="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
+              <Sparkles class="w-5 h-5 text-primary" />
               What would you like to discover?
             </h2>
 
@@ -401,7 +401,7 @@ export default function LoggedInDashboard() {
                   value={currentMessage()}
                   onInput={(e) => setCurrentMessage(e.target.value)}
                   placeholder="Describe your perfect day, meal, or adventure..."
-                  class="w-full h-12 px-4 py-3 border border-gray-300 dark:border-white/15 rounded-xl resize-none focus:ring-2 focus:ring-emerald-500 dark:focus:ring-emerald-300 focus:border-transparent bg-white dark:bg-white/10 text-gray-900 dark:text-white placeholder:text-gray-500 dark:placeholder:text-slate-300/70 backdrop-blur"
+                  class="w-full h-12 px-4 py-3 border border-border rounded-xl resize-none focus:ring-2 focus:ring-ring focus:border-transparent bg-background text-foreground placeholder:text-muted-foreground backdrop-blur"
                   rows="1"
                   onKeyDown={(e) => {
                     if (e.key === "Enter" && !e.shiftKey) {
@@ -414,7 +414,7 @@ export default function LoggedInDashboard() {
               <button
                 onClick={sendMessage}
                 disabled={!currentMessage().trim() || isLoading()}
-                class="px-6 py-3 bg-emerald-500 hover:bg-emerald-600 dark:bg-emerald-400 dark:hover:bg-emerald-300 disabled:bg-gray-400 dark:disabled:bg-slate-500/50 text-white dark:text-slate-950 rounded-xl font-semibold transition-all flex items-center gap-2 disabled:cursor-not-allowed shadow-lg dark:shadow-[0_14px_40px_rgba(52,211,153,0.35)] border border-emerald-400 dark:border-emerald-200/60"
+                class="px-6 py-3 bg-primary hover:bg-primary/90 disabled:bg-muted disabled:text-muted-foreground text-primary-foreground rounded-xl font-semibold transition-all flex items-center gap-2 disabled:cursor-not-allowed shadow-lg border border-primary/30"
               >
                 <Show
                   when={isLoading()}
@@ -436,7 +436,7 @@ export default function LoggedInDashboard() {
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-10">
           {/* Quick Actions */}
           <div class="lg:col-span-2">
-            <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-5">
+            <h2 class="text-xl font-semibold text-foreground mb-5">
               Quick Discoveries
             </h2>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-5 mb-10">
@@ -444,7 +444,7 @@ export default function LoggedInDashboard() {
                 {(discovery) => (
                   <button
                     onClick={() => handleQuickDiscovery(discovery)}
-                    class={`rounded-2xl p-6 text-white shadow-lg dark:shadow-[0_8px_32px_rgba(0,0,0,0.35)] hover:shadow-xl dark:hover:shadow-[0_12px_40px_rgba(52,211,153,0.2)] transform hover:translate-y-[-4px] transition-all duration-200 text-left group border border-white/20 dark:border-white/[0.1] backdrop-blur bg-gradient-to-br ${discovery.tone} from-white/8`}
+                    class={`rounded-2xl p-6 text-white shadow-lg hover:shadow-xl transform hover:translate-y-[-4px] transition-all duration-200 text-left group border border-white/20 backdrop-blur bg-gradient-to-br ${discovery.tone} from-white/8`}
                   >
                     <div class="flex items-start justify-between mb-3">
                       <discovery.icon class="w-8 h-8" />
@@ -460,16 +460,16 @@ export default function LoggedInDashboard() {
             {/* Personalized Suggestions */}
             {/* Trending Destinations */}
             <Show when={trendingQuery.data && trendingQuery.data.length > 0}>
-              <div class="rounded-2xl p-6 bg-white/95 dark:bg-white/[0.03] border border-gray-200/80 dark:border-white/[0.08] backdrop-blur-xl shadow-lg dark:shadow-[0_8px_40px_rgba(0,0,0,0.35)]">
-                <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-                  <TrendingUp class="w-5 h-5 text-emerald-600 dark:text-emerald-200" />
+              <div class="rounded-2xl p-6 bg-card/95 border border-border backdrop-blur-xl shadow-lg">
+                <h3 class="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
+                  <TrendingUp class="w-5 h-5 text-primary" />
                   Trending Destinations
                 </h3>
                 <div class="space-y-4">
                   <For each={trendingQuery.data}>
                     {(trending) => (
                       <div
-                        class="flex items-center justify-between p-4 rounded-lg border border-gray-300 dark:border-white/15 hover:bg-gray-100 dark:hover:bg-white/5 transition-colors group cursor-pointer"
+                        class="flex items-center justify-between p-4 rounded-lg border border-border hover:bg-muted transition-colors group cursor-pointer"
                         onClick={() => {
                           setCurrentMessage(`Tell me about ${trending.city_name}`);
                           setTimeout(() => sendMessage(), 100);
@@ -478,15 +478,15 @@ export default function LoggedInDashboard() {
                         <div class="flex items-center gap-3">
                           <span class="text-2xl">{trending.emoji}</span>
                           <div>
-                            <h4 class="font-semibold text-gray-900 dark:text-white group-hover:text-emerald-600 dark:group-hover:text-emerald-200 transition-colors">
+                            <h4 class="font-semibold text-foreground group-hover:text-primary transition-colors">
                               {trending.city_name}
                             </h4>
-                            <p class="text-sm text-gray-600 dark:text-slate-200/80">
+                            <p class="text-sm text-muted-foreground">
                               {trending.search_count} searches this week
                             </p>
                           </div>
                         </div>
-                        <ChevronRight class="w-5 h-5 text-gray-400 group-hover:text-emerald-600 dark:group-hover:text-emerald-200 transition-colors" />
+                        <ChevronRight class="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors" />
                       </div>
                     )}
                   </For>
@@ -498,10 +498,10 @@ export default function LoggedInDashboard() {
           {/* Sidebar */}
           <div class="space-y-6">
             {/* Recent Activity */}
-            <div class="rounded-2xl p-6 bg-white/95 dark:bg-white/[0.03] border border-gray-200/80 dark:border-white/[0.08] backdrop-blur-xl shadow-lg dark:shadow-[0_8px_40px_rgba(0,0,0,0.35)]">
+            <div class="rounded-2xl p-6 bg-card/95 border border-border backdrop-blur-xl shadow-lg">
               <div class="flex items-center justify-between mb-4">
-                <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Recent Activity</h3>
-                <button class="text-emerald-600 dark:text-emerald-200 hover:text-emerald-700 dark:hover:text-white text-sm font-semibold">
+                <h3 class="text-lg font-semibold text-foreground">Recent Activity</h3>
+                <button class="text-primary hover:text-primary/80 text-sm font-semibold">
                   View All
                 </button>
               </div>
@@ -510,18 +510,18 @@ export default function LoggedInDashboard() {
                   {(activity) => {
                     const IconComponent = getActivityIcon(activity.type);
                     return (
-                      <div class="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-white/5 transition-colors cursor-pointer group border border-gray-300 dark:border-white/10">
-                        <div class="flex-shrink-0 w-10 h-10 bg-gray-100 dark:bg-white/10 rounded-lg flex items-center justify-center">
-                          <IconComponent class="w-5 h-5 text-emerald-600 dark:text-emerald-200" />
+                      <div class="flex items-center gap-3 p-3 rounded-lg hover:bg-muted transition-colors cursor-pointer group border border-border">
+                        <div class="flex-shrink-0 w-10 h-10 bg-muted rounded-lg flex items-center justify-center">
+                          <IconComponent class="w-5 h-5 text-primary" />
                         </div>
                         <div class="flex-1 min-w-0">
-                          <h4 class="font-semibold text-gray-900 dark:text-white text-sm group-hover:text-emerald-600 dark:group-hover:text-emerald-200 transition-colors truncate">
+                          <h4 class="font-semibold text-foreground text-sm group-hover:text-primary transition-colors truncate">
                             {activity.title}
                           </h4>
-                          <p class="text-xs text-gray-600 dark:text-slate-200/80 truncate">
+                          <p class="text-xs text-muted-foreground truncate">
                             {activity.location}
                           </p>
-                          <p class="text-xs text-gray-500 dark:text-slate-400">
+                          <p class="text-xs text-muted-foreground/80">
                             {activity.timestamp}
                           </p>
                         </div>
@@ -536,23 +536,23 @@ export default function LoggedInDashboard() {
             </div>
 
             {/* Quick Actions Sidebar */}
-            <div class="rounded-2xl p-6 bg-white/95 dark:bg-white/[0.03] border border-gray-200/80 dark:border-white/[0.08] backdrop-blur-xl shadow-lg dark:shadow-[0_8px_40px_rgba(0,0,0,0.35)]">
-              <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+            <div class="rounded-2xl p-6 bg-card/95 border border-border backdrop-blur-xl shadow-lg">
+              <h3 class="text-lg font-semibold text-foreground mb-4">
                 Quick Actions
               </h3>
               <div class="space-y-3">
                 <button
                   onClick={() => navigate("/chat")}
-                  class="w-full flex items-center gap-3 p-3 text-left rounded-lg hover:bg-gray-100 dark:hover:bg-white/5 transition-colors group border border-gray-300 dark:border-white/10"
+                  class="w-full flex items-center gap-3 p-3 text-left rounded-lg hover:bg-muted transition-colors group border border-border"
                 >
-                  <div class="flex-shrink-0 w-10 h-10 bg-gray-100 dark:bg-white/10 rounded-lg flex items-center justify-center">
-                    <Sparkles class="w-5 h-5 text-emerald-600 dark:text-emerald-200" />
+                  <div class="flex-shrink-0 w-10 h-10 bg-muted rounded-lg flex items-center justify-center">
+                    <Sparkles class="w-5 h-5 text-primary" />
                   </div>
                   <div>
-                    <h4 class="font-semibold text-gray-900 dark:text-white text-sm group-hover:text-emerald-600 dark:group-hover:text-emerald-200 transition-colors">
+                    <h4 class="font-semibold text-foreground text-sm group-hover:text-primary transition-colors">
                       AI Chat
                     </h4>
-                    <p class="text-xs text-gray-600 dark:text-slate-200/80">
+                    <p class="text-xs text-muted-foreground">
                       Chat with our AI assistant
                     </p>
                   </div>
@@ -560,40 +560,40 @@ export default function LoggedInDashboard() {
 
                 <button
                   onClick={() => navigate("/lists")}
-                  class="w-full flex items-center gap-3 p-3 text-left rounded-lg hover:bg-gray-100 dark:hover:bg-white/5 transition-colors group border border-gray-300 dark:border-white/10"
+                  class="w-full flex items-center gap-3 p-3 text-left rounded-lg hover:bg-muted transition-colors group border border-border"
                 >
-                  <div class="flex-shrink-0 w-10 h-10 bg-gray-100 dark:bg-white/10 rounded-lg flex items-center justify-center">
-                    <Calendar class="w-5 h-5 text-emerald-600 dark:text-emerald-200" />
+                  <div class="flex-shrink-0 w-10 h-10 bg-muted rounded-lg flex items-center justify-center">
+                    <Calendar class="w-5 h-5 text-primary" />
                   </div>
                   <div>
-                    <h4 class="font-semibold text-gray-900 dark:text-white text-sm group-hover:text-emerald-600 dark:group-hover:text-emerald-200 transition-colors">
+                    <h4 class="font-semibold text-foreground text-sm group-hover:text-primary transition-colors">
                       My Itineraries
                     </h4>
-                    <p class="text-xs text-gray-600 dark:text-slate-200/80">View saved plans</p>
+                    <p class="text-xs text-muted-foreground">View saved plans</p>
                   </div>
                 </button>
 
                 <button
                   onClick={() => navigate("/lists?tab=favorites")}
-                  class="w-full flex items-center gap-3 p-3 text-left rounded-lg hover:bg-gray-100 dark:hover:bg-white/5 transition-colors group border border-gray-300 dark:border-white/10"
+                  class="w-full flex items-center gap-3 p-3 text-left rounded-lg hover:bg-muted transition-colors group border border-border"
                 >
-                  <div class="flex-shrink-0 w-10 h-10 bg-gray-100 dark:bg-white/10 rounded-lg flex items-center justify-center">
-                    <Heart class="w-5 h-5 text-emerald-600 dark:text-emerald-200" />
+                  <div class="flex-shrink-0 w-10 h-10 bg-muted rounded-lg flex items-center justify-center">
+                    <Heart class="w-5 h-5 text-primary" />
                   </div>
                   <div>
-                    <h4 class="font-semibold text-gray-900 dark:text-white text-sm group-hover:text-emerald-600 dark:group-hover:text-emerald-200 transition-colors">
+                    <h4 class="font-semibold text-foreground text-sm group-hover:text-primary transition-colors">
                       Saved Places
                     </h4>
-                    <p class="text-xs text-gray-600 dark:text-slate-200/80">Your favorites</p>
+                    <p class="text-xs text-muted-foreground">Your favorites</p>
                   </div>
                 </button>
               </div>
             </div>
 
             {/* API Access Coming Soon Card */}
-            <div class="rounded-2xl p-5 bg-gradient-to-br from-slate-800/90 to-slate-900/90 dark:from-slate-800/80 dark:to-slate-900/80 border border-slate-700/50 backdrop-blur shadow-xl">
+            <div class="rounded-2xl p-5 bg-foreground text-background border border-border backdrop-blur shadow-xl">
               <div class="flex items-start gap-3 mb-3">
-                <div class="w-10 h-10 bg-gradient-to-br from-[#0c7df2] to-purple-600 rounded-lg flex items-center justify-center flex-shrink-0">
+                <div class="w-10 h-10 bg-primary rounded-lg flex items-center justify-center flex-shrink-0">
                   <svg
                     class="w-5 h-5 text-white"
                     fill="none"
@@ -609,19 +609,19 @@ export default function LoggedInDashboard() {
                   </svg>
                 </div>
                 <div>
-                  <h4 class="font-semibold text-white text-sm">API Access</h4>
-                  <span class="inline-flex items-center gap-1 mt-0.5 px-2 py-0.5 bg-amber-500/20 text-amber-300 text-[10px] font-medium rounded-full border border-amber-500/30">
+                  <h4 class="font-semibold text-background text-sm">API Access</h4>
+                  <span class="inline-flex items-center gap-1 mt-0.5 px-2 py-0.5 bg-accent/20 text-accent text-[10px] font-medium rounded-full border border-accent/30">
                     <Clock class="w-2.5 h-2.5" />
                     Soon for Premium
                   </span>
                 </div>
               </div>
-              <p class="text-slate-300 text-xs mb-3">
+              <p class="text-background/70 text-xs mb-3">
                 Build custom integrations with our RESTful & gRPC API endpoints.
               </p>
               <button
                 onClick={() => navigate("/pricing#api-access")}
-                class="w-full flex items-center justify-center gap-2 px-3 py-2 bg-slate-700/50 hover:bg-slate-700 text-slate-300 hover:text-white rounded-lg text-xs font-medium transition-colors border border-slate-600/50"
+                class="w-full flex items-center justify-center gap-2 px-3 py-2 bg-background/10 hover:bg-background/20 text-background/80 hover:text-background rounded-lg text-xs font-medium transition-colors border border-background/20"
               >
                 Learn More
                 <ChevronRight class="w-3.5 h-3.5" />

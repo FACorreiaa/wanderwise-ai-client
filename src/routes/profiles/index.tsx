@@ -317,47 +317,47 @@ export default function ProfilesPage() {
 
   const renderProfileCard = (profile: Profile) => (
     <div
-      class={`cb-card hover:shadow-lg transition-all duration-300 ${profile.isDefault ? "ring-2 ring-blue-500" : ""}`}
+      class={`cb-card hover:shadow-lg transition-all duration-300 ${profile.isDefault ? "ring-2 ring-primary" : ""}`}
     >
       <div class="p-6">
         {/* Header */}
         <div class="flex items-start justify-between mb-4">
           <div class="flex-1">
             <div class="flex items-center gap-2 mb-1">
-              <h3 class="text-lg font-semibold text-gray-900">{profile.name}</h3>
+              <h3 class="text-lg font-semibold text-foreground">{profile.name}</h3>
               {profile.isDefault && (
-                <span class="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-medium">
+                <span class="px-2 py-1 bg-primary/10 text-primary rounded-full text-xs font-medium">
                   Default
                 </span>
               )}
               {profile.isPublic && (
-                <span class="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs font-medium">
+                <span class="px-2 py-1 bg-accent/10 text-accent rounded-full text-xs font-medium">
                   Public
                 </span>
               )}
             </div>
-            <p class="text-sm text-gray-600">{profile.description}</p>
+            <p class="text-sm text-muted-foreground">{profile.description}</p>
           </div>
 
           {/* Actions dropdown */}
           <div class="flex items-center gap-1 ml-4">
             <button
               onClick={() => openEditModal(profile)}
-              class="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+              class="p-2 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-lg transition-colors"
               title="Edit profile"
             >
               <Edit3 class="w-4 h-4" />
             </button>
             <button
               onClick={() => duplicateProfile(profile)}
-              class="p-2 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+              class="p-2 text-muted-foreground hover:text-accent hover:bg-accent/10 rounded-lg transition-colors"
               title="Duplicate profile"
             >
               <Copy class="w-4 h-4" />
             </button>
             <button
               onClick={() => deleteProfile(profile.id)}
-              class="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+              class="p-2 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg transition-colors"
               title="Delete profile"
             >
               <Trash2 class="w-4 h-4" />
@@ -366,20 +366,20 @@ export default function ProfilesPage() {
         </div>
 
         {/* Quick stats */}
-        <div class="grid grid-cols-3 gap-4 mb-4 py-3 bg-gray-50 rounded-lg">
+        <div class="grid grid-cols-3 gap-4 mb-4 py-3 bg-muted rounded-lg">
           <div class="text-center">
-            <div class="text-lg font-semibold text-gray-900">{profile.stats.placesVisited}</div>
-            <div class="text-xs text-gray-600">Places</div>
+            <div class="text-lg font-semibold text-foreground">{profile.stats.placesVisited}</div>
+            <div class="text-xs text-muted-foreground">Places</div>
           </div>
           <div class="text-center">
-            <div class="text-lg font-semibold text-gray-900">
+            <div class="text-lg font-semibold text-foreground">
               {profile.stats.itinerariesCreated}
             </div>
-            <div class="text-xs text-gray-600">Trips</div>
+            <div class="text-xs text-muted-foreground">Trips</div>
           </div>
           <div class="text-center">
-            <div class="text-lg font-semibold text-gray-900">{profile.stats.avgRating}</div>
-            <div class="text-xs text-gray-600">Rating</div>
+            <div class="text-lg font-semibold text-foreground">{profile.stats.avgRating}</div>
+            <div class="text-xs text-muted-foreground">Rating</div>
           </div>
         </div>
 
@@ -387,12 +387,12 @@ export default function ProfilesPage() {
         <div class="space-y-3 mb-4">
           <div class="flex items-center gap-2 text-sm">
             <span class="text-2xl">{getTravelStyleIcon(profile.travelStyle)}</span>
-            <span class="font-medium text-gray-700">
+            <span class="font-medium text-muted-foreground">
               {travelStyleOptions.find((s) => s.id === profile.travelStyle)?.label}
             </span>
-            <span class="text-gray-500">•</span>
+            <span class="text-muted-foreground">•</span>
             <span class="text-2xl">{getBudgetIcon(profile.budget)}</span>
-            <span class="text-gray-600">
+            <span class="text-muted-foreground">
               {budgetOptions.find((b) => b.id === profile.budget)?.label}
             </span>
           </div>
@@ -401,13 +401,13 @@ export default function ProfilesPage() {
             <span class="text-xl">
               {groupSizeOptions.find((g) => g.id === profile.groupSize)?.icon}
             </span>
-            <span class="text-gray-600">
+            <span class="text-muted-foreground">
               {groupSizeOptions.find((g) => g.id === profile.groupSize)?.label}
             </span>
             {profile.usageCount > 0 && (
               <>
-                <span class="text-gray-500">•</span>
-                <span class="text-gray-600">Used {profile.usageCount} times</span>
+                <span class="text-muted-foreground">•</span>
+                <span class="text-muted-foreground">Used {profile.usageCount} times</span>
               </>
             )}
           </div>
@@ -418,13 +418,13 @@ export default function ProfilesPage() {
           <div class="flex flex-wrap gap-1 mb-2">
             <For each={profile.interests.slice(0, 3)}>
               {(interest) => (
-                <span class="px-2 py-1 bg-purple-100 text-purple-800 rounded-full text-xs">
+                <span class="px-2 py-1 bg-primary/10 text-primary rounded-full text-xs">
                   {interest}
                 </span>
               )}
             </For>
             {profile.interests.length > 3 && (
-              <span class="px-2 py-1 bg-gray-100 text-gray-600 rounded-full text-xs">
+              <span class="px-2 py-1 bg-muted text-muted-foreground rounded-full text-xs">
                 +{profile.interests.length - 3} more
               </span>
             )}
@@ -432,8 +432,8 @@ export default function ProfilesPage() {
         </div>
 
         {/* Actions */}
-        <div class="flex items-center justify-between pt-4 border-t border-gray-100">
-          <div class="text-xs text-gray-500">
+        <div class="flex items-center justify-between pt-4 border-t border-border">
+          <div class="text-xs text-muted-foreground">
             {profile.lastUsed
               ? `Last used ${new Date(profile.lastUsed).toLocaleDateString()}`
               : "Never used"}
@@ -442,7 +442,7 @@ export default function ProfilesPage() {
             {!profile.isDefault && (
               <button
                 onClick={() => setAsDefault(profile.id)}
-                class="text-xs text-blue-600 hover:text-blue-700 font-medium"
+                class="text-xs text-primary hover:text-primary/80 font-medium"
               >
                 Set as Default
               </button>
@@ -458,30 +458,30 @@ export default function ProfilesPage() {
     <div class="space-y-6">
       {/* Basic Info */}
       <div>
-        <label class="block text-sm font-medium text-gray-700 mb-2">Profile Name</label>
+        <label class="block text-sm font-medium text-muted-foreground mb-2">Profile Name</label>
         <input
           type="text"
           value={profileForm().name}
           onInput={(e) => setProfileForm((prev) => ({ ...prev, name: e.target.value }))}
-          class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          class="w-full px-4 py-2 border border-border rounded-lg bg-background text-foreground focus:ring-2 focus:ring-ring focus:border-transparent"
           placeholder="e.g., Solo Explorer, Family Fun"
         />
       </div>
 
       <div>
-        <label class="block text-sm font-medium text-gray-700 mb-2">Description</label>
+        <label class="block text-sm font-medium text-muted-foreground mb-2">Description</label>
         <textarea
           value={profileForm().description}
           onInput={(e) => setProfileForm((prev) => ({ ...prev, description: e.target.value }))}
           rows={3}
-          class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          class="w-full px-4 py-2 border border-border rounded-lg bg-background text-foreground focus:ring-2 focus:ring-ring focus:border-transparent"
           placeholder="Describe this travel profile and when you'd use it..."
         />
       </div>
 
       {/* Travel Style */}
       <div>
-        <label class="block text-sm font-medium text-gray-700 mb-3">Travel Style</label>
+        <label class="block text-sm font-medium text-muted-foreground mb-3">Travel Style</label>
         <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
           <For each={travelStyleOptions}>
             {(style) => (
@@ -497,14 +497,14 @@ export default function ProfilesPage() {
                 <div
                   class={`p-3 rounded-lg border-2 transition-all ${
                     profileForm().travelStyle === style.id
-                      ? "border-blue-500 bg-blue-50"
-                      : "border-gray-200 hover:border-gray-300"
+                      ? "border-primary bg-primary/10"
+                      : "border-border hover:border-border"
                   }`}
                 >
                   <div class="text-center">
                     <div class="text-2xl mb-1">{getTravelStyleIcon(style.id)}</div>
-                    <div class="text-sm font-medium text-gray-900">{style.label}</div>
-                    <div class="text-xs text-gray-600">{style.description}</div>
+                    <div class="text-sm font-medium text-foreground">{style.label}</div>
+                    <div class="text-xs text-muted-foreground">{style.description}</div>
                   </div>
                 </div>
               </label>
@@ -515,25 +515,25 @@ export default function ProfilesPage() {
 
       {/* Budget */}
       <div>
-        <label class="block text-sm font-medium text-gray-700 mb-3">Budget Preference</label>
+        <label class="block text-sm font-medium text-muted-foreground mb-3">Budget Preference</label>
         <div class="space-y-2">
           <For each={budgetOptions}>
             {(budget) => (
-              <label class="flex items-center p-3 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50">
+              <label class="flex items-center p-3 border border-border rounded-lg cursor-pointer hover:bg-muted">
                 <input
                   type="radio"
                   name="budget"
                   value={budget.id}
                   checked={profileForm().budget === budget.id}
                   onChange={() => setProfileForm((prev) => ({ ...prev, budget: budget.id }))}
-                  class="text-blue-600 focus:ring-blue-500"
+                  class="text-primary focus:ring-ring"
                 />
                 <div class="ml-3 flex-1">
                   <div class="flex items-center gap-2">
                     <span class="text-lg">{getBudgetIcon(budget.id)}</span>
-                    <span class="font-medium text-gray-900">{budget.label}</span>
+                    <span class="font-medium text-foreground">{budget.label}</span>
                   </div>
-                  <p class="text-sm text-gray-600">{budget.description}</p>
+                  <p class="text-sm text-muted-foreground">{budget.description}</p>
                 </div>
               </label>
             )}
@@ -543,7 +543,7 @@ export default function ProfilesPage() {
 
       {/* Group Size */}
       <div>
-        <label class="block text-sm font-medium text-gray-700 mb-3">Group Size</label>
+        <label class="block text-sm font-medium text-muted-foreground mb-3">Group Size</label>
         <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
           <For each={groupSizeOptions}>
             {(group) => (
@@ -559,12 +559,12 @@ export default function ProfilesPage() {
                 <div
                   class={`p-3 rounded-lg border-2 transition-all text-center ${
                     profileForm().groupSize === group.id
-                      ? "border-blue-500 bg-blue-50"
-                      : "border-gray-200 hover:border-gray-300"
+                      ? "border-primary bg-primary/10"
+                      : "border-border hover:border-border"
                   }`}
                 >
                   <div class="text-2xl mb-1">{group.icon}</div>
-                  <div class="text-sm font-medium text-gray-900">{group.label}</div>
+                  <div class="text-sm font-medium text-foreground">{group.label}</div>
                 </div>
               </label>
             )}
@@ -574,11 +574,11 @@ export default function ProfilesPage() {
 
       {/* Interests */}
       <div>
-        <label class="block text-sm font-medium text-gray-700 mb-3">Interests</label>
+        <label class="block text-sm font-medium text-muted-foreground mb-3">Interests</label>
         <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
           <For each={interestOptions}>
             {(interest) => (
-              <label class="flex items-center p-2 rounded-lg cursor-pointer hover:bg-gray-50">
+              <label class="flex items-center p-2 rounded-lg cursor-pointer hover:bg-muted">
                 <input
                   type="checkbox"
                   checked={profileForm().interests.includes(interest)}
@@ -587,9 +587,9 @@ export default function ProfilesPage() {
                       setProfileForm((prev) => ({ ...prev, interests: newInterests })),
                     )
                   }
-                  class="text-blue-600 rounded focus:ring-blue-500"
+                  class="text-primary rounded focus:ring-ring"
                 />
-                <span class="ml-2 text-sm text-gray-700">{interest}</span>
+                <span class="ml-2 text-sm text-muted-foreground">{interest}</span>
               </label>
             )}
           </For>
@@ -598,7 +598,7 @@ export default function ProfilesPage() {
 
       {/* Tags */}
       <div>
-        <label class="block text-sm font-medium text-gray-700 mb-3">Preferred Tags</label>
+        <label class="block text-sm font-medium text-muted-foreground mb-3">Preferred Tags</label>
         <div class="flex flex-wrap gap-2">
           <For each={tagOptions}>
             {(tag) => (
@@ -611,8 +611,8 @@ export default function ProfilesPage() {
                 }
                 class={`px-3 py-1 rounded-full border transition-all text-sm ${
                   profileForm().tags.includes(tag)
-                    ? "bg-blue-100 text-blue-800 border-blue-200"
-                    : "bg-white text-gray-700 border-gray-200 hover:border-gray-300"
+                    ? "bg-primary/10 text-primary border-primary/30"
+                    : "bg-card text-muted-foreground border-border hover:border-primary/30"
                 }`}
               >
                 {tag}
@@ -624,7 +624,7 @@ export default function ProfilesPage() {
 
       {/* Accessibility */}
       <div>
-        <label class="block text-sm font-medium text-gray-700 mb-3">Accessibility Needs</label>
+        <label class="block text-sm font-medium text-muted-foreground mb-3">Accessibility Needs</label>
         <div class="space-y-2">
           <For each={accessibilityOptions}>
             {(option) => (
@@ -637,9 +637,9 @@ export default function ProfilesPage() {
                       setProfileForm((prev) => ({ ...prev, accessibility: newOptions })),
                     )
                   }
-                  class="text-blue-600 rounded focus:ring-blue-500"
+                  class="text-primary rounded focus:ring-ring"
                 />
-                <span class="ml-2 text-sm text-gray-700">{option}</span>
+                <span class="ml-2 text-sm text-muted-foreground">{option}</span>
               </label>
             )}
           </For>
@@ -653,9 +653,9 @@ export default function ProfilesPage() {
             type="checkbox"
             checked={profileForm().isDefault}
             onChange={(e) => setProfileForm((prev) => ({ ...prev, isDefault: e.target.checked }))}
-            class="text-blue-600 rounded focus:ring-blue-500"
+            class="text-primary rounded focus:ring-ring"
           />
-          <span class="ml-2 text-sm text-gray-700">Set as default profile</span>
+          <span class="ml-2 text-sm text-muted-foreground">Set as default profile</span>
         </label>
 
         <label class="flex items-center">
@@ -663,9 +663,9 @@ export default function ProfilesPage() {
             type="checkbox"
             checked={profileForm().isPublic}
             onChange={(e) => setProfileForm((prev) => ({ ...prev, isPublic: e.target.checked }))}
-            class="text-blue-600 rounded focus:ring-blue-500"
+            class="text-primary rounded focus:ring-ring"
           />
-          <span class="ml-2 text-sm text-gray-700">
+          <span class="ml-2 text-sm text-muted-foreground">
             Make profile public (others can discover and use it)
           </span>
         </label>
@@ -674,14 +674,14 @@ export default function ProfilesPage() {
   );
 
   return (
-    <div class="min-h-screen bg-gray-50">
+    <div class="min-h-screen bg-background relative transition-colors">
       {/* Header */}
-      <div class="bg-white border-b border-gray-200">
+      <div class="bg-card border-b border-border">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-              <h1 class="text-2xl font-bold text-gray-900">Travel Profiles</h1>
-              <p class="text-gray-600 mt-1">Manage your personalized travel preferences</p>
+              <h1 class="text-2xl font-bold text-foreground">Travel Profiles</h1>
+              <p class="text-muted-foreground mt-1">Manage your personalized travel preferences</p>
             </div>
             <Button onClick={() => setShowCreateModal(true)} class="gap-2">
               <Plus class="w-4 h-4" />
@@ -697,9 +697,9 @@ export default function ProfilesPage() {
           when={profiles().length > 0}
           fallback={
             <div class="text-center py-12">
-              <User class="w-12 h-12 text-gray-300 mx-auto mb-4" />
-              <h3 class="text-lg font-semibold text-gray-900 mb-2">No profiles yet</h3>
-              <p class="text-gray-600 mb-4">
+              <User class="w-12 h-12 text-muted-foreground/50 mx-auto mb-4" />
+              <h3 class="text-lg font-semibold text-foreground mb-2">No profiles yet</h3>
+              <p class="text-muted-foreground mb-4">
                 Create your first travel profile to get personalized recommendations
               </p>
               <Button onClick={() => setShowCreateModal(true)}>Create Your First Profile</Button>
@@ -714,21 +714,21 @@ export default function ProfilesPage() {
 
       {/* Create Profile Modal */}
       <Show when={showCreateModal()}>
-        <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div class="bg-white rounded-lg max-w-3xl w-full max-h-[90vh] overflow-y-auto">
-            <div class="p-6 border-b border-gray-200">
+        <div class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div class="bg-card border border-border rounded-lg shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
+            <div class="p-6 border-b border-border">
               <div class="flex items-center justify-between">
-                <h2 class="text-xl font-semibold text-gray-900">Create New Profile</h2>
+                <h2 class="text-xl font-semibold text-foreground">Create New Profile</h2>
                 <button
                   onClick={() => setShowCreateModal(false)}
-                  class="p-2 hover:bg-gray-100 rounded-lg"
+                  class="p-2 hover:bg-muted rounded-lg"
                 >
                   <X class="w-5 h-5" />
                 </button>
               </div>
             </div>
             <div class="p-6">{renderProfileForm()}</div>
-            <div class="p-6 border-t border-gray-200 flex items-center justify-end gap-3">
+            <div class="p-6 border-t border-border flex items-center justify-end gap-3">
               <Button variant="outline" onClick={() => setShowCreateModal(false)}>
                 Cancel
               </Button>
@@ -742,21 +742,21 @@ export default function ProfilesPage() {
 
       {/* Edit Profile Modal */}
       <Show when={showEditModal()}>
-        <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div class="bg-white rounded-lg max-w-3xl w-full max-h-[90vh] overflow-y-auto">
-            <div class="p-6 border-b border-gray-200">
+        <div class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div class="bg-card border border-border rounded-lg shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
+            <div class="p-6 border-b border-border">
               <div class="flex items-center justify-between">
-                <h2 class="text-xl font-semibold text-gray-900">Edit Profile</h2>
+                <h2 class="text-xl font-semibold text-foreground">Edit Profile</h2>
                 <button
                   onClick={() => setShowEditModal(false)}
-                  class="p-2 hover:bg-gray-100 rounded-lg"
+                  class="p-2 hover:bg-muted rounded-lg"
                 >
                   <X class="w-5 h-5" />
                 </button>
               </div>
             </div>
             <div class="p-6">{renderProfileForm()}</div>
-            <div class="p-6 border-t border-gray-200 flex items-center justify-end gap-3">
+            <div class="p-6 border-t border-border flex items-center justify-end gap-3">
               <Button variant="outline" onClick={() => setShowEditModal(false)}>
                 Cancel
               </Button>

@@ -296,78 +296,54 @@ export default function DiscoverPage() {
     }
   };
 
-  const getPriceColor = (price?: string) => {
-    const colorMap: Record<string, string> = {
-      Free: "text-green-600 bg-green-50 dark:text-green-400 dark:bg-green-900",
-      "€": "text-blue-600 bg-blue-50 dark:text-blue-400 dark:bg-blue-900",
-      "€€": "text-orange-600 bg-orange-50 dark:text-orange-400 dark:bg-orange-900",
-      "€€€": "text-red-600 bg-red-50 dark:text-red-400 dark:bg-red-900",
-      "€€€€": "text-purple-600 bg-purple-50 dark:text-purple-400 dark:bg-purple-900",
-    };
-    return colorMap[price || ""] || "text-gray-600 bg-gray-50 dark:text-gray-400 dark:bg-gray-800";
-  };
+  const getPriceColor = (_price?: string) => "text-primary bg-primary/10";
 
   const getPopularityInfo = (priority: number) => {
     if (priority >= 9) {
       return {
         label: "Trending",
-        color: "text-red-600 bg-red-50 dark:text-red-400 dark:bg-red-900",
+        color: "text-destructive bg-destructive/10",
         icon: "🔥",
       };
     } else if (priority >= 7) {
       return {
         label: "Popular",
-        color: "text-orange-600 bg-orange-50 dark:text-orange-400 dark:bg-orange-900",
+        color: "text-accent bg-accent/10",
         icon: "⭐",
       };
     } else if (priority >= 5) {
       return {
         label: "Liked",
-        color: "text-blue-600 bg-blue-50 dark:text-blue-400 dark:bg-blue-900",
+        color: "text-primary bg-primary/10",
         icon: "👍",
       };
     } else if (priority >= 3) {
       return {
         label: "Rising",
-        color: "text-green-600 bg-green-50 dark:text-green-400 dark:bg-green-900",
+        color: "text-muted-foreground bg-muted",
         icon: "📈",
       };
     }
-    return null; // Don't show anything for low popularity
+    return null;
   };
 
-  const getCategoryColor = (category: string) => {
-    const categoryColorMap: Record<string, string> = {
-      restaurant: "text-red-700 bg-red-100 dark:text-red-300 dark:bg-red-900",
-      museum: "text-purple-700 bg-purple-100 dark:text-purple-300 dark:bg-purple-900",
-      park: "text-green-700 bg-green-100 dark:text-green-300 dark:bg-green-900",
-      landmark: "text-blue-700 bg-blue-100 dark:text-blue-300 dark:bg-blue-900",
-      historical: "text-amber-700 bg-amber-100 dark:text-amber-300 dark:bg-amber-900",
-      entertainment: "text-pink-700 bg-pink-100 dark:text-pink-300 dark:bg-pink-900",
-      cultural: "text-indigo-700 bg-indigo-100 dark:text-indigo-300 dark:bg-indigo-900",
-      beach: "text-cyan-700 bg-cyan-100 dark:text-cyan-300 dark:bg-cyan-900",
-    };
-    return (
-      categoryColorMap[category.toLowerCase()] ||
-      "text-gray-700 bg-gray-100 dark:text-gray-300 dark:bg-gray-700"
-    );
-  };
+  const getCategoryColor = (_category: string) => "text-primary bg-primary/10";
 
   const renderGridCard = (poi: POIDetailedInfo) => (
-    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden hover:shadow-md transition-all duration-200 group">
+    <div class="bg-card rounded-lg shadow-sm border border-border overflow-hidden hover:shadow-md transition-all duration-200 group">
       {/* Image */}
-      <div class="relative h-48 bg-white/70 dark:bg-slate-900/60 border-b border-white/60 dark:border-slate-800/70">
+      <div class="relative h-48 bg-muted/50 border-b border-border">
         <div class="absolute inset-0 flex items-center justify-center text-4xl">🏛️</div>
 
         {/* Badges */}
         <div class="absolute top-3 left-3 flex flex-col gap-1">
           <Show when={false}>
-            <span class="px-2 py-1 bg-yellow-500 text-white rounded-full text-xs font-medium">
+            <span class="px-2 py-1 bg-accent text-accent-foreground rounded-full text-xs font-medium">
               Featured
             </span>
           </Show>
           <Show when={true}>
-            <span class="px-2 py-1 bg-green-500 text-white rounded-full text-xs font-medium">
+            <span class="px-2 py-1 bg-primary text-primary-foreground rounded-full text-xs font-medium">
               Open Now
             </span>
           </Show>
@@ -380,7 +356,11 @@ export default function DiscoverPage() {
               onClick={() => toggleFavorite(poi.id, poi)}
               disabled={addToFavoritesMutation.isPending || removeFromFavoritesMutation.isPending}
               data-poi-id={poi.id}
-              class={`p - 2 rounded - lg ${isFavorite(poi.id) ? "text-yellow-600" : "text-gray-400"} ...`}
+              class={`p-2 rounded-lg bg-card/90 shadow-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                isFavorite(poi.id)
+                  ? "text-accent"
+                  : "text-muted-foreground hover:text-accent hover:bg-muted"
+              }`}
               title={isFavorite(poi.id) ? "Remove from favorites" : "Add to favorites"}
             >
               <Show
@@ -389,12 +369,12 @@ export default function DiscoverPage() {
                   <div class="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
                 }
               >
-                <Star class={`w - 4 h - 4 ${isFavorite(poi.id) ? "fill-current" : ""} `} />
+                <Star class={`w-4 h-4 ${isFavorite(poi.id) ? "fill-current" : ""}`} />
               </Show>
             </button>
             <button
               onClick={() => handleShare(poi)}
-              class="p-2 bg-white text-gray-700 dark:bg-gray-800 dark:text-gray-300 rounded-lg shadow-sm hover:scale-110 transition-transform"
+              class="p-2 bg-card/90 text-muted-foreground rounded-lg shadow-sm hover:scale-110 hover:text-primary transition-all"
             >
               <Share2 class="w-4 h-4" />
             </button>
@@ -403,10 +383,10 @@ export default function DiscoverPage() {
 
         {/* Rating badge */}
         <div class="absolute bottom-3 left-3">
-          <div class="flex items-center gap-1 bg-white/90 dark:bg-gray-800/90 rounded-full px-2 py-1 text-sm font-medium">
-            <Star class="w-3 h-3 text-yellow-500 fill-current" />
-            <span class="text-gray-900 dark:text-white">{poi.rating || 0}</span>
-            <span class="text-gray-600 dark:text-gray-400">({poi.reviewCount || 0})</span>
+          <div class="flex items-center gap-1 bg-card/90 rounded-full px-2 py-1 text-sm font-medium border border-border">
+            <Star class="w-3 h-3 text-accent fill-current" />
+            <span class="text-foreground">{poi.rating || 0}</span>
+            <span class="text-muted-foreground">({poi.reviewCount || 0})</span>
           </div>
         </div>
       </div>
@@ -415,12 +395,10 @@ export default function DiscoverPage() {
       <div class="p-4">
         <div class="flex items-start justify-between mb-2">
           <div class="flex-1 min-w-0">
-            <h3 class="font-semibold text-gray-900 dark:text-white text-base mb-1 truncate">
-              {poi.name}
-            </h3>
+            <h3 class="font-semibold text-foreground text-base mb-1 truncate">{poi.name}</h3>
             <div class="flex flex-wrap items-center gap-2 mb-1">
               <span
-                class={`px - 2 py - 0.5 rounded - full text - xs font - medium ${getCategoryColor(poi.category)} `}
+                class={`px-2 py-0.5 rounded-full text-xs font-medium ${getCategoryColor(poi.category)}`}
               >
                 {poi.category}
               </span>
@@ -430,7 +408,7 @@ export default function DiscoverPage() {
                   return (
                     <Show when={popularityInfo}>
                       <span
-                        class={`px - 2 py - 0.5 rounded - full text - xs font - medium ${popularityInfo!.color} `}
+                        class={`px-2 py-0.5 rounded-full text-xs font-medium ${popularityInfo!.color}`}
                       >
                         <span class="mr-1">{popularityInfo!.icon}</span>
                         {popularityInfo!.label}
@@ -440,24 +418,24 @@ export default function DiscoverPage() {
                 })()}
               </Show>
               <Show when={poi.time_to_spend}>
-                <span class="px-2 py-0.5 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full text-xs">
+                <span class="px-2 py-0.5 bg-muted text-muted-foreground rounded-full text-xs">
                   {poi.time_to_spend}
                 </span>
               </Show>
             </div>
-            <p class="text-sm text-gray-600 dark:text-gray-400">{poi.city}</p>
+            <p class="text-sm text-muted-foreground">{poi.city}</p>
           </div>
           <span
-            class={`px - 2 py - 1 rounded - full text - xs font - medium ${getPriceColor(poi.price_level)} `}
+            class={`px-2 py-1 rounded-full text-xs font-medium ${getPriceColor(poi.price_level)}`}
           >
             {poi.price_level}
           </span>
         </div>
 
-        <p class="text-sm text-gray-600 dark:text-gray-400 mb-3 line-clamp-2">{poi.description}</p>
+        <p class="text-sm text-muted-foreground mb-3 line-clamp-2">{poi.description}</p>
 
         {/* Details */}
-        <div class="flex items-center gap-3 text-xs text-gray-500 dark:text-gray-500 mb-3">
+        <div class="flex items-center gap-3 text-xs text-muted-foreground mb-3">
           <div class="flex items-center gap-1">
             <MapPin class="w-3 h-3" />
             <span>{poi.distance}</span>
@@ -474,13 +452,11 @@ export default function DiscoverPage() {
         <div class="flex flex-wrap gap-1 mb-3">
           <For each={(poi.tags || []).slice(0, 3)}>
             {(tag) => (
-              <span class="px-2 py-0.5 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded-full text-xs">
-                {tag}
-              </span>
+              <span class="px-2 py-0.5 bg-primary/10 text-primary rounded-full text-xs">{tag}</span>
             )}
           </For>
           {(poi.tags || []).length > 3 && (
-            <span class="px-2 py-0.5 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 rounded-full text-xs">
+            <span class="px-2 py-0.5 bg-muted text-muted-foreground rounded-full text-xs">
               +{(poi.tags || []).length - 3}
             </span>
           )}
@@ -490,15 +466,15 @@ export default function DiscoverPage() {
         <div class="flex items-center justify-between">
           <div class="flex items-center gap-2 text-sm">
             <Show when={poi.amenities && poi.amenities.includes("Wifi")}>
-              <Wifi class="w-4 h-4 text-gray-400" />
+              <Wifi class="w-4 h-4 text-muted-foreground" />
             </Show>
             <Show when={poi.amenities && poi.amenities.includes("Parking")}>
-              <MapPin class="w-4 h-4 text-gray-400" />
+              <MapPin class="w-4 h-4 text-muted-foreground" />
             </Show>
           </div>
           <button
             onClick={() => handleItemClick(poi)}
-            class="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium text-sm"
+            class="text-primary hover:text-primary/80 font-medium text-sm"
           >
             View Details →
           </button>
@@ -512,10 +488,10 @@ export default function DiscoverPage() {
   });
 
   const renderListItem = (poi: POIDetailedInfo) => (
-    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4 hover:shadow-md transition-all duration-200">
+    <div class="bg-card rounded-lg shadow-sm border border-border p-4 hover:shadow-md transition-all duration-200">
       <div class="flex gap-4">
         {/* Image */}
-        <div class="w-24 h-24 bg-white/70 dark:bg-slate-900/60 border border-white/60 dark:border-slate-800/70 rounded-lg flex items-center justify-center flex-shrink-0">
+        <div class="w-24 h-24 bg-muted/50 border border-border rounded-lg flex items-center justify-center flex-shrink-0">
           🏛️
         </div>
 
@@ -523,10 +499,10 @@ export default function DiscoverPage() {
         <div class="flex-1 min-w-0">
           <div class="flex items-start justify-between mb-2">
             <div class="flex-1 min-w-0">
-              <h3 class="font-semibold text-gray-900 dark:text-white text-lg">{poi.name}</h3>
+              <h3 class="font-semibold text-foreground text-lg">{poi.name}</h3>
               <div class="flex flex-wrap items-center gap-2 mb-1">
                 <span
-                  class={`px - 2 py - 0.5 rounded - full text - xs font - medium ${getCategoryColor(poi.category)} `}
+                  class={`px-2 py-0.5 rounded-full text-xs font-medium ${getCategoryColor(poi.category)}`}
                 >
                   {poi.category}
                 </span>
@@ -536,7 +512,7 @@ export default function DiscoverPage() {
                     return (
                       <Show when={popularityInfo}>
                         <span
-                          class={`px - 2 py - 0.5 rounded - full text - xs font - medium ${popularityInfo!.color} `}
+                          class={`px-2 py-0.5 rounded-full text-xs font-medium ${popularityInfo!.color}`}
                         >
                           <span class="mr-1">{popularityInfo!.icon}</span>
                           {popularityInfo!.label}
@@ -546,38 +522,34 @@ export default function DiscoverPage() {
                   })()}
                 </Show>
                 <Show when={poi.time_to_spend}>
-                  <span class="px-2 py-0.5 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full text-xs">
+                  <span class="px-2 py-0.5 bg-muted text-muted-foreground rounded-full text-xs">
                     {poi.time_to_spend}
                   </span>
                 </Show>
               </div>
-              <p class="text-sm text-gray-600 dark:text-gray-400">{poi.city}</p>
+              <p class="text-sm text-muted-foreground">{poi.city}</p>
             </div>
             <div class="flex items-center gap-2">
               <div class="flex items-center gap-1">
-                <Star class="w-4 h-4 text-yellow-500 fill-current" />
-                <span class="text-sm font-medium text-gray-900 dark:text-white">
-                  {poi.rating || 0}
-                </span>
-                <span class="text-sm text-gray-600 dark:text-gray-400">
-                  ({poi.reviewCount || 0})
-                </span>
+                <Star class="w-4 h-4 text-accent fill-current" />
+                <span class="text-sm font-medium text-foreground">{poi.rating || 0}</span>
+                <span class="text-sm text-muted-foreground">({poi.reviewCount || 0})</span>
               </div>
               <span
-                class={`px - 2 py - 1 rounded - full text - xs font - medium ${getPriceColor(poi.price_level)} `}
+                class={`px-2 py-1 rounded-full text-xs font-medium ${getPriceColor(poi.price_level)}`}
               >
                 {poi.price_level}
               </span>
             </div>
           </div>
 
-          <p class="text-gray-600 dark:text-gray-400 mb-3">{poi.description}</p>
+          <p class="text-muted-foreground mb-3">{poi.description}</p>
 
           <div class="flex items-center justify-between">
             <div class="flex flex-wrap gap-1">
               <For each={(poi.tags || []).slice(0, 4)}>
                 {(tag) => (
-                  <span class="px-2 py-0.5 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded-full text-xs">
+                  <span class="px-2 py-0.5 bg-primary/10 text-primary rounded-full text-xs">
                     {tag}
                   </span>
                 )}
@@ -589,7 +561,11 @@ export default function DiscoverPage() {
                 onClick={() => toggleFavorite(poi.id, poi)}
                 disabled={addToFavoritesMutation.isPending || removeFromFavoritesMutation.isPending}
                 data-poi-id={poi.id}
-                class={`p - 2 rounded - lg ${isFavorite(poi.id) ? "text-yellow-600 dark:text-yellow-400" : "text-gray-400"} hover: bg - gray - 100 dark: hover: bg - gray - 700 disabled: opacity - 50 disabled: cursor - not - allowed`}
+                class={`p-2 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                  isFavorite(poi.id)
+                    ? "text-accent"
+                    : "text-muted-foreground hover:text-accent hover:bg-muted"
+                }`}
                 title={isFavorite(poi.id) ? "Remove from favorites" : "Add to favorites"}
               >
                 <Show
@@ -600,19 +576,19 @@ export default function DiscoverPage() {
                     <div class="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
                   }
                 >
-                  <Star class={`w - 4 h - 4 ${isFavorite(poi.id) ? "fill-current" : ""} `} />
+                  <Star class={`w-4 h-4 ${isFavorite(poi.id) ? "fill-current" : ""}`} />
                 </Show>
               </button>
               <button
                 onClick={() => handleShare(poi)}
-                class="p-2 rounded-lg text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700"
+                class="p-2 rounded-lg text-muted-foreground hover:text-primary hover:bg-muted transition-colors"
                 title="Share this place"
               >
                 <Share2 class="w-4 h-4" />
               </button>
               <button
                 onClick={() => handleItemClick(poi)}
-                class="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium text-sm"
+                class="text-primary hover:text-primary/80 font-medium text-sm"
               >
                 <Eye class="w-4 h-4 inline mr-1" />
                 Details
@@ -631,14 +607,14 @@ export default function DiscoverPage() {
         <div class="px-4 py-3 sm:px-6">
           <div class="max-w-7xl mx-auto">
             <div class="flex items-center gap-3 glass-panel gradient-border rounded-xl p-3">
-              <div class="w-8 h-8 bg-emerald-500 rounded-full flex items-center justify-center text-white shadow">
-                <Compass class="w-4 h-4 text-white" />
+              <div class="w-8 h-8 bg-accent rounded-full flex items-center justify-center text-accent-foreground shadow">
+                <Compass class="w-4 h-4" />
               </div>
               <div class="flex-1">
-                <p class="text-sm font-medium text-emerald-900 dark:text-emerald-200">
+                <p class="text-sm font-medium text-foreground">
                   ✨ <TypingAnimation text="Your activity recommendations are ready!" />
                 </p>
-                <p class="text-xs text-slate-700 dark:text-slate-300">
+                <p class="text-xs text-muted-foreground">
                   Generated from your chat: "
                   {(location.state as any)?.originalMessage || "Activity search"}"
                 </p>
@@ -662,13 +638,13 @@ export default function DiscoverPage() {
                     Discover
                   </span>
                   <Show when={showOnlyFavorites()}>
-                    <span class="loci-chip bg-white/25 text-white">Favorites only</span>
+                    <span class="loci-chip loci-chip--muted">Favorites only</span>
                   </Show>
                 </div>
                 <h1 class="text-3xl sm:text-4xl font-bold leading-tight">
                   Near Me · {displayLocation()}
                 </h1>
-                <p class="text-white/80">
+                <p class="loci-hero__subtitle">
                   {pois().loading
                     ? "Finding great spots around you..."
                     : `${filteredPois().length} places curated to your vibe`}
@@ -685,7 +661,7 @@ export default function DiscoverPage() {
                     </span>
                   </Show>
                   <Show when={pois().error}>
-                    <span class="loci-chip bg-red-500/30 border-red-200/40 text-red-50">
+                    <span class="loci-chip loci-chip--destructive">
                       <TriangleAlert class="w-4 h-4" />
                       {pois().error?.message || "Error loading POIs"}
                     </span>
@@ -693,22 +669,22 @@ export default function DiscoverPage() {
                 </div>
               </div>
               <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4 w-full sm:w-auto">
-                <div class="rounded-2xl bg-white/10 border border-white/20 p-4 shadow-lg backdrop-blur">
-                  <div class="text-xs uppercase tracking-wide text-white/70 mb-1">Spots</div>
+                <div class="loci-hero__stat">
+                  <div class="loci-hero__stat-label">Spots</div>
                   <div class="text-2xl font-bold">{filteredPois().length}</div>
-                  <div class="text-xs text-white/80">Matched to filters</div>
+                  <div class="loci-hero__stat-detail">Matched to filters</div>
                 </div>
-                <div class="rounded-2xl bg-white/10 border border-white/20 p-4 shadow-lg backdrop-blur">
-                  <div class="text-xs uppercase tracking-wide text-white/70 mb-1">Favorites</div>
+                <div class="loci-hero__stat">
+                  <div class="loci-hero__stat-label">Favorites</div>
                   <div class="text-2xl font-bold">{favoritesQuery.data?.length || 0}</div>
-                  <div class="text-xs text-white/80">Saved nearby</div>
+                  <div class="loci-hero__stat-detail">Saved nearby</div>
                 </div>
-                <div class="rounded-2xl bg-white/10 border border-white/20 p-4 shadow-lg backdrop-blur col-span-2 sm:col-span-1">
-                  <div class="text-xs uppercase tracking-wide text-white/70 mb-1">View</div>
+                <div class="loci-hero__stat col-span-2 sm:col-span-1">
+                  <div class="loci-hero__stat-label">View</div>
                   <div class="text-sm font-semibold capitalize">
                     {viewMode().replace("-", " + ")}
                   </div>
-                  <div class="text-xs text-white/80">Map / Cards</div>
+                  <div class="loci-hero__stat-detail">Map / Cards</div>
                 </div>
               </div>
             </div>
@@ -717,7 +693,7 @@ export default function DiscoverPage() {
       </div>
 
       {/* Search and Controls */}
-      <div class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+      <div class="bg-card border-b border-border">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div class="flex flex-col gap-4">
             {/* Top row: Search */}
@@ -758,7 +734,7 @@ export default function DiscoverPage() {
                   <div class="flex items-center gap-2">
                     <label
                       for="radius-select"
-                      class="text-sm font-medium text-gray-700 dark:text-gray-300 whitespace-nowrap"
+                      class="text-sm font-medium text-foreground whitespace-nowrap"
                     >
                       Search Radius:
                     </label>
@@ -766,7 +742,7 @@ export default function DiscoverPage() {
                       id="radius-select"
                       value={searchRadius()}
                       onChange={(e) => setSearchRadius(parseInt(e.target.value))}
-                      class="min-w-[100px] px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                      class="min-w-[100px] px-3 py-2 border border-border rounded-lg bg-card text-foreground focus:ring-2 focus:ring-ring focus:border-transparent text-sm"
                     >
                       <For each={radiusOptions}>
                         {(option) => <option value={option.value}>{option.label}</option>}
@@ -778,13 +754,13 @@ export default function DiscoverPage() {
                   <div class="flex items-center gap-2">
                     <button
                       onClick={() => setShowOnlyFavorites(!showOnlyFavorites())}
-                      class={`flex items - center gap - 2 px - 3 py - 2 border rounded - lg text - sm transition - colors ${
+                      class={`flex items-center gap-2 px-3 py-2 border rounded-lg text-sm transition-colors ${
                         showOnlyFavorites()
-                          ? "bg-yellow-50 border-yellow-300 text-yellow-700 dark:bg-yellow-900/20 dark:border-yellow-700 dark:text-yellow-300"
-                          : "border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
-                      } `}
+                          ? "bg-accent/10 border-accent/30 text-accent"
+                          : "border-border text-muted-foreground hover:bg-muted hover:text-foreground"
+                      }`}
                     >
-                      <Star class={`w - 4 h - 4 ${showOnlyFavorites() ? "fill-current" : ""} `} />
+                      <Star class={`w-4 h-4 ${showOnlyFavorites() ? "fill-current" : ""}`} />
                       <span class="hidden sm:inline">
                         {showOnlyFavorites() ? "Show All" : "Favorites Only"}
                       </span>
@@ -794,14 +770,14 @@ export default function DiscoverPage() {
 
                   {/* Sort Controls */}
                   <div class="flex items-center gap-2">
-                    <label class="text-sm font-medium text-gray-700 dark:text-gray-300 whitespace-nowrap">
+                    <label class="text-sm font-medium text-foreground whitespace-nowrap">
                       Sort by:
                     </label>
                     <div class="flex items-center gap-1">
                       <select
                         value={sortBy()}
                         onChange={(e) => setSortBy(e.target.value)}
-                        class="min-w-[120px] px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-l-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                        class="min-w-[120px] px-3 py-2 border border-border rounded-l-lg bg-card text-foreground focus:ring-2 focus:ring-ring focus:border-transparent text-sm"
                       >
                         <For each={sortOptions}>
                           {(option) => <option value={option.id}>{option.label}</option>}
@@ -809,13 +785,13 @@ export default function DiscoverPage() {
                       </select>
                       <button
                         onClick={() => setSortOrder((prev) => (prev === "asc" ? "desc" : "asc"))}
-                        class="p-2 border border-l-0 border-gray-300 dark:border-gray-600 rounded-r-lg hover:bg-gray-50 dark:hover:bg-gray-700 bg-white dark:bg-gray-700 transition-colors"
+                        class="p-2 border border-l-0 border-border rounded-r-lg hover:bg-muted bg-card transition-colors"
                         title={`Sort ${sortOrder() === "asc" ? "Descending" : "Ascending"} `}
                       >
                         {sortOrder() === "asc" ? (
-                          <SortAsc class="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                          <SortAsc class="w-4 h-4 text-muted-foreground" />
                         ) : (
-                          <SortDesc class="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                          <SortDesc class="w-4 h-4 text-muted-foreground" />
                         )}
                       </button>
                     </div>
@@ -824,13 +800,13 @@ export default function DiscoverPage() {
 
                 {/* Right side: View mode toggle */}
                 <div class="flex items-center gap-2">
-                  <label class="text-sm font-medium text-gray-700 dark:text-gray-300 whitespace-nowrap">
+                  <label class="text-sm font-medium text-foreground whitespace-nowrap">
                     View:
                   </label>
-                  <div class="flex items-center border border-gray-300 dark:border-gray-600 rounded-lg p-1 bg-white dark:bg-gray-700">
+                  <div class="flex items-center border border-border rounded-lg p-1 bg-card">
                     <button
                       onClick={() => setViewMode("map-cards")}
-                      class={`p - 2 rounded transition - colors ${viewMode() === "map-cards" ? "bg-blue-600 text-white" : "text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-600"} `}
+                      class={`p-2 rounded transition-colors ${viewMode() === "map-cards" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"}`}
                       title="Split view: Map + Cards"
                     >
                       <div class="flex items-center gap-1">
@@ -840,14 +816,14 @@ export default function DiscoverPage() {
                     </button>
                     <button
                       onClick={() => setViewMode("cards")}
-                      class={`p - 2 rounded transition - colors ${viewMode() === "cards" ? "bg-blue-600 text-white" : "text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-600"} `}
+                      class={`p-2 rounded transition-colors ${viewMode() === "cards" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"}`}
                       title="Show only cards"
                     >
                       <Grid class="w-4 h-4" />
                     </button>
                     <button
                       onClick={() => setViewMode("map")}
-                      class={`p - 2 rounded transition - colors ${viewMode() === "map" ? "bg-blue-600 text-white" : "text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-600"} `}
+                      class={`p-2 rounded transition-colors ${viewMode() === "map" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"}`}
                       title="Show only map"
                     >
                       <MapIcon class="w-4 h-4" />
@@ -863,7 +839,7 @@ export default function DiscoverPage() {
       {/* Results */}
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <div class="flex items-center justify-between mb-6">
-          <p class="text-gray-600 dark:text-gray-400">
+          <p class="text-muted-foreground">
             {filteredPois().length} place{filteredPois().length !== 1 ? "s" : ""} found
           </p>
         </div>
@@ -872,11 +848,9 @@ export default function DiscoverPage() {
           when={filteredPois().length > 0}
           fallback={
             <div class="text-center py-12">
-              <Search class="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
-              <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                No places found
-              </h3>
-              <p class="text-gray-600 dark:text-gray-400">
+              <Search class="w-12 h-12 text-muted-foreground/50 mx-auto mb-4" />
+              <h3 class="text-lg font-semibold text-foreground mb-2">No places found</h3>
+              <p class="text-muted-foreground">
                 Try adjusting your search criteria or filters
               </p>
             </div>
@@ -886,7 +860,7 @@ export default function DiscoverPage() {
           <Show when={viewMode() === "map-cards"}>
             <div class="flex flex-col lg:flex-row gap-6 h-[700px]">
               {/* Map Section */}
-              <div class="w-full lg:w-1/2 h-full rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700">
+              <div class="w-full lg:w-1/2 h-full rounded-lg overflow-hidden border border-border">
                 <MapComponent
                   center={[getSearchCoordinates().lon, getSearchCoordinates().lat]}
                   zoom={12}
@@ -912,7 +886,7 @@ export default function DiscoverPage() {
 
           {/* Map Only View */}
           <Show when={viewMode() === "map"}>
-            <div class="h-[700px] w-full rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700">
+            <div class="h-[700px] w-full rounded-lg overflow-hidden border border-border">
               <MapComponent
                 center={[getSearchCoordinates().lon, getSearchCoordinates().lat]}
                 zoom={12}

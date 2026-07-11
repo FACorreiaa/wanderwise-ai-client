@@ -125,7 +125,7 @@ export default function RestaurantsPage() {
   };
 
   const MapContent = (
-    <div class="h-full w-full bg-slate-100 dark:bg-slate-900 relative">
+    <div class="h-full w-full bg-muted relative">
       <Show
         when={allPois().length > 0}
         fallback={
@@ -155,12 +155,12 @@ export default function RestaurantsPage() {
   );
 
   const ListContent = (
-    <div class="h-full overflow-y-auto p-4 md:p-6 bg-slate-50/50 dark:bg-slate-950/50 backdrop-blur-sm">
+    <div class="h-full overflow-y-auto p-4 md:p-6 bg-background/50 backdrop-blur-sm">
       <div class="max-w-3xl mx-auto pb-20">
         <CityInfoHeader cityData={cityData()} isLoading={state.isStreaming && !cityData()} />
 
         <Show when={state.error}>
-          <div class="mb-6 p-4 rounded-xl bg-red-50 border border-red-200 text-red-600 dark:bg-red-900/20 dark:border-red-900/50 dark:text-red-400">
+          <div class="mb-6 p-4 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive">
             <p class="font-bold">Unable to load restaurants</p>
             <p class="text-sm opacity-90">{state.error}</p>
           </div>
@@ -172,7 +172,7 @@ export default function RestaurantsPage() {
 
         <Show when={restaurants().length > 0}>
           <div class="mb-8">
-            <h3 class="text-xl font-bold mb-4 text-gray-800 dark:text-white flex items-center gap-2">
+            <h3 class="text-xl font-bold mb-4 text-foreground flex items-center gap-2">
               <span class="text-2xl">🍽️</span> Restaurants ({restaurants().length})
             </h3>
             <RestaurantResults
@@ -205,9 +205,9 @@ export default function RestaurantsPage() {
 function RestaurantsSkeleton() {
   return (
     <div class="space-y-6">
-      <div class="rounded-2xl bg-gray-200 dark:bg-gray-800 h-64 animate-pulse" />
+      <div class="rounded-2xl bg-muted h-64 animate-pulse" />
       <div class="space-y-4">
-        <Card class="bg-white/50 dark:bg-slate-900/50">
+        <Card class="bg-card/50 border-border">
           <CardHeader>
             <Skeleton class="h-6 w-1/3 mb-2" />
             <Skeleton class="h-4 w-1/4" />
@@ -216,7 +216,7 @@ function RestaurantsSkeleton() {
             <Skeleton class="h-16 w-full" />
           </CardContent>
         </Card>
-        <Card class="bg-white/50 dark:bg-slate-900/50">
+        <Card class="bg-card/50 border-border">
           <CardHeader>
             <Skeleton class="h-6 w-1/3 mb-2" />
             <Skeleton class="h-4 w-1/4" />

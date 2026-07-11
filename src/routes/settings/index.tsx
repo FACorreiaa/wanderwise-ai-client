@@ -15,6 +15,7 @@ import {
   Mail,
   Phone,
   Upload,
+  KeyRound,
 } from "lucide-solid";
 import {
   useUpdateProfileMutation,
@@ -40,6 +41,8 @@ import { useAuth } from "~/contexts/AuthContext";
 import TagsComponent from "~/components/features/Settings/Tags";
 import InterestsComponent from "~/components/features/Settings/Interests";
 import TravelProfiles from "~/components/features/Settings/TravelProfiles";
+import AppearanceSettings from "~/components/AppearanceSettings";
+import ApiKeys from "~/components/features/Settings/ApiKeys";
 import { Button } from "~/ui/button";
 
 export default function SettingsPage() {
@@ -167,6 +170,7 @@ export default function SettingsPage() {
     { id: "tags", label: "Tags", icon: Tag },
     { id: "interests", label: "Interests", icon: Heart },
     { id: "profiles", label: "Travel Profiles", icon: Users },
+    { id: "apikeys", label: "API Keys", icon: KeyRound },
   ];
 
   // Get tags from API
@@ -228,17 +232,15 @@ export default function SettingsPage() {
 
     return (
       <div class="space-y-6">
-        {/* Header card inspired by go-templui */}
-        <div class="relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-primary via-primary to-foreground text-white shadow-2xl">
-          <div class="absolute inset-0 opacity-30 bg-[radial-gradient(circle_at_20%_20%,rgba(255,255,255,0.45),transparent_35%),radial-gradient(circle_at_80%_0%,rgba(255,255,255,0.35),transparent_30%),radial-gradient(circle_at_50%_80%,rgba(255,255,255,0.25),transparent_32%)]" />
-          <div class="relative p-6 sm:p-8 flex flex-col lg:flex-row gap-6 lg:items-center">
+        <div class="loci-hero">
+          <div class="loci-hero__content p-6 sm:p-8 flex flex-col lg:flex-row gap-6 lg:items-center">
             <div class="flex flex-1 items-start gap-4">
               <div class="relative">
-                <div class="absolute -inset-1 rounded-full bg-white/30 blur-lg" />
+                <div class="absolute -inset-1 hero-glow blur-lg opacity-80" />
                 <Show
                   when={photoPreview() || userProfile().avatar}
                   fallback={
-                    <div class="relative w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-white/10 backdrop-blur flex items-center justify-center text-white text-xl sm:text-2xl font-bold ring-2 ring-white/40 shadow-lg">
+                    <div class="loci-hero__icon w-16 h-16 sm:w-20 sm:h-20 rounded-2xl text-xl sm:text-2xl font-bold">
                       {(userProfile().firstname[0] || "") + (userProfile().lastname[0] || "") ||
                         userProfile().username[0] ||
                         ""}
@@ -248,13 +250,13 @@ export default function SettingsPage() {
                   <img
                     src={photoPreview() || userProfile().avatar}
                     alt="Profile"
-                    class="relative w-16 h-16 sm:w-20 sm:h-20 rounded-2xl object-cover ring-2 ring-white/50 shadow-xl"
+                    class="relative w-16 h-16 sm:w-20 sm:h-20 rounded-2xl object-cover ring-2 ring-[hsl(var(--hero-foreground)/0.5)] shadow-xl"
                   />
                 </Show>
                 <button
                   onClick={triggerFileInput}
                   disabled={isUploading()}
-                  class="absolute -bottom-2 -right-2 bg-white text-gray-800 rounded-xl px-3 py-1 text-xs font-semibold shadow-lg border border-white/40 hover:-translate-y-0.5 transition-all disabled:opacity-60"
+                  class="loci-hero__cta absolute -bottom-2 -right-2 text-xs px-3 py-1 rounded-xl shadow-lg hover:-translate-y-0.5 transition-all disabled:opacity-60"
                 >
                   <Show
                     when={isUploading()}
@@ -266,7 +268,7 @@ export default function SettingsPage() {
                     }
                   >
                     <span class="flex items-center gap-1">
-                      <div class="w-3 h-3 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />
+                      <div class="w-3 h-3 border-2 border-primary border-t-transparent rounded-full animate-spin" />
                       Uploading
                     </span>
                   </Show>
@@ -277,51 +279,51 @@ export default function SettingsPage() {
                   <h1 class="text-2xl sm:text-3xl font-bold leading-tight">
                     {profile?.username || "Traveler"}
                   </h1>
-                  <span class="px-3 py-1 text-xs font-semibold rounded-full bg-white/15 backdrop-blur border border-white/20">
+                  <span class="loci-chip uppercase tracking-wide text-[10px] sm:text-xs">
                     Profile
                   </span>
                 </div>
-                <div class="flex flex-wrap gap-2 text-sm text-white/80">
+                <div class="flex flex-wrap gap-2 text-sm">
                   <Show when={profile?.email}>
-                    <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-white/10 border border-white/15">
+                    <span class="loci-chip">
                       <Mail class="w-4 h-4" /> {profile?.email}
                     </span>
                   </Show>
                   <Show when={profile?.location || userProfile().city || userProfile().country}>
-                    <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-white/10 border border-white/15">
+                    <span class="loci-chip">
                       <MapPin class="w-4 h-4" />{" "}
                       {profile?.location ||
                         `${userProfile().city}${userProfile().country ? `, ${userProfile().country}` : ""}`}
                     </span>
                   </Show>
                   <Show when={profile?.joinedDate}>
-                    <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-white/10 border border-white/15">
+                    <span class="loci-chip">
                       <Calendar class="w-4 h-4" /> Joined{" "}
                       {new Date(profile?.joinedDate || "").toLocaleDateString()}
                     </span>
                   </Show>
                 </div>
-                <p class="text-sm text-white/85 max-w-2xl">
+                <p class="text-sm loci-hero__subtitle max-w-2xl">
                   {profile?.bio ||
                     "Fine‑tune your profile so the AI tailors recommendations to your vibe."}
                 </p>
               </div>
             </div>
             <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 w-full lg:w-auto">
-              <div class="rounded-2xl bg-white/10 border border-white/20 p-4 shadow-lg backdrop-blur">
-                <div class="text-xs uppercase tracking-wide text-white/70 mb-2">Tags</div>
+              <div class="loci-hero__stat">
+                <div class="loci-hero__stat-label">Tags</div>
                 <div class="text-2xl font-bold">{tags().length || 0}</div>
-                <div class="text-xs text-white/80">Personalized filters</div>
+                <div class="loci-hero__stat-detail">Personalized filters</div>
               </div>
-              <div class="rounded-2xl bg-white/10 border border-white/20 p-4 shadow-lg backdrop-blur">
-                <div class="text-xs uppercase tracking-wide text-white/70 mb-2">Interests</div>
+              <div class="loci-hero__stat">
+                <div class="loci-hero__stat-label">Interests</div>
                 <div class="text-2xl font-bold">{interests().length || 0}</div>
-                <div class="text-xs text-white/80">Signals for the AI</div>
+                <div class="loci-hero__stat-detail">Signals for the AI</div>
               </div>
-              <div class="rounded-2xl bg-white/10 border border-white/20 p-4 shadow-lg backdrop-blur col-span-2 sm:col-span-1">
-                <div class="text-xs uppercase tracking-wide text-white/70 mb-2">Profiles</div>
+              <div class="loci-hero__stat col-span-2 sm:col-span-1">
+                <div class="loci-hero__stat-label">Profiles</div>
                 <div class="text-2xl font-bold">{profile?.stats?.lists_created ?? 1}</div>
-                <div class="text-xs text-white/80">Trip styles saved</div>
+                <div class="loci-hero__stat-detail">Trip styles saved</div>
               </div>
             </div>
           </div>
@@ -392,7 +394,7 @@ export default function SettingsPage() {
                     Email
                   </label>
                   <div class="relative">
-                    <Mail class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                    <Mail class="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
                     <input
                       type="email"
                       value={userProfile().email}
@@ -407,7 +409,7 @@ export default function SettingsPage() {
                     Phone
                   </label>
                   <div class="relative">
-                    <Phone class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                    <Phone class="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
                     <input
                       type="tel"
                       value={userProfile().phone}
@@ -422,7 +424,7 @@ export default function SettingsPage() {
                     City
                   </label>
                   <div class="relative">
-                    <MapPin class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                    <MapPin class="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
                     <input
                       type="text"
                       value={userProfile().city}
@@ -437,7 +439,7 @@ export default function SettingsPage() {
                     Country
                   </label>
                   <div class="relative">
-                    <Globe class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                    <Globe class="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
                     <input
                       type="text"
                       value={userProfile().country}
@@ -487,9 +489,17 @@ export default function SettingsPage() {
               </p>
             </div>
 
-            <div class="rounded-3xl bg-gradient-to-br from-white to-blue-50 dark:from-slate-800 dark:to-slate-700 border border-blue-100 dark:border-slate-600 shadow p-6 sm:p-8 space-y-3">
+            <div class="rounded-3xl bg-card/80 backdrop-blur border border-border shadow-sm p-6 sm:p-8">
+              <h4 class="text-lg font-semibold text-foreground mb-1">Appearance</h4>
+              <p class="text-sm text-muted-foreground mb-4">
+                Theme and language sync across your devices when signed in.
+              </p>
+              <AppearanceSettings />
+            </div>
+
+            <div class="rounded-3xl bg-card/80 backdrop-blur border border-border shadow-sm p-6 sm:p-8 space-y-3">
               <div class="flex items-center gap-2">
-                <Bell class="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                <Bell class="w-5 h-5 text-primary" />
                 <h4 class="text-sm font-semibold text-foreground">Quick actions</h4>
               </div>
               <div class="grid grid-cols-1 gap-2">
@@ -498,27 +508,27 @@ export default function SettingsPage() {
                   class="w-full flex items-center justify-between px-4 py-3 rounded-xl bg-background text-foreground border border-border hover:border-accent hover:shadow-sm transition-all"
                 >
                   <span class="flex items-center gap-2 text-sm font-medium">
-                    <Camera class="w-4 h-4 text-blue-600 dark:text-blue-400" /> Update profile photo
+                    <Camera class="w-4 h-4 text-primary" /> Update profile photo
                   </span>
-                  <ChevronRight class="w-4 h-4 text-gray-400" />
+                  <ChevronRight class="w-4 h-4 text-muted-foreground" />
                 </button>
                 <button
                   onClick={() => setActiveTab("tags")}
                   class="w-full flex items-center justify-between px-4 py-3 rounded-xl bg-background text-foreground border border-border hover:border-accent hover:shadow-sm transition-all"
                 >
                   <span class="flex items-center gap-2 text-sm font-medium">
-                    <Tag class="w-4 h-4 text-blue-600 dark:text-blue-400" /> Curate tags
+                    <Tag class="w-4 h-4 text-primary" /> Curate tags
                   </span>
-                  <ChevronRight class="w-4 h-4 text-gray-400" />
+                  <ChevronRight class="w-4 h-4 text-muted-foreground" />
                 </button>
                 <button
                   onClick={() => setActiveTab("interests")}
                   class="w-full flex items-center justify-between px-4 py-3 rounded-xl bg-background text-foreground border border-border hover:border-accent hover:shadow-sm transition-all"
                 >
                   <span class="flex items-center gap-2 text-sm font-medium">
-                    <Heart class="w-4 h-4 text-blue-600 dark:text-blue-400" /> Update interests
+                    <Heart class="w-4 h-4 text-primary" /> Update interests
                   </span>
-                  <ChevronRight class="w-4 h-4 text-gray-400" />
+                  <ChevronRight class="w-4 h-4 text-muted-foreground" />
                 </button>
               </div>
             </div>
@@ -676,6 +686,12 @@ export default function SettingsPage() {
         return renderInterests();
       case "profiles":
         return renderProfiles();
+      case "apikeys":
+        return (
+          <ApiKeys
+            onNotification={(message, type) => setNotification({ message, type })}
+          />
+        );
       default:
         return renderSettings();
     }
@@ -689,8 +705,8 @@ export default function SettingsPage() {
         <div
           class={`fixed top-4 left-4 right-4 sm:left-auto sm:right-4 sm:w-96 z-50 p-4 rounded-lg shadow-lg border ${
             notification()?.type === "success"
-              ? "bg-green-50 dark:bg-green-900 text-green-800 dark:text-green-200 border-green-200 dark:border-green-700"
-              : "bg-red-50 dark:bg-red-900 text-red-800 dark:text-red-200 border-red-200 dark:border-red-700"
+              ? "bg-accent/10 text-accent border-accent/30"
+              : "bg-destructive/10 text-destructive border-destructive/30"
           } animate-in slide-in-from-top-2 duration-300`}
         >
           <div class="flex items-center justify-between">
