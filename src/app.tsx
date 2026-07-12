@@ -6,6 +6,7 @@ import Nav from "~/components/Nav";
 import Footer from "~/components/Footer";
 import PWAInstall from "~/components/PWAInstall";
 import GlobalErrorBoundary from "~/components/GlobalErrorBoundary";
+import PageLoading from "~/components/PageLoading";
 import "./app.css";
 import { QueryClientProvider } from "@tanstack/solid-query";
 // @ts-ignore - Context type
@@ -39,7 +40,7 @@ export default function App() {
                           <Nav />
                           <main class="relative flex-grow">
                             <div class="relative min-h-screen">
-                              <Suspense>{props.children}</Suspense>
+                              <Suspense fallback={<PageLoading />}>{props.children}</Suspense>
                             </div>
                           </main>
                           <Footer />
