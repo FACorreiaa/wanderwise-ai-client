@@ -1,0 +1,173 @@
+/* Landing redesign — "Cartographer's Copilot".
+   Token-driven so it adapts across the loci/classic/modern theme families.
+   Colors come from the app's HSL custom properties; motion is guarded by
+   prefers-reduced-motion. */
+
+/* Monospace utility for coordinates, labels, and data (Space Mono is loaded
+   globally in entry-server). */
+.font-coord {
+  font-family: "Space Mono", ui-monospace, "SF Mono", "Cascadia Code", monospace;
+}
+
+/* Faint cartographic contour grid used as page atmosphere. */
+.contour-grid {
+  background-image:
+    linear-gradient(hsl(var(--border)) 1px, transparent 1px),
+    linear-gradient(90deg, hsl(var(--border)) 1px, transparent 1px);
+  background-size: 48px 48px;
+  background-position: -1px -1px;
+  -webkit-mask-image: radial-gradient(120% 90% at 50% -10%, black 38%, transparent 76%);
+  mask-image: radial-gradient(120% 90% at 50% -10%, black 38%, transparent 76%);
+}
+
+/* ---- Route spine ---- */
+.route-rail {
+  position: relative;
+}
+.route-rail::before {
+  content: "";
+  position: absolute;
+  left: 23px;
+  top: 8px;
+  bottom: 0;
+  width: 2px;
+  background: hsl(var(--border));
+}
+.route-fill {
+  position: absolute;
+  left: 23px;
+  top: 8px;
+  width: 2px;
+  height: 0;
+  background: hsl(var(--accent));
+  box-shadow: 0 0 12px hsl(var(--accent) / 0.5);
+  transition: height 0.1s linear;
+}
+.route-stop {
+  position: relative;
+}
+.route-stop-mark {
+  position: absolute;
+  left: 16px;
+  top: 4px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: hsl(var(--background));
+  border: 2px solid hsl(var(--border));
+  display: grid;
+  place-items: center;
+  transition:
+    border-color 0.3s ease,
+    box-shadow 0.3s ease;
+}
+.route-stop-mark::after {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: hsl(var(--border));
+  transition: background 0.3s ease;
+}
+.route-stop.is-lit .route-stop-mark {
+  border-color: hsl(var(--accent));
+  box-shadow: 0 0 0 4px hsl(var(--accent) / 0.12);
+}
+.route-stop.is-lit .route-stop-mark::after {
+  background: hsl(var(--accent));
+}
+
+@media (max-width: 900px) {
+  .route-rail::before,
+  .route-fill {
+    left: 8px;
+  }
+  .route-stop-mark {
+    left: 1px;
+  }
+}
+
+/* ---- Hero plot signature ---- */
+.plot-grid {
+  background-image:
+    linear-gradient(hsl(var(--border)) 1px, transparent 1px),
+    linear-gradient(90deg, hsl(var(--border)) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+.route-draw {
+  stroke-dasharray: 780;
+  stroke-dashoffset: 780;
+}
+.route-draw.is-drawn {
+  animation: loci-draw 2.4s ease 0.2s forwards;
+}
+@keyframes loci-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+.plot-point {
+  opacity: 0;
+}
+.plot-point.is-drawn {
+  animation: loci-pop 0.4s ease forwards;
+}
+.plot-point.d1 {
+  animation-delay: 0.5s;
+}
+.plot-point.d2 {
+  animation-delay: 0.9s;
+}
+.plot-point.d3 {
+  animation-delay: 1.3s;
+}
+.plot-point.d4 {
+  animation-delay: 1.7s;
+}
+.plot-point.d5 {
+  animation-delay: 2.1s;
+}
+@keyframes loci-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.4);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* ---- Scroll reveal ---- */
+.reveal {
+  opacity: 0;
+  transform: translateY(16px);
+  transition:
+    opacity 0.6s ease,
+    transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.reveal.is-in {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .route-fill {
+    transition: none;
+  }
+  .route-draw,
+  .route-draw.is-drawn {
+    animation: none;
+    stroke-dashoffset: 0;
+  }
+  .plot-point,
+  .plot-point.is-drawn {
+    animation: none;
+    opacity: 1;
+  }
+  .reveal {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+}
