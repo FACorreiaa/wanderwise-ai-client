@@ -277,9 +277,7 @@ export default function DiscoverPage() {
                 const list = extractPois(parsedData);
                 setSearchResults(list);
                 setProgressMessage(
-                  event.type === "nearby"
-                    ? "Found places near you"
-                    : "Found places you might like",
+                  event.type === "nearby" ? "Found places near you" : "Found places you might like",
                 );
                 break;
               }
@@ -595,9 +593,7 @@ export default function DiscoverPage() {
                   </div>
                 </form>
                 <Show when={progressMessage()}>
-                  <p class="mt-3 text-sm text-primary font-medium">
-                    {progressMessage()}
-                  </p>
+                  <p class="mt-3 text-sm text-primary font-medium">{progressMessage()}</p>
                 </Show>
               </div>
               <Show when={discoverData.isError}>
@@ -610,7 +606,7 @@ export default function DiscoverPage() {
           </div>
         </div>
 
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-2 pb-8">
           {/* Search Results */}
           <Show when={searchResults().length > 0 || isSearching() || searchError()}>
             <div class="mb-10">
@@ -622,9 +618,7 @@ export default function DiscoverPage() {
                 </p>
               </div>
               <Show when={searchResults().length > 0}>
-                <div class="text-xs text-primary mb-3">
-                  Mode: {streamDomain()}
-                </div>
+                <div class="text-xs text-primary mb-3">Mode: {streamDomain()}</div>
               </Show>
               <Show when={searchError()}>
                 <p class="text-sm text-destructive mb-3">{searchError()}</p>
@@ -664,7 +658,7 @@ export default function DiscoverPage() {
                         };
                         return (
                           <div
-                            class={`glass-panel rounded-2xl p-4 hover:shadow-xl hover:scale-[1.02] transition-all duration-200 cursor-pointer ${selection.isSelected(poi.id || poi.name) ? "ring-2 ring-ring bg-primary/10/50" : ""}`}
+                            class={`glass-panel rounded-2xl p-4 hover:shadow-xl hover:scale-[1.02] transition-all duration-200 cursor-pointer ${selection.isSelected(poi.id || poi.name) ? "ring-2 ring-accent bg-accent/10" : ""}`}
                           >
                             <div class="flex items-start justify-between gap-3 mb-2">
                               <div class="flex items-center gap-3 flex-1">
@@ -936,9 +930,7 @@ export default function DiscoverPage() {
                               <div class="flex items-start gap-3 mb-3">
                                 <span class="text-2xl">🗺️</span>
                                 <div class="flex-1 min-w-0">
-                                  <span class="loci-chip loci-chip--muted mb-2">
-                                    Discovery
-                                  </span>
+                                  <span class="loci-chip loci-chip--muted mb-2">Discovery</span>
                                   <h3 class="font-semibold text-foreground text-sm truncate">
                                     {session.city_name || "Unknown City"}
                                   </h3>

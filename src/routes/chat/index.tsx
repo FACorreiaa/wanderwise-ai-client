@@ -100,11 +100,7 @@ export default function ChatPage() {
   };
 
   return (
-    <div class="min-h-screen bg-background flex flex-col lg:flex-row relative overflow-hidden">
-      {/* Background veil */}
-      <div class="absolute inset-0 domain-veil pointer-events-none" />
-      <div class="absolute top-0 right-0 w-96 h-96 bg-primary/10 dark:bg-primary/5 rounded-full blur-3xl pointer-events-none" />
-
+    <div class="min-h-screen flex flex-col lg:flex-row relative overflow-hidden">
       <ChatSidebar
         sessions={chat.sessions()}
         isLoading={chat.chatSessionsQuery.isLoading}
@@ -139,11 +135,7 @@ export default function ChatPage() {
         />
 
         {/* Messages */}
-        <div
-          ref={scrollRef}
-          onScroll={onScroll}
-          class="flex-1 overflow-y-auto p-3 sm:p-4 bg-background/50 backdrop-blur-sm"
-        >
+        <div ref={scrollRef} onScroll={onScroll} class="flex-1 overflow-y-auto p-3 sm:p-4 sm:py-6">
           <div class="max-w-3xl mx-auto space-y-3 sm:space-y-4">
             <For each={chat.messages()}>
               {(message) => (
@@ -174,7 +166,7 @@ export default function ChatPage() {
                   <Show when={chat.streamingSession()}>
                     <div class="text-xs text-muted-foreground space-y-1">
                       <div class="flex items-center gap-1 sm:gap-2">
-                        <span class="inline-block w-2 h-2 bg-primary rounded-full flex-shrink-0" />
+                        <span class="inline-block w-2 h-2 bg-accent rounded-full flex-shrink-0 animate-pulse motion-reduce:animate-none" />
                         <span class="truncate">Domain: {chat.streamingSession()?.domain}</span>
                       </div>
                       <Show when={chat.streamingSession()?.city}>
