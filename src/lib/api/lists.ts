@@ -1,5 +1,5 @@
 // Lists queries and mutations using ConnectRPC ListService
-import { useQuery, useMutation, useQueryClient } from '@tanstack/solid-query';
+import { useQuery, useMutation, useQueryClient } from "@tanstack/solid-query";
 import { createClient } from "@connectrpc/connect";
 import {
   ListService,
@@ -10,7 +10,7 @@ import {
   DeleteListRequestSchema,
   AddListItemRequestSchema,
   RemoveListItemRequestSchema,
-  ContentType
+  ContentType,
 } from "@buf/loci_loci-proto.bufbuild_es/loci/list/list_pb.js";
 import { create } from "@bufbuild/protobuf";
 import { transport } from "../connect-transport";
@@ -25,7 +25,7 @@ const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
 const getUserId = async (): Promise<string | null> => {
   const now = Date.now();
-  if (cachedUserId && (now - cacheTimestamp) < CACHE_TTL) {
+  if (cachedUserId && now - cacheTimestamp < CACHE_TTL) {
     return cachedUserId;
   }
 
@@ -48,11 +48,16 @@ const getUserId = async (): Promise<string | null> => {
 // Helper to map content type string to proto enum
 export const contentTypeToProto = (type: string): ContentType => {
   switch (type.toLowerCase()) {
-    case 'poi': return ContentType.POI;
-    case 'restaurant': return ContentType.RESTAURANT;
-    case 'hotel': return ContentType.HOTEL;
-    case 'itinerary': return ContentType.ITINERARY;
-    default: return ContentType.UNSPECIFIED;
+    case "poi":
+      return ContentType.POI;
+    case "restaurant":
+      return ContentType.RESTAURANT;
+    case "hotel":
+      return ContentType.HOTEL;
+    case "itinerary":
+      return ContentType.ITINERARY;
+    default:
+      return ContentType.UNSPECIFIED;
   }
 };
 
@@ -62,7 +67,7 @@ export const contentTypeToProto = (type: string): ContentType => {
 
 export const useLists = () => {
   return useQuery(() => ({
-    queryKey: ['lists'],
+    queryKey: ["lists"],
     queryFn: async () => {
       const userId = await getUserId();
       if (!userId) return [];
@@ -72,7 +77,7 @@ export const useLists = () => {
           userId,
           limit: 100,
           offset: 0,
-        })
+        }),
       );
       // Extract the list object from ListWithItems
       return (response.lists || []).map((item: any) => item.list || item);
@@ -83,7 +88,7 @@ export const useLists = () => {
 
 export const useList = (listId: string) => {
   return useQuery(() => ({
-    queryKey: ['list', listId],
+    queryKey: ["list", listId],
     queryFn: async () => {
       const userId = await getUserId();
       if (!userId) return null;
@@ -93,7 +98,7 @@ export const useList = (listId: string) => {
           userId,
           listId,
           includeDetailedItems: true,
-        })
+        }),
       );
       return response.list;
     },
@@ -125,17 +130,17 @@ export const useCreateListMutation = () => {
         create(CreateListRequestSchema, {
           userId,
           name: data.name,
-          description: data.description || '',
-          cityId: data.cityId || '',
+          description: data.description || "",
+          cityId: data.cityId || "",
           isItinerary: data.isItinerary || false,
           isPublic: data.isPublic || false,
-        })
+        }),
       );
       return response.list;
     },
     onSuccess: (newList: any) => {
       if (newList) {
-        queryClient.setQueryData(['lists'], (old: any[] = []) => [...old, newList]);
+        queryClient.setQueryData(["lists"], (old: any[] = []) => [...old, newList]);
       }
     },
   }));
@@ -156,15 +161,15 @@ export const useUpdateListMutation = () => {
           name: data.name,
           description: data.description,
           isPublic: data.isPublic,
-        })
+        }),
       );
       return { list: response.list, listId };
     },
     onSuccess: (result: { list: any; listId: string }) => {
       if (result.list) {
-        queryClient.setQueryData(['list', result.listId], result.list);
-        queryClient.setQueryData(['lists'], (old: any[] = []) =>
-          old.map(list => list.id === result.listId ? result.list : list)
+        queryClient.setQueryData(["list", result.listId], result.list);
+        queryClient.setQueryData(["lists"], (old: any[] = []) =>
+          old.map((list) => (list.id === result.listId ? result.list : list)),
         );
       }
     },
@@ -183,27 +188,27 @@ export const useDeleteListMutation = () => {
         create(DeleteListRequestSchema, {
           userId,
           listId,
-        })
+        }),
       );
     },
     onMutate: async (listId: string) => {
-      await queryClient.cancelQueries({ queryKey: ['lists'] });
-      const previousLists = queryClient.getQueryData(['lists']);
+      await queryClient.cancelQueries({ queryKey: ["lists"] });
+      const previousLists = queryClient.getQueryData(["lists"]);
 
-      queryClient.setQueryData(['lists'], (old: any[] = []) =>
-        old.filter(list => list.id !== listId)
+      queryClient.setQueryData(["lists"], (old: any[] = []) =>
+        old.filter((list) => list.id !== listId),
       );
 
       return { previousLists };
     },
     onError: (_err: unknown, _listId: string, context: any) => {
       if (context?.previousLists) {
-        queryClient.setQueryData(['lists'], context.previousLists);
+        queryClient.setQueryData(["lists"], context.previousLists);
       }
     },
     onSettled: (_: unknown, __: unknown, listId: string) => {
-      queryClient.removeQueries({ queryKey: ['list', listId] });
-      queryClient.invalidateQueries({ queryKey: ['lists'] });
+      queryClient.removeQueries({ queryKey: ["list", listId] });
+      queryClient.invalidateQueries({ queryKey: ["lists"] });
     },
   }));
 };
@@ -214,7 +219,7 @@ export const useDeleteListMutation = () => {
 
 export interface AddListItemData {
   itemId: string;
-  contentType: 'poi' | 'restaurant' | 'hotel' | 'itinerary';
+  contentType: "poi" | "restaurant" | "hotel" | "itinerary";
   position?: number;
   notes?: string;
   dayNumber?: number;
@@ -237,16 +242,16 @@ export const useAddToListMutation = () => {
           itemId: itemData.itemId,
           contentType: contentTypeToProto(itemData.contentType),
           position: itemData.position || 0,
-          notes: itemData.notes || '',
+          notes: itemData.notes || "",
           dayNumber: itemData.dayNumber || 0,
           durationMinutes: itemData.durationMinutes || 0,
-        })
+        }),
       );
       return response;
     },
     onSuccess: (_, { listId }) => {
-      queryClient.invalidateQueries({ queryKey: ['list', listId] });
-      queryClient.invalidateQueries({ queryKey: ['lists'] });
+      queryClient.invalidateQueries({ queryKey: ["list", listId] });
+      queryClient.invalidateQueries({ queryKey: ["lists"] });
     },
   }));
 };
@@ -264,12 +269,12 @@ export const useRemoveFromListMutation = () => {
           userId,
           listId,
           itemId,
-        })
+        }),
       );
     },
     onSuccess: (_, { listId }) => {
-      queryClient.invalidateQueries({ queryKey: ['list', listId] });
-      queryClient.invalidateQueries({ queryKey: ['lists'] });
+      queryClient.invalidateQueries({ queryKey: ["list", listId] });
+      queryClient.invalidateQueries({ queryKey: ["lists"] });
     },
   }));
 };

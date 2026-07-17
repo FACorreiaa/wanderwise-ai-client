@@ -15,7 +15,7 @@ export function useStreamedRpc(
   message: () => string,
   cityName: () => string,
   profileId: () => string,
-  opts: StreamedRpcOptions = {}
+  opts: StreamedRpcOptions = {},
 ) {
   const [store, setStore] = createStore<{
     data: AiCityResponse | null;
@@ -27,9 +27,7 @@ export function useStreamedRpc(
     isLoading: false,
   });
 
-  const [, setStream] = createSignal<AsyncIterable<any> | null>(
-    null
-  );
+  const [, setStream] = createSignal<AsyncIterable<any> | null>(null);
 
   const connect = async () => {
     if (!message() || !cityName()) {
@@ -65,9 +63,7 @@ export function useStreamedRpc(
       switch (event.type) {
         case "itinerary":
           if (event.data) {
-            const itinerary = JSON.parse(
-              new TextDecoder().decode(event.data)
-            ) as AiCityResponse;
+            const itinerary = JSON.parse(new TextDecoder().decode(event.data)) as AiCityResponse;
             setStore("data", itinerary);
             opts.onData?.(itinerary);
           }

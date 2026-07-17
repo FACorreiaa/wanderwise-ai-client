@@ -15,7 +15,7 @@ export interface StreamingSession {
   completedAt?: number;
 }
 
-const STREAMING_SESSION_KEY = 'active_streaming_session';
+const STREAMING_SESSION_KEY = "active_streaming_session";
 const SESSION_TIMEOUT = 5 * 60 * 1000; // 5 minutes
 
 /**
@@ -29,7 +29,7 @@ export function setStreamingSession(session: Partial<StreamingSession>) {
     startedAt: existing?.startedAt || Date.now(),
   };
   sessionStorage.setItem(STREAMING_SESSION_KEY, JSON.stringify(updated));
-  console.log('📦 Stored streaming session:', updated);
+  console.log("📦 Stored streaming session:", updated);
 }
 
 /**
@@ -45,14 +45,14 @@ export function getStreamingSession(): StreamingSession | null {
     // Check if session is expired
     const age = Date.now() - session.startedAt;
     if (age > SESSION_TIMEOUT) {
-      console.warn('⏰ Streaming session expired, clearing...');
+      console.warn("⏰ Streaming session expired, clearing...");
       clearStreamingSession();
       return null;
     }
 
     return session;
   } catch (error) {
-    console.error('Error reading streaming session:', error);
+    console.error("Error reading streaming session:", error);
     return null;
   }
 }
@@ -62,7 +62,7 @@ export function getStreamingSession(): StreamingSession | null {
  */
 export function clearStreamingSession() {
   sessionStorage.removeItem(STREAMING_SESSION_KEY);
-  console.log('🧹 Cleared streaming session');
+  console.log("🧹 Cleared streaming session");
 }
 
 /**
@@ -93,42 +93,55 @@ export function hasActiveStreamingSession(): boolean {
 export function updateStreamingData(partialData: any) {
   const session = getStreamingSession();
   if (!session) {
-    console.warn('No active streaming session to update');
+    console.warn("No active streaming session to update");
     return;
   }
 
   // Check if this is an incremental update (adding to itinerary) vs a full update
   // Handle both camelCase and snake_case formats from API
   const hasItineraryResponse = Boolean(
-    partialData.itinerary_response || partialData.itineraryResponse
+    partialData.itinerary_response || partialData.itineraryResponse,
   );
   const hasExistingData = Boolean(
-    session.data?.itinerary_response || session.data?.general_city_data
+    session.data?.itinerary_response || session.data?.general_city_data,
   );
 
   // It's incremental if we have existing data and we're getting an itinerary update
   const isIncrementalUpdate = hasExistingData && hasItineraryResponse;
 
   // Normalize incoming itinerary_response (handle both camelCase and snake_case)
-  const incomingItinerary = partialData.itinerary_response ||
-    (partialData.itineraryResponse ? {
-      itinerary_name: partialData.itineraryResponse.itineraryName || partialData.itineraryResponse.itinerary_name,
-      overall_description: partialData.itineraryResponse.overallDescription || partialData.itineraryResponse.overall_description,
-      points_of_interest: partialData.itineraryResponse.pointsOfInterest || partialData.itineraryResponse.points_of_interest || [],
-    } : undefined);
+  const incomingItinerary =
+    partialData.itinerary_response ||
+    (partialData.itineraryResponse
+      ? {
+          itinerary_name:
+            partialData.itineraryResponse.itineraryName ||
+            partialData.itineraryResponse.itinerary_name,
+          overall_description:
+            partialData.itineraryResponse.overallDescription ||
+            partialData.itineraryResponse.overall_description,
+          points_of_interest:
+            partialData.itineraryResponse.pointsOfInterest ||
+            partialData.itineraryResponse.points_of_interest ||
+            [],
+        }
+      : undefined);
 
   const mergedData = {
     ...session.data,
     ...partialData,
     // Only update general points_of_interest for FULL updates, not incremental
-    points_of_interest: !isIncrementalUpdate && partialData.points_of_interest
-      ? partialData.points_of_interest
-      : session.data?.points_of_interest,
+    points_of_interest:
+      !isIncrementalUpdate && partialData.points_of_interest
+        ? partialData.points_of_interest
+        : session.data?.points_of_interest,
     // Always update itinerary_response with merged data
-    itinerary_response: incomingItinerary ? {
-      ...session.data?.itinerary_response,
-      ...incomingItinerary,
-    } : session.data?.itinerary_response,
+    itinerary_response: incomingItinerary
+      ? {
+          ...session.data?.itinerary_response,
+          ...incomingItinerary,
+        }
+      : session.data?.itinerary_response,
   };
 
   setStreamingSession({

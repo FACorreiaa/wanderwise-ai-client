@@ -7,4 +7,4 @@ export {
   useLogoutMutation,
   useUpdatePasswordMutation,
   useRefreshTokenMutation,
-} from './auth-connect';
+} from "./auth-connect";

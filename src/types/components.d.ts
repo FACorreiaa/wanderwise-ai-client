@@ -14,9 +14,9 @@ export interface MapPOI {
   dogFriendly?: boolean;
 }
 
-// Chat Message Types  
+// Chat Message Types
 export interface ChatMessage {
-  type: 'user' | 'assistant' | 'error';
+  type: "user" | "assistant" | "error";
   content: string;
   timestamp: Date;
   id?: string;

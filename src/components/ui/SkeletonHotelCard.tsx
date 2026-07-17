@@ -1,5 +1,5 @@
 // SkeletonHotelCard.tsx
-import { Component, For } from 'solid-js';
+import { Component, For } from "solid-js";
 
 export const SkeletonHotelCard: Component = () => {
   return (
@@ -48,9 +48,7 @@ export const SkeletonHotelGrid: Component<{ count?: number }> = (props) => {
   const count = props.count || 6;
   return (
     <div class="space-y-4">
-      <For each={Array.from({ length: count })}>
-        {() => <SkeletonHotelCard />}
-      </For>
+      <For each={Array.from({ length: count })}>{() => <SkeletonHotelCard />}</For>
     </div>
   );
 };

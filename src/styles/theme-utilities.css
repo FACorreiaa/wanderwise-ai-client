@@ -1,0 +1,94 @@
+@layer utilities {
+  .aurora-sheen {
+    background-image:
+      radial-gradient(circle at 15% 20%, rgba(32, 148, 243, 0.18), transparent 24%),
+      radial-gradient(circle at 80% 12%, rgba(16, 185, 214, 0.16), transparent 28%),
+      radial-gradient(circle at 40% 85%, rgba(29, 78, 216, 0.1), transparent 30%),
+      linear-gradient(135deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.05));
+  }
+
+  .glass-panel {
+    @apply bg-card/95 border border-border backdrop-blur-xl;
+    box-shadow: 0 4px 24px hsl(var(--foreground) / 0.06);
+  }
+
+  .dark .glass-panel {
+    box-shadow: 0 4px 32px hsl(var(--foreground) / 0.15);
+  }
+
+  .gradient-border {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .gradient-border::before {
+    content: "";
+    position: absolute;
+    inset: -1px;
+    border-radius: inherit;
+    padding: 1px;
+    background: linear-gradient(
+      135deg,
+      rgba(16, 185, 129, 0.3),
+      rgba(20, 184, 166, 0.25),
+      rgba(6, 182, 212, 0.3)
+    );
+    -webkit-mask:
+      linear-gradient(#fff 0 0) content-box,
+      linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+  }
+
+  .soft-shadow {
+    box-shadow: 0 10px 45px rgba(15, 23, 42, 0.25);
+  }
+
+  .domain-grid {
+    background-image:
+      linear-gradient(to right, var(--grid-accent, rgba(12, 74, 110, 0.08)) 1px, transparent 1px),
+      linear-gradient(to bottom, var(--grid-accent, rgba(12, 74, 110, 0.08)) 1px, transparent 1px);
+    background-size: 140px 140px;
+    mask-image: radial-gradient(circle at 50% 50%, rgba(0, 0, 0, 0.75), transparent 65%);
+    opacity: 0.5;
+  }
+
+  .domain-veil {
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(circle at 30% 20%, var(--glow-a, rgba(37, 99, 235, 0.12)), transparent 28%),
+      radial-gradient(circle at 75% 15%, var(--glow-b, rgba(8, 145, 178, 0.12)), transparent 32%),
+      radial-gradient(circle at 45% 80%, var(--glow-c, rgba(52, 211, 153, 0.1)), transparent 30%);
+    filter: saturate(110%);
+  }
+
+  .domain-halo {
+    position: absolute;
+    inset: 0;
+    background: conic-gradient(
+      from 120deg,
+      transparent 0deg,
+      var(--halo, rgba(37, 99, 235, 0.12)) 120deg,
+      transparent 220deg
+    );
+    mix-blend-mode: soft-light;
+    opacity: 0.9;
+    transform: scale(1.4);
+    transform-origin: center;
+    contain: layout style paint;
+  }
+
+  .domain-noise {
+    position: absolute;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160' viewBox='0 0 160 160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.05'/%3E%3C/svg%3E");
+    mix-blend-mode: soft-light;
+    pointer-events: none;
+  }
+
+  .hero-glow {
+    background: var(--hero-glow);
+  }
+}

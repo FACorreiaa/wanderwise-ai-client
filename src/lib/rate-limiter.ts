@@ -23,9 +23,11 @@ export class ClientRateLimiter {
   }
 
   // Check if request should be allowed for a specific endpoint
-  public async checkRateLimit(endpoint: string): Promise<{ allowed: boolean; retryAfter?: number }> {
+  public async checkRateLimit(
+    endpoint: string,
+  ): Promise<{ allowed: boolean; retryAfter?: number }> {
     // Only apply rate limiting to LLM endpoints containing "prompt-response"
-    if (!endpoint.includes('prompt-response')) {
+    if (!endpoint.includes("prompt-response")) {
       return { allowed: true };
     }
 
@@ -44,7 +46,7 @@ export class ClientRateLimiter {
 
     // Check if we're still within the rate limit window
     const timeDiff = now - record.timestamp;
-    
+
     if (timeDiff >= this.windowMs) {
       // Reset the window
       this.requests.set(key, { timestamp: now, count: 1 });
@@ -55,10 +57,10 @@ export class ClientRateLimiter {
     if (record.count >= this.maxRequests) {
       const retryAfter = Math.ceil((this.windowMs - timeDiff) / 1000); // Convert to seconds
       console.warn(`Rate limit exceeded for ${endpoint}. Retry after ${retryAfter} seconds.`);
-      
-      return { 
-        allowed: false, 
-        retryAfter: retryAfter 
+
+      return {
+        allowed: false,
+        retryAfter: retryAfter,
       };
     }
 
@@ -70,12 +72,12 @@ export class ClientRateLimiter {
   // Generate a key for the endpoint (normalize variations)
   private getEndpointKey(endpoint: string): string {
     // Remove query parameters and normalize the endpoint
-    const baseEndpoint = endpoint.split('?')[0];
-    
+    const baseEndpoint = endpoint.split("?")[0];
+
     // Replace dynamic segments with placeholders for consistent rate limiting
     return baseEndpoint
-      .replace(/\/[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}/g, '/{id}') // UUID patterns
-      .replace(/\/\d+/g, '/{id}') // Numeric IDs
+      .replace(/\/[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}/g, "/{id}") // UUID patterns
+      .replace(/\/\d+/g, "/{id}") // Numeric IDs
       .toLowerCase();
   }
 
@@ -85,12 +87,13 @@ export class ClientRateLimiter {
     const expiredKeys: string[] = [];
 
     for (const [key, record] of this.requests.entries()) {
-      if (now - record.timestamp >= this.windowMs * 2) { // Keep for 2x the window
+      if (now - record.timestamp >= this.windowMs * 2) {
+        // Keep for 2x the window
         expiredKeys.push(key);
       }
     }
 
-    expiredKeys.forEach(key => this.requests.delete(key));
+    expiredKeys.forEach((key) => this.requests.delete(key));
   }
 
   // Get current usage stats for debugging
@@ -102,7 +105,7 @@ export class ClientRateLimiter {
       const timeLeft = Math.max(0, this.windowMs - (now - record.timestamp));
       stats[key] = {
         count: record.count,
-        windowExpiry: new Date(now + timeLeft).toISOString()
+        windowExpiry: new Date(now + timeLeft).toISOString(),
       };
     }
 
@@ -120,7 +123,7 @@ export class ClientRateLimiter {
 export const defaultLLMRateLimiter = new ClientRateLimiter({
   maxRequests: 20,
   windowMs: 60 * 1000, // 1 minute
-  retryAfterMs: 3000,   // 3 seconds
+  retryAfterMs: 3000, // 3 seconds
 });
 
 // Rate limit error class
@@ -128,27 +131,31 @@ export class RateLimitError extends Error {
   constructor(
     message: string,
     public retryAfter: number,
-    public endpoint: string
+    public endpoint: string,
   ) {
     super(message);
-    this.name = 'RateLimitError';
+    this.name = "RateLimitError";
   }
 }
 
 // Utility function to wait for retry
 export const waitForRetry = (seconds: number): Promise<void> => {
-  return new Promise(resolve => setTimeout(resolve, seconds * 1000));
+  return new Promise((resolve) => setTimeout(resolve, seconds * 1000));
 };
 
 // Show rate limit notification to user
 export const showRateLimitNotification = (retryAfter: number, endpoint: string): void => {
   // This could be integrated with your notification system
-  console.warn(`Rate limit exceeded for ${endpoint}. Please wait ${retryAfter} seconds before trying again.`);
-  
+  console.warn(
+    `Rate limit exceeded for ${endpoint}. Please wait ${retryAfter} seconds before trying again.`,
+  );
+
   // You could dispatch a custom event or call a notification service here
-  if (typeof window !== 'undefined') {
-    window.dispatchEvent(new CustomEvent('rate-limit-exceeded', {
-      detail: { retryAfter, endpoint }
-    }));
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(
+      new CustomEvent("rate-limit-exceeded", {
+        detail: { retryAfter, endpoint },
+      }),
+    );
   }
 };

@@ -1,9 +1,17 @@
-import { Component, createSignal, For, Show } from 'solid-js';
-import { useNavigate } from '@solidjs/router';
+import { Component, createSignal, For, Show } from "solid-js";
+import { useNavigate } from "@solidjs/router";
 import { Button } from "@/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/ui/card";
 import { Badge } from "@/ui/badge";
-import { FiArrowRight, FiCheck, FiMapPin, FiHeart, FiMessageCircle, FiUser, FiCamera } from 'solid-icons/fi';
+import {
+  FiArrowRight,
+  FiCheck,
+  FiMapPin,
+  FiHeart,
+  FiMessageCircle,
+  FiUser,
+  FiCamera,
+} from "solid-icons/fi";
 
 interface OnboardingStep {
   id: string;
@@ -22,50 +30,48 @@ const OnboardingCard: Component = () => {
 
   const steps: OnboardingStep[] = [
     {
-      id: 'profile',
-      title: 'Create Your Travel Profile',
-      description: 'Set up your preferences to get personalized recommendations',
+      id: "profile",
+      title: "Create Your Travel Profile",
+      description: "Set up your preferences to get personalized recommendations",
       icon: FiUser,
       completed: false,
-      action: 'Create Profile',
-      route: '/profiles'
+      action: "Create Profile",
+      route: "/profiles",
     },
     {
-      id: 'interests',
-      title: 'Choose Your Interests',
-      description: 'Select topics and activities you love to discover relevant places',
+      id: "interests",
+      title: "Choose Your Interests",
+      description: "Select topics and activities you love to discover relevant places",
       icon: FiHeart,
       completed: false,
-      action: 'Set Interests',
-      route: '/settings?tab=interests'
+      action: "Set Interests",
+      route: "/settings?tab=interests",
     },
     {
-      id: 'chat',
-      title: 'Try AI Planning',
-      description: 'Ask our AI assistant to create a personalized itinerary for you',
+      id: "chat",
+      title: "Try AI Planning",
+      description: "Ask our AI assistant to create a personalized itinerary for you",
       icon: FiMessageCircle,
       completed: false,
-      action: 'Start Chat',
-      route: '/chat'
+      action: "Start Chat",
+      route: "/chat",
     },
     {
-      id: 'explore',
-      title: 'Explore Destinations',
-      description: 'Browse hotels, restaurants, and attractions in your favorite cities',
+      id: "explore",
+      title: "Explore Destinations",
+      description: "Browse hotels, restaurants, and attractions in your favorite cities",
       icon: FiMapPin,
       completed: false,
-      action: 'Explore',
-      route: '/itinerary'
-    }
+      action: "Explore",
+      route: "/itinerary",
+    },
   ];
 
   const [onboardingSteps, setOnboardingSteps] = createSignal(steps);
 
   const markStepCompleted = (stepId: string) => {
-    setOnboardingSteps(prev =>
-      prev.map(step =>
-        step.id === stepId ? { ...step, completed: true } : step
-      )
+    setOnboardingSteps((prev) =>
+      prev.map((step) => (step.id === stepId ? { ...step, completed: true } : step)),
     );
   };
 
@@ -90,10 +96,10 @@ const OnboardingCard: Component = () => {
 
   const skipOnboarding = () => {
     setShowOnboarding(false);
-    localStorage.setItem('onboardingSkipped', 'true');
+    localStorage.setItem("onboardingSkipped", "true");
   };
 
-  const completedSteps = () => onboardingSteps().filter(step => step.completed).length;
+  const completedSteps = () => onboardingSteps().filter((step) => step.completed).length;
   const progressPercentage = () => Math.round((completedSteps() / onboardingSteps().length) * 100);
 
   return (
@@ -115,7 +121,9 @@ const OnboardingCard: Component = () => {
             <div class="mt-6">
               <div class="flex items-center justify-between text-sm text-gray-600 dark:text-gray-300 mb-2">
                 <span>Progress</span>
-                <span>{completedSteps()} of {onboardingSteps().length} completed</span>
+                <span>
+                  {completedSteps()} of {onboardingSteps().length} completed
+                </span>
               </div>
               <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
                 <div
@@ -135,11 +143,15 @@ const OnboardingCard: Component = () => {
                     {(() => {
                       const step = onboardingSteps()[currentStep()];
                       const IconComponent = step.icon;
-                      return <>{step.completed ? (
-                        <FiCheck class="w-6 h-6 text-white" />
-                      ) : (
-                        <IconComponent class="w-6 h-6 text-white" />
-                      )}</>;
+                      return (
+                        <>
+                          {step.completed ? (
+                            <FiCheck class="w-6 h-6 text-white" />
+                          ) : (
+                            <IconComponent class="w-6 h-6 text-white" />
+                          )}
+                        </>
+                      );
                     })()}
                   </div>
                   <div class="flex-1">
@@ -150,10 +162,12 @@ const OnboardingCard: Component = () => {
                       {onboardingSteps()[currentStep()].description}
                     </p>
                     <Button
-                      onClick={() => goToStep(
-                        onboardingSteps()[currentStep()].route,
-                        onboardingSteps()[currentStep()].id
-                      )}
+                      onClick={() =>
+                        goToStep(
+                          onboardingSteps()[currentStep()].route,
+                          onboardingSteps()[currentStep()].id,
+                        )
+                      }
                       class="bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white"
                       size="sm"
                     >
@@ -170,18 +184,24 @@ const OnboardingCard: Component = () => {
               <h4 class="font-medium text-gray-900 dark:text-white mb-3">Getting Started Steps:</h4>
               <For each={onboardingSteps()}>
                 {(step, index) => (
-                  <div class={`flex items-center gap-3 p-3 rounded-lg border transition-all ${step.completed
-                    ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800'
-                    : index() === currentStep()
-                      ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800'
-                      : 'bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700'
-                    }`}>
-                    <div class={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${step.completed
-                      ? 'bg-green-600 dark:bg-green-500'
-                      : index() === currentStep()
-                        ? 'bg-blue-600 dark:bg-blue-500'
-                        : 'bg-gray-400 dark:bg-gray-600'
-                      }`}>
+                  <div
+                    class={`flex items-center gap-3 p-3 rounded-lg border transition-all ${
+                      step.completed
+                        ? "bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800"
+                        : index() === currentStep()
+                          ? "bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800"
+                          : "bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700"
+                    }`}
+                  >
+                    <div
+                      class={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
+                        step.completed
+                          ? "bg-green-600 dark:bg-green-500"
+                          : index() === currentStep()
+                            ? "bg-blue-600 dark:bg-blue-500"
+                            : "bg-gray-400 dark:bg-gray-600"
+                      }`}
+                    >
                       {step.completed ? (
                         <FiCheck class="w-4 h-4 text-white" />
                       ) : (
@@ -190,8 +210,13 @@ const OnboardingCard: Component = () => {
                     </div>
                     <div class="flex-1">
                       <div class="flex items-center gap-2">
-                        <h5 class={`text-sm font-medium ${step.completed ? 'text-green-900 dark:text-green-100' : 'text-gray-900 dark:text-white'
-                          }`}>
+                        <h5
+                          class={`text-sm font-medium ${
+                            step.completed
+                              ? "text-green-900 dark:text-green-100"
+                              : "text-gray-900 dark:text-white"
+                          }`}
+                        >
                           {step.title}
                         </h5>
                         {step.completed && (
@@ -200,8 +225,13 @@ const OnboardingCard: Component = () => {
                           </Badge>
                         )}
                       </div>
-                      <p class={`text-xs ${step.completed ? 'text-green-700 dark:text-green-300' : 'text-gray-600 dark:text-gray-300'
-                        }`}>
+                      <p
+                        class={`text-xs ${
+                          step.completed
+                            ? "text-green-700 dark:text-green-300"
+                            : "text-gray-600 dark:text-gray-300"
+                        }`}
+                      >
                         {step.description}
                       </p>
                     </div>

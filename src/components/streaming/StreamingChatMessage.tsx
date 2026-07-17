@@ -1,7 +1,7 @@
-import { createSignal, Show, For, createEffect } from 'solid-js';
-import { Bot, Loader2, MapPin, Calendar, Clock, Star, Users, Heart } from 'lucide-solid';
-import { useStreamingChat } from '~/lib/hooks/useStreamingChat';
-import type { DomainType } from '~/lib/api/types';
+import { createSignal, Show, For, createEffect } from "solid-js";
+import { Bot, Loader2, MapPin, Calendar, Clock, Star, Users, Heart } from "lucide-solid";
+import { useStreamingChat } from "~/lib/hooks/useStreamingChat";
+import type { DomainType } from "~/lib/api/types";
 
 export interface StreamingChatMessageProps {
   url: string;
@@ -18,11 +18,11 @@ export function StreamingChatMessage(props: StreamingChatMessageProps) {
     onProgress: (data) => {
       // Accumulate streaming data as it arrives
       if (data) {
-        setAccumulatedData(prev => ({
+        setAccumulatedData((prev) => ({
           ...prev,
-          ...data
+          ...data,
         }));
-        
+
         // Process and display partial results immediately
         processPartialData(data);
       }
@@ -32,7 +32,7 @@ export function StreamingChatMessage(props: StreamingChatMessageProps) {
     },
     onRedirect: (domain, sessionId, city) => {
       props.onRedirect?.(domain, sessionId, city);
-    }
+    },
   });
 
   const processPartialData = (newData: any) => {
@@ -44,11 +44,11 @@ export function StreamingChatMessage(props: StreamingChatMessageProps) {
       const cityData = newData.general_city_data || currentData.general_city_data;
       if (cityData) {
         results.push({
-          type: 'city',
+          type: "city",
           title: `Exploring ${cityData.city}`,
           content: cityData.description || `Information about ${cityData.city}`,
           data: cityData,
-          icon: MapPin
+          icon: MapPin,
         });
       }
     }
@@ -58,11 +58,11 @@ export function StreamingChatMessage(props: StreamingChatMessageProps) {
       const pois = newData.points_of_interest || currentData.points_of_interest;
       if (pois && pois.length > 0) {
         results.push({
-          type: 'pois',
+          type: "pois",
           title: `Found ${pois.length} points of interest`,
           content: `Discovered ${pois.length} interesting places for your trip`,
           data: pois,
-          icon: Star
+          icon: Star,
         });
       }
     }
@@ -72,11 +72,11 @@ export function StreamingChatMessage(props: StreamingChatMessageProps) {
       const itinerary = newData.itinerary_response || currentData.itinerary_response;
       if (itinerary) {
         results.push({
-          type: 'itinerary',
-          title: itinerary.itinerary_name || 'Your Itinerary',
+          type: "itinerary",
+          title: itinerary.itinerary_name || "Your Itinerary",
           content: `Created a ${itinerary.duration_days || 1}-day itinerary`,
           data: itinerary,
-          icon: Calendar
+          icon: Calendar,
         });
       }
     }
@@ -86,11 +86,11 @@ export function StreamingChatMessage(props: StreamingChatMessageProps) {
       const hotels = newData.accommodation_response || currentData.accommodation_response;
       if (hotels && hotels.length > 0) {
         results.push({
-          type: 'hotels',
+          type: "hotels",
           title: `${hotels.length} accommodations found`,
           content: `Curated hotel recommendations for your stay`,
           data: hotels,
-          icon: Heart
+          icon: Heart,
         });
       }
     }
@@ -100,11 +100,11 @@ export function StreamingChatMessage(props: StreamingChatMessageProps) {
       const restaurants = newData.dining_response || currentData.dining_response;
       if (restaurants && restaurants.length > 0) {
         results.push({
-          type: 'restaurants',
+          type: "restaurants",
           title: `${restaurants.length} restaurants discovered`,
           content: `Handpicked dining experiences`,
           data: restaurants,
-          icon: Users
+          icon: Users,
         });
       }
     }
@@ -114,11 +114,11 @@ export function StreamingChatMessage(props: StreamingChatMessageProps) {
       const activities = newData.activities_response || currentData.activities_response;
       if (activities && activities.length > 0) {
         results.push({
-          type: 'activities',
+          type: "activities",
           title: `${activities.length} activities available`,
           content: `Exciting activities for your adventure`,
           data: activities,
-          icon: Clock
+          icon: Clock,
         });
       }
     }
@@ -141,10 +141,8 @@ export function StreamingChatMessage(props: StreamingChatMessageProps) {
           <Bot class="w-4 h-4 text-white" />
         </div>
         <div class="flex-1 min-w-0">
-          <div class="text-sm font-medium text-gray-900 mb-1">
-            AI Assistant
-          </div>
-          
+          <div class="text-sm font-medium text-gray-900 mb-1">AI Assistant</div>
+
           {/* Streaming status */}
           <Show when={currentState.isStreaming}>
             <div class="flex items-center gap-2 text-sm text-blue-600 mb-3">
@@ -163,10 +161,10 @@ export function StreamingChatMessage(props: StreamingChatMessageProps) {
           <Show when={currentState.isStreaming && currentState.progress > 0}>
             <div class="mb-4">
               <div class="w-full bg-gray-200 rounded-full h-2">
-                <div 
+                <div
                   class="bg-blue-600 h-2 rounded-full transition-all duration-300"
                   style={{ width: `${currentState.progress}%` }}
-                 />
+                />
               </div>
               <div class="text-xs text-gray-500 mt-1">
                 {Math.round(currentState.progress)}% complete
@@ -192,15 +190,11 @@ export function StreamingChatMessage(props: StreamingChatMessageProps) {
                       <result.icon class="w-4 h-4 text-blue-600" />
                     </div>
                     <div class="flex-1">
-                      <h4 class="font-medium text-gray-900 mb-1">
-                        {result.title}
-                      </h4>
-                      <p class="text-sm text-gray-600 mb-2">
-                        {result.content}
-                      </p>
-                      
+                      <h4 class="font-medium text-gray-900 mb-1">{result.title}</h4>
+                      <p class="text-sm text-gray-600 mb-2">{result.content}</p>
+
                       {/* Show partial data preview */}
-                      <Show when={result.type === 'pois' && result.data?.length > 0}>
+                      <Show when={result.type === "pois" && result.data?.length > 0}>
                         <div class="space-y-1">
                           <For each={result.data.slice(0, 3)}>
                             {(poi: any) => (
@@ -220,14 +214,14 @@ export function StreamingChatMessage(props: StreamingChatMessageProps) {
                         </div>
                       </Show>
 
-                      <Show when={result.type === 'city' && result.data?.city}>
+                      <Show when={result.type === "city" && result.data?.city}>
                         <div class="text-xs text-gray-500 bg-white rounded px-2 py-1">
                           📍 {result.data.city}
                           {result.data.country && `, ${result.data.country}`}
                         </div>
                       </Show>
 
-                      <Show when={result.type === 'itinerary' && result.data?.itinerary_name}>
+                      <Show when={result.type === "itinerary" && result.data?.itinerary_name}>
                         <div class="text-xs text-gray-500 bg-white rounded px-2 py-1">
                           📅 {result.data.itinerary_name}
                           {result.data.duration_days && ` (${result.data.duration_days} days)`}
@@ -241,7 +235,9 @@ export function StreamingChatMessage(props: StreamingChatMessageProps) {
           </div>
 
           {/* Completion message */}
-          <Show when={!currentState.isStreaming && !currentState.error && displayedResults().length > 0}>
+          <Show
+            when={!currentState.isStreaming && !currentState.error && displayedResults().length > 0}
+          >
             <div class="mt-4 p-3 bg-green-50 border border-green-200 rounded-lg">
               <p class="text-sm text-green-700 font-medium">
                 ✓ Your travel plan is ready! Click on any section above to explore in detail.
@@ -252,7 +248,7 @@ export function StreamingChatMessage(props: StreamingChatMessageProps) {
           {/* Control buttons */}
           <Show when={currentState.isStreaming}>
             <div class="mt-4">
-              <button 
+              <button
                 onClick={stopStream}
                 class="text-xs text-gray-500 hover:text-gray-700 px-2 py-1 rounded border border-gray-300 hover:border-gray-400"
               >
@@ -285,8 +281,8 @@ const styles = `
 `;
 
 // Inject styles
-if (typeof document !== 'undefined') {
-  const styleSheet = document.createElement('style');
+if (typeof document !== "undefined") {
+  const styleSheet = document.createElement("style");
   styleSheet.textContent = styles;
   document.head.appendChild(styleSheet);
 }

@@ -1,6 +1,6 @@
-import { createSignal, createEffect, Show } from 'solid-js';
-import { MapPin, X, Navigation, AlertCircle } from 'lucide-solid';
-import { useUserLocation } from '~/contexts/LocationContext';
+import { createSignal, createEffect, Show } from "solid-js";
+import { MapPin, X, Navigation, AlertCircle } from "lucide-solid";
+import { useUserLocation } from "~/contexts/LocationContext";
 
 interface LocationPermissionPromptProps {
   onPermissionGranted?: () => void;
@@ -37,14 +37,16 @@ export default function LocationPermissionPrompt(props: LocationPermissionPrompt
 
   // Auto-hide if permission is already granted
   createEffect(() => {
-    if (permissionStatus() === 'granted') {
+    if (permissionStatus() === "granted") {
       setIsVisible(false);
     }
   });
 
   return (
-    <Show when={isVisible() && permissionStatus() !== 'granted'}>
-      <div class={`fixed bottom-4 right-4 max-w-sm bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 p-4 z-50 ${props.className || ''}`}>
+    <Show when={isVisible() && permissionStatus() !== "granted"}>
+      <div
+        class={`fixed bottom-4 right-4 max-w-sm bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 p-4 z-50 ${props.className || ""}`}
+      >
         {/* Close button */}
         <button
           onClick={handleDismiss}
@@ -61,7 +63,9 @@ export default function LocationPermissionPrompt(props: LocationPermissionPrompt
               <MapPin class="w-5 h-5 text-blue-600 dark:text-blue-400" />
             </div>
             <div>
-              <h3 class="font-semibold text-gray-900 dark:text-white text-sm">Better Recommendations</h3>
+              <h3 class="font-semibold text-gray-900 dark:text-white text-sm">
+                Better Recommendations
+              </h3>
               <p class="text-xs text-gray-600 dark:text-gray-300">Find places near you</p>
             </div>
           </div>
@@ -69,7 +73,8 @@ export default function LocationPermissionPrompt(props: LocationPermissionPrompt
           {/* Content */}
           <Show when={!hasRequested()}>
             <p class="text-sm text-gray-600 dark:text-gray-300 mb-4">
-              Allow location access to get personalized recommendations and accurate distances to nearby places.
+              Allow location access to get personalized recommendations and accurate distances to
+              nearby places.
             </p>
 
             <div class="flex gap-2">
@@ -81,7 +86,7 @@ export default function LocationPermissionPrompt(props: LocationPermissionPrompt
                 <Show when={isLoadingLocation()} fallback={<Navigation class="w-4 h-4" />}>
                   <div class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                 </Show>
-                <span>{isLoadingLocation() ? 'Requesting...' : 'Allow Location'}</span>
+                <span>{isLoadingLocation() ? "Requesting..." : "Allow Location"}</span>
               </button>
 
               <button
@@ -107,7 +112,7 @@ export default function LocationPermissionPrompt(props: LocationPermissionPrompt
           </Show>
 
           {/* Success state */}
-          <Show when={permissionStatus() === 'granted'}>
+          <Show when={permissionStatus() === "granted"}>
             <div class="flex items-center gap-2 text-green-600 dark:text-green-400 text-sm">
               <div class="w-4 h-4 bg-green-600 rounded-full flex items-center justify-center">
                 <div class="w-2 h-2 bg-white dark:bg-gray-800 rounded-full" />

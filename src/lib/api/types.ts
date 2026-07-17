@@ -38,12 +38,12 @@ export interface UserProfileResponse {
     following?: number;
   };
   badges?: string[];
+  theme?: string;
+  language?: string;
   social_links?: Record<string, string>;
   preferences?: Record<string, unknown>;
   settings?: Record<string, unknown>;
 }
-
-
 
 // Define the processed profile data type
 export interface ProcessedProfileData {
@@ -65,8 +65,6 @@ export interface ProcessedProfileData {
   };
 }
 
-
-
 export interface Interest {
   id: string;
   name: string;
@@ -74,7 +72,7 @@ export interface Interest {
   active?: boolean | null;
   created_at: string;
   updated_at?: string | null;
-  source: 'global' | 'custom';
+  source: "global" | "custom";
 }
 
 export interface PersonalTag {
@@ -83,7 +81,7 @@ export interface PersonalTag {
   name: string;
   tag_type: string;
   description?: string | null;
-  source?: 'global' | 'personal' | null;
+  source?: "global" | "personal" | null;
   active?: boolean | null;
   created_at: string;
   updated_at?: string | null;
@@ -117,8 +115,8 @@ export interface POI {
 
 export interface ChatMessage {
   id: string;
-  type: 'user' | 'assistant' | 'system';
-  role?: 'user' | 'assistant' | 'system'; // For backward compatibility
+  type: "user" | "assistant" | "system";
+  role?: "user" | "assistant" | "system"; // For backward compatibility
   content: string;
   timestamp: Date;
   hasItinerary?: boolean;
@@ -188,7 +186,7 @@ export interface SessionEngagementMetrics {
   assistant_message_count: number;
   avg_message_length: number;
   peak_activity_time?: string;
-  engagement_level: 'low' | 'medium' | 'high';
+  engagement_level: "low" | "medium" | "high";
 }
 
 export interface ItineraryList {
@@ -245,7 +243,14 @@ export interface Hotel {
   checkIn?: string;
   checkOut?: string;
   nearbyAttractions?: { name: string; type: string; distance: string }[];
-  rooms?: { type: string; description: string; price: string; size: string; capacity: string; amenities: string[] }[];
+  rooms?: {
+    type: string;
+    description: string;
+    price: string;
+    size: string;
+    capacity: string;
+    amenities: string[];
+  }[];
   contact?: { phone?: string; email?: string; website?: string };
   pricePerNight?: string;
 }
@@ -387,9 +392,20 @@ export interface TravelProfileFormData {
 // STREAMING TYPES
 // ==================
 
-export type DomainType = 'general' | 'itinerary' | 'accommodation' | 'dining' | 'activities';
+export type DomainType = "general" | "itinerary" | "accommodation" | "dining" | "activities";
 
-export type StreamEventType = 'start' | 'chunk' | 'complete' | 'error' | 'city_data' | 'general_pois' | 'itinerary' | 'hotels' | 'restaurants' | 'activities' | 'progress';
+export type StreamEventType =
+  | "start"
+  | "chunk"
+  | "complete"
+  | "error"
+  | "city_data"
+  | "general_pois"
+  | "itinerary"
+  | "hotels"
+  | "restaurants"
+  | "activities"
+  | "progress";
 
 // Streaming chunk data interfaces
 export interface StreamChunkData {
@@ -410,7 +426,17 @@ export interface ProgressData {
 
 export interface StreamEvent {
   type: StreamEventType;
-  data?: UnifiedChatResponse | GeneralCityData | POIDetailedInfo[] | HotelDetailedInfo[] | RestaurantDetailedInfo[] | AIItineraryResponse | StreamChunkData | StreamCompleteData | string | ProgressData;
+  data?:
+    | UnifiedChatResponse
+    | GeneralCityData
+    | POIDetailedInfo[]
+    | HotelDetailedInfo[]
+    | RestaurantDetailedInfo[]
+    | AIItineraryResponse
+    | StreamChunkData
+    | StreamCompleteData
+    | string
+    | ProgressData;
   error?: string;
   event_id?: string;
   timestamp?: string;
@@ -485,6 +511,36 @@ export interface HotelDetailedInfo {
   images: string[];
   rating: number;
   llm_interaction_id: string;
+  // Extended fields for detail page
+  checkIn?: string;
+  checkOut?: string;
+  pricePerNight?: string;
+  reviewCount?: number;
+  features?: string[];
+  rooms?: HotelRoom[];
+  nearbyAttractions?: NearbyAttraction[];
+  contact?: HotelContact;
+}
+
+export interface HotelRoom {
+  type: string;
+  description: string;
+  price: string;
+  size: string;
+  capacity: string;
+  amenities: string[];
+}
+
+export interface NearbyAttraction {
+  name: string;
+  type: string;
+  distance: string;
+}
+
+export interface HotelContact {
+  phone?: string;
+  email?: string;
+  website?: string;
 }
 
 export interface RestaurantDetailedInfo {
@@ -505,6 +561,28 @@ export interface RestaurantDetailedInfo {
   images: string[];
   rating: number;
   llm_interaction_id: string;
+  // Extended fields for detail page
+  reviewCount?: number;
+  isOpen?: boolean;
+  reservationRequired?: boolean;
+  acceptsCards?: boolean;
+  features?: string[] | { name: string; icon: any; available: boolean }[];
+  specialties?: string[];
+  languages?: string[];
+  averagePrice?: string;
+  priceRange?: string;
+  cuisine?: string;
+  menu?: {
+    starters: { name: string; description: string; price: string }[];
+    mains: { name: string; description: string; price: string }[];
+    desserts: { name: string; description: string; price: string }[];
+  };
+  hours?: Record<string, string>;
+  contact?: {
+    phone?: string;
+    email?: string;
+    website?: string;
+  };
 }
 
 export interface POIDetailedInfo {
@@ -541,23 +619,27 @@ export interface POIDetailedInfo {
 // Domain-specific response types
 export interface AccommodationResponse {
   hotels: HotelDetailedInfo[];
-  domain: 'accommodation';
+  domain: "accommodation";
   session_id: string;
 }
 
 export interface DiningResponse {
   restaurants: RestaurantDetailedInfo[];
-  domain: 'dining';
+  domain: "dining";
   session_id: string;
 }
 
 export interface ActivitiesResponse {
   activities: POIDetailedInfo[];
-  domain: 'activities';
+  domain: "activities";
   session_id: string;
 }
 
-export type UnifiedChatResponse = AiCityResponse | AccommodationResponse | DiningResponse | ActivitiesResponse;
+export type UnifiedChatResponse =
+  | AiCityResponse
+  | AccommodationResponse
+  | DiningResponse
+  | ActivitiesResponse;
 
 // Streaming session management
 export interface StreamingSession {
@@ -582,7 +664,7 @@ export interface RecentSearch {
 
 export interface RecentActivity {
   id: string;
-  type: 'search' | 'poi_view' | 'hotel_view' | 'restaurant_view' | 'itinerary_save' | 'list_create';
+  type: "search" | "poi_view" | "hotel_view" | "restaurant_view" | "itinerary_save" | "list_create";
   entity_id?: string;
   entity_name?: string;
   timestamp: string;
@@ -688,9 +770,6 @@ export interface RecentInteractionsResponse {
   offset: number;
   limit: number;
 }
-
-
-
 
 // Bookmark/Save Itinerary Request
 export interface BookmarkRequest {

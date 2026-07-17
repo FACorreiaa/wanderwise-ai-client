@@ -14,9 +14,7 @@ import FavoriteButton from "~/components/shared/FavoriteButton";
 
 export default function ActivitiesPage() {
   const [searchParams] = useSearchParams();
-  const [message] = createSignal(
-    (searchParams.message as string) || "Show me activities"
-  );
+  const [message] = createSignal((searchParams.message as string) || "Show me activities");
   const [cityName] = createSignal((searchParams.cityName as string) || "London");
 
   const { state, startStream } = useChatRPC();
@@ -46,19 +44,22 @@ export default function ActivitiesPage() {
     const sessionIdFromUrl = searchParams.sessionId as string;
 
     if (sessionIdFromUrl) {
-      const completedSession = sessionStorage.getItem('completedStreamingSession');
+      const completedSession = sessionStorage.getItem("completedStreamingSession");
       if (completedSession) {
         try {
           const parsed = JSON.parse(completedSession);
           const parsedData = parsed.data || parsed;
 
-          if (parsedData && (parsed.sessionId === sessionIdFromUrl || parsedData.session_id === sessionIdFromUrl)) {
+          if (
+            parsedData &&
+            (parsed.sessionId === sessionIdFromUrl || parsedData.session_id === sessionIdFromUrl)
+          ) {
             const normalizedData = normalizeStoredData(parsedData);
             setRestoredData(normalizedData);
             return;
           }
         } catch (e) {
-          console.warn('Failed to parse completed streaming session:', e);
+          console.warn("Failed to parse completed streaming session:", e);
         }
       }
       return;
@@ -80,11 +81,11 @@ export default function ActivitiesPage() {
   });
 
   const allPois = createMemo(() => {
-    return activities().map(a => ({
+    return activities().map((a) => ({
       ...a,
       id: a.name,
-      latitude: typeof a.latitude === 'string' ? parseFloat(a.latitude) : a.latitude,
-      longitude: typeof a.longitude === 'string' ? parseFloat(a.longitude) : a.longitude,
+      latitude: typeof a.latitude === "string" ? parseFloat(a.latitude) : a.latitude,
+      longitude: typeof a.longitude === "string" ? parseFloat(a.longitude) : a.longitude,
     })) as POIDetailedInfo[];
   });
 
@@ -101,11 +102,13 @@ export default function ActivitiesPage() {
 
   const handleShare = () => {
     if (navigator.share) {
-      navigator.share({
-        title: `Activities in ${cityName()}`,
-        text: `Check out these activities in ${cityName()}!`,
-        url: window.location.href,
-      }).catch(console.error);
+      navigator
+        .share({
+          title: `Activities in ${cityName()}`,
+          text: `Check out these activities in ${cityName()}!`,
+          url: window.location.href,
+        })
+        .catch(console.error);
     }
   };
 
@@ -114,10 +117,8 @@ export default function ActivitiesPage() {
   };
 
   const _handleItemFavorite = (name: string) => {
-    setFavorites(prev =>
-      prev.includes(name)
-        ? prev.filter(n => n !== name)
-        : [...prev, name]
+    setFavorites((prev) =>
+      prev.includes(name) ? prev.filter((n) => n !== name) : [...prev, name],
     );
     console.log(`Toggled favorite for: ${name}`);
   };
@@ -125,16 +126,19 @@ export default function ActivitiesPage() {
   const _isFavorite = (name: string) => favorites().includes(name);
 
   const MapContent = (
-    <div class="h-full w-full bg-slate-100 dark:bg-slate-900 relative">
-      <Show when={allPois().length > 0} fallback={
-        <div class="h-full w-full flex items-center justify-center text-muted-foreground p-4 text-center">
-          {state.isStreaming ? "Loading map data..." : "No items to display on map"}
-        </div>
-      }>
+    <div class="h-full w-full bg-muted relative">
+      <Show
+        when={allPois().length > 0}
+        fallback={
+          <div class="h-full w-full flex items-center justify-center text-muted-foreground p-4 text-center">
+            {state.isStreaming ? "Loading map data..." : "No items to display on map"}
+          </div>
+        }
+      >
         <MapComponent
           center={[
             (allPois()[0]?.longitude as number) || 0,
-            (allPois()[0]?.latitude as number) || 0
+            (allPois()[0]?.latitude as number) || 0,
           ]}
           pointsOfInterest={allPois()}
           zoom={12}
@@ -152,12 +156,12 @@ export default function ActivitiesPage() {
   );
 
   const ListContent = (
-    <div class="h-full overflow-y-auto p-4 md:p-6 bg-slate-50/50 dark:bg-slate-950/50 backdrop-blur-sm">
+    <div class="h-full overflow-y-auto p-4 md:p-6 bg-background/50 backdrop-blur-sm">
       <div class="max-w-3xl mx-auto pb-20">
         <CityInfoHeader cityData={cityData()} isLoading={state.isStreaming && !cityData()} />
 
         <Show when={state.error}>
-          <div class="mb-6 p-4 rounded-xl bg-red-50 border border-red-200 text-red-600 dark:bg-red-900/20 dark:border-red-900/50 dark:text-red-400">
+          <div class="mb-6 p-4 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive">
             <p class="font-bold">Unable to load activities</p>
             <p class="text-sm opacity-90">{state.error}</p>
           </div>
@@ -169,13 +173,13 @@ export default function ActivitiesPage() {
 
         <Show when={activities().length > 0}>
           <div class="mb-8">
-            <h3 class="text-xl font-bold mb-4 text-gray-800 dark:text-white flex items-center gap-2">
+            <h3 class="text-xl font-bold mb-4 text-foreground flex items-center gap-2">
               <span class="text-2xl">🎯</span> Activities ({activities().length})
             </h3>
             <div class="space-y-4">
               <For each={activities()}>
                 {(item) => (
-                  <Card class="hover:shadow-md transition-all cursor-pointer bg-white/80 dark:bg-gray-800/80 backdrop-blur">
+                  <Card class="hover:shadow-md transition-all cursor-pointer bg-card/80 backdrop-blur border-border">
                     <CardHeader>
                       <div class="flex justify-between items-start">
                         <CardTitle class="text-lg">{item.name}</CardTitle>
@@ -184,8 +188,8 @@ export default function ActivitiesPage() {
                             item={{
                               id: item.name,
                               name: item.name,
-                              contentType: 'poi',
-                              description: item.description_poi || item.description || '',
+                              contentType: "poi",
+                              description: item.description_poi || item.description || "",
                             }}
                             size="sm"
                           />
@@ -194,10 +198,10 @@ export default function ActivitiesPage() {
                       </div>
                     </CardHeader>
                     <CardContent>
-                      <p class="text-sm text-gray-600 dark:text-gray-300 line-clamp-3 mb-2">
+                      <p class="text-sm text-muted-foreground line-clamp-3 mb-2">
                         {item.description_poi || item.description}
                       </p>
-                      <div class="text-xs text-gray-500">
+                      <div class="text-xs text-muted-foreground">
                         <p>{item.address}</p>
                       </div>
                     </CardContent>
@@ -213,16 +217,12 @@ export default function ActivitiesPage() {
 
   return (
     <>
-      <SplitView
-        listContent={ListContent}
-        mapContent={MapContent}
-        initialMode="split"
-      />
+      <SplitView listContent={ListContent} mapContent={MapContent} initialMode="split" />
       <FloatingChat
         getStreamingData={() => effectiveData()}
         setStreamingData={(fn) => {
           const currentData = effectiveData();
-          const newData = typeof fn === 'function' ? fn(currentData) : fn;
+          const newData = typeof fn === "function" ? fn(currentData) : fn;
           setRestoredData(newData);
         }}
         initialSessionId={searchParams.sessionId as string}
@@ -234,9 +234,9 @@ export default function ActivitiesPage() {
 function ActivitiesSkeleton() {
   return (
     <div class="space-y-6">
-      <div class="rounded-2xl bg-gray-200 dark:bg-gray-800 h-64 animate-pulse" />
+      <div class="rounded-2xl bg-muted h-64 animate-pulse" />
       <div class="space-y-4">
-        <Card class="bg-white/50 dark:bg-slate-900/50">
+        <Card class="bg-card/50 border-border">
           <CardHeader>
             <Skeleton class="h-6 w-1/3 mb-2" />
             <Skeleton class="h-4 w-1/4" />
@@ -245,7 +245,7 @@ function ActivitiesSkeleton() {
             <Skeleton class="h-16 w-full" />
           </CardContent>
         </Card>
-        <Card class="bg-white/50 dark:bg-slate-900/50">
+        <Card class="bg-card/50 border-border">
           <CardHeader>
             <Skeleton class="h-6 w-1/3 mb-2" />
             <Skeleton class="h-4 w-1/4" />
