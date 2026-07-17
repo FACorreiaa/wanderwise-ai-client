@@ -4,7 +4,7 @@
  */
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "loci",
+  "name": "loci-client",
   "main": "./.output/server/index.mjs",
   "compatibility_date": "2025-06-12",
   "compatibility_flags": ["nodejs_compat"],
@@ -16,17 +16,12 @@
     "enabled": true,
   },
   /**
-   * Staging Environment (Beta)
-   * Deploy with: wrangler deploy --env staging
+   * NOTE: no top-level `env` block. Vinxi/Nitro copies this file into the
+   * generated .output/server/wrangler.json ("redirected" config), and wrangler
+   * rejects a redirected config that contains environments — it broke the
+   * Cloudflare Workers Build deploy (`wrangler versions upload`). A staging
+   * worker needs its own separate config, not an `env.staging` block here.
    */
-  "env": {
-    "staging": {
-      "name": "loci-staging",
-      "vars": {
-        "ENVIRONMENT": "staging",
-      },
-    },
-  },
   /**
    * Smart Placement
    * Docs: https://developers.cloudflare.com/workers/configuration/smart-placement/#smart-placement

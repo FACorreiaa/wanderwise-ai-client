@@ -4,7 +4,7 @@ import { Title, Meta } from "@solidjs/meta";
 import { Plug, KeyRound, Terminal, Sparkles, ArrowRight } from "lucide-solid";
 import { useAuth } from "~/contexts/AuthContext";
 
-const MCP_ENDPOINT = `${import.meta.env.VITE_CONNECT_BASE_URL ?? "https://api.loci.app"}/mcp`;
+const MCP_ENDPOINT = `${import.meta.env.VITE_CONNECT_BASE_URL ?? "http://localhost:8000"}/mcp`;
 
 export default function McpPage() {
   const { isAuthenticated } = useAuth();
