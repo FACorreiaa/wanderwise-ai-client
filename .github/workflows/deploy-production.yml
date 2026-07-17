@@ -39,7 +39,7 @@ jobs:
       - name: Build verification
         run: pnpm run build
         env:
-          VITE_API_URL: ${{ secrets.PRODUCTION_API_URL }}
+          VITE_CONNECT_BASE_URL: ${{ secrets.PRODUCTION_API_URL }}
 
   deploy-production:
     name: Deploy to Production
@@ -68,7 +68,7 @@ jobs:
       - name: Build for production
         run: pnpm run build
         env:
-          VITE_API_URL: ${{ secrets.PRODUCTION_API_URL }}
+          VITE_CONNECT_BASE_URL: ${{ secrets.PRODUCTION_API_URL }}
           NODE_ENV: production
 
       - name: Deploy to Cloudflare (Production)

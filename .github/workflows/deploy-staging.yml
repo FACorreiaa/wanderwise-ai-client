@@ -43,7 +43,7 @@ jobs:
       - name: Build for staging
         run: pnpm run build
         env:
-          VITE_API_URL: ${{ secrets.STAGING_API_URL }}
+          VITE_CONNECT_BASE_URL: ${{ secrets.STAGING_API_URL }}
           NODE_ENV: staging
 
       - name: Deploy to Cloudflare (Staging)

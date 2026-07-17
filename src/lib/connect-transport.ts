@@ -17,7 +17,7 @@ import { notifyAuthExpired } from "./auth/auth-events";
 import { logger } from "./logger";
 
 // Connect RPC base URL (without /api/v1 prefix - Connect appends service paths)
-const API_BASE_URL = import.meta.env.VITE_CONNECT_BASE_URL;
+const API_BASE_URL = import.meta.env.VITE_CONNECT_BASE_URL || "http://localhost:8000";
 
 // Bare transport WITHOUT the refresh interceptor, used only to refresh tokens.
 // Using the main authenticated transport here would recurse: a 401 from the
