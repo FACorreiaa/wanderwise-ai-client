@@ -11,7 +11,7 @@ on:
 
 env:
   NODE_VERSION: "22"
-  PNPM_VERSION: "9"
+  PNPM_VERSION: "11"
 
 jobs:
   # Require CI to pass before deploying
