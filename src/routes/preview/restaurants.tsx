@@ -28,7 +28,7 @@ export default function PreviewRestaurantsPage() {
   const handleBookmark = () => alert("Sign in to bookmark!");
 
   const MapContent = (
-    <div class="h-full w-full bg-slate-100 dark:bg-slate-900 relative">
+    <div class="h-full w-full bg-muted relative">
       <Show when={allPois().length > 0}>
         <MapComponent
           center={[
@@ -51,10 +51,10 @@ export default function PreviewRestaurantsPage() {
   );
 
   const ListContent = (
-    <div class="h-full overflow-y-auto p-4 md:p-6 bg-slate-50/50 dark:bg-slate-950/50 backdrop-blur-sm">
+    <div class="h-full overflow-y-auto p-4 md:p-6 bg-background/50 backdrop-blur-sm">
       <div class="max-w-3xl mx-auto pb-20">
         <div class="mb-6">
-          <div class="inline-block px-3 py-1 mb-4 rounded-full bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 text-xs font-semibold border border-orange-200 dark:border-orange-800">
+          <div class="loci-chip text-xs font-semibold mb-4">
             Preview Mode
           </div>
           <CityInfoHeader cityData={cityData()} isLoading={false} />
@@ -62,7 +62,7 @@ export default function PreviewRestaurantsPage() {
 
         <Show when={restaurants().length > 0}>
           <div class="mb-8">
-            <h3 class="text-xl font-bold mb-4 text-gray-800 dark:text-white flex items-center gap-2">
+            <h3 class="text-xl font-bold mb-4 text-foreground flex items-center gap-2">
               <span class="text-2xl">🍽️</span> Restaurants ({restaurants().length})
             </h3>
             <RestaurantResults

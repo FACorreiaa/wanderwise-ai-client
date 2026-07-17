@@ -73,18 +73,14 @@ export default function Hero(props: HeroProps) {
                 placeholder={props.placeholder}
                 value={searchQuery()}
                 onInput={(e) => setSearchQuery(e.currentTarget.value)}
-                class="w-full rounded-full py-4 sm:py-5 md:py-6 pl-12 sm:pl-16 pr-14 sm:pr-16 text-base sm:text-lg border border-border shadow-lg focus:shadow-xl transition-shadow bg-background/60 backdrop-blur-sm focus:bg-background focus:outline-none focus:ring-2 focus:ring-primary text-foreground placeholder:text-muted-foreground
-                                       [&[data-theme='vt-news']]:bg-gray-800/80 [&[data-theme='vt-news']]:border-gray-600 [&[data-theme='vt-news']]:focus:ring-yellow-500
-                                       [&[data-theme='valuetainment']]:focus:ring-red-500"
+                class="w-full rounded-full py-4 sm:py-5 md:py-6 pl-12 sm:pl-16 pr-14 sm:pr-16 text-base sm:text-lg border border-border shadow-lg focus:shadow-xl transition-shadow bg-background/60 backdrop-blur-sm focus:bg-background focus:outline-none focus:ring-2 focus:ring-primary text-foreground placeholder:text-muted-foreground"
               />
             </TextFieldRoot>
             <div class="absolute inset-y-0 right-0 flex items-center pr-2 sm:pr-3">
               <Button
                 type="submit"
                 size="icon"
-                class="rounded-full bg-primary hover:bg-primary/90 h-9 w-9 sm:h-10 sm:w-10 transition-all hover:scale-105
-                                                                     [&[data-theme='vt-news']]:bg-yellow-600 [&[data-theme='vt-news']]:hover:bg-yellow-700 [&[data-theme='vt-news']]:text-black
-                                                                     [&[data-theme='valuetainment']]:bg-red-600 [&[data-theme='valuetainment']]:hover:bg-red-700"
+                class="rounded-full bg-primary hover:bg-primary/90 h-9 w-9 sm:h-10 sm:w-10 transition-all hover:scale-105"
               >
                 <FiArrowRight class="h-4 w-4 sm:h-5 sm:w-5 text-primary-foreground" />
               </Button>
@@ -103,7 +99,7 @@ export default function Hero(props: HeroProps) {
                   onClick={() => setSelectedContext(option.id)}
                   class={`group relative p-4 rounded-xl border transition-all duration-200 hover:shadow-md ${
                     selectedContext() === option.id
-                      ? 'border-primary bg-primary/10 [&[data-theme="vt-news"]]:border-yellow-500 [&[data-theme="vt-news"]]:bg-yellow-500/10 [&[data-theme="valuetainment"]]:border-red-500 [&[data-theme="valuetainment"]]:bg-red-500/10'
+                      ? "border-primary bg-primary/10"
                       : "border-border bg-background/60 backdrop-blur-sm hover:bg-accent"
                   }`}
                 >
@@ -111,8 +107,8 @@ export default function Hero(props: HeroProps) {
                     <div
                       class={`p-2 rounded-lg transition-colors ${
                         selectedContext() === option.id
-                          ? 'bg-primary text-primary-foreground [&[data-theme="vt-news"]]:bg-yellow-500 [&[data-theme="vt-news"]]:text-black [&[data-theme="valuetainment"]]:bg-red-500'
-                          : 'bg-muted text-muted-foreground group-hover:bg-primary group-hover:text-primary-foreground [&[data-theme="vt-news"]]:group-hover:bg-yellow-500 [&[data-theme="vt-news"]]:group-hover:text-black [&[data-theme="valuetainment"]]:group-hover:bg-red-500'
+                          ? "bg-primary text-primary-foreground"
+                          : "bg-muted text-muted-foreground group-hover:bg-primary group-hover:text-primary-foreground"
                       }`}
                     >
                       {option.icon}
@@ -120,9 +116,7 @@ export default function Hero(props: HeroProps) {
                     <div>
                       <h3
                         class={`font-semibold text-sm ${
-                          selectedContext() === option.id
-                            ? 'text-primary [&[data-theme="vt-news"]]:text-yellow-600 [&[data-theme="valuetainment"]]:text-red-600'
-                            : "text-foreground"
+                          selectedContext() === option.id ? "text-primary" : "text-foreground"
                         }`}
                       >
                         {option.label}
@@ -132,8 +126,7 @@ export default function Hero(props: HeroProps) {
                   </div>
                   {selectedContext() === option.id && (
                     <div
-                      class="absolute inset-0 rounded-xl ring-2 ring-primary/20 ring-offset-2 ring-offset-background 
-                                                    [&[data-theme='vt-news']]:ring-yellow-500/20 [&[data-theme='valuetainment']]:ring-red-500/20"
+                      class="absolute inset-0 rounded-xl ring-2 ring-primary/20 ring-offset-2 ring-offset-background"
                     />
                   )}
                 </button>

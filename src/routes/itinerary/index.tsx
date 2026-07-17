@@ -320,7 +320,7 @@ export default function ItineraryPage() {
 
   // Map Content
   const MapContent = (
-    <div class="h-full w-full bg-slate-100 dark:bg-slate-900 relative">
+    <div class="h-full w-full bg-muted relative">
       <Show
         when={mapPois().length > 0}
         fallback={

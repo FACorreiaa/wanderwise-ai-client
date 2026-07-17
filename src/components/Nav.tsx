@@ -29,6 +29,7 @@ import { handleLinkPreload } from "~/lib/preload";
 const publicNavigationItems = [
   { name: "About", href: "/about" },
   { name: "Features", href: "/features" },
+  { name: "MCP", href: "/mcp" },
   { name: "Roadmap", href: "/roadmap" },
   { name: "Pricing", href: "/pricing" },
 ];
@@ -92,18 +93,18 @@ export default function Nav() {
                     alt="Loci logo"
                     class="w-full h-full object-contain"
                   />
-                  <ImageFallback class="w-full h-full bg-blue-600 text-white rounded flex items-center justify-center text-sm font-bold">
+                  <ImageFallback class="w-full h-full bg-primary text-primary-foreground rounded flex items-center justify-center text-sm font-bold">
                     L
                   </ImageFallback>
                 </ImageRoot>
               </div>
-              <span class="ml-2 text-lg sm:text-xl font-bold text-gray-900 dark:text-white tracking-tight transition-colors">
+              <span class="ml-2 text-lg sm:text-xl font-bold text-foreground tracking-tight transition-colors">
                 Loci
               </span>
               <Show when={isAuthenticated()}>
                 <Badge
                   variant="secondary"
-                  class="ml-1 sm:ml-2 bg-emerald-50 dark:bg-emerald-400/20 text-emerald-800 dark:text-emerald-100 border border-emerald-300 dark:border-emerald-300/40 text-xs px-1.5 py-0.5 sm:px-2 sm:py-1"
+                  class="ml-1 sm:ml-2 bg-primary/10 text-primary border border-primary/30 text-xs px-1.5 py-0.5 sm:px-2 sm:py-1"
                 >
                   AI
                 </Badge>
@@ -115,7 +116,7 @@ export default function Nav() {
           <Button
             variant="ghost"
             size="sm"
-            class="md:hidden p-2 text-gray-900 dark:text-white hover:text-blue-700 dark:hover:text-emerald-200"
+            class="md:hidden p-2 text-foreground hover:text-primary"
             onClick={() => setIsMenuOpen(!isMenuOpen())}
             aria-label={isMenuOpen() ? "Close menu" : "Open menu"}
           >
@@ -134,7 +135,7 @@ export default function Nav() {
                     {(item) => (
                       <A
                         href={item.href}
-                        class="text-gray-700 dark:text-slate-200 hover:text-blue-700 dark:hover:text-emerald-200 font-medium transition-colors text-sm lg:text-base jb-tab"
+                        class="text-muted-foreground hover:text-primary font-medium transition-colors text-sm lg:text-base jb-tab"
                         activeClass="jb-tab-active"
                       >
                         {item.name}
@@ -152,7 +153,7 @@ export default function Nav() {
                       <A
                         href={item.href}
                         onMouseEnter={() => handleLinkPreload(item.href)}
-                        class="flex items-center gap-2 px-3 py-2 rounded-xl font-medium transition-all text-sm border border-transparent jb-tab hover:bg-gray-100 dark:hover:bg-white/5"
+                        class="flex items-center gap-2 px-3 py-2 rounded-xl font-medium transition-all text-sm border border-transparent jb-tab hover:bg-muted"
                         activeClass="jb-tab-active shadow-sm"
                       >
                         <IconComponent class="w-4 h-4" />
@@ -188,13 +189,13 @@ export default function Nav() {
                   <A href="/auth/signin">
                     <Button
                       variant="ghost"
-                      class="text-gray-700 dark:text-white hover:text-blue-700 dark:hover:text-emerald-200 text-sm lg:text-base px-3 lg:px-4 font-semibold"
+                      class="text-muted-foreground hover:text-primary text-sm lg:text-base px-3 lg:px-4 font-semibold"
                     >
                       Log In
                     </Button>
                   </A>
                   <A href="/auth/signup">
-                    <Button class="text-sm lg:text-base px-3 lg:px-4 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 dark:bg-emerald-400 dark:hover:bg-emerald-300 text-white dark:text-slate-950 font-semibold shadow-[0_14px_40px_rgba(52,211,153,0.35)]">
+                    <Button class="text-sm lg:text-base px-3 lg:px-4 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold shadow-lg">
                       Get Started
                     </Button>
                   </A>
@@ -212,21 +213,21 @@ export default function Nav() {
                   variant="ghost"
                   size="sm"
                   onClick={() => setShowUserMenu(!showUserMenu())}
-                  class="flex items-center gap-2 p-2 text-gray-900 dark:text-white hover:text-blue-700 dark:hover:text-emerald-200"
+                  class="flex items-center gap-2 p-2 text-foreground hover:text-primary"
                 >
-                  <div class="w-8 h-8 rounded-full bg-emerald-600 dark:bg-emerald-400 flex items-center justify-center text-white dark:text-slate-950 text-sm font-bold shadow-lg ring-2 ring-emerald-200 dark:ring-white/40">
+                  <div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground text-sm font-bold shadow-lg ring-2 ring-primary/30">
                     {(user()?.display_name || user()?.username || user()?.email || "U")
                       .charAt(0)
                       .toUpperCase()}
                   </div>
-                  <span class="text-sm font-semibold text-gray-900 dark:text-white">
+                  <span class="text-sm font-semibold text-foreground">
                     {user()?.display_name || user()?.username || user()?.email || "Guest"}
                   </span>
                 </Button>
 
                 {/* User Dropdown Menu */}
                 <Show when={showUserMenu()}>
-                  <div class="absolute top-full right-0 mt-2 w-56 bg-white dark:bg-[#0b1c36]/95 backdrop-blur-xl rounded-2xl shadow-[0_24px_70px_rgba(3,7,18,0.55)] border border-gray-300 dark:border-white/10 py-2 z-50 transition-colors">
+                  <div class="absolute top-full right-0 mt-2 w-56 bg-popover/95 backdrop-blur-xl rounded-2xl shadow-lg border border-border py-2 z-50 transition-colors">
                     {/* User Menu Items */}
                     <For each={userMenuItems}>
                       {(item) => {
@@ -236,8 +237,8 @@ export default function Nav() {
                             href={item.href}
                             class={`flex items-center gap-3 px-4 py-2.5 text-sm font-medium transition-colors mx-1 rounded-lg ${
                               location.pathname === item.href
-                                ? "bg-blue-50 dark:bg-white/10 text-blue-600 dark:text-blue-300"
-                                : "text-gray-700 dark:text-slate-200 hover:bg-gray-100 dark:hover:bg-white/5"
+                                ? "bg-primary/10 text-primary"
+                                : "text-muted-foreground hover:bg-muted"
                             }`}
                             onClick={() => setShowUserMenu(false)}
                           >
@@ -257,7 +258,7 @@ export default function Nav() {
                     </For>
 
                     {/* Divider */}
-                    <div class="my-2 mx-3 border-t border-gray-200 dark:border-white/10" />
+                    <div class="my-2 mx-3 border-t border-border" />
 
                     {/* Sign Out */}
                     <button
@@ -265,7 +266,7 @@ export default function Nav() {
                         setShowUserMenu(false);
                         handleLogout();
                       }}
-                      class="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors rounded-lg mx-1"
+                      class="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-destructive hover:bg-destructive/10 transition-colors rounded-lg mx-1"
                     >
                       <LogOut class="w-4 h-4" />
                       Sign Out
@@ -282,12 +283,12 @@ export default function Nav() {
         <Portal>
           <div class="md:hidden fixed inset-0 z-[100] transition-all duration-300">
             {/* Glassy Background Layer */}
-            <div class="absolute inset-0 bg-white/80 dark:bg-[#050915]/80 backdrop-blur-3xl" />
+            <div class="absolute inset-0 bg-background/80 backdrop-blur-3xl" />
 
             <div class="relative flex flex-col h-full overflow-y-auto">
               {/* Mobile Header */}
               {/* Mobile Header */}
-              <div class="flex justify-between items-center px-4 sm:px-6 py-4 border-b border-gray-200/50 dark:border-white/10 bg-white/50 dark:bg-black/20 backdrop-blur-sm sticky top-0 z-10 h-14 sm:h-16">
+              <div class="flex justify-between items-center px-4 sm:px-6 py-4 border-b border-border/50 bg-card/50 backdrop-blur-sm sticky top-0 z-10 h-14 sm:h-16">
                 <div class="flex items-center">
                   <div class="w-6 h-6 sm:w-8 sm:h-8 flex items-center justify-center">
                     <ImageRoot>
@@ -296,18 +297,18 @@ export default function Nav() {
                         alt="Loci logo"
                         class="w-full h-full object-contain"
                       />
-                      <ImageFallback class="w-full h-full bg-blue-600 text-white rounded flex items-center justify-center text-sm font-bold">
+                      <ImageFallback class="w-full h-full bg-primary text-primary-foreground rounded flex items-center justify-center text-sm font-bold">
                         L
                       </ImageFallback>
                     </ImageRoot>
                   </div>
-                  <span class="ml-2 text-lg sm:text-xl font-bold text-gray-900 dark:text-white tracking-tight">
+                  <span class="ml-2 text-lg sm:text-xl font-bold text-foreground tracking-tight">
                     Loci
                   </span>
                   <Show when={isAuthenticated()}>
                     <Badge
                       variant="secondary"
-                      class="ml-1 sm:ml-2 bg-emerald-50 dark:bg-emerald-400/20 text-emerald-800 dark:text-emerald-100 border border-emerald-300 dark:border-emerald-300/40 text-xs px-1.5 py-0.5 sm:px-2 sm:py-1"
+                      class="ml-1 sm:ml-2 bg-primary/10 text-primary border border-primary/30 text-xs px-1.5 py-0.5 sm:px-2 sm:py-1"
                     >
                       AI
                     </Badge>
@@ -316,7 +317,7 @@ export default function Nav() {
                 <Button
                   variant="ghost"
                   size="sm"
-                  class="md:hidden p-2 text-gray-900 dark:text-white hover:bg-black/5 dark:hover:bg-white/10 rounded-full"
+                  class="md:hidden p-2 text-foreground hover:bg-muted rounded-full"
                   onClick={() => setIsMenuOpen(false)}
                 >
                   <X class="w-6 h-6" />
@@ -333,11 +334,11 @@ export default function Nav() {
                         {(item) => (
                           <A
                             href={item.href}
-                            class="group flex items-center justify-between py-5 text-lg font-medium text-gray-900 dark:text-white border-b border-gray-200/50 dark:border-white/5 active:bg-black/5 dark:active:bg-white/5 transition-colors"
+                            class="group flex items-center justify-between py-5 text-lg font-medium text-foreground border-b border-border/50 active:bg-muted transition-colors"
                             onClick={() => setIsMenuOpen(false)}
                           >
                             {item.name}
-                            <span class="text-gray-400 dark:text-gray-600 group-hover:translate-x-1 transition-transform">
+                            <span class="text-muted-foreground/60 group-hover:translate-x-1 transition-transform">
                               →
                             </span>
                           </A>
@@ -354,11 +355,11 @@ export default function Nav() {
                             <A
                               href={item.href}
                               onTouchStart={() => handleLinkPreload(item.href)}
-                              class="group flex items-center justify-between py-5 text-lg font-medium text-gray-900 dark:text-white border-b border-gray-200/50 dark:border-white/5 active:bg-black/5 dark:active:bg-white/5 transition-colors"
+                              class="group flex items-center justify-between py-5 text-lg font-medium text-foreground border-b border-border/50 active:bg-muted transition-colors"
                               onClick={() => setIsMenuOpen(false)}
                             >
                               <div class="flex items-center gap-4">
-                                <span class="p-2 rounded-lg bg-gray-100 dark:bg-white/5 text-gray-700 dark:text-gray-300">
+                                <span class="p-2 rounded-lg bg-muted text-muted-foreground">
                                   <IconComponent class="w-5 h-5" />
                                 </span>
                                 <div class="flex items-center gap-2">
@@ -373,7 +374,7 @@ export default function Nav() {
                                   </Show>
                                 </div>
                               </div>
-                              <span class="text-gray-400 dark:text-gray-600 group-hover:translate-x-1 transition-transform">
+                              <span class="text-muted-foreground/60 group-hover:translate-x-1 transition-transform">
                                 →
                               </span>
                             </A>
@@ -387,21 +388,21 @@ export default function Nav() {
 
               {/* Mobile Footer / User Action Area */}
               <Show when={!isLoading()}>
-                <div class="p-6 mt-auto bg-white/50 dark:bg-black/20 backdrop-blur-md border-t border-gray-200/50 dark:border-white/10">
+                <div class="p-6 mt-auto bg-card/50 backdrop-blur-md border-t border-border/50">
                   <Show
                     when={!isAuthenticated()}
                     fallback={
                       <div class="space-y-6">
                         {/* User Info */}
                         <div class="flex items-center gap-4">
-                          <div class="w-12 h-12 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center text-white text-xl font-bold shadow-lg ring-2 ring-white/50 dark:ring-white/10">
+                          <div class="w-12 h-12 rounded-full bg-primary flex items-center justify-center text-primary-foreground text-xl font-bold shadow-lg ring-2 ring-primary/30">
                             {user()?.username?.charAt(0).toUpperCase() || "U"}
                           </div>
                           <div class="flex-1 min-w-0">
-                            <div class="font-bold text-lg text-gray-900 dark:text-white truncate">
+                            <div class="font-bold text-lg text-foreground truncate">
                               {user()?.username || "User"}
                             </div>
-                            <div class="text-sm text-gray-500 dark:text-gray-400 truncate">
+                            <div class="text-sm text-muted-foreground truncate">
                               {user()?.email}
                             </div>
                           </div>
@@ -413,7 +414,7 @@ export default function Nav() {
                           <A href="/settings" class="w-full" onClick={() => setIsMenuOpen(false)}>
                             <Button
                               variant="outline"
-                              class="w-full justify-center h-12 text-base border-gray-200 dark:border-white/10 bg-white/50 dark:bg-white/5 text-gray-900 dark:text-white hover:bg-white/80 dark:hover:bg-white/10"
+                              class="w-full justify-center h-12 text-base border-border bg-card/50 text-foreground hover:bg-muted"
                             >
                               Settings
                             </Button>
@@ -424,7 +425,7 @@ export default function Nav() {
                               handleLogout();
                             }}
                             variant="outline"
-                            class="w-full justify-center h-12 text-base text-red-600 dark:text-red-400 border-red-200 dark:border-red-900/30 bg-red-50/50 dark:bg-red-900/10 hover:bg-red-100 dark:hover:bg-red-900/20"
+                            class="w-full justify-center h-12 text-base text-destructive border-destructive/30 bg-destructive/10 hover:bg-destructive/20"
                           >
                             Sign Out
                           </Button>
@@ -435,7 +436,7 @@ export default function Nav() {
                     {/* Guest Actions */}
                     <div class="space-y-4">
                       <div class="flex justify-between items-center mb-4">
-                        <span class="text-sm font-medium text-gray-500 dark:text-gray-400">
+                        <span class="text-sm font-medium text-muted-foreground">
                           Appearance
                         </span>
                         <ThemeSelector />
@@ -443,13 +444,13 @@ export default function Nav() {
                       <A href="/auth/signin" class="block" onClick={() => setIsMenuOpen(false)}>
                         <Button
                           variant="outline"
-                          class="w-full justify-center h-12 text-base font-semibold border-gray-200 dark:border-white/10 bg-white/50 dark:bg-white/5 text-gray-900 dark:text-white"
+                          class="w-full justify-center h-12 text-base font-semibold border-border bg-card/50 text-foreground"
                         >
                           Log In
                         </Button>
                       </A>
                       <A href="/auth/signup" class="block" onClick={() => setIsMenuOpen(false)}>
-                        <Button class="w-full justify-center h-12 text-base font-bold bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-lg shadow-emerald-500/20">
+                        <Button class="w-full justify-center h-12 text-base font-bold bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg">
                           Get Started
                         </Button>
                       </A>

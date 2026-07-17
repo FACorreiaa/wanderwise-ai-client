@@ -4,13 +4,15 @@ import { useNavigate, useSearchParams } from "@solidjs/router";
 import { FiCheck, FiLock } from "solid-icons/fi";
 import { Component, createSignal, Show, onMount } from "solid-js";
 import AuthLayout from "../../layout/Auth";
-import { useTheme } from "~/contexts/ThemeContext";
 import { useResetPasswordMutation } from "~/lib/api/auth-connect";
+
+const inputClass =
+  "w-full px-4 py-3 rounded-lg border border-border bg-background text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-ring focus:border-transparent transition-all";
+const inputErrorClass = "!border-destructive !ring-destructive focus:!ring-destructive focus:!border-destructive";
 
 const ResetPassword: Component = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { isDark } = useTheme();
   const [password, setPassword] = createSignal("");
   const [confirmPassword, setConfirmPassword] = createSignal("");
   const [passwordReset, setPasswordReset] = createSignal(false);
@@ -20,7 +22,6 @@ const ResetPassword: Component = () => {
 
   const resetPasswordMutation = useResetPasswordMutation();
 
-  // Get token from URL - ensure it's always a string
   const token = (): string => {
     const t = searchParams.token;
     if (!t) return "";
@@ -42,7 +43,6 @@ const ResetPassword: Component = () => {
       setPasswordError("Password must be at least 8 characters");
       return false;
     }
-    // Check for uppercase, lowercase, digit, special char
     if (!/[A-Z]/.test(pwd)) {
       setPasswordError("Password must contain at least one uppercase letter");
       return false;
@@ -81,7 +81,6 @@ const ResetPassword: Component = () => {
       return;
     }
 
-    // Validate both fields
     const pwdValid = validatePassword(password());
     const confirmValid = validateConfirmPassword();
 
@@ -106,35 +105,24 @@ const ResetPassword: Component = () => {
     navigate("/auth/signin");
   };
 
-  const labelClass = isDark() ? "text-white" : "text-slate-900";
-  const inputClass = isDark()
-    ? "w-full px-4 py-3 rounded-lg border border-white/20 bg-white/10 text-white placeholder:text-slate-300/70 focus:ring-2 focus:ring-emerald-300 focus:border-transparent transition-all backdrop-blur"
-    : "w-full px-4 py-3 rounded-lg border border-slate-200 bg-white text-slate-900 placeholder:text-slate-500 focus:ring-2 focus:ring-emerald-400 focus:border-transparent transition-all";
-  const inputErrorClass = "!border-red-500 !ring-red-500 focus:!ring-red-500 focus:!border-red-500";
-  const helperClass = isDark() ? "text-slate-200/85" : "text-slate-700";
-
   return (
     <AuthLayout showBackButton onBack={handleBackToSignIn}>
       <Show
         when={!passwordReset()}
         fallback={
           <div class="text-center space-y-4">
-            <div class="w-16 h-16 bg-emerald-400/15 rounded-2xl flex items-center justify-center mx-auto border border-emerald-200/40">
-              <FiCheck class="w-8 h-8 text-emerald-200" />
+            <div class="w-16 h-16 bg-primary/15 rounded-2xl flex items-center justify-center mx-auto border border-primary/30">
+              <FiCheck class="w-8 h-8 text-primary" />
             </div>
-            <h1
-              class={`text-2xl font-bold tracking-tight ${isDark() ? "text-white" : "text-slate-900"}`}
-            >
-              Password reset!
-            </h1>
-            <p class={`${helperClass}`}>
+            <h1 class="text-2xl font-bold tracking-tight text-foreground">Password reset!</h1>
+            <p class="text-muted-foreground">
               Your password has been successfully reset.
               <br />
               You can now sign in with your new password.
             </p>
             <Button
               onClick={handleBackToSignIn}
-              class="w-full py-3 font-semibold bg-emerald-400 hover:bg-emerald-300 text-slate-950 shadow-[0_18px_50px_rgba(52,211,153,0.35)]"
+              class="w-full py-3 font-semibold bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg"
             >
               Sign in
             </Button>
@@ -143,22 +131,22 @@ const ResetPassword: Component = () => {
       >
         <div class="text-left mb-6 space-y-2">
           <div class="flex items-center gap-2 mb-2">
-            <FiLock class="w-5 h-5 text-emerald-200" />
-            <p class="text-xs uppercase tracking-[0.2em] text-emerald-200">Secure reset</p>
+            <FiLock class="w-5 h-5 text-primary" />
+            <p class="text-xs uppercase tracking-[0.2em] text-primary">Secure reset</p>
           </div>
-          <h1 class="text-2xl font-bold text-white tracking-tight">Create new password</h1>
-          <p class={`${helperClass}`}>Enter your new password below.</p>
+          <h1 class="text-2xl font-bold text-foreground tracking-tight">Create new password</h1>
+          <p class="text-muted-foreground">Enter your new password below.</p>
         </div>
 
         <Show when={generalError()}>
-          <div class="mb-4 p-3 bg-red-500/20 border border-red-500/30 rounded-lg">
-            <p class="text-sm text-red-400">{generalError()}</p>
+          <div class="mb-4 p-3 bg-destructive/10 border border-destructive/30 rounded-lg">
+            <p class="text-sm text-destructive">{generalError()}</p>
           </div>
         </Show>
 
         <form onSubmit={handleSubmit} class="space-y-4">
           <div>
-            <label class={`block text-sm font-semibold mb-2 ${labelClass}`}>New password</label>
+            <label class="block text-sm font-semibold mb-2 text-foreground">New password</label>
             <TextFieldRoot>
               <TextField
                 type="password"
@@ -172,12 +160,12 @@ const ResetPassword: Component = () => {
               />
             </TextFieldRoot>
             <Show when={passwordError()}>
-              <p class="mt-1.5 text-sm text-red-500 dark:text-red-400">{passwordError()}</p>
+              <p class="mt-1.5 text-sm text-destructive">{passwordError()}</p>
             </Show>
           </div>
 
           <div>
-            <label class={`block text-sm font-semibold mb-2 ${labelClass}`}>Confirm password</label>
+            <label class="block text-sm font-semibold mb-2 text-foreground">Confirm password</label>
             <TextFieldRoot>
               <TextField
                 type="password"
@@ -191,11 +179,11 @@ const ResetPassword: Component = () => {
               />
             </TextFieldRoot>
             <Show when={confirmError()}>
-              <p class="mt-1.5 text-sm text-red-500 dark:text-red-400">{confirmError()}</p>
+              <p class="mt-1.5 text-sm text-destructive">{confirmError()}</p>
             </Show>
           </div>
 
-          <p class={`text-xs ${helperClass}`}>
+          <p class="text-xs text-muted-foreground">
             Password must be at least 8 characters with uppercase, lowercase, digit, and special
             character.
           </p>
@@ -203,7 +191,7 @@ const ResetPassword: Component = () => {
           <Button
             type="submit"
             disabled={resetPasswordMutation.isPending || !token()}
-            class="w-full py-3 font-semibold bg-emerald-400 hover:bg-emerald-300 text-slate-950 shadow-[0_18px_50px_rgba(52,211,153,0.35)]"
+            class="w-full py-3 font-semibold bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg"
           >
             {resetPasswordMutation.isPending ? "Resetting..." : "Reset password"}
           </Button>

@@ -31,11 +31,11 @@ const OAuthCallback: Component = () => {
   });
 
   return (
-    <div class="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-emerald-950 to-slate-900">
+    <div class="min-h-screen flex items-center justify-center bg-background">
       <div class="text-center">
-        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-400 mx-auto mb-4" />
-        <p class="text-lg text-white">Processing authentication...</p>
-        <p class="text-sm text-slate-400 mt-2">This window will close automatically.</p>
+        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4" />
+        <p class="text-lg text-foreground">Processing authentication...</p>
+        <p class="text-sm text-muted-foreground mt-2">This window will close automatically.</p>
       </div>
     </div>
   );

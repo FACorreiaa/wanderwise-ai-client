@@ -161,21 +161,21 @@ export default function AdminDashboard() {
 
   const getActivityColor = (severity: string) => {
     const colors: Record<string, string> = {
-      info: "text-blue-600 bg-blue-50",
-      success: "text-green-600 bg-green-50",
-      warning: "text-yellow-600 bg-yellow-50",
-      error: "text-red-600 bg-red-50",
+      info: "text-primary bg-primary/10",
+      success: "text-accent bg-accent/10",
+      warning: "text-accent bg-accent/10",
+      error: "text-destructive bg-destructive/10",
     };
-    return colors[severity] || "text-gray-600 bg-gray-50";
+    return colors[severity] || "text-muted-foreground bg-muted";
   };
 
   const getPriorityColor = (priority: string) => {
     const colors: Record<string, string> = {
-      high: "text-red-600 bg-red-50",
-      medium: "text-yellow-600 bg-yellow-50",
-      low: "text-green-600 bg-green-50",
+      high: "text-destructive bg-destructive/10",
+      medium: "text-accent bg-accent/10",
+      low: "text-primary bg-primary/10",
     };
-    return colors[priority] || "text-gray-600 bg-gray-50";
+    return colors[priority] || "text-muted-foreground bg-muted";
   };
 
   const formatTimestamp = (timestamp: string) => {
@@ -190,14 +190,14 @@ export default function AdminDashboard() {
           <div class="p-6">
             <div class="flex items-center justify-between">
               <div>
-                <p class="text-sm font-medium text-gray-600">Total Users</p>
-                <p class="text-2xl font-bold text-gray-900">
+                <p class="text-sm font-medium text-muted-foreground">Total Users</p>
+                <p class="text-2xl font-bold text-foreground">
                   {stats().users.total.toLocaleString()}
                 </p>
-                <p class="text-sm text-green-600 mt-1">+{stats().users.growth}% this month</p>
+                <p class="text-sm text-accent mt-1">+{stats().users.growth}% this month</p>
               </div>
-              <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                <Users class="w-6 h-6 text-blue-600" />
+              <div class="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center">
+                <Users class="w-6 h-6 text-primary" />
               </div>
             </div>
           </div>
@@ -207,14 +207,14 @@ export default function AdminDashboard() {
           <div class="p-6">
             <div class="flex items-center justify-between">
               <div>
-                <p class="text-sm font-medium text-gray-600">Total POIs</p>
-                <p class="text-2xl font-bold text-gray-900">
+                <p class="text-sm font-medium text-muted-foreground">Total POIs</p>
+                <p class="text-2xl font-bold text-foreground">
                   {stats().pois.total.toLocaleString()}
                 </p>
-                <p class="text-sm text-yellow-600 mt-1">{stats().pois.pending} pending approval</p>
+                <p class="text-sm text-accent mt-1">{stats().pois.pending} pending approval</p>
               </div>
-              <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-                <MapPin class="w-6 h-6 text-green-600" />
+              <div class="w-12 h-12 bg-accent/10 rounded-lg flex items-center justify-center">
+                <MapPin class="w-6 h-6 text-accent" />
               </div>
             </div>
           </div>
@@ -224,14 +224,14 @@ export default function AdminDashboard() {
           <div class="p-6">
             <div class="flex items-center justify-between">
               <div>
-                <p class="text-sm font-medium text-gray-600">Reviews</p>
-                <p class="text-2xl font-bold text-gray-900">
+                <p class="text-sm font-medium text-muted-foreground">Reviews</p>
+                <p class="text-2xl font-bold text-foreground">
                   {stats().reviews.total.toLocaleString()}
                 </p>
-                <p class="text-sm text-blue-600 mt-1">Avg rating: {stats().reviews.avgRating}/5</p>
+                <p class="text-sm text-primary mt-1">Avg rating: {stats().reviews.avgRating}/5</p>
               </div>
-              <div class="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
-                <Star class="w-6 h-6 text-yellow-600" />
+              <div class="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center">
+                <Star class="w-6 h-6 text-primary" />
               </div>
             </div>
           </div>
@@ -241,16 +241,16 @@ export default function AdminDashboard() {
           <div class="p-6">
             <div class="flex items-center justify-between">
               <div>
-                <p class="text-sm font-medium text-gray-600">Chat Sessions</p>
-                <p class="text-2xl font-bold text-gray-900">
+                <p class="text-sm font-medium text-muted-foreground">Chat Sessions</p>
+                <p class="text-2xl font-bold text-foreground">
                   {stats().chat.sessions.toLocaleString()}
                 </p>
-                <p class="text-sm text-purple-600 mt-1">
+                <p class="text-sm text-accent mt-1">
                   {stats().chat.satisfaction}% satisfaction
                 </p>
               </div>
-              <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
-                <MessageCircle class="w-6 h-6 text-purple-600" />
+              <div class="w-12 h-12 bg-accent/10 rounded-lg flex items-center justify-center">
+                <MessageCircle class="w-6 h-6 text-accent" />
               </div>
             </div>
           </div>
@@ -262,19 +262,19 @@ export default function AdminDashboard() {
         {/* Top POIs */}
         <div class="cb-card">
           <div class="p-6">
-            <h3 class="text-lg font-semibold text-gray-900 mb-4">Top Performing POIs</h3>
+            <h3 class="text-lg font-semibold text-foreground mb-4">Top Performing POIs</h3>
             <div class="space-y-4">
               <For each={topPOIs()}>
                 {(poi) => (
                   <div class="flex items-center justify-between">
                     <div class="flex-1">
-                      <h4 class="font-medium text-gray-900">{poi.name}</h4>
-                      <p class="text-sm text-gray-600">
+                      <h4 class="font-medium text-foreground">{poi.name}</h4>
+                      <p class="text-sm text-muted-foreground">
                         {poi.views.toLocaleString()} views • {poi.reviews} reviews
                       </p>
                     </div>
                     <div class="flex items-center gap-1">
-                      <Star class="w-4 h-4 text-yellow-500 fill-current" />
+                      <Star class="w-4 h-4 text-accent fill-current" />
                       <span class="text-sm font-medium">{poi.rating}</span>
                     </div>
                   </div>
@@ -287,15 +287,15 @@ export default function AdminDashboard() {
         {/* Recent Activity */}
         <div class="cb-card">
           <div class="p-6">
-            <h3 class="text-lg font-semibold text-gray-900 mb-4">Recent Activity</h3>
+            <h3 class="text-lg font-semibold text-foreground mb-4">Recent Activity</h3>
             <div class="space-y-4">
               <For each={recentActivity().slice(0, 5)}>
                 {(activity) => (
                   <div class="flex items-start gap-3">
                     <span class="text-lg">{getActivityIcon(activity.type)}</span>
                     <div class="flex-1 min-w-0">
-                      <p class="text-sm text-gray-900">{activity.description}</p>
-                      <p class="text-xs text-gray-500">{formatTimestamp(activity.timestamp)}</p>
+                      <p class="text-sm text-foreground">{activity.description}</p>
+                      <p class="text-xs text-muted-foreground">{formatTimestamp(activity.timestamp)}</p>
                     </div>
                     <span
                       class={`px-2 py-1 rounded-full text-xs font-medium ${getActivityColor(activity.severity)}`}
@@ -314,10 +314,10 @@ export default function AdminDashboard() {
       <div class="cb-card">
         <div class="p-6">
           <div class="flex items-center justify-between mb-4">
-            <h3 class="text-lg font-semibold text-gray-900">Flagged Content Requiring Attention</h3>
+            <h3 class="text-lg font-semibold text-foreground">Flagged Content Requiring Attention</h3>
             <button
               onClick={() => setActiveTab("flags")}
-              class="text-sm text-blue-600 hover:text-blue-700 font-medium"
+              class="text-sm text-primary hover:text-primary/80 font-medium"
             >
               View All →
             </button>
@@ -325,17 +325,17 @@ export default function AdminDashboard() {
           <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             <For each={flaggedContent().slice(0, 3)}>
               {(item) => (
-                <div class="border border-gray-200 rounded-lg p-4">
+                <div class="border border-border rounded-lg p-4">
                   <div class="flex items-center justify-between mb-2">
-                    <h4 class="font-medium text-gray-900 text-sm">{item.title}</h4>
+                    <h4 class="font-medium text-foreground text-sm">{item.title}</h4>
                     <span
                       class={`px-2 py-1 rounded-full text-xs font-medium ${getPriorityColor(item.priority)}`}
                     >
                       {item.priority}
                     </span>
                   </div>
-                  <p class="text-sm text-gray-600 mb-2">{item.description}</p>
-                  <p class="text-xs text-gray-500">{item.reportCount} reports</p>
+                  <p class="text-sm text-muted-foreground mb-2">{item.description}</p>
+                  <p class="text-xs text-muted-foreground">{item.reportCount} reports</p>
                 </div>
               )}
             </For>
@@ -350,15 +350,15 @@ export default function AdminDashboard() {
       <div class="cb-card">
         <div class="p-6">
           <div class="flex items-center justify-between mb-6">
-            <h3 class="text-lg font-semibold text-gray-900">Flagged Content</h3>
+            <h3 class="text-lg font-semibold text-foreground">Flagged Content</h3>
             <div class="flex items-center gap-3">
-              <select class="px-3 py-2 border border-gray-300 rounded-lg text-sm">
+              <select class="px-3 py-2 border border-border rounded-lg text-sm bg-card text-foreground">
                 <option>All Types</option>
                 <option>POIs</option>
                 <option>Reviews</option>
                 <option>Users</option>
               </select>
-              <select class="px-3 py-2 border border-gray-300 rounded-lg text-sm">
+              <select class="px-3 py-2 border border-border rounded-lg text-sm bg-card text-foreground">
                 <option>All Priorities</option>
                 <option>High</option>
                 <option>Medium</option>
@@ -370,12 +370,12 @@ export default function AdminDashboard() {
           <div class="space-y-4">
             <For each={flaggedContent()}>
               {(item) => (
-                <div class="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+                <div class="border border-border rounded-lg p-4 hover:shadow-md transition-shadow">
                   <div class="flex items-start justify-between">
                     <div class="flex-1">
                       <div class="flex items-center gap-2 mb-2">
-                        <h4 class="font-medium text-gray-900">{item.title}</h4>
-                        <span class="px-2 py-1 bg-gray-100 text-gray-700 rounded-full text-xs font-medium">
+                        <h4 class="font-medium text-foreground">{item.title}</h4>
+                        <span class="px-2 py-1 bg-muted text-muted-foreground rounded-full text-xs font-medium">
                           {item.type}
                         </span>
                         <span
@@ -384,17 +384,17 @@ export default function AdminDashboard() {
                           {item.priority} priority
                         </span>
                       </div>
-                      <p class="text-gray-600 mb-2">{item.description}</p>
-                      <div class="flex items-center gap-4 text-sm text-gray-500">
+                      <p class="text-muted-foreground mb-2">{item.description}</p>
+                      <div class="flex items-center gap-4 text-sm text-muted-foreground">
                         <span>{item.reportCount} reports</span>
                         <span>Created {formatTimestamp(item.createdAt)}</span>
                         <span
                           class={`px-2 py-1 rounded-full text-xs ${
                             item.status === "pending"
-                              ? "bg-yellow-100 text-yellow-700"
+                              ? "bg-accent/10 text-accent"
                               : item.status === "investigating"
-                                ? "bg-blue-100 text-blue-700"
-                                : "bg-gray-100 text-gray-700"
+                                ? "bg-primary/10 text-primary"
+                                : "bg-muted text-muted-foreground"
                           }`}
                         >
                           {item.status}
@@ -427,31 +427,31 @@ export default function AdminDashboard() {
         return renderFlags();
       case "users":
         return (
-          <div class="cb-card p-6 text-center text-gray-500">
+          <div class="cb-card p-6 text-center text-muted-foreground">
             User management interface coming soon...
           </div>
         );
       case "content":
         return (
-          <div class="cb-card p-6 text-center text-gray-500">
+          <div class="cb-card p-6 text-center text-muted-foreground">
             Content management interface coming soon...
           </div>
         );
       case "reviews":
         return (
-          <div class="cb-card p-6 text-center text-gray-500">
+          <div class="cb-card p-6 text-center text-muted-foreground">
             Review management interface coming soon...
           </div>
         );
       case "chat":
         return (
-          <div class="cb-card p-6 text-center text-gray-500">
+          <div class="cb-card p-6 text-center text-muted-foreground">
             Chat analytics interface coming soon...
           </div>
         );
       case "settings":
         return (
-          <div class="cb-card p-6 text-center text-gray-500">
+          <div class="cb-card p-6 text-center text-muted-foreground">
             System settings interface coming soon...
           </div>
         );
@@ -461,20 +461,20 @@ export default function AdminDashboard() {
   };
 
   return (
-    <div class="min-h-screen bg-gray-50">
+    <div class="min-h-screen bg-background relative transition-colors">
       {/* Header */}
-      <div class="bg-white border-b border-gray-200">
+      <div class="bg-card border-b border-border">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-              <h1 class="text-2xl font-bold text-gray-900">Admin Dashboard</h1>
-              <p class="text-gray-600 mt-1">Monitor and manage your travel platform</p>
+              <h1 class="text-2xl font-bold text-foreground">Admin Dashboard</h1>
+              <p class="text-muted-foreground mt-1">Monitor and manage your travel platform</p>
             </div>
             <div class="flex items-center gap-3">
               <select
                 value={timeRange()}
                 onChange={(e) => setTimeRange(e.target.value)}
-                class="px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                class="px-3 py-2 border border-border rounded-lg text-sm bg-card text-foreground"
               >
                 <For each={timeRanges}>
                   {(range) => <option value={range.value}>{range.label}</option>}
@@ -508,14 +508,14 @@ export default function AdminDashboard() {
                           onClick={() => setActiveTab(tab.id)}
                           class={`w-full flex items-center gap-3 px-3 py-2 text-left rounded-lg transition-colors ${
                             activeTab() === tab.id
-                              ? "bg-blue-600 text-white"
-                              : "text-gray-700 hover:bg-gray-100"
+                              ? "bg-primary text-primary-foreground"
+                              : "text-muted-foreground hover:bg-muted hover:text-foreground"
                           }`}
                         >
                           <Icon class="w-5 h-5" />
                           {tab.label}
                           {tab.id === "flags" && (
-                            <span class="ml-auto bg-red-500 text-white text-xs rounded-full px-2 py-1">
+                            <span class="ml-auto bg-destructive text-destructive-foreground text-xs rounded-full px-2 py-1">
                               {flaggedContent().length}
                             </span>
                           )}

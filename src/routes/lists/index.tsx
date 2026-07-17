@@ -198,13 +198,13 @@ export default function ListsPage() {
                 <div class="flex items-center gap-3">
                   <div class="relative">
                     <div class="absolute -inset-1 hero-glow blur-md opacity-80" />
-                    <div class="relative w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center text-white shadow-lg ring-2 ring-white/60">
+                    <div class="loci-hero__icon">
                       <Folder class="w-6 h-6" />
                     </div>
                   </div>
                   <div>
                     <h1 class="text-3xl sm:text-4xl font-bold tracking-tight">My Lists</h1>
-                    <p class="text-white/80 text-sm mt-1">
+                    <p class="loci-hero__subtitle text-sm mt-1">
                       Organize your saved places and travel plans
                     </p>
                   </div>
@@ -219,14 +219,14 @@ export default function ListsPage() {
               <div class="flex items-center gap-3 flex-wrap">
                 <A
                   href="/favorites"
-                  class="flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 rounded-lg text-white/90 text-sm font-medium transition-all border border-white/20"
+                  class="loci-hero__action px-4 py-2"
                 >
                   <Heart class="w-4 h-4" />
                   View Favorites
                 </A>
                 <A
                   href="/bookmarks"
-                  class="flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 rounded-lg text-white/90 text-sm font-medium transition-all border border-white/20"
+                  class="loci-hero__action px-4 py-2"
                 >
                   <Bookmark class="w-4 h-4" />
                   View Bookmarks
@@ -243,7 +243,7 @@ export default function ListsPage() {
               onClick={() => setActiveTab("all")}
               class={`px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
                 activeTab() === "all"
-                  ? "border-blue-500 text-primary"
+                  ? "border-primary text-primary"
                   : "border-transparent text-muted-foreground hover:text-muted-foreground"
               }`}
             >
@@ -253,7 +253,7 @@ export default function ListsPage() {
               onClick={() => setActiveTab("custom")}
               class={`px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
                 activeTab() === "custom"
-                  ? "border-blue-500 text-primary"
+                  ? "border-primary text-primary"
                   : "border-transparent text-muted-foreground hover:text-muted-foreground"
               }`}
             >
@@ -263,7 +263,7 @@ export default function ListsPage() {
               onClick={() => setActiveTab("itineraries")}
               class={`px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
                 activeTab() === "itineraries"
-                  ? "border-blue-500 text-primary"
+                  ? "border-primary text-primary"
                   : "border-transparent text-muted-foreground hover:text-muted-foreground"
               }`}
             >
@@ -287,7 +287,7 @@ export default function ListsPage() {
           {/* Empty State */}
           <Show when={!isLoading() && !listsQuery.isError && filteredLists().length === 0}>
             <div class="text-center py-16">
-              <div class="w-20 h-20 mx-auto mb-6 rounded-full bg-gradient-to-br from-accent to-pink-100 dark:from-accent/30 dark:to-pink-900/30 flex items-center justify-center">
+              <div class="w-20 h-20 mx-auto mb-6 rounded-full bg-accent/10 flex items-center justify-center">
                 <FolderPlus class="w-10 h-10 text-accent" />
               </div>
               <h3 class="text-xl font-semibold text-foreground mb-2">
@@ -320,14 +320,14 @@ export default function ListsPage() {
                         <div class="flex gap-2">
                           <button
                             onClick={() => setDeleteConfirmId(null)}
-                            class="px-3 py-1.5 text-sm text-muted-foreground hover:bg-muted dark:hover:bg-gray-800 rounded-lg"
+                            class="px-3 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:bg-muted rounded-lg"
                           >
                             Cancel
                           </button>
                           <button
                             onClick={() => handleDelete(list.id)}
                             disabled={deleteMutation.isPending}
-                            class="px-3 py-1.5 text-sm bg-red-500 text-white rounded-lg hover:bg-red-600 disabled:opacity-50"
+                            class="px-3 py-1.5 text-sm bg-destructive text-destructive-foreground rounded-lg hover:bg-destructive/90 disabled:opacity-50"
                           >
                             {deleteMutation.isPending ? "Deleting..." : "Delete"}
                           </button>
@@ -343,7 +343,7 @@ export default function ListsPage() {
                           </h3>
                           {list.isPublic ? (
                             <span title="Public">
-                              <Globe class="w-4 h-4 text-green-500 flex-shrink-0" />
+                              <Globe class="w-4 h-4 text-accent flex-shrink-0" />
                             </span>
                           ) : (
                             <span title="Private">
@@ -374,7 +374,7 @@ export default function ListsPage() {
                         <Show when={list.isPublic}>
                           <button
                             onClick={(e) => handleShare(list, e)}
-                            class="p-2 text-muted-foreground hover:text-green-500 rounded-lg hover:bg-green-50 dark:hover:bg-green-900/20"
+                            class="p-2 text-muted-foreground hover:text-accent rounded-lg hover:bg-accent/10"
                             title="Share"
                           >
                             <Share2 class="w-4 h-4" />
@@ -389,7 +389,7 @@ export default function ListsPage() {
                         </button>
                         <button
                           onClick={() => setDeleteConfirmId(list.id)}
-                          class="p-2 text-muted-foreground hover:text-red-500 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20"
+                          class="p-2 text-muted-foreground hover:text-destructive rounded-lg hover:bg-destructive/10"
                           title="Delete"
                         >
                           <Trash2 class="w-4 h-4" />
@@ -445,7 +445,7 @@ export default function ListsPage() {
                 </h2>
                 <button
                   onClick={closeModal}
-                  class="p-2 text-muted-foreground hover:text-foreground rounded-lg hover:bg-muted dark:hover:bg-gray-800"
+                  class="p-2 text-muted-foreground hover:text-foreground rounded-lg hover:bg-muted hover:bg-muted"
                 >
                   <X class="w-5 h-5" />
                 </button>

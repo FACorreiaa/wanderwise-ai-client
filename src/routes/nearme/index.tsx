@@ -198,7 +198,7 @@ export default function NearmePage() {
     <div class="space-y-4">
       <For each={[1, 2, 3, 4]}>
         {() => (
-          <Card class="bg-white/80 dark:bg-gray-800/80">
+          <Card class="bg-card/80 backdrop-blur-sm border-border">
             <CardHeader>
               <Skeleton class="h-6 w-3/4" />
             </CardHeader>
@@ -245,18 +245,18 @@ export default function NearmePage() {
 
   // List Content
   const ListContent = (
-    <div class="h-full overflow-y-auto p-4 md:p-6 bg-slate-50/50 dark:bg-slate-950/50 backdrop-blur-sm">
+    <div class="h-full overflow-y-auto p-4 md:p-6 bg-background/50 backdrop-blur-sm">
       <div class="max-w-3xl mx-auto pb-20">
         {/* Location Header */}
         <div class="mb-6">
           <div class="flex items-center gap-3 mb-4">
-            <div class="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center text-white shadow-lg">
+            <div class="w-12 h-12 rounded-full bg-primary flex items-center justify-center text-primary-foreground shadow-lg">
               <Navigation class="w-6 h-6" />
             </div>
             <div>
-              <h1 class="text-2xl font-bold text-gray-800 dark:text-white">Near Me</h1>
+              <h1 class="text-2xl font-bold text-foreground">Near Me</h1>
               <Show when={userLocation()}>
-                <p class="text-sm text-gray-500 dark:text-gray-400">
+                <p class="text-sm text-muted-foreground">
                   {userLocation()?.latitude.toFixed(4)}, {userLocation()?.longitude.toFixed(4)}
                 </p>
               </Show>
@@ -265,26 +265,26 @@ export default function NearmePage() {
 
           {/* Distance Selector */}
           <div class="flex items-center gap-4 mb-4">
-            <span class="text-sm text-gray-600 dark:text-gray-400">Search radius:</span>
+            <span class="text-sm text-muted-foreground">Search radius:</span>
             <div class="relative">
               <button
                 onClick={() => setShowDistanceDropdown(!showDistanceDropdown())}
-                class="flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-all"
+                class="flex items-center gap-2 px-4 py-2 bg-card rounded-lg border border-border shadow-sm hover:shadow-md transition-all"
               >
-                <MapPin class="w-4 h-4 text-blue-500" />
-                <span class="font-medium">{selectedDistance()} km</span>
-                <ChevronDown class="w-4 h-4 text-gray-400" />
+                <MapPin class="w-4 h-4 text-primary" />
+                <span class="font-medium text-foreground">{selectedDistance()} km</span>
+                <ChevronDown class="w-4 h-4 text-muted-foreground" />
               </button>
               <Show when={showDistanceDropdown()}>
-                <div class="absolute top-full left-0 mt-2 w-32 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-xl z-20">
+                <div class="absolute top-full left-0 mt-2 w-32 bg-card rounded-lg border border-border shadow-xl z-20">
                   <For each={DISTANCE_OPTIONS}>
                     {(option) => (
                       <button
                         onClick={() => handleDistanceChange(option.value)}
-                        class={`w-full px-4 py-2 text-left hover:bg-gray-100 dark:hover:bg-gray-700 first:rounded-t-lg last:rounded-b-lg ${
+                        class={`w-full px-4 py-2 text-left hover:bg-muted first:rounded-t-lg last:rounded-b-lg ${
                           selectedDistance() === option.value
-                            ? "bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400"
-                            : "text-gray-700 dark:text-gray-300"
+                            ? "bg-primary/10 text-primary"
+                            : "text-foreground"
                         }`}
                       >
                         {option.label}
@@ -305,7 +305,7 @@ export default function NearmePage() {
 
         {/* Location Error */}
         <Show when={locationError()}>
-          <div class="mb-6 p-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-700 dark:bg-amber-900/20 dark:border-amber-900/50 dark:text-amber-400 flex items-start gap-3">
+          <div class="mb-6 p-4 rounded-xl bg-accent/10 border border-accent/20 text-accent flex items-start gap-3">
             <AlertCircle class="w-5 h-5 flex-shrink-0 mt-0.5" />
             <div>
               <p class="font-medium">Location Access Required</p>
@@ -319,11 +319,11 @@ export default function NearmePage() {
 
         {/* Loading State */}
         <Show when={isLoadingLocation()}>
-          <div class="mb-6 p-6 rounded-xl bg-blue-50 border border-blue-200 dark:bg-blue-900/20 dark:border-blue-900/50 flex items-center gap-4">
-            <Loader2 class="w-6 h-6 animate-spin text-blue-500" />
+          <div class="mb-6 p-6 rounded-xl bg-primary/5 border border-primary/20 flex items-center gap-4">
+            <Loader2 class="w-6 h-6 animate-spin text-primary" />
             <div>
-              <p class="font-medium text-blue-700 dark:text-blue-400">Getting your location...</p>
-              <p class="text-sm text-blue-600 dark:text-blue-300 opacity-80">
+              <p class="font-medium text-primary">Getting your location...</p>
+              <p class="text-sm text-muted-foreground opacity-80">
                 This may take a few seconds
               </p>
             </div>
@@ -337,7 +337,7 @@ export default function NearmePage() {
 
         {/* Error State */}
         <Show when={state.error}>
-          <div class="mb-6 p-4 rounded-xl bg-red-50 border border-red-200 text-red-600 dark:bg-red-900/20 dark:border-red-900/50 dark:text-red-400">
+          <div class="mb-6 p-4 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive">
             <p class="font-bold">Unable to find nearby places</p>
             <p class="text-sm opacity-90">{state.error}</p>
           </div>
@@ -346,7 +346,7 @@ export default function NearmePage() {
         {/* Results */}
         <Show when={allPois().length > 0}>
           <div class="mb-8">
-            <h3 class="text-xl font-bold mb-4 text-gray-800 dark:text-white flex items-center gap-2">
+            <h3 class="text-xl font-bold mb-4 text-foreground flex items-center gap-2">
               <span class="text-2xl">📍</span> Nearby Places ({allPois().length})
             </h3>
             <div class="space-y-4">
@@ -364,7 +364,7 @@ export default function NearmePage() {
                   };
                   return (
                     <Card
-                      class={`hover:shadow-md transition-all cursor-pointer bg-white/80 dark:bg-gray-800/80 backdrop-blur ${selection.isSelected(item.name) ? "ring-2 ring-blue-500" : ""}`}
+                      class={`hover:shadow-md transition-all cursor-pointer bg-card/80 backdrop-blur border-border ${selection.isSelected(item.name) ? "ring-2 ring-primary" : ""}`}
                     >
                       <CardHeader>
                         <div class="flex justify-between items-start">
@@ -373,7 +373,7 @@ export default function NearmePage() {
                               type="checkbox"
                               checked={selection.isSelected(item.name)}
                               onChange={() => selection.toggleSelection(itemForSelection)}
-                              class="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500 flex-shrink-0"
+                              class="w-4 h-4 text-primary rounded border-border focus:ring-primary flex-shrink-0"
                             />
                             <CardTitle class="text-lg">{item.name}</CardTitle>
                           </div>
@@ -392,10 +392,10 @@ export default function NearmePage() {
                         </div>
                       </CardHeader>
                       <CardContent>
-                        <p class="text-sm text-gray-600 dark:text-gray-300 line-clamp-3 mb-2">
+                        <p class="text-sm text-muted-foreground line-clamp-3 mb-2">
                           {item.description_poi || item.description}
                         </p>
-                        <div class="flex items-center gap-4 text-xs text-gray-500 dark:text-gray-400">
+                        <div class="flex items-center gap-4 text-xs text-muted-foreground">
                           <Show when={item.distance}>
                             <span class="flex items-center gap-1">
                               <MapPin class="w-3 h-3" />
@@ -423,7 +423,7 @@ export default function NearmePage() {
             !isLoadingLocation() && !state.isStreaming && userLocation() && allPois().length === 0
           }
         >
-          <div class="text-center py-12 text-gray-500 dark:text-gray-400">
+          <div class="text-center py-12 text-muted-foreground">
             <MapPin class="w-16 h-16 mx-auto mb-4 opacity-50" />
             <p class="text-lg font-medium">No places found nearby</p>
             <p class="text-sm">Try expanding your search radius</p>

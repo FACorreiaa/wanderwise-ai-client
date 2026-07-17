@@ -1,8 +1,8 @@
 import { createSignal, Show, For, createEffect } from "solid-js";
 import { useNavigate } from "@solidjs/router";
-import { X, User, MapPin, Bell, Palette, Settings, Loader2, Moon, Sun } from "lucide-solid";
+import { X, User, MapPin, Bell, Settings, Loader2 } from "lucide-solid";
 import { useAuth } from "~/contexts/AuthContext";
-import { useTheme } from "~/contexts/ThemeContext";
+import AppearanceSettings from "~/components/AppearanceSettings";
 import { useUserLocation } from "~/contexts/LocationContext";
 import {
   useDefaultSearchProfile,
@@ -21,7 +21,6 @@ interface QuickSettingsModalProps {
 export default function QuickSettingsModal(props: QuickSettingsModalProps) {
   const navigate = useNavigate();
   const _auth = useAuth(); // User unused but keeping hook for future use
-  const { isDark, setTheme } = useTheme();
   const { userLocation, requestLocation } = useUserLocation();
 
   // API hooks
@@ -42,11 +41,6 @@ export default function QuickSettingsModal(props: QuickSettingsModalProps) {
       setSelectedProfile(defaultProfileQuery.data.id);
     }
   });
-
-  const themeOptions = [
-    { value: "light", label: "Light", icon: Sun },
-    { value: "dark", label: "Dark", icon: Moon },
-  ];
 
   const handleLocationUpdate = async () => {
     setIsUpdatingLocation(true);
@@ -92,7 +86,7 @@ export default function QuickSettingsModal(props: QuickSettingsModalProps) {
       >
         {/* Modal */}
         <div
-          class="fixed inset-x-4 top-1/2 -translate-y-1/2 sm:inset-x-auto sm:left-1/2 sm:-translate-x-1/2 sm:w-full sm:max-w-md bg-white dark:bg-gray-800 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 max-h-[90vh] overflow-hidden"
+          class="fixed inset-x-4 top-1/2 -translate-y-1/2 sm:inset-x-auto sm:left-1/2 sm:-translate-x-1/2 sm:w-full sm:max-w-md bg-card rounded-2xl shadow-2xl border border-border max-h-[90vh] overflow-hidden"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
@@ -119,7 +113,7 @@ export default function QuickSettingsModal(props: QuickSettingsModalProps) {
               <Show
                 when={!profilesQuery.isLoading && profiles.length > 0}
                 fallback={
-                  <div class="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+                  <div class="flex items-center gap-2 text-sm text-muted-foreground">
                     <Loader2 class="w-4 h-4 animate-spin" />
                     Loading profiles...
                   </div>
@@ -129,7 +123,7 @@ export default function QuickSettingsModal(props: QuickSettingsModalProps) {
                   value={selectedProfile()}
                   onChange={(e) => handleProfileChange(e.target.value)}
                   disabled={setDefaultProfileMutation.isPending}
-                  class="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
+                  class="w-full p-3 border border-border rounded-lg bg-background text-foreground text-sm focus:ring-2 focus:ring-ring focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <For each={profiles}>
                     {(profile) => <option value={profile.id}>{profile.profile_name}</option>}
@@ -137,7 +131,7 @@ export default function QuickSettingsModal(props: QuickSettingsModalProps) {
                 </select>
               </Show>
               <Show when={setDefaultProfileMutation.isPending}>
-                <div class="flex items-center gap-2 text-sm text-blue-600 dark:text-blue-400">
+                <div class="flex items-center gap-2 text-sm text-primary">
                   <Loader2 class="w-4 h-4 animate-spin" />
                   Updating...
                 </div>
@@ -154,14 +148,14 @@ export default function QuickSettingsModal(props: QuickSettingsModalProps) {
                 <Show
                   when={currentLocation}
                   fallback={
-                    <p class="text-sm text-gray-500 dark:text-gray-400 mb-3">Location not set</p>
+                    <p class="text-sm text-muted-foreground mb-3">Location not set</p>
                   }
                 >
-                  <p class="text-sm text-gray-700 dark:text-gray-300 mb-1">
+                  <p class="text-sm text-foreground mb-1">
                     📍 {currentLocation?.latitude?.toFixed(4)},{" "}
                     {currentLocation?.longitude?.toFixed(4)}
                   </p>
-                  <p class="text-xs text-gray-500 dark:text-gray-400 mb-3">
+                  <p class="text-xs text-muted-foreground mb-3">
                     Used for nearby recommendations
                   </p>
                 </Show>
@@ -189,33 +183,7 @@ export default function QuickSettingsModal(props: QuickSettingsModalProps) {
               </div>
             </div>
 
-            {/* Theme Selection */}
-            <div class="space-y-3">
-              <div class="flex items-center gap-2">
-                <Palette class="w-4 h-4 text-muted-foreground" />
-                <Label>Theme</Label>
-              </div>
-              <div class="grid grid-cols-2 gap-2">
-                <For each={themeOptions}>
-                  {(option) => {
-                    const Icon = option.icon;
-                    const isActive =
-                      (option.value === "dark" && isDark()) ||
-                      (option.value === "light" && !isDark());
-                    return (
-                      <Button
-                        variant={isActive ? "default" : "outline"}
-                        onClick={() => setTheme(option.value as "light" | "dark")}
-                        class="flex-col h-auto py-3"
-                      >
-                        <Icon class="w-4 h-4 mb-1" />
-                        <span class="text-xs font-medium">{option.label}</span>
-                      </Button>
-                    );
-                  }}
-                </For>
-              </div>
-            </div>
+            <AppearanceSettings compact />
 
             {/* Notifications */}
             <div class="space-y-3">

@@ -46,7 +46,7 @@ export default function ForgotPasswordPage() {
             <Button type="submit" class="w-full" size="lg">
               Send Reset Link
             </Button>
-            <A href="/auth" class="text-sm text-blue-600 hover:underline">
+            <A href="/auth" class="text-sm text-primary hover:underline">
               Back to Sign In
             </A>
           </CardFooter>

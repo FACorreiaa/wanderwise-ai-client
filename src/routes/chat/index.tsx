@@ -100,11 +100,7 @@ export default function ChatPage() {
   };
 
   return (
-    <div class="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-slate-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 flex flex-col lg:flex-row relative overflow-hidden">
-      {/* Background veil */}
-      <div class="absolute inset-0 domain-veil pointer-events-none" />
-      <div class="absolute top-0 right-0 w-96 h-96 bg-primary/10 dark:bg-primary/5 rounded-full blur-3xl pointer-events-none" />
-
+    <div class="min-h-screen flex flex-col lg:flex-row relative overflow-hidden">
       <ChatSidebar
         sessions={chat.sessions()}
         isLoading={chat.chatSessionsQuery.isLoading}
@@ -139,11 +135,7 @@ export default function ChatPage() {
         />
 
         {/* Messages */}
-        <div
-          ref={scrollRef}
-          onScroll={onScroll}
-          class="flex-1 overflow-y-auto p-3 sm:p-4 bg-white/30 backdrop-blur-sm"
-        >
+        <div ref={scrollRef} onScroll={onScroll} class="flex-1 overflow-y-auto p-3 sm:p-4 sm:py-6">
           <div class="max-w-3xl mx-auto space-y-3 sm:space-y-4">
             <For each={chat.messages()}>
               {(message) => (
@@ -161,8 +153,8 @@ export default function ChatPage() {
             {/* Loading indicator with streaming progress */}
             <Show when={chat.isLoading()}>
               <div class="flex gap-2 sm:gap-3 justify-start" aria-live="polite">
-                <div class="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-gradient-to-br from-blue-500 to-accent flex items-center justify-center flex-shrink-0">
-                  <Bot class="w-3 h-3 sm:w-4 sm:h-4 text-white" />
+                <div class="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
+                  <Bot class="w-3 h-3 sm:w-4 sm:h-4 text-primary-foreground" />
                 </div>
                 <div class="bg-card/80 backdrop-blur-sm border border-border rounded-2xl px-3 py-2 sm:px-4 sm:py-3 max-w-xs sm:max-w-md shadow-sm">
                   <div class="flex items-center gap-1 sm:gap-2 text-muted-foreground mb-2">
@@ -174,7 +166,7 @@ export default function ChatPage() {
                   <Show when={chat.streamingSession()}>
                     <div class="text-xs text-muted-foreground space-y-1">
                       <div class="flex items-center gap-1 sm:gap-2">
-                        <span class="inline-block w-2 h-2 bg-primary rounded-full flex-shrink-0" />
+                        <span class="inline-block w-2 h-2 bg-accent rounded-full flex-shrink-0 animate-pulse motion-reduce:animate-none" />
                         <span class="truncate">Domain: {chat.streamingSession()?.domain}</span>
                       </div>
                       <Show when={chat.streamingSession()?.city}>

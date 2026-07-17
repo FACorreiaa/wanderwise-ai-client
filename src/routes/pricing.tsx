@@ -129,9 +129,9 @@ export default function Pricing() {
 
   const getColorClasses = (color: string, type: "bg" | "text" | "border") => {
     const colors = {
-      gray: { bg: "bg-gray-100", text: "text-gray-600", border: "border-gray-200" },
-      blue: { bg: "bg-blue-100", text: "text-blue-600", border: "border-blue-200" },
-      purple: { bg: "bg-purple-100", text: "text-purple-600", border: "border-purple-200" },
+      gray: { bg: "bg-muted", text: "text-muted-foreground", border: "border-border" },
+      blue: { bg: "bg-primary/10", text: "text-primary", border: "border-primary/30" },
+      purple: { bg: "bg-accent/10", text: "text-accent", border: "border-accent/30" },
     };
     return colors[color as keyof typeof colors][type];
   };
@@ -250,15 +250,15 @@ export default function Pricing() {
         <div class="max-w-7xl mx-auto px-4 py-12 space-y-12">
           {/* Hero Section */}
           <header class="text-center">
-            <div class="rounded-3xl bg-gradient-to-br from-[#1e66f5]/12 via-[#04a5e5]/12 to-[#df8e1d]/12 border border-[hsl(223,16%,83%)]/70 dark:border-white/10 shadow-[0_30px_80px_rgba(4,165,229,0.18)] p-10 space-y-4">
-              <h1 class="text-4xl md:text-6xl font-bold text-foreground dark:text-white">
-                Simple <span class="text-[#1e66f5] dark:text-blue-400">Pricing</span>
+            <div class="rounded-3xl bg-gradient-to-br from-primary/10 via-accent/10 to-primary/5 border border-border shadow-lg p-10 space-y-4">
+              <h1 class="text-4xl md:text-6xl font-bold text-foreground">
+                Simple <span class="text-primary">Pricing</span>
               </h1>
-              <p class="text-xl text-[hsl(233,13%,41%)] dark:text-slate-200/85 max-w-3xl mx-auto leading-relaxed">
-                Choose the perfect plan for your exploration needs. Catppuccin Latte keeps light
-                mode calm; dark stays bold.
+              <p class="text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
+                Choose the perfect plan for your exploration needs. Plans adapt to your active design
+                theme and color mode.
               </p>
-              <div class="inline-flex items-center bg-[hsl(109,58%,40%)]/10 text-[hsl(109,58%,40%)] dark:bg-green-900/50 dark:text-green-200 px-4 py-2 rounded-full text-sm font-medium border border-[hsl(223,16%,83%)] dark:border-green-800">
+              <div class="inline-flex items-center bg-primary/10 text-primary px-4 py-2 rounded-full text-sm font-medium border border-primary/30">
                 <Star class="w-4 h-4 mr-2" aria-hidden="true" />
                 30-day money-back guarantee on all paid plans
               </div>
@@ -273,16 +273,18 @@ export default function Pricing() {
           {/* Promo Success Banner */}
           <Show when={appliedPromo()}>
             <div class="max-w-4xl mx-auto mb-12">
-              <div class="glass-panel gradient-border text-slate-900 dark:text-white rounded-2xl p-6 shadow-lg border-0">
+              <div class="glass-panel gradient-border rounded-2xl p-6 shadow-lg border-0">
                 <div class="flex items-center gap-4">
-                  <div class="w-12 h-12 bg-[#0c7df2] rounded-full flex items-center justify-center text-white shadow-lg ring-2 ring-white/60 dark:ring-slate-800">
+                  <div class="w-12 h-12 bg-primary rounded-full flex items-center justify-center text-primary-foreground shadow-lg ring-2 ring-primary/30">
                     <Star class="w-6 h-6" />
                   </div>
                   <div class="flex-1">
-                    <h3 class="text-xl font-bold mb-1">Promo Code Applied Successfully! 🎉</h3>
-                    <p class="text-slate-700 dark:text-slate-200">{appliedPromo()?.description}</p>
+                    <h3 class="text-xl font-bold mb-1 text-foreground">
+                      Promo Code Applied Successfully! 🎉
+                    </h3>
+                    <p class="text-muted-foreground">{appliedPromo()?.description}</p>
                     <Show when={appliedPromo()?.type === "discount"}>
-                      <p class="text-sm text-slate-500 dark:text-slate-300 mt-1">
+                      <p class="text-sm text-muted-foreground mt-1">
                         Your discount will be applied at checkout
                       </p>
                     </Show>
@@ -302,18 +304,18 @@ export default function Pricing() {
                 const IconComponent = plan.icon;
                 return (
                   <article
-                    class={`relative bg-card border-2 rounded-2xl shadow-lg transition-all duration-300 focus-within:ring-2 focus-within:ring-blue-500 focus-within:ring-offset-2 ${
+                    class={`relative bg-card border-2 rounded-2xl shadow-lg transition-all duration-300 focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 ${
                       plan.disabled
-                        ? "border-gray-300 dark:border-gray-600 opacity-75"
+                        ? "border-muted opacity-75"
                         : plan.popular
-                          ? "border-blue-500 dark:border-blue-400 scale-105 hover:shadow-xl"
-                          : "border-border hover:border-blue-300 dark:hover:border-blue-600 hover:shadow-xl"
+                          ? "border-primary scale-105 hover:shadow-xl"
+                          : "border-border hover:border-primary/50 hover:shadow-xl"
                     }`}
                     aria-labelledby={`plan-${index()}`}
                   >
                     {plan.popular && !plan.disabled && (
                       <div class="absolute -top-4 left-1/2 transform -translate-x-1/2">
-                        <div class="bg-blue-500 dark:bg-blue-600 text-white px-4 py-1 rounded-full text-sm font-medium flex items-center">
+                        <div class="bg-primary text-primary-foreground px-4 py-1 rounded-full text-sm font-medium flex items-center">
                           <Zap class="w-4 h-4 mr-1" aria-hidden="true" />
                           Most Popular
                         </div>
@@ -322,7 +324,7 @@ export default function Pricing() {
 
                     {plan.disabled && (
                       <div class="absolute -top-4 left-1/2 transform -translate-x-1/2">
-                        <div class="bg-orange-500 dark:bg-orange-600 text-white px-4 py-1 rounded-full text-sm font-medium flex items-center">
+                        <div class="bg-accent text-accent-foreground px-4 py-1 rounded-full text-sm font-medium flex items-center">
                           <Clock class="w-4 h-4 mr-1" aria-hidden="true" />
                           Coming Soon
                         </div>
@@ -347,22 +349,22 @@ export default function Pricing() {
                       <div class="mb-4">
                         <div class="flex items-center gap-2">
                           <span
-                            class={`text-4xl font-bold ${plan.disabled ? "text-gray-500 dark:text-gray-400" : "text-card-foreground"}`}
+                            class={`text-4xl font-bold ${plan.disabled ? "text-muted-foreground" : "text-card-foreground"}`}
                           >
                             {plan.price}
                           </span>
                           <span
-                            class={`ml-2 ${plan.disabled ? "text-gray-500 dark:text-gray-400" : "text-muted-foreground"}`}
+                            class={`ml-2 ${plan.disabled ? "text-muted-foreground" : "text-muted-foreground"}`}
                           >
                             /{plan.period}
                           </span>
                         </div>
                         <Show when={plan.yearlyPrice}>
                           <div class="flex items-center gap-2 mt-1 text-sm">
-                            <span class="px-2 py-0.5 rounded-full bg-[hsl(223,16%,83%)]/70 dark:bg-white/10 text-[hsl(233,13%,41%)] dark:text-slate-200">
+                            <span class="px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
                               Yearly: {plan.yearlyPrice}
                             </span>
-                            <span class="text-[hsl(233,10%,47%)] dark:text-slate-400">
+                            <span class="text-muted-foreground">
                               Save vs monthly
                             </span>
                           </div>
@@ -381,14 +383,14 @@ export default function Pricing() {
                             <span class="text-lg text-muted-foreground line-through">
                               {plan.price}
                             </span>
-                            <span class="text-2xl font-bold text-green-600 dark:text-green-400">
+                            <span class="text-2xl font-bold text-primary">
                               $
                               {(
                                 parseFloat(plan.price.replace("$", "")) *
                                 (1 - appliedPromo()?.discount / 100)
                               ).toFixed(2)}
                             </span>
-                            <span class="bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 px-2 py-1 rounded text-sm font-medium">
+                            <span class="bg-primary/10 text-primary px-2 py-1 rounded text-sm font-medium">
                               {appliedPromo()?.discount}% OFF
                             </span>
                           </div>
@@ -404,7 +406,7 @@ export default function Pricing() {
                           }
                         >
                           <div class="mt-2">
-                            <span class="bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 px-3 py-1 rounded-full text-sm font-medium">
+                            <span class="bg-primary/10 text-primary px-3 py-1 rounded-full text-sm font-medium">
                               FREE for {appliedPromo()?.duration} days
                             </span>
                           </div>
@@ -420,7 +422,7 @@ export default function Pricing() {
                           }
                         >
                           <div class="mt-2">
-                            <span class="bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 px-3 py-1 rounded-full text-sm font-medium">
+                            <span class="bg-accent/10 text-accent px-3 py-1 rounded-full text-sm font-medium">
                               FREE ACCESS
                             </span>
                           </div>
@@ -432,10 +434,10 @@ export default function Pricing() {
                       <button
                         class={`w-full py-3 px-6 rounded-lg font-semibold transition-colors mb-6 focus:outline-none ${
                           plan.disabled
-                            ? "bg-gray-300 dark:bg-gray-700 text-gray-500 dark:text-gray-400 cursor-not-allowed"
+                            ? "bg-muted text-muted-foreground cursor-not-allowed"
                             : plan.popular
-                              ? "bg-blue-600 hover:bg-blue-700 focus:bg-blue-700 text-white focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-                              : "border border-border text-card-foreground hover:bg-muted focus:bg-muted focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                              ? "bg-primary hover:bg-primary/90 text-primary-foreground focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                              : "border border-border text-card-foreground hover:bg-muted focus:bg-muted focus:ring-2 focus:ring-ring focus:ring-offset-2"
                         }`}
                         disabled={plan.disabled}
                         aria-label={
@@ -456,7 +458,7 @@ export default function Pricing() {
 
                       <div class="space-y-3">
                         <h4
-                          class={`font-semibold ${plan.disabled ? "text-gray-500 dark:text-gray-400" : "text-card-foreground"}`}
+                          class={`font-semibold ${plan.disabled ? "text-muted-foreground" : "text-card-foreground"}`}
                         >
                           Includes:
                         </h4>
@@ -466,17 +468,13 @@ export default function Pricing() {
                               <li class="flex items-start" role="listitem">
                                 <Check
                                   class={`w-5 h-5 mr-3 mt-0.5 flex-shrink-0 ${
-                                    plan.disabled
-                                      ? "text-gray-400 dark:text-gray-500"
-                                      : "text-green-500 dark:text-green-400"
+                                    plan.disabled ? "text-muted-foreground/60" : "text-primary"
                                   }`}
                                   aria-hidden="true"
                                 />
                                 <span
                                   class={`text-sm ${
-                                    plan.disabled
-                                      ? "text-gray-500 dark:text-gray-400"
-                                      : "text-muted-foreground"
+                                    plan.disabled ? "text-muted-foreground" : "text-muted-foreground"
                                   }`}
                                 >
                                   {feature}
@@ -519,20 +517,19 @@ export default function Pricing() {
 
           {/* API Access for Developers Section */}
           <section class="mb-20" aria-labelledby="api-access">
-            <div class="relative bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 dark:from-slate-800 dark:via-slate-700 dark:to-slate-800 rounded-3xl p-8 md:p-12 shadow-2xl border border-slate-700/50 overflow-hidden">
-              {/* Background decoration */}
+            <div class="relative bg-foreground text-background rounded-3xl p-8 md:p-12 shadow-2xl border border-border overflow-hidden">
               <div class="absolute inset-0 overflow-hidden pointer-events-none">
-                <div class="absolute -top-24 -right-24 w-96 h-96 bg-[#0c7df2]/20 rounded-full blur-3xl" />
-                <div class="absolute -bottom-24 -left-24 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl" />
+                <div class="absolute -top-24 -right-24 w-96 h-96 bg-primary/20 rounded-full blur-3xl" />
+                <div class="absolute -bottom-24 -left-24 w-96 h-96 bg-accent/10 rounded-full blur-3xl" />
               </div>
 
               <div class="relative z-10">
                 <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-8">
                   <div class="flex-1">
                     <div class="flex items-center gap-3 mb-4">
-                      <div class="w-12 h-12 bg-gradient-to-br from-[#0c7df2] to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
+                      <div class="w-12 h-12 bg-primary rounded-xl flex items-center justify-center shadow-lg">
                         <svg
-                          class="w-6 h-6 text-white"
+                          class="w-6 h-6 text-primary-foreground"
                           fill="none"
                           stroke="currentColor"
                           viewBox="0 0 24 24"
@@ -546,57 +543,57 @@ export default function Pricing() {
                         </svg>
                       </div>
                       <div>
-                        <h2 id="api-access" class="text-2xl md:text-3xl font-bold text-white">
+                        <h2 id="api-access" class="text-2xl md:text-3xl font-bold text-background">
                           API Access for Developers
                         </h2>
-                        <span class="inline-flex items-center gap-1.5 mt-1 px-3 py-1 bg-amber-500/20 text-amber-300 text-xs font-semibold rounded-full border border-amber-500/30">
+                        <span class="inline-flex items-center gap-1.5 mt-1 px-3 py-1 bg-accent/20 text-accent text-xs font-semibold rounded-full border border-accent/30">
                           <Clock class="w-3 h-3" />
                           Coming Soon for Premium Users
                         </span>
                       </div>
                     </div>
-                    <p class="text-slate-300 text-lg mb-6 max-w-2xl">
+                    <p class="text-background/70 text-lg mb-6 max-w-2xl">
                       Build custom integrations with the Loci API. Access our AI-powered travel
                       recommendations, POI data, and personalization engine directly in your
                       applications.
                     </p>
-                    <ul class="grid grid-cols-1 md:grid-cols-2 gap-3 text-slate-300">
+                    <ul class="grid grid-cols-1 md:grid-cols-2 gap-3 text-background/80">
                       <li class="flex items-center gap-2">
-                        <Check class="w-5 h-5 text-emerald-400 flex-shrink-0" />
+                        <Check class="w-5 h-5 text-primary flex-shrink-0" />
                         <span>RESTful & gRPC endpoints</span>
                       </li>
                       <li class="flex items-center gap-2">
-                        <Check class="w-5 h-5 text-emerald-400 flex-shrink-0" />
+                        <Check class="w-5 h-5 text-primary flex-shrink-0" />
                         <span>Real-time streaming responses</span>
                       </li>
                       <li class="flex items-center gap-2">
-                        <Check class="w-5 h-5 text-emerald-400 flex-shrink-0" />
+                        <Check class="w-5 h-5 text-primary flex-shrink-0" />
                         <span>AI recommendation engine</span>
                       </li>
                       <li class="flex items-center gap-2">
-                        <Check class="w-5 h-5 text-emerald-400 flex-shrink-0" />
+                        <Check class="w-5 h-5 text-primary flex-shrink-0" />
                         <span>Comprehensive documentation</span>
                       </li>
                       <li class="flex items-center gap-2">
-                        <Check class="w-5 h-5 text-emerald-400 flex-shrink-0" />
+                        <Check class="w-5 h-5 text-primary flex-shrink-0" />
                         <span>SDKs for popular languages</span>
                       </li>
                       <li class="flex items-center gap-2">
-                        <Check class="w-5 h-5 text-emerald-400 flex-shrink-0" />
+                        <Check class="w-5 h-5 text-primary flex-shrink-0" />
                         <span>Developer support</span>
                       </li>
                     </ul>
                   </div>
                   <div class="flex flex-col items-center md:items-end gap-4">
                     <div class="text-center md:text-right">
-                      <div class="text-slate-400 text-sm mb-1">Starting at</div>
-                      <div class="text-4xl font-bold text-white">
-                        $49<span class="text-lg text-slate-400">/mo</span>
+                      <div class="text-background/60 text-sm mb-1">Starting at</div>
+                      <div class="text-4xl font-bold text-background">
+                        $49<span class="text-lg text-background/60">/mo</span>
                       </div>
-                      <div class="text-slate-400 text-sm">for 10,000 API calls</div>
+                      <div class="text-background/60 text-sm">for 10,000 API calls</div>
                     </div>
                     <button
-                      class="inline-flex items-center gap-2 px-6 py-3 bg-slate-700/50 text-slate-300 rounded-xl font-semibold border border-slate-600/50 cursor-not-allowed"
+                      class="inline-flex items-center gap-2 px-6 py-3 bg-background/10 text-background/80 rounded-xl font-semibold border border-background/20 cursor-not-allowed"
                       disabled
                     >
                       <Clock class="w-5 h-5" />
@@ -626,13 +623,13 @@ export default function Pricing() {
                       Free
                     </th>
                     <th
-                      class="text-center py-4 px-4 font-semibold text-blue-600 dark:text-blue-400"
+                      class="text-center py-4 px-4 font-semibold text-primary"
                       scope="col"
                     >
                       Explorer
                     </th>
                     <th
-                      class="text-center py-4 pl-4 font-semibold text-purple-600 dark:text-purple-400"
+                      class="text-center py-4 pl-4 font-semibold text-accent"
                       scope="col"
                     >
                       Pro
@@ -656,7 +653,7 @@ export default function Pricing() {
                                 {typeof item.free === "boolean" ? (
                                   item.free ? (
                                     <Check
-                                      class="w-5 h-5 text-green-500 dark:text-green-400 mx-auto"
+                                      class="w-5 h-5 text-accent mx-auto"
                                       aria-label="Included"
                                     />
                                   ) : (
@@ -675,7 +672,7 @@ export default function Pricing() {
                                 {typeof item.explorer === "boolean" ? (
                                   item.explorer ? (
                                     <Check
-                                      class="w-5 h-5 text-green-500 dark:text-green-400 mx-auto"
+                                      class="w-5 h-5 text-accent mx-auto"
                                       aria-label="Included"
                                     />
                                   ) : (
@@ -687,7 +684,7 @@ export default function Pricing() {
                                     </div>
                                   )
                                 ) : (
-                                  <span class="text-sm text-blue-600 dark:text-blue-400 font-medium">
+                                  <span class="text-sm text-primary font-medium">
                                     {item.explorer}
                                   </span>
                                 )}
@@ -696,7 +693,7 @@ export default function Pricing() {
                                 {typeof item.pro === "boolean" ? (
                                   item.pro ? (
                                     <Check
-                                      class="w-5 h-5 text-green-500 dark:text-green-400 mx-auto"
+                                      class="w-5 h-5 text-accent mx-auto"
                                       aria-label="Included"
                                     />
                                   ) : (
@@ -708,7 +705,7 @@ export default function Pricing() {
                                     </div>
                                   )
                                 ) : (
-                                  <span class="text-sm text-purple-600 dark:text-purple-400 font-medium">
+                                  <span class="text-sm text-accent font-medium">
                                     {item.pro}
                                   </span>
                                 )}
@@ -784,7 +781,7 @@ export default function Pricing() {
             <div class="flex flex-col sm:flex-row gap-4 justify-center">
               <A href="/auth/signup" class="inline-block">
                 <button
-                  class="bg-[#0c7df2] text-white font-semibold px-8 py-3 rounded-lg hover:bg-[#0a6ed6] focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-slate-900 transition-colors shadow-[0_14px_32px_rgba(12,125,242,0.22)] border border-white/30 dark:border-slate-800/60"
+                  class="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold px-8 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-background transition-colors shadow-lg"
                   aria-label="Sign up for Loci to start exploring for free"
                 >
                   Start Free Today
@@ -792,7 +789,7 @@ export default function Pricing() {
               </A>
               <A href="/features" class="inline-block">
                 <button
-                  class="border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100 hover:bg-white/60 dark:hover:bg-slate-900/60 font-semibold px-8 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-slate-900 transition-colors"
+                  class="border border-border text-foreground hover:bg-muted font-semibold px-8 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-background transition-colors"
                   aria-label="Learn more about Loci features"
                 >
                   Learn More

@@ -1,5 +1,7 @@
 import { onMount, onCleanup, createEffect, mergeProps } from "solid-js";
 import mapboxgl from "mapbox-gl";
+import { useTheme } from "~/contexts/ThemeContext";
+import { mapStyleForColorMode } from "~/lib/theme-colors";
 
 export interface POI {
   id: string;
@@ -32,6 +34,8 @@ interface MapComponentProps {
   onSelect?: (poi: POI, index: number) => void;
   /** Fired on a deliberate "open" action (popup button) — opens detail. */
   onActivate?: (poi: POI, index: number) => void;
+  /** Swap Mapbox light/dark basemap when color mode changes. Default true. */
+  followColorMode?: boolean;
 }
 
 // One stable colour per itinerary day. Index past the end wraps.
@@ -68,9 +72,14 @@ const isValidPoi = (poi: POI): boolean => {
 };
 
 const MapComponent = (_props: MapComponentProps) => {
-  const props = mergeProps({ style: "mapbox://styles/mapbox/standard", showRoutes: true }, _props);
+  const props = mergeProps(
+    { style: "mapbox://styles/mapbox/standard", showRoutes: true, followColorMode: true },
+    _props,
+  );
+  const theme = useTheme();
   let mapContainer: HTMLDivElement | undefined;
   let map: mapboxgl.Map | undefined;
+  let activeStyleUrl: string | undefined;
   let popup: mapboxgl.Popup | undefined;
   let updateTimer: ReturnType<typeof setTimeout> | undefined;
   let handlersBound = false;
@@ -80,23 +89,26 @@ const MapComponent = (_props: MapComponentProps) => {
   const poiByFeatureId = new Map<number, { poi: POI; index: number }>();
   let selectedFeatureId: number | null = null;
 
+  const resolveMapStyle = () =>
+    props.followColorMode ? mapStyleForColorMode(theme.isDark()) : props.style;
+
   const buildPopupContent = (poi: POI, index: number) => {
     const isMobile = mapContainer ? mapContainer.offsetWidth < 768 : true;
     const container = document.createElement("div");
-    container.className = `p-3 ${isMobile ? "min-w-[180px] max-w-[250px]" : "min-w-[200px] max-w-[300px]"}`;
+    container.className = `map-popup p-3 ${isMobile ? "min-w-[180px] max-w-[250px]" : "min-w-[200px] max-w-[300px]"}`;
 
     const title = document.createElement("h3");
-    title.className = `font-semibold text-gray-900 mb-1 ${isMobile ? "text-sm" : "text-base"}`;
+    title.className = `map-popup__title mb-1 ${isMobile ? "text-sm" : "text-base"}`;
     title.textContent = poi.name;
     container.appendChild(title);
 
     const category = document.createElement("p");
-    category.className = `${isMobile ? "text-xs" : "text-sm"} text-gray-600 mb-2`;
+    category.className = `map-popup__meta mb-2 ${isMobile ? "text-xs" : "text-sm"}`;
     category.textContent = poi.category;
     container.appendChild(category);
 
     const meta = document.createElement("div");
-    meta.className = `flex items-center justify-between ${isMobile ? "text-xs" : "text-sm"} text-gray-500`;
+    meta.className = `map-popup__meta flex items-center justify-between ${isMobile ? "text-xs" : "text-sm"}`;
     if (poi.rating != null) {
       const rating = document.createElement("span");
       rating.textContent = `⭐ ${poi.rating}`;
@@ -117,7 +129,7 @@ const MapComponent = (_props: MapComponentProps) => {
 
     if (poi.dogFriendly) {
       const badge = document.createElement("div");
-      badge.className = `mt-2 ${isMobile ? "text-xs" : "text-sm"} bg-green-100 text-green-800 px-2 py-1 rounded-full inline-block`;
+      badge.className = `map-popup__badge mt-2 ${isMobile ? "text-xs" : "text-sm"} px-2 py-1 rounded-full inline-block`;
       badge.textContent = "🐕 Dog Friendly";
       container.appendChild(badge);
     }
@@ -126,7 +138,7 @@ const MapComponent = (_props: MapComponentProps) => {
       const btn = document.createElement("button");
       btn.type = "button";
       btn.className =
-        "mt-3 w-full text-sm font-medium bg-blue-600 text-white rounded-md px-3 py-1.5 hover:bg-blue-700 transition-colors";
+        "map-popup__btn mt-3 w-full text-sm font-medium rounded-md px-3 py-1.5 transition-colors";
       btn.textContent = "View details";
       btn.addEventListener("click", (e) => {
         e.stopPropagation();
@@ -423,9 +435,12 @@ const MapComponent = (_props: MapComponentProps) => {
       }
     }
 
+    const initialStyle = resolveMapStyle();
+    activeStyleUrl = initialStyle;
+
     map = new mapboxgl.Map({
       container: mapContainer!,
-      style: props.style,
+      style: initialStyle,
       center: validCenter,
       zoom: props.zoom || 12,
       minZoom: props.minZoom || 2,
@@ -466,6 +481,15 @@ const MapComponent = (_props: MapComponentProps) => {
     const resizeObserver = new ResizeObserver(() => map && map.resize());
     resizeObserver.observe(mapContainer!);
     onCleanup(() => resizeObserver.disconnect());
+  });
+
+  // Swap basemap when color mode changes.
+  createEffect(() => {
+    if (!props.followColorMode) return;
+    const nextStyle = mapStyleForColorMode(theme.isDark());
+    if (!map || activeStyleUrl === nextStyle) return;
+    activeStyleUrl = nextStyle;
+    map.setStyle(nextStyle);
   });
 
   // React to POI changes — debounced, in-place source update (no churn).

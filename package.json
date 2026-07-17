@@ -18,7 +18,7 @@
     "prepare": "husky"
   },
   "dependencies": {
-    "@buf/loci_loci-proto.bufbuild_es": "2.12.0-20260604095003-22472d418845.1",
+    "@buf/loci_loci-proto.bufbuild_es": "2.12.1-20260711223240-70152a17f3bd.1",
     "@bufbuild/protobuf": "^2.10.2",
     "@connectrpc/connect": "^2.1.1",
     "@connectrpc/connect-web": "^2.1.1",
@@ -44,6 +44,7 @@
   "devDependencies": {
     "@eslint/js": "^9.39.2",
     "@tailwindcss/vite": "^4.1.18",
+    "@types/geojson": "^7946.0.16",
     "@types/node": "^24.10.4",
     "@typescript-eslint/eslint-plugin": "^8.49.0",
     "@typescript-eslint/parser": "^8.49.0",
@@ -66,5 +67,6 @@
   },
   "engines": {
     "node": ">=22"
-  }
+  },
+  "packageManager": "pnpm@11.13.1"
 }

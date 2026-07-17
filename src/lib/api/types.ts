@@ -38,6 +38,8 @@ export interface UserProfileResponse {
     following?: number;
   };
   badges?: string[];
+  theme?: string;
+  language?: string;
   social_links?: Record<string, string>;
   preferences?: Record<string, unknown>;
   settings?: Record<string, unknown>;

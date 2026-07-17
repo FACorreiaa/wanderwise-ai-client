@@ -172,14 +172,10 @@ export default function Features() {
         <div class="max-w-6xl mx-auto px-4 py-12 space-y-12">
           {/* Hero Section */}
           <header class="text-center">
-            <div class="rounded-3xl bg-gradient-to-br from-[#1e66f5]/12 via-[#04a5e5]/12 to-[#8839ef]/12 border border-[hsl(223,16%,83%)]/70 dark:border-white/10 shadow-[0_30px_80px_rgba(30,102,245,0.18)] p-10">
-              <p class="text-sm uppercase tracking-[0.2em] text-[hsl(22,99%,52%)] dark:text-amber-200 mb-3">
-                Features
-              </p>
-              <h1 class="text-4xl md:text-6xl font-bold text-foreground dark:text-white mb-4">
-                AI-powered travel.
-              </h1>
-              <p class="text-xl text-[hsl(233,13%,41%)] dark:text-slate-200/85 max-w-3xl mx-auto leading-relaxed">
+            <div class="rounded-3xl bg-gradient-to-br from-primary/10 via-accent/10 to-primary/5 border border-border shadow-lg p-10">
+              <p class="text-sm uppercase tracking-[0.2em] text-accent mb-3">Features</p>
+              <h1 class="text-4xl md:text-6xl font-bold text-foreground mb-4">AI-powered travel.</h1>
+              <p class="text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
                 Discover what makes Loci the smartest way to explore cities. We aim for WCAG AA/AAA
                 contrast in both Light (Latte) and Dark mode so it stays readable everywhere.
               </p>
@@ -197,16 +193,16 @@ export default function Features() {
                   const IconComponent = feature.icon;
                   return (
                     <article
-                      class="bg-card border border-border rounded-lg p-6 shadow-lg hover:shadow-xl transition-all duration-300 focus-within:ring-2 focus-within:ring-blue-500 focus-within:ring-offset-2"
+                      class="bg-card border border-border rounded-lg p-6 shadow-lg hover:shadow-xl transition-all duration-300 focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2"
                       role="listitem"
                       aria-labelledby={`feature-${index()}`}
                     >
                       <div class="flex items-center mb-4">
                         <div
-                          class="bg-blue-100 dark:bg-blue-900/50 p-3 rounded-lg mr-4"
+                          class="bg-primary/10 p-3 rounded-lg mr-4"
                           aria-hidden="true"
                         >
-                          <IconComponent class="w-6 h-6 text-blue-600 dark:text-blue-400" />
+                          <IconComponent class="w-6 h-6 text-primary" />
                         </div>
                         <h3
                           id={`feature-${index()}`}
@@ -226,7 +222,7 @@ export default function Features() {
                               role="listitem"
                             >
                               <div
-                                class="w-1.5 h-1.5 bg-blue-500 dark:bg-blue-400 rounded-full mr-2"
+                                class="w-1.5 h-1.5 bg-primary rounded-full mr-2"
                                 aria-hidden="true"
                               />
                               {detail}
@@ -261,7 +257,7 @@ export default function Features() {
                     >
                       <div class="flex items-center mb-4">
                         <div class="bg-background p-3 rounded-lg mr-4 shadow-md" aria-hidden="true">
-                          <IconComponent class="w-6 h-6 text-blue-600 dark:text-blue-400" />
+                          <IconComponent class="w-6 h-6 text-primary" />
                         </div>
                         <h3
                           id={`capability-${index()}`}
@@ -295,30 +291,30 @@ export default function Features() {
             <div class="grid md:grid-cols-3 gap-6" role="list">
               <div class="text-center" role="listitem">
                 <div
-                  class="bg-white/70 dark:bg-slate-900/60 rounded-lg p-4 mb-4 shadow-md border border-white/30 dark:border-slate-800/60"
+                  class="bg-muted/70 rounded-lg p-4 mb-4 shadow-md border border-border"
                   aria-hidden="true"
                 >
-                  <Clock class="w-8 h-8 mx-auto text-slate-900 dark:text-white" />
+                  <Clock class="w-8 h-8 mx-auto text-primary" />
                 </div>
                 <h3 class="font-semibold mb-2 text-foreground">Time-Optimized</h3>
                 <p class="text-sm text-muted-foreground">Perfect timing for every activity</p>
               </div>
               <div class="text-center" role="listitem">
                 <div
-                  class="bg-white/70 dark:bg-slate-900/60 rounded-lg p-4 mb-4 shadow-md border border-white/30 dark:border-slate-800/60"
+                  class="bg-muted/70 rounded-lg p-4 mb-4 shadow-md border border-border"
                   aria-hidden="true"
                 >
-                  <Brain class="w-8 h-8 mx-auto text-slate-900 dark:text-white" />
+                  <Brain class="w-8 h-8 mx-auto text-primary" />
                 </div>
                 <h3 class="font-semibold mb-2 text-foreground">Personalized</h3>
                 <p class="text-sm text-muted-foreground">Tailored to your unique interests</p>
               </div>
               <div class="text-center" role="listitem">
                 <div
-                  class="bg-white/70 dark:bg-slate-900/60 rounded-lg p-4 mb-4 shadow-md border border-white/30 dark:border-slate-800/60"
+                  class="bg-muted/70 rounded-lg p-4 mb-4 shadow-md border border-border"
                   aria-hidden="true"
                 >
-                  <MapPin class="w-8 h-8 mx-auto text-slate-900 dark:text-white" />
+                  <MapPin class="w-8 h-8 mx-auto text-primary" />
                 </div>
                 <h3 class="font-semibold mb-2 text-foreground">Location-Aware</h3>
                 <p class="text-sm text-muted-foreground">Optimized routes and distances</p>
@@ -344,10 +340,10 @@ export default function Features() {
               <div class="bg-card rounded-lg p-6 border border-border" role="listitem">
                 <div class="flex items-center mb-4">
                   <div
-                    class="bg-purple-100 dark:bg-purple-900/50 p-3 rounded-lg mr-4"
+                    class="bg-accent/10 p-3 rounded-lg mr-4"
                     aria-hidden="true"
                   >
-                    <Database class="w-6 h-6 text-purple-600 dark:text-purple-400" />
+                    <Database class="w-6 h-6 text-accent" />
                   </div>
                   <h3 class="text-xl font-semibold text-card-foreground">Conversation Memory</h3>
                 </div>
@@ -358,15 +354,15 @@ export default function Features() {
                 </p>
                 <ul class="space-y-2" role="list">
                   <li class="flex items-center text-sm text-muted-foreground">
-                    <div class="w-1.5 h-1.5 bg-purple-500 rounded-full mr-2" aria-hidden="true" />
+                    <div class="w-1.5 h-1.5 bg-accent rounded-full mr-2" aria-hidden="true" />
                     Remembers your preferences from past conversations
                   </li>
                   <li class="flex items-center text-sm text-muted-foreground">
-                    <div class="w-1.5 h-1.5 bg-purple-500 rounded-full mr-2" aria-hidden="true" />
+                    <div class="w-1.5 h-1.5 bg-accent rounded-full mr-2" aria-hidden="true" />
                     Understands context from previous interactions
                   </li>
                   <li class="flex items-center text-sm text-muted-foreground">
-                    <div class="w-1.5 h-1.5 bg-purple-500 rounded-full mr-2" aria-hidden="true" />
+                    <div class="w-1.5 h-1.5 bg-accent rounded-full mr-2" aria-hidden="true" />
                     Builds a personalized knowledge base over time
                   </li>
                 </ul>
@@ -374,10 +370,10 @@ export default function Features() {
               <div class="bg-card rounded-lg p-6 border border-border" role="listitem">
                 <div class="flex items-center mb-4">
                   <div
-                    class="bg-emerald-100 dark:bg-emerald-900/50 p-3 rounded-lg mr-4"
+                    class="bg-primary/10 p-3 rounded-lg mr-4"
                     aria-hidden="true"
                   >
-                    <Search class="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
+                    <Search class="w-6 h-6 text-primary" />
                   </div>
                   <h3 class="text-xl font-semibold text-card-foreground">Intelligent Retrieval</h3>
                 </div>
@@ -388,22 +384,22 @@ export default function Features() {
                 </p>
                 <ul class="space-y-2" role="list">
                   <li class="flex items-center text-sm text-muted-foreground">
-                    <div class="w-1.5 h-1.5 bg-emerald-500 rounded-full mr-2" aria-hidden="true" />
+                    <div class="w-1.5 h-1.5 bg-primary rounded-full mr-2" aria-hidden="true" />
                     Finds relevant information from your past interactions
                   </li>
                   <li class="flex items-center text-sm text-muted-foreground">
-                    <div class="w-1.5 h-1.5 bg-emerald-500 rounded-full mr-2" aria-hidden="true" />
+                    <div class="w-1.5 h-1.5 bg-primary rounded-full mr-2" aria-hidden="true" />
                     Combines your preferences with real-time data
                   </li>
                   <li class="flex items-center text-sm text-muted-foreground">
-                    <div class="w-1.5 h-1.5 bg-emerald-500 rounded-full mr-2" aria-hidden="true" />
+                    <div class="w-1.5 h-1.5 bg-primary rounded-full mr-2" aria-hidden="true" />
                     Provides contextual recommendations that improve over time
                   </li>
                 </ul>
               </div>
             </div>
             <div class="mt-8 text-center">
-              <div class="bg-gradient-to-r from-purple-50 to-emerald-50 dark:from-purple-950/30 dark:to-emerald-950/30 rounded-lg p-6 border border-purple-200/50 dark:border-purple-800/50">
+              <div class="bg-gradient-to-r from-accent/10 to-primary/10 rounded-lg p-6 border border-border">
                 <h4 class="text-lg font-semibold text-foreground mb-2">Example in Action</h4>
                 <p class="text-sm text-muted-foreground">
                   <strong>You:</strong> "Show me some good restaurants in downtown."
@@ -426,10 +422,10 @@ export default function Features() {
             <div class="grid md:grid-cols-2 gap-6" role="list">
               <div class="flex items-center" role="listitem">
                 <div
-                  class="bg-green-100 dark:bg-green-900/50 p-2 rounded-lg mr-4"
+                  class="bg-primary/10 p-2 rounded-lg mr-4"
                   aria-hidden="true"
                 >
-                  <Zap class="w-5 h-5 text-green-600 dark:text-green-400" />
+                  <Zap class="w-5 h-5 text-primary" />
                 </div>
                 <div>
                   <h3 class="font-semibold text-foreground">Speech-to-Text</h3>
@@ -438,10 +434,10 @@ export default function Features() {
               </div>
               <div class="flex items-center" role="listitem">
                 <div
-                  class="bg-green-100 dark:bg-green-900/50 p-2 rounded-lg mr-4"
+                  class="bg-primary/10 p-2 rounded-lg mr-4"
                   aria-hidden="true"
                 >
-                  <List class="w-5 h-5 text-green-600 dark:text-green-400" />
+                  <List class="w-5 h-5 text-primary" />
                 </div>
                 <div>
                   <h3 class="font-semibold text-foreground">Itinerary Export</h3>
@@ -450,10 +446,10 @@ export default function Features() {
               </div>
               <div class="flex items-center" role="listitem">
                 <div
-                  class="bg-green-100 dark:bg-green-900/50 p-2 rounded-lg mr-4"
+                  class="bg-primary/10 p-2 rounded-lg mr-4"
                   aria-hidden="true"
                 >
-                  <Users class="w-5 h-5 text-green-600 dark:text-green-400" />
+                  <Users class="w-5 h-5 text-primary" />
                 </div>
                 <div>
                   <h3 class="font-semibold text-foreground">24/7 AI Agent</h3>
@@ -462,10 +458,10 @@ export default function Features() {
               </div>
               <div class="flex items-center" role="listitem">
                 <div
-                  class="bg-green-100 dark:bg-green-900/50 p-2 rounded-lg mr-4"
+                  class="bg-primary/10 p-2 rounded-lg mr-4"
                   aria-hidden="true"
                 >
-                  <Globe class="w-5 h-5 text-green-600 dark:text-green-400" />
+                  <Globe class="w-5 h-5 text-primary" />
                 </div>
                 <div>
                   <h3 class="font-semibold text-foreground">Advanced Memory Features</h3>
@@ -489,7 +485,7 @@ export default function Features() {
             <div class="flex flex-col sm:flex-row gap-4 justify-center">
               <A href="/auth/signup" class="inline-block">
                 <button
-                  class="bg-blue-600 hover:bg-blue-700 focus:bg-blue-700 text-white font-semibold px-8 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
+                  class="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold px-8 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 transition-colors"
                   aria-label="Sign up for free to start using Loci features"
                 >
                   Get Started Free
@@ -497,7 +493,7 @@ export default function Features() {
               </A>
               <A href="/pricing" class="inline-block">
                 <button
-                  class="border border-border text-foreground hover:bg-muted focus:bg-muted font-semibold px-8 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
+                  class="border border-border text-foreground hover:bg-muted focus:bg-muted font-semibold px-8 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 transition-colors"
                   aria-label="View pricing plans for Loci"
                 >
                   View Pricing

@@ -37,6 +37,8 @@ export interface UpdateUserProfileParams {
   location?: string;
   interests?: string[];
   badges?: string[];
+  theme?: string;
+  language?: string;
 }
 
 // ===================
@@ -206,6 +208,12 @@ export const useUpdateProfileMutation = () => {
       }
       if (params.badges !== undefined && params.badges.length > 0) {
         updateParamsData.badges = params.badges;
+      }
+      if (params.theme !== undefined && params.theme !== "") {
+        updateParamsData.theme = params.theme;
+      }
+      if (params.language !== undefined && params.language !== "") {
+        updateParamsData.language = params.language;
       }
 
       const updateParams = create(UpdateProfileParamsSchema, updateParamsData);

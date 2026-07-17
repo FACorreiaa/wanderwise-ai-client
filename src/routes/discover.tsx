@@ -277,9 +277,7 @@ export default function DiscoverPage() {
                 const list = extractPois(parsedData);
                 setSearchResults(list);
                 setProgressMessage(
-                  event.type === "nearby"
-                    ? "Found places near you"
-                    : "Found places you might like",
+                  event.type === "nearby" ? "Found places near you" : "Found places you might like",
                 );
                 break;
               }
@@ -551,14 +549,14 @@ export default function DiscoverPage() {
             <div class="loci-hero__content p-6 sm:p-8 space-y-6">
               <div class="flex items-center gap-3">
                 <div class="relative">
-                  <div class="absolute -inset-1 bg-gradient-to-tr from-blue-500/60 via-cyan-500/60 to-accent/60 blur-md opacity-80" />
-                  <div class="relative w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center text-white shadow-lg ring-2 ring-white/60">
+                  <div class="absolute -inset-1 hero-glow blur-md opacity-80" />
+                  <div class="loci-hero__icon">
                     <Sparkles class="w-6 h-6" />
                   </div>
                 </div>
                 <div>
                   <h1 class="text-3xl sm:text-4xl font-bold tracking-tight">Discover</h1>
-                  <p class="text-white/80 text-sm mt-1">
+                  <p class="loci-hero__subtitle text-sm mt-1">
                     AI-curated routes, fresh drops, and local pulse in one place.
                   </p>
                 </div>
@@ -576,7 +574,7 @@ export default function DiscoverPage() {
                         placeholder="What are you looking for? (e.g., 'best ramen in Tokyo')"
                         value={searchQuery()}
                         onInput={(e) => setSearchQuery(e.currentTarget.value)}
-                        class="w-full pl-10 pr-4 py-3 rounded-xl border-2 border-border focus:ring-2 focus:ring-ring focus:border-ring bg-card/95 text-foreground placeholder-gray-600 dark:placeholder-gray-500 text-base transition-all"
+                        class="w-full pl-10 pr-4 py-3 rounded-xl border-2 border-border focus:ring-2 focus:ring-ring focus:border-ring bg-card/95 text-foreground placeholder:text-muted-foreground text-base transition-all"
                       />
                     </div>
                     <div class="flex gap-2">
@@ -585,7 +583,7 @@ export default function DiscoverPage() {
                         placeholder="Location (optional)"
                         value={searchLocation()}
                         onInput={(e) => setSearchLocation(e.currentTarget.value)}
-                        class="px-4 py-3 rounded-xl border-2 border-border focus:ring-2 focus:ring-ring focus:border-ring bg-card/95 text-foreground placeholder-gray-600 dark:placeholder-gray-500 w-40 md:w-48 backdrop-blur transition-all"
+                        class="px-4 py-3 rounded-xl border-2 border-border focus:ring-2 focus:ring-ring focus:border-ring bg-card/95 text-foreground placeholder:text-muted-foreground w-40 md:w-48 backdrop-blur transition-all"
                       />
                       <Button type="submit" disabled={!searchQuery().trim()} class="gap-2">
                         <Search class="w-5 h-5" />
@@ -595,13 +593,11 @@ export default function DiscoverPage() {
                   </div>
                 </form>
                 <Show when={progressMessage()}>
-                  <p class="mt-3 text-sm text-blue-900 dark:text-blue-200 font-medium">
-                    {progressMessage()}
-                  </p>
+                  <p class="mt-3 text-sm text-primary font-medium">{progressMessage()}</p>
                 </Show>
               </div>
               <Show when={discoverData.isError}>
-                <p class="text-sm text-white/80">
+                <p class="text-sm loci-hero__subtitle">
                   Couldn’t reach the discover service, showing sample data.{" "}
                   {(discoverData.error as any)?.message || "offline"}
                 </p>
@@ -610,7 +606,7 @@ export default function DiscoverPage() {
           </div>
         </div>
 
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-2 pb-8">
           {/* Search Results */}
           <Show when={searchResults().length > 0 || isSearching() || searchError()}>
             <div class="mb-10">
@@ -622,12 +618,10 @@ export default function DiscoverPage() {
                 </p>
               </div>
               <Show when={searchResults().length > 0}>
-                <div class="text-xs text-blue-800 dark:text-blue-200 mb-3">
-                  Mode: {streamDomain()}
-                </div>
+                <div class="text-xs text-primary mb-3">Mode: {streamDomain()}</div>
               </Show>
               <Show when={searchError()}>
-                <p class="text-sm text-red-600 dark:text-red-400 mb-3">{searchError()}</p>
+                <p class="text-sm text-destructive mb-3">{searchError()}</p>
               </Show>
               <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 <Show
@@ -664,7 +658,7 @@ export default function DiscoverPage() {
                         };
                         return (
                           <div
-                            class={`glass-panel rounded-2xl p-4 hover:shadow-xl hover:scale-[1.02] transition-all duration-200 cursor-pointer ${selection.isSelected(poi.id || poi.name) ? "ring-2 ring-ring bg-primary/10/50" : ""}`}
+                            class={`glass-panel rounded-2xl p-4 hover:shadow-xl hover:scale-[1.02] transition-all duration-200 cursor-pointer ${selection.isSelected(poi.id || poi.name) ? "ring-2 ring-accent bg-accent/10" : ""}`}
                           >
                             <div class="flex items-start justify-between gap-3 mb-2">
                               <div class="flex items-center gap-3 flex-1">
@@ -693,7 +687,7 @@ export default function DiscoverPage() {
                                   }}
                                   size="sm"
                                 />
-                                <span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-gradient-to-r from-blue-100 to-cyan-100 text-blue-800 dark:text-blue-200 border border-primary/30/50 dark:border-blue-800/50">
+                                <span class="loci-chip loci-chip--muted">
                                   {poi.city || "Unknown"}
                                 </span>
                               </div>
@@ -703,7 +697,7 @@ export default function DiscoverPage() {
                             </p>
                             <div class="flex items-center gap-3 text-xs text-muted-foreground">
                               <div class="flex items-center gap-1">
-                                <Star class="w-4 h-4 text-amber-500 dark:text-yellow-500 fill-current" />
+                                <Star class="w-4 h-4 text-accent fill-current" />
                                 <span class="font-medium">{poi.rating ?? "4.0"}</span>
                               </div>
                               <div class="flex items-center gap-1">
@@ -732,7 +726,7 @@ export default function DiscoverPage() {
                 {(cat) => (
                   <button
                     onClick={() => handleCategoryClick(cat.category, cat.name)}
-                    class="glass-panel p-3 rounded-xl hover:shadow-lg hover:scale-105 hover:border-blue-400/60 dark:hover:border-blue-300 transition-all duration-200 group text-center"
+                    class="glass-panel p-3 rounded-xl hover:shadow-lg hover:scale-105 hover:border-primary/30 transition-all duration-200 group text-center"
                   >
                     <span class="block text-2xl mb-1 group-hover:scale-110 transition-transform">
                       {cat.emoji}
@@ -758,13 +752,13 @@ export default function DiscoverPage() {
                     </p>
                   }
                 />
-                <div class="rounded-2xl border border-border bg-gradient-to-br from-blue-50/40 via-cyan-50/40 to-amber-50/30 dark:from-primary/10 dark:via-primary/10 dark:to-accent/10 p-5 sm:p-6 shadow-[0_20px_70px_rgba(4,165,229,0.25)]">
+                <div class="rounded-2xl border border-border bg-primary/5 p-5 sm:p-6">
                   <div class="flex items-start gap-3">
-                    <div class="p-3 rounded-xl bg-gradient-to-br from-blue-100/95 to-cyan-100/95 dark:bg-white/10 text-blue-700 dark:text-white border border-primary/30/70 shadow-sm">
+                    <div class="p-3 rounded-xl bg-primary/10 text-primary border border-primary/30 shadow-sm">
                       <Smartphone class="w-5 h-5" />
                     </div>
                     <div class="space-y-2">
-                      <p class="text-xs uppercase tracking-[0.16em] font-medium text-blue-700/80 dark:text-slate-300">
+                      <p class="text-xs uppercase tracking-[0.16em] font-medium text-muted-foreground">
                         Native apps incoming
                       </p>
                       <h3 class="text-lg font-semibold text-foreground">
@@ -828,9 +822,9 @@ export default function DiscoverPage() {
                           {(item, index) => (
                             <button
                               onClick={() => handleTrendingClick(item)}
-                              class="w-full flex items-center gap-3 p-4 glass-panel rounded-xl hover:border-blue-400/60 dark:hover:border-blue-300 hover:shadow-lg cursor-pointer transition-all duration-200 group"
+                              class="w-full flex items-center gap-3 p-4 glass-panel rounded-xl hover:border-primary/30 hover:shadow-lg cursor-pointer transition-all duration-200 group"
                             >
-                              <div class="flex items-center justify-center w-8 h-8 bg-gradient-to-br from-blue-100 to-cyan-100 text-primary rounded-full text-sm font-bold shadow-sm">
+                              <div class="flex items-center justify-center w-8 h-8 bg-primary/10 text-primary rounded-full text-sm font-bold shadow-sm">
                                 {index() + 1}
                               </div>
                               <span class="text-2xl">{item.emoji}</span>
@@ -854,7 +848,7 @@ export default function DiscoverPage() {
                 {/* Featured Collections */}
                 <div>
                   <h2 class="text-xl font-semibold text-foreground mb-4 flex items-center gap-2">
-                    <Star class="w-5 h-5 text-yellow-500 fill-current" />
+                    <Star class="w-5 h-5 text-accent fill-current" />
                     Featured Collections
                   </h2>
                   <Show
@@ -880,7 +874,7 @@ export default function DiscoverPage() {
                           {(item) => (
                             <button
                               onClick={() => handleCategoryClick(item.category, item.title)}
-                              class="flex items-center gap-3 p-4 glass-panel rounded-xl hover:border-amber-400/60 dark:hover:border-yellow-300 hover:shadow-lg cursor-pointer transition-all duration-200 group"
+                              class="flex items-center gap-3 p-4 glass-panel rounded-xl hover:border-accent/30 hover:shadow-lg cursor-pointer transition-all duration-200 group"
                             >
                               <span class="text-3xl">{item.emoji}</span>
                               <div class="flex-1 text-left">
@@ -936,9 +930,7 @@ export default function DiscoverPage() {
                               <div class="flex items-start gap-3 mb-3">
                                 <span class="text-2xl">🗺️</span>
                                 <div class="flex-1 min-w-0">
-                                  <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-gradient-to-r from-blue-100 to-cyan-100 text-blue-800 border border-primary/30/50 dark:border-blue-800/50 mb-2">
-                                    Discovery
-                                  </span>
+                                  <span class="loci-chip loci-chip--muted mb-2">Discovery</span>
                                   <h3 class="font-semibold text-foreground text-sm truncate">
                                     {session.city_name || "Unknown City"}
                                   </h3>
@@ -964,7 +956,7 @@ export default function DiscoverPage() {
                         </For>
                         <Show when={recentHasMore()}>
                           <button
-                            class="w-full mt-2 text-sm font-semibold text-blue-700 dark:text-blue-200 px-3 py-2 rounded-lg border border-primary/30/60 dark:border-blue-800/60 bg-card hover:bg-primary/10 transition disabled:opacity-60"
+                            class="w-full mt-2 text-sm font-semibold text-primary px-3 py-2 rounded-lg border border-primary/30 bg-card hover:bg-primary/10 transition disabled:opacity-60"
                             onClick={loadMoreRecents}
                             disabled={recentLoadingMore()}
                           >
