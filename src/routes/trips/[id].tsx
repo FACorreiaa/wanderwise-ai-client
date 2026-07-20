@@ -16,6 +16,7 @@ import { TripPace } from "@buf/loci_loci-proto.bufbuild_es/loci/trip/trip_pb.js"
 import { useUserSubscription } from "~/lib/api/billing";
 import { isProPlan } from "~/lib/subscription";
 import TripExportMenu from "~/components/trip/TripExportMenu";
+import WhyThisStop from "~/components/poi/WhyThisStop";
 
 const minutesToHHMM = (m?: number) => {
   if (m == null) return "";
@@ -294,11 +295,9 @@ export default function TripEditor() {
                             />
                             <span class="text-xs text-muted-foreground">min</span>
                           </div>
-                          <Show when={stop.notes}>
-                            <p class="mt-2 pl-8 text-xs text-muted-foreground line-clamp-2">
-                              {stop.notes}
-                            </p>
-                          </Show>
+                          <div class="mt-1 pl-8">
+                            <WhyThisStop reason={stop.notes} />
+                          </div>
                         </li>
                       )}
                     </For>

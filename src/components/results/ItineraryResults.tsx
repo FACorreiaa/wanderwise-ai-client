@@ -10,6 +10,8 @@ import {
   Share2,
 } from "lucide-solid";
 import FavoriteButton from "~/components/shared/FavoriteButton";
+import WhyThisStop from "~/components/poi/WhyThisStop";
+import { deriveWhyThis } from "~/lib/why-this";
 import { POIDetailedInfo, AIItineraryResponse } from "~/lib/api/types";
 
 interface ItineraryResultsProps {
@@ -187,9 +189,7 @@ export default function ItineraryResults(props: ItineraryResultsProps) {
                     <Show when={poi.rating}>
                       <div class="flex items-center gap-1 ml-2 flex-shrink-0">
                         <Star class="w-4 h-4 text-accent fill-current" />
-                        <span class="text-sm font-medium text-foreground">
-                          {poi.rating}
-                        </span>
+                        <span class="text-sm font-medium text-foreground">{poi.rating}</span>
                       </div>
                     </Show>
                   </div>
@@ -198,6 +198,21 @@ export default function ItineraryResults(props: ItineraryResultsProps) {
                     <p class="text-sm text-muted-foreground mb-3 line-clamp-2">
                       {poi.description_poi}
                     </p>
+                  </Show>
+
+                  <Show when={!props.compact}>
+                    <WhyThisStop
+                      reason={deriveWhyThis({
+                        category: poi.category,
+                        rating: poi.rating,
+                        recommendation_rationale: (
+                          poi as POIDetailedInfo & {
+                            recommendation_rationale?: string;
+                          }
+                        ).recommendation_rationale,
+                        tags: poi.tags,
+                      })}
+                    />
                   </Show>
 
                   <div class="flex items-center gap-4 text-xs text-muted-foreground flex-wrap">

@@ -614,6 +614,8 @@ export interface POIDetailedInfo {
   reviewCount?: number;
   cuisine_type?: string;
   star_rating?: number;
+  recommendation_rationale?: string;
+  uncertainty_score?: number;
 }
 
 // Domain-specific response types
