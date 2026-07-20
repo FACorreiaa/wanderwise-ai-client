@@ -23,6 +23,7 @@ import {
 } from "@buf/loci_loci-proto.bufbuild_es/loci/trip/trip_pb.js";
 import { PaginationRequestSchema } from "@buf/loci_loci-proto.bufbuild_es/loci/common/common_pb.js";
 import { transport } from "../connect-transport";
+import { cacheTripOffline, getCachedTrip } from "../trip-offline-cache";
 
 const tripClient = createClient(TripService, transport);
 
@@ -177,8 +178,13 @@ export const useTrip = (id: () => string | undefined) =>
     enabled: !!id(),
     queryFn: async () => {
       const res = await tripClient.getTrip(create(GetTripRequestSchema, { tripId: id()! }));
-      return mapTrip(res);
+      const trip = mapTrip(res);
+      cacheTripOffline(trip);
+      return trip;
     },
+    // Serve last cached copy while offline / before network returns.
+    placeholderData: () => getCachedTrip(id() ?? ""),
+    networkMode: "offlineFirst",
   }));
 
 // ---- mutations ----
