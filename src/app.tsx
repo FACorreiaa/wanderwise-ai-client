@@ -19,6 +19,7 @@ import queryClient from "~/lib/query-client";
 import PageBackground from "./components/PageBackground";
 import ProfilePreferencesSync from "~/components/ProfilePreferencesSync";
 import ThemeMetaSync from "~/components/ThemeMetaSync";
+import UpgradePrompt from "~/components/UpgradePrompt";
 
 export default function App() {
   return (
@@ -45,6 +46,7 @@ export default function App() {
                           </main>
                           <Footer />
                           <PWAInstall />
+                          <UpgradePrompt />
                         </div>
                       </div>
                     </LocationProvider>

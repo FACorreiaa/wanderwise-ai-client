@@ -1,13 +1,12 @@
 // src/lib/hooks/useStreamedRpc.ts
 import { createStore } from "solid-js/store";
-import { createSignal, onCleanup } from "solid-js";
-import { chatService } from "@/lib/api";
-import { parseStreamError } from "../errors";
+import { onCleanup } from "solid-js";
+import { streamChatEvents } from "@/lib/streaming/chatStream";
 import { AiCityResponse } from "~/lib/api/types";
 
 type StreamedRpcOptions = {
   onData?: (_: AiCityResponse) => void;
-  onComplete?: () => void;
+  onComplete?: (meta?: { tripId?: string }) => void;
   onError?: (_: Error) => void;
 };
 
@@ -21,13 +20,16 @@ export function useStreamedRpc(
     data: AiCityResponse | null;
     error: Error | null;
     isLoading: boolean;
+    tripId: string | null;
   }>({
     data: null,
     error: null,
     isLoading: false,
+    tripId: null,
   });
 
-  const [, setStream] = createSignal<AsyncIterable<any> | null>(null);
+  // Abort the in-flight stream on cleanup so navigating away cancels the RPC.
+  const controller = new AbortController();
 
   const connect = async () => {
     if (!message() || !cityName()) {
@@ -36,56 +38,55 @@ export function useStreamedRpc(
 
     setStore("isLoading", true);
     setStore("error", null);
+    setStore("tripId", null);
+
+    let completedTripId: string | undefined;
 
     try {
-      const stream = chatService.streamChat({
-        message: message(),
-        cityName: cityName(),
-        // profileId: profileId(), // Not supported by ChatRequest schema
-      });
-      setStream(stream);
-      await readStream(stream);
-    } catch (error) {
-      const err = error instanceof Error ? error : new Error(String(error));
-      const parsed = parseStreamError(err.message);
-
-      const wrappedError = new Error(parsed.userMessage);
-      setStore("error", wrappedError);
-      opts.onError?.(wrappedError);
-    } finally {
-      setStore("isLoading", false);
-      opts.onComplete?.();
-    }
-  };
-
-  const readStream = async (stream: AsyncIterable<any>) => {
-    for await (const event of stream) {
-      switch (event.type) {
-        case "itinerary":
-          if (event.data) {
-            const itinerary = JSON.parse(new TextDecoder().decode(event.data)) as AiCityResponse;
-            setStore("data", itinerary);
-            opts.onData?.(itinerary);
-          }
-          break;
-        case "error":
-          if (event.error) {
-            const parsed = parseStreamError(event.error);
-            const err = new Error(parsed.userMessage);
+      // Single canonical reader. profileId is now threaded (was dropped before).
+      for await (const event of streamChatEvents(
+        {
+          message: message(),
+          cityName: cityName(),
+          profileId: profileId() || undefined,
+        },
+        controller.signal,
+      )) {
+        switch (event.kind) {
+          case "itinerary":
+            setStore("data", event.cityResponse);
+            opts.onData?.(event.cityResponse);
+            break;
+          case "complete":
+            if (event.result) {
+              setStore("data", event.result);
+              opts.onData?.(event.result);
+            }
+            if (event.tripId) {
+              completedTripId = event.tripId;
+              setStore("tripId", event.tripId);
+            }
+            break;
+          case "error": {
+            const err = new Error(event.userMessage);
             setStore("error", err);
             opts.onError?.(err);
+            break;
           }
-          break;
-        case "complete":
-          // The stream is finished
-          break;
+        }
       }
+    } catch (error) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      setStore("error", err);
+      opts.onError?.(err);
+    } finally {
+      setStore("isLoading", false);
+      opts.onComplete?.(completedTripId ? { tripId: completedTripId } : undefined);
     }
   };
 
   onCleanup(() => {
-    // Abort the stream on cleanup
-    // This depends on how the connect-es client handles cancellation
+    controller.abort();
   });
 
   return { store, connect, setStore };

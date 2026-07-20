@@ -17,13 +17,8 @@ import {
   Settings,
   Clock,
 } from "lucide-solid";
-import { detectDomain, domainToContextType } from "~/lib/api/llm";
-import {
-  createStreamingSession,
-  getDomainRoute,
-  sendUnifiedChatMessageStream,
-  streamingService,
-} from "~/lib/chat-stream";
+import { detectDomain } from "~/lib/api/llm";
+import { createStreamingSession, getDomainRoute, streamingService } from "~/lib/chat-stream";
 import type { StreamingSession, AiCityResponse, CityInteractions } from "~/lib/api/types";
 import { useUserLocation } from "~/contexts/LocationContext";
 import { useDefaultSearchProfile } from "~/lib/api/profiles";
@@ -205,74 +200,73 @@ export default function LoggedInDashboard() {
         throw new Error("No default search profile found");
       }
 
-      // Start streaming request
-      const response = await sendUnifiedChatMessageStream({
-        profileId: currentProfileId,
-        message: currentMessage(),
-        contextType: domainToContextType(domain),
-        userLocation: {
-          userLat: userLatitude,
-          userLon: userLongitude,
+      // Set up streaming manager (the service owns the stream now).
+      streamingService.startStream(
+        {
+          profileId: currentProfileId,
+          message: currentMessage(),
+          userLocation: {
+            userLat: userLatitude,
+            userLon: userLongitude,
+          },
         },
-      });
+        {
+          session,
+          onProgress: (updatedSession) => {
+            setStreamingSession(updatedSession);
+            const domain = updatedSession.domain;
 
-      // Set up streaming manager
-      streamingService.startStream(response, {
-        session,
-        onProgress: (updatedSession) => {
-          setStreamingSession(updatedSession);
-          const domain = updatedSession.domain;
+            // Type guard or assertion for general_city_data
+            const cityData = (updatedSession.data as Partial<AiCityResponse>)?.general_city_data;
 
-          // Type guard or assertion for general_city_data
-          const cityData = (updatedSession.data as Partial<AiCityResponse>)?.general_city_data;
+            if (cityData) {
+              setStreamProgress(`Found information about ${cityData.city}...`);
+            } else if (domain === "accommodation") {
+              setStreamProgress("Finding hotels...");
+            } else if (domain === "dining") {
+              setStreamProgress("Searching restaurants...");
+            } else if (domain === "activities") {
+              setStreamProgress("Discovering activities...");
+            } else {
+              setStreamProgress("Creating your itinerary...");
+            }
+            sessionStorage.setItem("currentStreamingSession", JSON.stringify(updatedSession));
+          },
+          onComplete: (completedSession) => {
+            console.log("🎊 onComplete callback triggered in LoggedInDashboard", completedSession);
+            setIsLoading(false);
+            setStreamProgress("");
+            setCurrentMessage("");
 
-          if (cityData) {
-            setStreamProgress(`Found information about ${cityData.city}...`);
-          } else if (domain === "accommodation") {
-            setStreamProgress("Finding hotels...");
-          } else if (domain === "dining") {
-            setStreamProgress("Searching restaurants...");
-          } else if (domain === "activities") {
-            setStreamProgress("Discovering activities...");
-          } else {
-            setStreamProgress("Creating your itinerary...");
-          }
-          sessionStorage.setItem("currentStreamingSession", JSON.stringify(updatedSession));
+            // Store completed session
+            sessionStorage.setItem("completedStreamingSession", JSON.stringify(completedSession));
+
+            // Navigate to appropriate page
+            const route = getDomainRoute(
+              completedSession.domain,
+              completedSession.sessionId,
+              completedSession.city,
+            );
+            console.log("🧭 Navigation route:", route, {
+              domain: completedSession.domain,
+              sessionId: completedSession.sessionId,
+              city: completedSession.city,
+            });
+
+            if (route) {
+              console.log("✈️  Navigating to:", route);
+              navigate(route);
+            } else {
+              console.error("❌ No route returned from getDomainRoute");
+            }
+          },
+          onError: (error) => {
+            console.error("Streaming error:", error);
+            setIsLoading(false);
+            setStreamProgress("");
+          },
         },
-        onComplete: (completedSession) => {
-          console.log("🎊 onComplete callback triggered in LoggedInDashboard", completedSession);
-          setIsLoading(false);
-          setStreamProgress("");
-          setCurrentMessage("");
-
-          // Store completed session
-          sessionStorage.setItem("completedStreamingSession", JSON.stringify(completedSession));
-
-          // Navigate to appropriate page
-          const route = getDomainRoute(
-            completedSession.domain,
-            completedSession.sessionId,
-            completedSession.city,
-          );
-          console.log("🧭 Navigation route:", route, {
-            domain: completedSession.domain,
-            sessionId: completedSession.sessionId,
-            city: completedSession.city,
-          });
-
-          if (route) {
-            console.log("✈️  Navigating to:", route);
-            navigate(route);
-          } else {
-            console.error("❌ No route returned from getDomainRoute");
-          }
-        },
-        onError: (error) => {
-          console.error("Streaming error:", error);
-          setIsLoading(false);
-          setStreamProgress("");
-        },
-      });
+      );
     } catch (error) {
       console.error("Error sending message:", error);
       setIsLoading(false);
@@ -316,9 +310,7 @@ export default function LoggedInDashboard() {
               <h1 class="text-3xl font-bold text-foreground tracking-tight">
                 Welcome back, {displayName}! 👋
               </h1>
-              <p class="text-muted-foreground mt-1">
-                Ready to discover something amazing today?
-              </p>
+              <p class="text-muted-foreground mt-1">Ready to discover something amazing today?</p>
             </div>
             <div class="flex items-center gap-3">
               <button
@@ -436,9 +428,7 @@ export default function LoggedInDashboard() {
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-10">
           {/* Quick Actions */}
           <div class="lg:col-span-2">
-            <h2 class="text-xl font-semibold text-foreground mb-5">
-              Quick Discoveries
-            </h2>
+            <h2 class="text-xl font-semibold text-foreground mb-5">Quick Discoveries</h2>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-5 mb-10">
               <For each={quickDiscoveries}>
                 {(discovery) => (
@@ -518,12 +508,8 @@ export default function LoggedInDashboard() {
                           <h4 class="font-semibold text-foreground text-sm group-hover:text-primary transition-colors truncate">
                             {activity.title}
                           </h4>
-                          <p class="text-xs text-muted-foreground truncate">
-                            {activity.location}
-                          </p>
-                          <p class="text-xs text-muted-foreground/80">
-                            {activity.timestamp}
-                          </p>
+                          <p class="text-xs text-muted-foreground truncate">{activity.location}</p>
+                          <p class="text-xs text-muted-foreground/80">{activity.timestamp}</p>
                         </div>
                         <Show when={activity.saved}>
                           <Heart class="w-4 h-4 text-red-500 fill-current" />
@@ -537,9 +523,7 @@ export default function LoggedInDashboard() {
 
             {/* Quick Actions Sidebar */}
             <div class="rounded-2xl p-6 bg-card/95 border border-border backdrop-blur-xl shadow-lg">
-              <h3 class="text-lg font-semibold text-foreground mb-4">
-                Quick Actions
-              </h3>
+              <h3 class="text-lg font-semibold text-foreground mb-4">Quick Actions</h3>
               <div class="space-y-3">
                 <button
                   onClick={() => navigate("/chat")}
@@ -552,9 +536,7 @@ export default function LoggedInDashboard() {
                     <h4 class="font-semibold text-foreground text-sm group-hover:text-primary transition-colors">
                       AI Chat
                     </h4>
-                    <p class="text-xs text-muted-foreground">
-                      Chat with our AI assistant
-                    </p>
+                    <p class="text-xs text-muted-foreground">Chat with our AI assistant</p>
                   </div>
                 </button>
 

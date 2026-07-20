@@ -1,7 +1,16 @@
-// Streaming service for handling Server-Sent Events from the unified chat API
+// Streaming service for the unified chat API.
+//
+// This consumes the ONE canonical stream reader (streamChatEvents) — which reads
+// the typed proto oneof directly — and projects normalized events onto a
+// StreamingSession, preserving the manager callback contract that useChat relies
+// on (onProgress / onComplete / onError / onRedirect).
+//
+// The previous implementation hand-rolled an SSE text parser plus a
+// brace-counting JSON accumulator (chunkBuffer) because structured data used to
+// arrive as buffered LLM text chunks. Structured data now arrives as typed
+// events, so all of that machinery is gone.
 
 import type {
-  StreamEvent,
   StreamingSession,
   DomainType,
   UnifiedChatResponse,
@@ -9,14 +18,14 @@ import type {
   AccommodationResponse,
   DiningResponse,
   ActivitiesResponse,
-  GeneralCityData,
-  POIDetailedInfo,
-  AIItineraryResponse,
   HotelDetailedInfo,
   RestaurantDetailedInfo,
-  StreamChunkData,
-  StreamCompleteData,
 } from "./api/types";
+import {
+  streamChatEvents,
+  type ChatStreamParams,
+  type LociStreamEvent,
+} from "./streaming/chatStream";
 
 export interface StreamingSessionManager {
   session: StreamingSession;
@@ -27,107 +36,41 @@ export interface StreamingSessionManager {
 }
 
 export class StreamingChatService {
-  private eventSource: EventSource | null = null;
   private manager: StreamingSessionManager | null = null;
-  private reader: ReadableStreamDefaultReader<Uint8Array> | null = null;
+  private controller: AbortController | null = null;
   private aborted = false;
-  private chunkBuffer: {
-    general_pois: string;
-    itinerary: string;
-    city_data: string;
-    hotels: string;
-    restaurants: string;
-    activities: string;
-  } = {
-    general_pois: "",
-    itinerary: "",
-    city_data: "",
-    hotels: "",
-    restaurants: "",
-    activities: "",
-  };
 
   constructor() {}
 
-  // Start streaming session
-  public startStream(response: Response, manager: StreamingSessionManager): void {
+  /**
+   * Open a chat stream for the given request and drive the manager callbacks.
+   * (Previously took a pre-opened SSE Response; now it owns the stream so it can
+   * thread profile/session and cancel cleanly.)
+   */
+  public startStream(params: ChatStreamParams, manager: StreamingSessionManager): void {
     this.manager = manager;
-
-    // Reset chunk buffer for new stream to prevent corruption from previous requests
-    this.chunkBuffer = {
-      general_pois: "",
-      itinerary: "",
-      city_data: "",
-      hotels: "",
-      restaurants: "",
-      activities: "",
-    };
-
-    if (!response.body) {
-      this.manager.onError("No response body received");
-      return;
-    }
-
     this.aborted = false;
-    const reader = response.body.getReader();
-    this.reader = reader;
-    const decoder = new TextDecoder();
-
-    this.processStream(reader, decoder);
+    this.controller = new AbortController();
+    void this.run(params);
   }
 
   /** Stop the in-flight stream. Finalizes the partial session (onComplete),
    *  does not surface an error. */
   public stop(): void {
-    if (!this.reader) return;
+    if (!this.controller) return;
     this.aborted = true;
-    this.reader.cancel().catch(() => {});
+    this.controller.abort();
   }
 
-  private async processStream(
-    reader: ReadableStreamDefaultReader<Uint8Array>,
-    decoder: TextDecoder,
-  ): Promise<void> {
-    if (!this.manager) return;
-
+  private async run(params: ChatStreamParams): Promise<void> {
+    if (!this.manager || !this.controller) return;
     try {
-      while (true) {
-        if (this.aborted) {
-          this.handleStreamComplete();
-          break;
-        }
-
-        const { done, value } = await reader.read();
-
-        if (done) {
-          this.handleStreamComplete();
-          break;
-        }
-
-        const chunk = decoder.decode(value, { stream: true });
-        const lines = chunk.split("\n");
-
-        for (const line of lines) {
-          if (line.startsWith("data: ")) {
-            const data = line.slice(6); // Remove 'data: ' prefix
-            if (data.trim() === "") continue;
-
-            try {
-              const event: StreamEvent = JSON.parse(data);
-              this.processStreamEvent(event);
-            } catch (_parseError) {
-              console.error("Failed to parse SSE data:", _parseError, data);
-            }
-          } else if (line.startsWith("event: ")) {
-            // Handle event type if needed
-            const eventType = line.slice(7);
-            console.log("Event type:", eventType);
-          }
-        }
+      for await (const event of streamChatEvents(params, this.controller.signal)) {
+        if (this.aborted) break;
+        this.project(event);
       }
+      this.handleStreamComplete();
     } catch (error) {
-      // A cancel() during an in-flight read() rejects — treat intentional stops
-      // as a clean finalize, not an error.
       if (this.aborted) {
         this.handleStreamComplete();
         return;
@@ -135,624 +78,145 @@ export class StreamingChatService {
       console.error("Stream processing error:", error);
       this.manager?.onError(`Stream error: ${error}`);
     } finally {
-      this.reader = null;
+      this.controller = null;
     }
   }
 
-  private processStreamEvent(event: StreamEvent): void {
-    if (!this.manager) return;
+  // Project a normalized event onto the session and fire callbacks.
+  private project(event: LociStreamEvent): void {
+    const mgr = this.manager;
+    if (!mgr) return;
+    const isCity = mgr.session.domain === "general" || mgr.session.domain === "itinerary";
 
-    // session unused
-
-    switch (event.type) {
+    switch (event.kind) {
       case "start":
-        this.handleStartEvent(event);
+        if (event.sessionId) mgr.session.sessionId = event.sessionId;
+        if (event.domain) mgr.session.domain = event.domain as DomainType;
+        if (event.city) mgr.session.city = event.city;
+        mgr.onProgress(mgr.session);
         break;
 
-      case "chunk":
-        this.handleChunkEvent(event);
+      case "token":
+      case "partial":
+        // Incremental text is surfaced through onProgress; the session's
+        // structured data is populated by the typed events below.
+        mgr.onProgress(mgr.session);
         break;
 
       case "city_data":
-        this.handleCityDataEvent(event);
+        if (isCity && event.city) {
+          const data = (mgr.session.data ?? {}) as Partial<AiCityResponse>;
+          data.general_city_data = event.city;
+          data.session_id = mgr.session.sessionId;
+          mgr.session.data = data;
+        }
+        if (event.city?.city) mgr.session.city = event.city.city;
+        mgr.onProgress(mgr.session);
         break;
 
       case "general_pois":
-        this.handleGeneralPOIsEvent(event);
+        if (isCity) {
+          const data = (mgr.session.data ?? {}) as Partial<AiCityResponse>;
+          data.points_of_interest = event.pois;
+          if (event.city) data.general_city_data = event.city;
+          mgr.session.data = data;
+        }
+        mgr.onProgress(mgr.session);
         break;
 
       case "itinerary":
-        this.handleItineraryEvent(event);
+        // The itinerary event carries the full aggregate city response.
+        mgr.session.data = event.cityResponse;
+        if (event.cityResponse.general_city_data?.city) {
+          mgr.session.city = event.cityResponse.general_city_data.city;
+        }
+        mgr.onProgress(mgr.session);
         break;
 
       case "hotels":
-        this.handleHotelsEvent(event);
+        if (event.city?.city) mgr.session.city = event.city.city;
+        mgr.session.data = {
+          general_city_data: event.city,
+          // Slice 1: hotels are POI-shaped end-to-end (see chatStream.ts).
+          hotels: event.pois as unknown as HotelDetailedInfo[],
+          domain: "accommodation",
+          session_id: event.sessionId || mgr.session.sessionId,
+        } as AccommodationResponse;
+        mgr.onProgress(mgr.session);
         break;
 
       case "restaurants":
-        this.handleRestaurantsEvent(event);
+        if (event.city?.city) mgr.session.city = event.city.city;
+        mgr.session.data = {
+          general_city_data: event.city,
+          restaurants: event.pois as unknown as RestaurantDetailedInfo[],
+          domain: "dining",
+          session_id: event.sessionId || mgr.session.sessionId,
+        } as DiningResponse;
+        mgr.onProgress(mgr.session);
         break;
 
       case "activities":
-        this.handleActivitiesEvent(event);
+        if (event.city?.city) mgr.session.city = event.city.city;
+        mgr.session.data = {
+          general_city_data: event.city,
+          activities: event.pois,
+          domain: "activities",
+          session_id: event.sessionId || mgr.session.sessionId,
+        } as ActivitiesResponse;
+        mgr.onProgress(mgr.session);
         break;
 
-      case "complete":
-        this.handleCompleteEvent();
+      case "progress":
+        mgr.onProgress(mgr.session);
         break;
 
       case "error":
-        this.handleErrorEvent(event);
+        mgr.session.error = event.userMessage;
+        mgr.onError(event.userMessage);
         break;
 
-      default:
-        console.log("Unknown event type:", event.type, event);
+      case "complete":
+        this.handleComplete(event);
+        break;
     }
   }
 
-  private handleStartEvent(event: StreamEvent): void {
-    if (!this.manager || !event.data) return;
+  private handleComplete(event: Extract<LociStreamEvent, { kind: "complete" }>): void {
+    const mgr = this.manager;
+    if (!mgr) return;
+    if (mgr.session.isComplete) return; // guard double-complete
 
-    const data = event.data as StreamCompleteData;
-    const { domain, city, session_id } = data;
-
-    if (session_id) this.manager.session.sessionId = session_id;
-    if (domain) this.manager.session.domain = domain;
-    if (city) this.manager.session.city = city;
-
-    // Reset chunk buffer for new session
-    this.chunkBuffer = {
-      general_pois: "",
-      itinerary: "",
-      city_data: "",
-      hotels: "",
-      restaurants: "",
-      activities: "",
-    };
-
-    this.manager.onProgress(this.manager.session);
-  }
-
-  private handleChunkEvent(event: StreamEvent): void {
-    if (!this.manager || !event.data) return;
-
-    const data = event.data as StreamChunkData;
-    const { chunk, part } = data;
-
-    if (
-      part &&
-      (part === "general_pois" ||
-        part === "itinerary" ||
-        part === "city_data" ||
-        part === "hotels" ||
-        part === "restaurants" ||
-        part === "activities")
-    ) {
-      // Accumulate chunks for the specific part
-      this.chunkBuffer[part] += chunk;
-
-      // Try to find complete JSON objects
-      this.tryParseBufferedData(part as keyof typeof this.chunkBuffer);
-    }
-
-    this.manager.onProgress(this.manager.session);
-  }
-
-  private tryParseBufferedData(part: keyof typeof this.chunkBuffer): void {
-    if (!this.manager) return;
-
-    let buffer = this.chunkBuffer[part];
-
-    // Remove markdown code blocks more carefully:
-    // 1. Remove opening code block marker (backticks + optional language) at start
-    // 2. Remove closing code block marker (backticks) at end
-    buffer = buffer
-      .replace(/^`+(?:json)?\s*/i, "")
-      .replace(/\s*`+$/g, "")
-      .trim();
-
-    // Try to find complete JSON objects
-    let braceCount = 0;
-    let jsonStart = -1;
-
-    for (let i = 0; i < buffer.length; i++) {
-      if (buffer[i] === "{") {
-        if (braceCount === 0) {
-          jsonStart = i;
-        }
-        braceCount++;
-      } else if (buffer[i] === "}") {
-        braceCount--;
-        if (braceCount === 0 && jsonStart !== -1) {
-          // Found complete JSON object
-          const jsonStr = buffer.substring(jsonStart, i + 1);
-          try {
-            const jsonData = JSON.parse(jsonStr);
-
-            // Process the complete JSON based on part type
-            console.log(`=== PARSED JSON FOR ${part.toUpperCase()} ===`);
-            console.log("JSON data:", jsonData);
-
-            switch (part) {
-              case "city_data":
-                this.handleParsedCityData(jsonData);
-                break;
-              case "general_pois":
-                this.handleParsedGeneralPOIs(jsonData);
-                break;
-              case "itinerary":
-                this.handleParsedItinerary(jsonData);
-                break;
-              case "hotels":
-                this.handleParsedHotels(jsonData);
-                break;
-              case "restaurants":
-                this.handleParsedRestaurants(jsonData);
-                break;
-              case "activities":
-                this.handleParsedActivities(jsonData);
-                break;
-            }
-
-            // Remove processed data from buffer
-            this.chunkBuffer[part] = buffer.substring(i + 1);
-            return;
-          } catch (_parseError) {
-            // JSON not complete yet, continue accumulating
-            console.log(`Partial JSON for ${part}, continuing...`);
-          }
-        }
+    // If the aggregate arrived on the complete event, prefer it.
+    if (event.result) {
+      mgr.session.data = event.result;
+      if (event.result.general_city_data?.city) {
+        mgr.session.city = event.result.general_city_data.city;
       }
     }
-  }
+    if (event.sessionId) mgr.session.sessionId = event.sessionId;
 
-  private handleParsedCityData(cityData: GeneralCityData): void {
-    if (!this.manager) return;
+    mgr.session.isComplete = true;
+    mgr.onComplete(mgr.session);
 
-    try {
-      // Initialize data structure based on domain
-      if (
-        this.manager.session.domain === "general" ||
-        this.manager.session.domain === "itinerary"
-      ) {
-        this.manager.session.data = {
-          ...this.manager.session.data,
-          general_city_data: cityData,
-          session_id: this.manager.session.sessionId,
-        } as Partial<AiCityResponse>;
-      }
-
-      this.manager.onProgress(this.manager.session);
-    } catch (error) {
-      console.error("Error processing parsed city data:", error);
+    if (mgr.onRedirect && mgr.session.data) {
+      mgr.onRedirect(mgr.session.domain, mgr.session.data as UnifiedChatResponse);
     }
-  }
-
-  private handleParsedGeneralPOIs(poisData: { points_of_interest: POIDetailedInfo[] }): void {
-    if (!this.manager) return;
-
-    try {
-      const pois = poisData.points_of_interest || [];
-
-      if (
-        this.manager.session.domain === "general" ||
-        this.manager.session.domain === "itinerary"
-      ) {
-        const currentData = this.manager.session.data as Partial<AiCityResponse>;
-        currentData.points_of_interest = pois;
-      }
-
-      this.manager.onProgress(this.manager.session);
-    } catch (error) {
-      console.error("Error processing parsed POIs data:", error);
-    }
-  }
-
-  private handleParsedItinerary(itineraryData: AIItineraryResponse): void {
-    if (!this.manager) return;
-
-    try {
-      if (
-        this.manager.session.domain === "general" ||
-        this.manager.session.domain === "itinerary"
-      ) {
-        const currentData = this.manager.session.data as Partial<AiCityResponse>;
-        currentData.itinerary_response = itineraryData;
-      }
-
-      this.manager.onProgress(this.manager.session);
-    } catch (error) {
-      console.error("Error processing parsed itinerary data:", error);
-    }
-  }
-
-  private handleParsedHotels(hotelsData: any): void {
-    if (!this.manager) return;
-
-    try {
-      const hotels = hotelsData.hotels || [];
-
-      this.manager.session.data = {
-        hotels,
-        domain: "accommodation",
-        session_id: this.manager.session.sessionId,
-      } as AccommodationResponse;
-
-      this.manager.onProgress(this.manager.session);
-    } catch (error) {
-      console.error("Error processing parsed hotels data:", error);
-    }
-  }
-
-  private handleParsedRestaurants(restaurantsData: any): void {
-    if (!this.manager) return;
-
-    try {
-      const restaurants = restaurantsData.restaurants || [];
-      console.log("=== STREAMING SERVICE: handleParsedRestaurants ===");
-      console.log("Raw restaurantsData:", restaurantsData);
-      console.log("Extracted restaurants:", restaurants);
-      console.log("Restaurants count:", restaurants.length);
-
-      this.manager.session.data = {
-        restaurants,
-        domain: "dining",
-        session_id: this.manager.session.sessionId,
-      } as DiningResponse;
-
-      console.log("Set session data:", this.manager.session.data);
-      this.manager.onProgress(this.manager.session);
-    } catch (error) {
-      console.error("Error processing parsed restaurants data:", error);
-    }
-  }
-
-  private handleParsedActivities(activitiesData: any): void {
-    if (!this.manager) return;
-
-    try {
-      const activities = activitiesData.activities || [];
-
-      this.manager.session.data = {
-        activities,
-        domain: "activities",
-        session_id: this.manager.session.sessionId,
-      } as ActivitiesResponse;
-
-      this.manager.onProgress(this.manager.session);
-    } catch (error) {
-      console.error("Error processing parsed activities data:", error);
-    }
-  }
-
-  private handleCityDataEvent(event: StreamEvent): void {
-    if (!this.manager || !event.data) return;
-
-    try {
-      const cityData: GeneralCityData = this.parseStreamData(event.data);
-
-      // Initialize data structure based on domain
-      if (
-        this.manager.session.domain === "general" ||
-        this.manager.session.domain === "itinerary"
-      ) {
-        const currentData = this.manager.session.data as Partial<AiCityResponse>;
-        if (!currentData.general_city_data) {
-          this.manager.session.data = {
-            ...this.manager.session.data,
-            general_city_data: cityData,
-            points_of_interest: [],
-            itinerary_response: {
-              itinerary_name: "",
-              overall_description: "",
-              points_of_interest: [],
-            },
-            session_id: this.manager.session.sessionId,
-          } as Partial<AiCityResponse>;
-        } else {
-          (this.manager.session.data as Partial<AiCityResponse>).general_city_data = cityData;
-        }
-      }
-
-      this.manager.onProgress(this.manager.session);
-    } catch (error) {
-      console.error("Error processing city data:", error);
-    }
-  }
-
-  private handleGeneralPOIsEvent(event: StreamEvent): void {
-    if (!this.manager || !event.data) return;
-
-    try {
-      const pois: POIDetailedInfo[] = this.parseStreamData(event.data);
-
-      if (
-        this.manager.session.domain === "general" ||
-        this.manager.session.domain === "itinerary"
-      ) {
-        (this.manager.session.data as Partial<AiCityResponse>).points_of_interest = pois;
-      }
-
-      this.manager.onProgress(this.manager.session);
-    } catch (error) {
-      console.error("Error processing POIs data:", error);
-    }
-  }
-
-  private handleItineraryEvent(event: StreamEvent): void {
-    if (!this.manager || !event.data) return;
-
-    try {
-      const itinerary: AIItineraryResponse = this.parseStreamData(event.data);
-
-      if (
-        this.manager.session.domain === "general" ||
-        this.manager.session.domain === "itinerary"
-      ) {
-        (this.manager.session.data as Partial<AiCityResponse>).itinerary_response = itinerary;
-      }
-
-      this.manager.onProgress(this.manager.session);
-    } catch (error) {
-      console.error("Error processing itinerary data:", error);
-    }
-  }
-
-  private handleHotelsEvent(event: StreamEvent): void {
-    if (!this.manager || !event.data) return;
-
-    try {
-      // Backend sends pre-parsed data with structure: { general_city_data, hotels, session_id }
-      const data = event.data as {
-        general_city_data?: GeneralCityData;
-        hotels?: HotelDetailedInfo[];
-        session_id?: string;
-      };
-
-      // Update city from general_city_data if available
-      if (data.general_city_data?.city) {
-        this.manager.session.city = data.general_city_data.city;
-      }
-
-      this.manager.session.data = {
-        general_city_data: data.general_city_data,
-        hotels: data.hotels || [],
-        domain: "accommodation",
-        session_id: data.session_id || this.manager.session.sessionId,
-      } as AccommodationResponse;
-
-      console.log("✅ Received pre-parsed hotels event:", {
-        city: data.general_city_data?.city,
-        hotelCount: data.hotels?.length || 0,
-      });
-
-      this.manager.onProgress(this.manager.session);
-    } catch (error) {
-      console.error("Error processing hotels data:", error);
-    }
-  }
-
-  private handleRestaurantsEvent(event: StreamEvent): void {
-    if (!this.manager || !event.data) return;
-
-    try {
-      // Backend sends pre-parsed data with structure: { general_city_data, restaurants, session_id }
-      const data = event.data as {
-        general_city_data?: GeneralCityData;
-        restaurants?: RestaurantDetailedInfo[];
-        session_id?: string;
-      };
-
-      // Update city from general_city_data if available
-      if (data.general_city_data?.city) {
-        this.manager.session.city = data.general_city_data.city;
-      }
-
-      this.manager.session.data = {
-        general_city_data: data.general_city_data,
-        restaurants: data.restaurants || [],
-        domain: "dining",
-        session_id: data.session_id || this.manager.session.sessionId,
-      } as DiningResponse;
-
-      console.log("✅ Received pre-parsed restaurants event:", {
-        city: data.general_city_data?.city,
-        restaurantCount: data.restaurants?.length || 0,
-      });
-
-      this.manager.onProgress(this.manager.session);
-    } catch (error) {
-      console.error("Error processing restaurants data:", error);
-    }
-  }
-
-  private handleActivitiesEvent(event: StreamEvent): void {
-    if (!this.manager || !event.data) return;
-
-    try {
-      // Backend sends pre-parsed data with structure: { general_city_data, activities, session_id }
-      const data = event.data as {
-        general_city_data?: GeneralCityData;
-        activities?: POIDetailedInfo[];
-        session_id?: string;
-      };
-
-      // Update city from general_city_data if available
-      if (data.general_city_data?.city) {
-        this.manager.session.city = data.general_city_data.city;
-      }
-
-      this.manager.session.data = {
-        general_city_data: data.general_city_data,
-        activities: data.activities || [],
-        domain: "activities",
-        session_id: data.session_id || this.manager.session.sessionId,
-      } as ActivitiesResponse;
-
-      console.log("✅ Received pre-parsed activities event:", {
-        city: data.general_city_data?.city,
-        activityCount: data.activities?.length || 0,
-      });
-
-      this.manager.onProgress(this.manager.session);
-    } catch (error) {
-      console.error("Error processing activities data:", error);
-    }
-  }
-
-  // Force flush any remaining buffered data before stream completion
-  private flushBufferedData(): void {
-    if (!this.manager) return;
-
-    const bufferKeys: (keyof typeof this.chunkBuffer)[] = [
-      "hotels",
-      "restaurants",
-      "activities",
-      "city_data",
-      "general_pois",
-      "itinerary",
-    ];
-
-    for (const part of bufferKeys) {
-      let buffer = this.chunkBuffer[part];
-      if (!buffer || buffer.trim() === "") continue;
-
-      console.log(`🔄 Flushing remaining buffer for ${part}:`, buffer.substring(0, 100) + "...");
-
-      // Remove markdown code blocks more carefully:
-      // 1. Remove opening code block marker (backticks + optional language) at start
-      // 2. Remove closing code block marker (backticks) at end
-      buffer = buffer
-        .replace(/^`+(?:json)?\s*/i, "")
-        .replace(/\s*`+$/g, "")
-        .trim();
-
-      // Try to find and parse JSON objects
-      try {
-        // Look for JSON object in the buffer
-        const startIdx = buffer.indexOf("{");
-        const endIdx = buffer.lastIndexOf("}");
-
-        if (startIdx !== -1 && endIdx > startIdx) {
-          const jsonStr = buffer.substring(startIdx, endIdx + 1);
-          const jsonData = JSON.parse(jsonStr);
-
-          console.log(`✅ Successfully flushed ${part} data:`, jsonData);
-
-          switch (part) {
-            case "city_data":
-              this.handleParsedCityData(jsonData);
-              break;
-            case "general_pois":
-              this.handleParsedGeneralPOIs(jsonData);
-              break;
-            case "itinerary":
-              this.handleParsedItinerary(jsonData);
-              break;
-            case "hotels":
-              this.handleParsedHotels(jsonData);
-              break;
-            case "restaurants":
-              this.handleParsedRestaurants(jsonData);
-              break;
-            case "activities":
-              this.handleParsedActivities(jsonData);
-              break;
-          }
-
-          // Clear the processed buffer
-          this.chunkBuffer[part] = "";
-        }
-      } catch (e) {
-        console.warn(`⚠️ Could not flush ${part} buffer:`, e);
-        console.warn(`⚠️ Buffer content (first 500 chars):`, buffer.substring(0, 500));
-      }
-    }
-  }
-
-  private handleCompleteEvent(): void {
-    console.log("🎉 Complete event received");
-    if (!this.manager) {
-      console.error("❌ No manager available");
-      return;
-    }
-
-    // Guard against processing complete event multiple times
-    if (this.manager.session.isComplete) {
-      console.log("⚠️ Complete event already processed, skipping");
-      return;
-    }
-
-    // Flush any remaining buffered data before completing
-    this.flushBufferedData();
-
-    console.log("📦 Session data before complete:", {
-      sessionId: this.manager.session.sessionId,
-      domain: this.manager.session.domain,
-      city: this.manager.session.city,
-      hasData: !!this.manager.session.data,
-      dataKeys: Object.keys(this.manager.session.data || {}),
-    });
-
-    this.manager.session.isComplete = true;
-    console.log("✅ Calling onComplete callback");
-    this.manager.onComplete(this.manager.session);
-
-    // Trigger redirect based on domain
-    if (this.manager.onRedirect && this.manager.session.data) {
-      console.log("🔄 Triggering redirect");
-      this.manager.onRedirect(
-        this.manager.session.domain,
-        this.manager.session.data as UnifiedChatResponse,
-      );
-    }
-  }
-
-  private handleErrorEvent(event: StreamEvent): void {
-    if (!this.manager) return;
-
-    const errorMessage = event.error || "Unknown streaming error";
-    this.manager.session.error = errorMessage;
-    this.manager.onError(errorMessage);
   }
 
   private handleStreamComplete(): void {
     if (!this.manager) return;
-
     if (!this.manager.session.isComplete) {
-      // If we didn't receive a complete event, mark as complete anyway
+      // Stream ended without an explicit complete event — finalize anyway.
       this.manager.session.isComplete = true;
       this.manager.onComplete(this.manager.session);
     }
   }
 
-  private parseStreamData(data: any): any {
-    // Handle both JSON string and object data
-    if (typeof data === "string") {
-      try {
-        return JSON.parse(data);
-      } catch {
-        return data;
-      }
-    }
-    return data;
-  }
-
   // Clean up resources
   public cleanup(): void {
-    if (this.eventSource) {
-      this.eventSource.close();
-      this.eventSource = null;
-    }
+    this.stop();
     this.manager = null;
-    this.chunkBuffer = {
-      general_pois: "",
-      itinerary: "",
-      city_data: "",
-      hotels: "",
-      restaurants: "",
-      activities: "",
-    };
   }
 }
 

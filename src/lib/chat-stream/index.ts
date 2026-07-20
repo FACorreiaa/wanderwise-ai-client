@@ -1,4 +1,3 @@
-export { sendUnifiedChatMessageStream } from "../api/llm";
 export {
   StreamingChatService,
   createStreamingSession,

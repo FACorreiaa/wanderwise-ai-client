@@ -8,6 +8,19 @@ declare module "virtual:pwa-register" {
 declare module "@env" {
   export const VITE_CONNECT_BASE_URL: string;
   export const VITE_MAPBOX_API_KEY: string;
+  export const VITE_STRIPE_PRICE_ID_MONTHLY: string;
+  export const VITE_STRIPE_PRICE_ID_ANNUAL: string;
+}
+
+interface ImportMetaEnv {
+  readonly VITE_CONNECT_BASE_URL?: string;
+  readonly VITE_MAPBOX_API_KEY?: string;
+  readonly VITE_STRIPE_PRICE_ID_MONTHLY?: string;
+  readonly VITE_STRIPE_PRICE_ID_ANNUAL?: string;
+}
+
+interface ImportMeta {
+  readonly env: ImportMetaEnv;
 }
 
 // Utility types for the project

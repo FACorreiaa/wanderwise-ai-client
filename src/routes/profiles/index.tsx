@@ -1,6 +1,14 @@
-import { createSignal, For, Show } from "solid-js";
+import { createSignal, createMemo, For, Show } from "solid-js";
 import { User, Plus, Edit3, Trash2, Copy, X } from "lucide-solid";
 import { Button } from "~/ui/button";
+import {
+  useSearchProfiles,
+  useCreateSearchProfileMutation,
+  useUpdateSearchProfileMutation,
+  useDeleteSearchProfileMutation,
+  useSetDefaultProfileMutation,
+} from "~/lib/api/profiles";
+import type { SearchProfile, TravelProfileFormData } from "~/lib/api/types";
 
 interface ProfileStats {
   placesVisited: number;
@@ -47,75 +55,52 @@ export default function ProfilesPage() {
     isPublic: false,
   });
 
-  // Sample profiles data
-  const [profiles, setProfiles] = createSignal<Profile[]>([
-    {
-      id: "prof-1",
-      name: "Solo Explorer",
-      description:
-        "Perfect for independent travel and self-discovery. Focus on cultural experiences, museums, and quiet cafes.",
-      interests: ["Art & Culture", "History", "Photography", "Literature"],
-      tags: ["Museums", "Cafes", "Walking Tours", "Historic Sites"],
-      budget: "medium",
-      travelStyle: "cultural",
-      groupSize: "solo",
-      accessibility: ["Public Transport"],
-      isDefault: true,
-      isPublic: false,
-      createdAt: "2024-01-15",
-      usageCount: 15,
-      lastUsed: "2024-01-20",
-      stats: {
-        placesVisited: 23,
-        itinerariesCreated: 8,
-        avgRating: 4.3,
-      },
-    },
-    {
-      id: "prof-2",
-      name: "Foodie Adventure",
-      description:
-        "For culinary enthusiasts seeking authentic local flavors. From street food to fine dining.",
-      interests: ["Food & Dining", "Local Culture", "Markets", "Cooking"],
-      tags: ["Restaurants", "Food Markets", "Cooking Classes", "Wine Tasting"],
-      budget: "high",
-      travelStyle: "culinary",
-      groupSize: "couple",
-      accessibility: [],
-      isDefault: false,
-      isPublic: true,
-      createdAt: "2024-01-10",
-      usageCount: 8,
-      lastUsed: "2024-01-18",
-      stats: {
-        placesVisited: 18,
-        itinerariesCreated: 5,
-        avgRating: 4.7,
-      },
-    },
-    {
-      id: "prof-3",
-      name: "Family Fun",
-      description:
-        "Family-friendly adventures with activities for all ages. Safe, accessible, and entertaining.",
-      interests: ["Family Activities", "Outdoor Fun", "Educational", "Entertainment"],
-      tags: ["Family Friendly", "Parks", "Museums", "Interactive"],
-      budget: "medium",
-      travelStyle: "family",
-      groupSize: "family",
-      accessibility: ["Wheelchair Accessible", "Family Friendly", "Public Transport"],
-      isDefault: false,
-      isPublic: false,
-      createdAt: "2024-01-05",
-      usageCount: 12,
-      lastUsed: "2024-01-19",
-      stats: {
-        placesVisited: 31,
-        itinerariesCreated: 6,
-        avgRating: 4.1,
-      },
-    },
-  ]);
+  // Real profiles from the API (was mock local data).
+  const searchProfilesQuery = useSearchProfiles();
+  const createMut = useCreateSearchProfileMutation();
+  const updateMut = useUpdateSearchProfileMutation();
+  const deleteMut = useDeleteSearchProfileMutation();
+  const setDefaultMut = useSetDefaultProfileMutation();
+
+  const levelToBudget = (n: number) =>
+    n <= 1 ? "low" : n === 2 ? "medium" : n === 3 ? "high" : "luxury";
+  const budgetToLevel = (b: string) =>
+    b === "low" ? 1 : b === "medium" ? 2 : b === "high" ? 3 : b === "luxury" ? 4 : 2;
+
+  // The API has no per-profile stats/usage; those display fields default to zero.
+  const mapToDisplay = (p: SearchProfile): Profile => ({
+    id: p.id,
+    name: p.profile_name,
+    description: "",
+    interests: p.interests ?? [],
+    tags: p.tags ?? [],
+    budget: levelToBudget(p.budget_level),
+    travelStyle: p.preferred_pace || "balanced",
+    groupSize: "solo",
+    accessibility: p.prefer_accessible_pois ? ["Wheelchair Accessible"] : [],
+    isDefault: p.is_default,
+    isPublic: false,
+    createdAt: p.created_at,
+    usageCount: 0,
+    lastUsed: null,
+    stats: { placesVisited: 0, itinerariesCreated: 0, avgRating: 0 },
+  });
+
+  const profiles = createMemo<Profile[]>(() => (searchProfilesQuery.data ?? []).map(mapToDisplay));
+
+  // Map the editor form to the API's create/update input. NOTE: interests/tags are
+  // sent as-is; the backend resolves them against its id catalog (a full
+  // name→id picker lives in Settings → Travel Profiles).
+  const formToApi = (f: ReturnType<typeof profileForm>): Partial<TravelProfileFormData> => ({
+    profile_name: f.name,
+    is_default: f.isDefault,
+    budget_level: budgetToLevel(f.budget),
+    prefer_accessible_pois: f.accessibility.includes("Wheelchair Accessible"),
+    prefer_dog_friendly: f.accessibility.includes("Dog Friendly"),
+    preferred_vibes: f.travelStyle ? [f.travelStyle] : [],
+    interests: f.interests,
+    tags: f.tags,
+  });
 
   const interestOptions = [
     "Art & Culture",
@@ -195,63 +180,53 @@ export default function ProfilesPage() {
   ];
 
   const createProfile = () => {
-    const newProfile = {
-      id: `prof-${Date.now()}`,
-      ...profileForm(),
-      createdAt: new Date().toISOString().split("T")[0],
-      usageCount: 0,
-      lastUsed: null,
-      stats: {
-        placesVisited: 0,
-        itinerariesCreated: 0,
-        avgRating: 0,
+    createMut.mutate(formToApi(profileForm()), {
+      onSuccess: () => {
+        setShowCreateModal(false);
+        resetForm();
       },
-    };
-    setProfiles((prev) => [...prev, newProfile]);
-    setShowCreateModal(false);
-    resetForm();
+    });
   };
 
   const updateProfile = () => {
     const current = selectedProfile();
     if (!current) return;
-
-    setProfiles((prev) =>
-      prev.map((p) => (p.id === current.id ? ({ ...current, ...profileForm() } as Profile) : p)),
+    updateMut.mutate(
+      { profileId: current.id, data: formToApi(profileForm()) },
+      {
+        onSuccess: () => {
+          setShowEditModal(false);
+          resetForm();
+        },
+      },
     );
-    setShowEditModal(false);
-    resetForm();
   };
 
   const deleteProfile = (profileId: string) => {
     if (confirm("Are you sure you want to delete this profile?")) {
-      setProfiles((prev) => prev.filter((p) => p.id !== profileId));
+      deleteMut.mutate(profileId);
     }
   };
 
   const duplicateProfile = (profile: Profile) => {
-    const { id: _id, stats: _stats, ...startProps } = profile;
-    void _id;
-    const newProfile = {
-      ...startProps,
-      id: `prof-${Date.now()}`,
-      name: `${profile.name} (Copy)`,
-      isDefault: false,
-      createdAt: new Date().toISOString().split("T")[0],
-      usageCount: 0,
-      lastUsed: null,
-      stats: { ..._stats },
-    };
-    setProfiles((prev) => [...prev, newProfile as any]);
+    createMut.mutate(
+      formToApi({
+        name: `${profile.name} (Copy)`,
+        description: profile.description,
+        interests: profile.interests,
+        tags: profile.tags,
+        budget: profile.budget,
+        travelStyle: profile.travelStyle,
+        groupSize: profile.groupSize,
+        accessibility: profile.accessibility,
+        isDefault: false,
+        isPublic: profile.isPublic,
+      }),
+    );
   };
 
   const setAsDefault = (profileId: string) => {
-    setProfiles((prev) =>
-      prev.map((p) => ({
-        ...p,
-        isDefault: p.id === profileId,
-      })),
-    );
+    setDefaultMut.mutate(profileId);
   };
 
   const resetForm = () => {
@@ -515,7 +490,9 @@ export default function ProfilesPage() {
 
       {/* Budget */}
       <div>
-        <label class="block text-sm font-medium text-muted-foreground mb-3">Budget Preference</label>
+        <label class="block text-sm font-medium text-muted-foreground mb-3">
+          Budget Preference
+        </label>
         <div class="space-y-2">
           <For each={budgetOptions}>
             {(budget) => (
@@ -624,7 +601,9 @@ export default function ProfilesPage() {
 
       {/* Accessibility */}
       <div>
-        <label class="block text-sm font-medium text-muted-foreground mb-3">Accessibility Needs</label>
+        <label class="block text-sm font-medium text-muted-foreground mb-3">
+          Accessibility Needs
+        </label>
         <div class="space-y-2">
           <For each={accessibilityOptions}>
             {(option) => (
