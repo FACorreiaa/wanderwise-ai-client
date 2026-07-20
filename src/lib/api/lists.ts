@@ -15,8 +15,18 @@ import {
 import { create } from "@bufbuild/protobuf";
 import { transport } from "../connect-transport";
 import { getAuthToken, authAPI } from "../api";
+import { handleEntitlementError } from "../entitlement-error";
 
 const listClient = createClient(ListService, transport);
+
+async function withEntitlementGuard<T>(fn: () => Promise<T>): Promise<T> {
+  try {
+    return await fn();
+  } catch (err) {
+    handleEntitlementError(err);
+    throw err;
+  }
+}
 
 // Cache for user ID
 let cachedUserId: string | null = null;
@@ -122,22 +132,23 @@ export const useCreateListMutation = () => {
   const queryClient = useQueryClient();
 
   return useMutation(() => ({
-    mutationFn: async (data: CreateListData) => {
-      const userId = await getUserId();
-      if (!userId) throw new Error("Not authenticated");
+    mutationFn: async (data: CreateListData) =>
+      withEntitlementGuard(async () => {
+        const userId = await getUserId();
+        if (!userId) throw new Error("Not authenticated");
 
-      const response = await listClient.createList(
-        create(CreateListRequestSchema, {
-          userId,
-          name: data.name,
-          description: data.description || "",
-          cityId: data.cityId || "",
-          isItinerary: data.isItinerary || false,
-          isPublic: data.isPublic || false,
-        }),
-      );
-      return response.list;
-    },
+        const response = await listClient.createList(
+          create(CreateListRequestSchema, {
+            userId,
+            name: data.name,
+            description: data.description || "",
+            cityId: data.cityId || "",
+            isItinerary: data.isItinerary || false,
+            isPublic: data.isPublic || false,
+          }),
+        );
+        return response.list;
+      }),
     onSuccess: (newList: any) => {
       if (newList) {
         queryClient.setQueryData(["lists"], (old: any[] = []) => [...old, newList]);
@@ -231,24 +242,25 @@ export const useAddToListMutation = () => {
   const queryClient = useQueryClient();
 
   return useMutation(() => ({
-    mutationFn: async ({ listId, itemData }: { listId: string; itemData: AddListItemData }) => {
-      const userId = await getUserId();
-      if (!userId) throw new Error("Not authenticated");
+    mutationFn: async ({ listId, itemData }: { listId: string; itemData: AddListItemData }) =>
+      withEntitlementGuard(async () => {
+        const userId = await getUserId();
+        if (!userId) throw new Error("Not authenticated");
 
-      const response = await listClient.addListItem(
-        create(AddListItemRequestSchema, {
-          userId,
-          listId,
-          itemId: itemData.itemId,
-          contentType: contentTypeToProto(itemData.contentType),
-          position: itemData.position || 0,
-          notes: itemData.notes || "",
-          dayNumber: itemData.dayNumber || 0,
-          durationMinutes: itemData.durationMinutes || 0,
-        }),
-      );
-      return response;
-    },
+        const response = await listClient.addListItem(
+          create(AddListItemRequestSchema, {
+            userId,
+            listId,
+            itemId: itemData.itemId,
+            contentType: contentTypeToProto(itemData.contentType),
+            position: itemData.position || 0,
+            notes: itemData.notes || "",
+            dayNumber: itemData.dayNumber || 0,
+            durationMinutes: itemData.durationMinutes || 0,
+          }),
+        );
+        return response;
+      }),
     onSuccess: (_, { listId }) => {
       queryClient.invalidateQueries({ queryKey: ["list", listId] });
       queryClient.invalidateQueries({ queryKey: ["lists"] });

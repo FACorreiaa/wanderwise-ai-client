@@ -1,193 +1,188 @@
-import { A } from "@solidjs/router";
+import { A, useNavigate } from "@solidjs/router";
 import { Title, Meta } from "@solidjs/meta";
-import { Check, Star, Zap, Crown, Heart, MapPin, Clock } from "lucide-solid";
+import { Check, Star, Zap, Crown, Heart, Plug } from "lucide-solid";
 import { createSignal, Show, For } from "solid-js";
 import PromoCodeSection from "~/components/PromoCodeSection";
+import { useAuth } from "~/contexts/AuthContext";
+import { useCreateCheckoutSession, useUserSubscription } from "~/lib/api/billing";
+import { hasCheckoutConfigured, isProPlan, stripePriceIds } from "~/lib/subscription";
+
+type BillingInterval = "monthly" | "annual";
 
 export default function Pricing() {
-  const [appliedPromo, setAppliedPromo] = createSignal<any>(null);
+  const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
+  const subscriptionQuery = useUserSubscription(() => isAuthenticated());
+  const checkout = useCreateCheckoutSession();
 
-  const handlePromoSuccess = (promoData: any) => {
+  const [appliedPromo, setAppliedPromo] = createSignal<{
+    description?: string;
+    type?: string;
+    discount?: number;
+    duration?: number;
+    planAccess?: string;
+  } | null>(null);
+  const [interval, setInterval] = createSignal<BillingInterval>("monthly");
+  const [checkoutError, setCheckoutError] = createSignal<string | null>(null);
+  const [loading, setLoading] = createSignal(false);
+
+  const alreadyPro = () => isProPlan(subscriptionQuery.data?.plan);
+  const prices = () => stripePriceIds();
+  const checkoutReady = () => hasCheckoutConfigured();
+
+  const monthlyPrice = 9.99;
+  const annualPrice = 99.9;
+  const displayPrice = () =>
+    interval() === "monthly" ? `$${monthlyPrice.toFixed(2)}` : `$${annualPrice.toFixed(2)}`;
+  const displayPeriod = () => (interval() === "monthly" ? "per month" : "per year");
+
+  const freeFeatures = [
+    "10 AI planning requests per day",
+    "Core recommendations & maps",
+    "Save favorites and lists",
+    "Day 1 Trip Kit (Maps + calendar + PDF)",
+    "MCP data tools (search places, lists)",
+  ];
+
+  const freeLimits = [
+    "Multi-day Trip Kit locked after Day 1",
+    "MCP plan_itinerary requires Pro",
+    "Fair daily AI limit resets at midnight UTC",
+  ];
+
+  const proFeatures = [
+    "Unlimited AI planning (fair-use protected)",
+    "Full multi-day Trip Kit — Maps, calendar, PDF",
+    "MCP plan_itinerary in Claude, Codex & more",
+    "Priority feature access as we ship",
+    "Ad-free experience",
+    "30-day money-back guarantee",
+  ];
+
+  const comparison = [
+    {
+      category: "AI & planning",
+      items: [
+        { feature: "Daily AI requests", free: "10 / day", pro: "Unlimited*" },
+        { feature: "Streaming itineraries", free: true, pro: true },
+        { feature: "Preference profiles", free: true, pro: true },
+        { feature: "MCP plan_itinerary", free: false, pro: true },
+      ],
+    },
+    {
+      category: "Trip Kit",
+      items: [
+        { feature: "Google Maps multi-stop", free: "Day 1", pro: "All days" },
+        { feature: "Calendar (.ics) export", free: "Day 1", pro: "All days" },
+        { feature: "PDF city pack", free: "Day 1", pro: "Full trip" },
+      ],
+    },
+    {
+      category: "Agent access",
+      items: [
+        { feature: "MCP search & lists", free: true, pro: true },
+        { feature: "API keys", free: true, pro: true },
+      ],
+    },
+  ];
+
+  const handlePromoSuccess = (promoData: {
+    description?: string;
+    type?: string;
+    discount?: number;
+    duration?: number;
+    planAccess?: string;
+  }) => {
     setAppliedPromo(promoData);
-    console.log("Promo applied:", promoData);
   };
 
-  const plans = [
-    {
-      name: "Free",
-      price: "$0",
-      period: "forever",
-      yearlyPrice: null,
-      description: "Perfect for casual explorers",
-      icon: Heart,
-      color: "gray",
-      features: [
-        "Core AI recommendations",
-        "Basic preference filters",
-        "Up to 10 saved locations",
-        "Interactive map view",
-        "Mobile-optimized experience",
-        "Community support",
-      ],
-      limitations: [
-        "Limited to 5 searches per day",
-        "Basic filtering options only",
-        "Non-intrusive contextual ads",
-      ],
-      cta: "Get Started Free",
-      popular: false,
-    },
-    {
-      name: "Explorer",
-      price: "$3.99",
-      period: "per month",
-      yearlyPrice: "$39.90 / yr",
-      description: "For regular city discoverers",
-      icon: MapPin,
-      color: "blue",
-      features: [
-        "Everything in Free",
-        "Unlimited searches & recommendations",
-        "Advanced filtering (cuisine, accessibility, niche tags)",
-        "Up to 100 saved locations",
-        "Custom lists & collections",
-        "Priority customer support",
-        "Ad-free experience",
-        "Enhanced AI recommendations",
-      ],
-      limitations: [],
-      cta: "Start Explorer Plan",
-      popular: true,
-    },
-    {
-      name: "Pro",
-      price: "$9.99",
-      period: "per month",
-      yearlyPrice: "$99.90 / yr",
-      description: "For travel enthusiasts & professionals",
-      icon: Crown,
-      color: "purple",
-      features: [
-        "Everything in Explorer",
-        "Unlimited saved locations & lists",
-        "Offline access & sync",
-        "Exclusive curated content",
-        "Advanced AI with semantic search",
-        "24/7 personalized AI agent",
-        "Speech-to-text capabilities",
-        "Itinerary export (PDF/Markdown)",
-        "Multi-city trip planning",
-        "Premium partnerships & exclusive deals",
-        "Priority feature access",
-        "Dedicated account manager",
-      ],
-      limitations: [],
-      cta: "Coming Soon",
-      popular: false,
-      disabled: true,
-    },
-  ];
+  const startCheckout = async () => {
+    setCheckoutError(null);
 
-  const features = [
-    {
-      category: "AI & Personalization",
-      items: [
-        { feature: "Basic AI recommendations", free: true, explorer: true, pro: true },
-        { feature: "Advanced AI with learning", free: false, explorer: true, pro: true },
-        { feature: "Semantic search & embeddings", free: false, explorer: false, pro: true },
-        { feature: "24/7 AI agent", free: false, explorer: false, pro: "Coming Soon" },
-      ],
-    },
-    {
-      category: "Search & Discovery",
-      items: [
-        { feature: "Daily searches", free: "5 per day", explorer: "Unlimited", pro: "Unlimited" },
-        { feature: "Basic filters", free: true, explorer: true, pro: true },
-        { feature: "Advanced filters", free: false, explorer: true, pro: true },
-        { feature: "Multi-city planning", free: false, explorer: false, pro: true },
-      ],
-    },
-    {
-      category: "Organization",
-      items: [
-        { feature: "Saved locations", free: "10", explorer: "100", pro: "Unlimited" },
-        { feature: "Custom lists", free: false, explorer: true, pro: true },
-        { feature: "Itinerary planning", free: "Basic", explorer: "Advanced", pro: "Premium" },
-        { feature: "Export capabilities", free: false, explorer: false, pro: true },
-      ],
-    },
-    {
-      category: "Experience",
-      items: [
-        { feature: "Mobile experience", free: true, explorer: true, pro: true },
-        { feature: "Offline access", free: false, explorer: false, pro: true },
-        { feature: "Ad-free experience", free: false, explorer: true, pro: true },
-        { feature: "Exclusive content", free: false, explorer: false, pro: true },
-      ],
-    },
-  ];
+    if (!isAuthenticated()) {
+      navigate("/auth/signup?next=/pricing");
+      return;
+    }
 
-  const getColorClasses = (color: string, type: "bg" | "text" | "border") => {
-    const colors = {
-      gray: { bg: "bg-muted", text: "text-muted-foreground", border: "border-border" },
-      blue: { bg: "bg-primary/10", text: "text-primary", border: "border-primary/30" },
-      purple: { bg: "bg-accent/10", text: "text-accent", border: "border-accent/30" },
-    };
-    return colors[color as keyof typeof colors][type];
+    if (alreadyPro()) {
+      navigate("/billing");
+      return;
+    }
+
+    const { monthly, annual } = prices();
+    const priceId = interval() === "annual" ? annual || monthly : monthly || annual;
+    if (!priceId) {
+      setCheckoutError(
+        "Checkout is not configured yet. Set VITE_STRIPE_PRICE_ID_MONTHLY (and annual) to match the server Stripe prices.",
+      );
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const origin = window.location.origin;
+      const result = await checkout.mutateAsync({
+        priceId,
+        successUrl: `${origin}/billing?success=true`,
+        cancelUrl: `${origin}/pricing?canceled=true`,
+        mode: "subscription",
+      });
+      if (result.url) {
+        window.location.href = result.url;
+        return;
+      }
+      setCheckoutError("Checkout session created but no redirect URL was returned.");
+    } catch (e) {
+      console.error("Checkout failed:", e);
+      setCheckoutError(
+        e instanceof Error ? e.message : "Could not start checkout. Please try again.",
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const cell = (value: boolean | string) => {
+    if (typeof value === "boolean") {
+      return value ? (
+        <Check class="w-5 h-5 text-accent mx-auto" aria-label="Included" />
+      ) : (
+        <div class="w-5 h-5 mx-auto flex items-center justify-center" aria-label="Not included">
+          <div class="w-4 h-0.5 bg-muted-foreground/50" />
+        </div>
+      );
+    }
+    return <span class="text-sm text-muted-foreground font-medium">{value}</span>;
   };
 
   return (
     <>
-      <Title>Pricing Plans - Free, Explorer & Pro | Loci AI Travel Companion</Title>
+      <Title>Pricing — Free & Pro | Loci AI Travel Companion</Title>
       <Meta
         name="description"
-        content="Choose the perfect Loci plan for your travel needs. Start free with basic AI recommendations or upgrade to Explorer ($3.99/mo) or Pro ($9.99/mo) for unlimited searches, advanced features, and premium perks. 30-day money-back guarantee."
+        content="Start free with 10 AI planning requests a day. Upgrade to Loci Pro for unlimited planning, full multi-day Trip Kit exports, and MCP itinerary generation."
       />
-      <Meta
-        name="keywords"
-        content="Loci pricing, travel app plans, AI travel subscription, free travel planner, premium travel features, Explorer plan, Pro plan, travel app cost"
-      />
-      <Meta property="og:title" content="Pricing Plans - Free, Explorer & Pro | Loci" />
+      <Meta property="og:title" content="Loci Pricing — Free & Pro" />
       <Meta
         property="og:description"
-        content="Flexible pricing for every traveler. Free plan available, Explorer at $3.99/mo, Pro at $9.99/mo. 30-day money-back guarantee on all paid plans."
+        content="Free plan for casual explorers. Pro at $9.99/mo for full Trip Kit, unlimited AI, and agent planning."
       />
       <Meta property="og:url" content="https://loci.app/pricing" />
-      <Meta name="twitter:title" content="Pricing Plans - Loci AI Travel Companion" />
-      <Meta
-        name="twitter:description"
-        content="Start free or choose Explorer ($3.99/mo) or Pro ($9.99/mo) for advanced AI travel features. 30-day money-back guarantee."
-      />
       <link rel="canonical" href="https://loci.app/pricing" />
 
-      {/* Structured Data - Product with Multiple Offers */}
       <script type="application/ld+json">
         {JSON.stringify({
           "@context": "https://schema.org",
           "@type": "Product",
           name: "Loci - AI Travel Companion",
-          description: "AI-powered travel discovery platform with personalized recommendations",
-          brand: {
-            "@type": "Brand",
-            name: "Loci",
-          },
+          description: "AI-powered travel planning with Trip Kit exports",
+          brand: { "@type": "Brand", name: "Loci" },
           offers: [
             {
               "@type": "Offer",
               name: "Free Plan",
               price: "0",
               priceCurrency: "USD",
-              description: "Perfect for casual explorers with core AI recommendations",
-              availability: "https://schema.org/InStock",
-            },
-            {
-              "@type": "Offer",
-              name: "Explorer Plan",
-              price: "3.99",
-              priceCurrency: "USD",
-              billingIncrement: "monthly",
-              description:
-                "For regular city discoverers with unlimited searches and advanced features",
               availability: "https://schema.org/InStock",
             },
             {
@@ -195,521 +190,261 @@ export default function Pricing() {
               name: "Pro Plan",
               price: "9.99",
               priceCurrency: "USD",
-              billingIncrement: "monthly",
-              description:
-                "For travel enthusiasts with offline access, 24/7 AI agent, and premium features",
-              availability: "https://schema.org/PreOrder",
-            },
-          ],
-        })}
-      </script>
-
-      {/* Structured Data - FAQ */}
-      <script type="application/ld+json">
-        {JSON.stringify({
-          "@context": "https://schema.org",
-          "@type": "FAQPage",
-          mainEntity: [
-            {
-              "@type": "Question",
-              name: "Can I upgrade or downgrade my plan anytime?",
-              acceptedAnswer: {
-                "@type": "Answer",
-                text: "Yes, you can change your plan at any time. Changes take effect immediately, and we'll prorate the charges accordingly.",
-              },
-            },
-            {
-              "@type": "Question",
-              name: "Is there a free trial for paid plans?",
-              acceptedAnswer: {
-                "@type": "Answer",
-                text: "We don't offer a traditional free trial, but our Free plan gives you access to core features. Plus, all paid plans come with a 30-day money-back guarantee.",
-              },
-            },
-            {
-              "@type": "Question",
-              name: "How does the AI learn my preferences?",
-              acceptedAnswer: {
-                "@type": "Answer",
-                text: "Our AI analyzes your explicit preferences, saved locations, and interaction patterns to provide increasingly personalized recommendations over time.",
-              },
-            },
-            {
-              "@type": "Question",
-              name: "Do you offer discounts for annual subscriptions?",
-              acceptedAnswer: {
-                "@type": "Answer",
-                text: "Yes! Annual subscriptions receive a 20% discount. Contact our support team to set up annual billing.",
-              },
+              availability: "https://schema.org/InStock",
             },
           ],
         })}
       </script>
 
       <div class="min-h-screen bg-background text-foreground transition-colors">
-        <div class="max-w-7xl mx-auto px-4 py-12 space-y-12">
-          {/* Hero Section */}
+        <div class="max-w-6xl mx-auto px-4 py-12 space-y-12">
           <header class="text-center">
             <div class="rounded-3xl bg-gradient-to-br from-primary/10 via-accent/10 to-primary/5 border border-border shadow-lg p-10 space-y-4">
               <h1 class="text-4xl md:text-6xl font-bold text-foreground">
                 Simple <span class="text-primary">Pricing</span>
               </h1>
-              <p class="text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
-                Choose the perfect plan for your exploration needs. Plans adapt to your active design
-                theme and color mode.
+              <p class="text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
+                Plan free. Upgrade when you need the full trip on your phone — Maps, calendar, PDF,
+                and unlimited AI.
               </p>
               <div class="inline-flex items-center bg-primary/10 text-primary px-4 py-2 rounded-full text-sm font-medium border border-primary/30">
                 <Star class="w-4 h-4 mr-2" aria-hidden="true" />
-                30-day money-back guarantee on all paid plans
+                30-day money-back guarantee on Pro
               </div>
             </div>
           </header>
 
-          {/* Promo Code Section */}
-          <div class="mb-16">
-            <PromoCodeSection onSuccess={handlePromoSuccess} />
-          </div>
+          <PromoCodeSection onSuccess={handlePromoSuccess} />
 
-          {/* Promo Success Banner */}
           <Show when={appliedPromo()}>
-            <div class="max-w-4xl mx-auto mb-12">
-              <div class="glass-panel gradient-border rounded-2xl p-6 shadow-lg border-0">
-                <div class="flex items-center gap-4">
-                  <div class="w-12 h-12 bg-primary rounded-full flex items-center justify-center text-primary-foreground shadow-lg ring-2 ring-primary/30">
-                    <Star class="w-6 h-6" />
-                  </div>
-                  <div class="flex-1">
-                    <h3 class="text-xl font-bold mb-1 text-foreground">
-                      Promo Code Applied Successfully! 🎉
-                    </h3>
-                    <p class="text-muted-foreground">{appliedPromo()?.description}</p>
-                    <Show when={appliedPromo()?.type === "discount"}>
-                      <p class="text-sm text-muted-foreground mt-1">
-                        Your discount will be applied at checkout
-                      </p>
-                    </Show>
-                  </div>
-                </div>
-              </div>
+            <div class="max-w-3xl mx-auto glass-panel gradient-border rounded-2xl p-5 border-0">
+              <p class="font-semibold text-foreground">Promo applied</p>
+              <p class="text-muted-foreground text-sm">{appliedPromo()?.description}</p>
             </div>
           </Show>
 
-          {/* Pricing Cards */}
-          <section class="grid md:grid-cols-3 gap-8 mb-20" aria-labelledby="pricing-plans">
+          {/* Interval toggle */}
+          <div class="flex justify-center">
+            <div
+              class="inline-flex rounded-full border border-border bg-muted/40 p-1"
+              role="group"
+              aria-label="Billing interval"
+            >
+              <button
+                type="button"
+                class={`px-4 py-1.5 rounded-full text-sm font-medium transition ${
+                  interval() === "monthly"
+                    ? "bg-primary text-primary-foreground shadow"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+                onClick={() => setInterval("monthly")}
+              >
+                Monthly
+              </button>
+              <button
+                type="button"
+                class={`px-4 py-1.5 rounded-full text-sm font-medium transition ${
+                  interval() === "annual"
+                    ? "bg-primary text-primary-foreground shadow"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+                onClick={() => setInterval("annual")}
+              >
+                Annual <span class="opacity-80">(~17% off)</span>
+              </button>
+            </div>
+          </div>
+
+          <section
+            class="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto"
+            aria-labelledby="pricing-plans"
+          >
             <h2 id="pricing-plans" class="sr-only">
-              Pricing Plans
+              Pricing plans
             </h2>
-            <For each={plans}>
-              {(plan, index) => {
-                const IconComponent = plan.icon;
-                return (
-                  <article
-                    class={`relative bg-card border-2 rounded-2xl shadow-lg transition-all duration-300 focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 ${
-                      plan.disabled
-                        ? "border-muted opacity-75"
-                        : plan.popular
-                          ? "border-primary scale-105 hover:shadow-xl"
-                          : "border-border hover:border-primary/50 hover:shadow-xl"
-                    }`}
-                    aria-labelledby={`plan-${index()}`}
-                  >
-                    {plan.popular && !plan.disabled && (
-                      <div class="absolute -top-4 left-1/2 transform -translate-x-1/2">
-                        <div class="bg-primary text-primary-foreground px-4 py-1 rounded-full text-sm font-medium flex items-center">
-                          <Zap class="w-4 h-4 mr-1" aria-hidden="true" />
-                          Most Popular
-                        </div>
-                      </div>
-                    )}
 
-                    {plan.disabled && (
-                      <div class="absolute -top-4 left-1/2 transform -translate-x-1/2">
-                        <div class="bg-accent text-accent-foreground px-4 py-1 rounded-full text-sm font-medium flex items-center">
-                          <Clock class="w-4 h-4 mr-1" aria-hidden="true" />
-                          Coming Soon
-                        </div>
-                      </div>
-                    )}
-
-                    <div class="p-8">
-                      <div class="flex items-center mb-4">
-                        <div
-                          class={`${getColorClasses(plan.color, "bg")} dark:bg-opacity-50 p-3 rounded-lg mr-4`}
-                          aria-hidden="true"
-                        >
-                          <IconComponent
-                            class={`w-6 h-6 ${getColorClasses(plan.color, "text")} dark:opacity-90`}
-                          />
-                        </div>
-                        <h3 id={`plan-${index()}`} class="text-2xl font-bold text-card-foreground">
-                          {plan.name}
-                        </h3>
-                      </div>
-
-                      <div class="mb-4">
-                        <div class="flex items-center gap-2">
-                          <span
-                            class={`text-4xl font-bold ${plan.disabled ? "text-muted-foreground" : "text-card-foreground"}`}
-                          >
-                            {plan.price}
-                          </span>
-                          <span
-                            class={`ml-2 ${plan.disabled ? "text-muted-foreground" : "text-muted-foreground"}`}
-                          >
-                            /{plan.period}
-                          </span>
-                        </div>
-                        <Show when={plan.yearlyPrice}>
-                          <div class="flex items-center gap-2 mt-1 text-sm">
-                            <span class="px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
-                              Yearly: {plan.yearlyPrice}
-                            </span>
-                            <span class="text-muted-foreground">
-                              Save vs monthly
-                            </span>
-                          </div>
-                        </Show>
-                        {/* Show discount for applicable plans */}
-                        <Show
-                          when={
-                            appliedPromo() &&
-                            appliedPromo()?.type === "discount" &&
-                            plan.name !== "Free" &&
-                            (appliedPromo()?.planAccess === "any" ||
-                              appliedPromo()?.planAccess === plan.name.toLowerCase())
-                          }
-                        >
-                          <div class="flex items-center gap-2 mt-2">
-                            <span class="text-lg text-muted-foreground line-through">
-                              {plan.price}
-                            </span>
-                            <span class="text-2xl font-bold text-primary">
-                              $
-                              {(
-                                parseFloat(plan.price.replace("$", "")) *
-                                (1 - appliedPromo()?.discount / 100)
-                              ).toFixed(2)}
-                            </span>
-                            <span class="bg-primary/10 text-primary px-2 py-1 rounded text-sm font-medium">
-                              {appliedPromo()?.discount}% OFF
-                            </span>
-                          </div>
-                        </Show>
-                        {/* Show free trial indicator */}
-                        <Show
-                          when={
-                            appliedPromo() &&
-                            appliedPromo()?.type === "free_trial" &&
-                            plan.name !== "Free" &&
-                            (appliedPromo()?.planAccess === "any" ||
-                              appliedPromo()?.planAccess === plan.name.toLowerCase())
-                          }
-                        >
-                          <div class="mt-2">
-                            <span class="bg-primary/10 text-primary px-3 py-1 rounded-full text-sm font-medium">
-                              FREE for {appliedPromo()?.duration} days
-                            </span>
-                          </div>
-                        </Show>
-                        {/* Show free access indicator */}
-                        <Show
-                          when={
-                            appliedPromo() &&
-                            appliedPromo()?.type === "free_access" &&
-                            plan.name !== "Free" &&
-                            (appliedPromo()?.planAccess === "any" ||
-                              appliedPromo()?.planAccess === plan.name.toLowerCase())
-                          }
-                        >
-                          <div class="mt-2">
-                            <span class="bg-accent/10 text-accent px-3 py-1 rounded-full text-sm font-medium">
-                              FREE ACCESS
-                            </span>
-                          </div>
-                        </Show>
-                      </div>
-
-                      <p class="text-muted-foreground mb-6">{plan.description}</p>
-
-                      <button
-                        class={`w-full py-3 px-6 rounded-lg font-semibold transition-colors mb-6 focus:outline-none ${
-                          plan.disabled
-                            ? "bg-muted text-muted-foreground cursor-not-allowed"
-                            : plan.popular
-                              ? "bg-primary hover:bg-primary/90 text-primary-foreground focus:ring-2 focus:ring-ring focus:ring-offset-2"
-                              : "border border-border text-card-foreground hover:bg-muted focus:bg-muted focus:ring-2 focus:ring-ring focus:ring-offset-2"
-                        }`}
-                        disabled={plan.disabled}
-                        aria-label={
-                          plan.disabled
-                            ? `${plan.name} plan coming soon`
-                            : `Choose ${plan.name} plan for ${plan.price} ${plan.period}`
-                        }
-                      >
-                        {plan.disabled ? (
-                          <div class="flex items-center justify-center gap-2">
-                            <Clock class="w-4 h-4" aria-hidden="true" />
-                            {plan.cta}
-                          </div>
-                        ) : (
-                          plan.cta
-                        )}
-                      </button>
-
-                      <div class="space-y-3">
-                        <h4
-                          class={`font-semibold ${plan.disabled ? "text-muted-foreground" : "text-card-foreground"}`}
-                        >
-                          Includes:
-                        </h4>
-                        <ul class="space-y-2" role="list">
-                          <For each={plan.features}>
-                            {(feature) => (
-                              <li class="flex items-start" role="listitem">
-                                <Check
-                                  class={`w-5 h-5 mr-3 mt-0.5 flex-shrink-0 ${
-                                    plan.disabled ? "text-muted-foreground/60" : "text-primary"
-                                  }`}
-                                  aria-hidden="true"
-                                />
-                                <span
-                                  class={`text-sm ${
-                                    plan.disabled ? "text-muted-foreground" : "text-muted-foreground"
-                                  }`}
-                                >
-                                  {feature}
-                                </span>
-                              </li>
-                            )}
-                          </For>
-                        </ul>
-
-                        {plan.limitations.length > 0 && (
-                          <>
-                            <hr class="my-4 border-border" />
-                            <h4 class="font-semibold text-card-foreground text-sm">Limitations:</h4>
-                            <ul class="space-y-2" role="list">
-                              <For each={plan.limitations}>
-                                {(limitation) => (
-                                  <li class="flex items-start" role="listitem">
-                                    <div
-                                      class="w-5 h-5 mr-3 mt-0.5 flex-shrink-0"
-                                      aria-hidden="true"
-                                    >
-                                      <div class="w-1.5 h-1.5 bg-muted-foreground rounded-full mx-auto mt-2" />
-                                    </div>
-                                    <span class="text-muted-foreground/80 text-sm">
-                                      {limitation}
-                                    </span>
-                                  </li>
-                                )}
-                              </For>
-                            </ul>
-                          </>
-                        )}
-                      </div>
-                    </div>
-                  </article>
-                );
-              }}
-            </For>
-          </section>
-
-          {/* API Access for Developers Section */}
-          <section class="mb-20" aria-labelledby="api-access">
-            <div class="relative bg-foreground text-background rounded-3xl p-8 md:p-12 shadow-2xl border border-border overflow-hidden">
-              <div class="absolute inset-0 overflow-hidden pointer-events-none">
-                <div class="absolute -top-24 -right-24 w-96 h-96 bg-primary/20 rounded-full blur-3xl" />
-                <div class="absolute -bottom-24 -left-24 w-96 h-96 bg-accent/10 rounded-full blur-3xl" />
+            {/* Free */}
+            <article class="relative bg-card border-2 border-border rounded-2xl shadow-lg p-8">
+              <div class="flex items-center mb-4 gap-3">
+                <div class="bg-muted p-3 rounded-lg">
+                  <Heart class="w-6 h-6 text-muted-foreground" />
+                </div>
+                <h3 class="text-2xl font-bold">Free</h3>
               </div>
+              <div class="mb-2">
+                <span class="text-4xl font-bold">$0</span>
+                <span class="text-muted-foreground ml-2">forever</span>
+              </div>
+              <p class="text-muted-foreground mb-6">
+                For casual explorers trying AI trip planning.
+              </p>
+              <A
+                href={isAuthenticated() ? "/chat" : "/auth/signup"}
+                class="block w-full text-center py-3 px-6 rounded-lg font-semibold border border-border hover:bg-muted transition mb-6"
+              >
+                Get started free
+              </A>
+              <ul class="space-y-2 mb-4">
+                <For each={freeFeatures}>
+                  {(f) => (
+                    <li class="flex items-start gap-2 text-sm text-muted-foreground">
+                      <Check class="w-5 h-5 text-primary shrink-0" />
+                      {f}
+                    </li>
+                  )}
+                </For>
+              </ul>
+              <hr class="my-4 border-border" />
+              <p class="text-xs font-semibold text-muted-foreground mb-2">Limits</p>
+              <ul class="space-y-1.5">
+                <For each={freeLimits}>
+                  {(f) => (
+                    <li class="text-sm text-muted-foreground/80 flex gap-2">
+                      <span class="mt-2 w-1.5 h-1.5 rounded-full bg-muted-foreground shrink-0" />
+                      {f}
+                    </li>
+                  )}
+                </For>
+              </ul>
+            </article>
 
-              <div class="relative z-10">
-                <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-8">
-                  <div class="flex-1">
-                    <div class="flex items-center gap-3 mb-4">
-                      <div class="w-12 h-12 bg-primary rounded-xl flex items-center justify-center shadow-lg">
-                        <svg
-                          class="w-6 h-6 text-primary-foreground"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            stroke-width="2"
-                            d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"
-                          />
-                        </svg>
-                      </div>
-                      <div>
-                        <h2 id="api-access" class="text-2xl md:text-3xl font-bold text-background">
-                          API Access for Developers
-                        </h2>
-                        <span class="inline-flex items-center gap-1.5 mt-1 px-3 py-1 bg-accent/20 text-accent text-xs font-semibold rounded-full border border-accent/30">
-                          <Clock class="w-3 h-3" />
-                          Coming Soon for Premium Users
-                        </span>
-                      </div>
-                    </div>
-                    <p class="text-background/70 text-lg mb-6 max-w-2xl">
-                      Build custom integrations with the Loci API. Access our AI-powered travel
-                      recommendations, POI data, and personalization engine directly in your
-                      applications.
-                    </p>
-                    <ul class="grid grid-cols-1 md:grid-cols-2 gap-3 text-background/80">
-                      <li class="flex items-center gap-2">
-                        <Check class="w-5 h-5 text-primary flex-shrink-0" />
-                        <span>RESTful & gRPC endpoints</span>
-                      </li>
-                      <li class="flex items-center gap-2">
-                        <Check class="w-5 h-5 text-primary flex-shrink-0" />
-                        <span>Real-time streaming responses</span>
-                      </li>
-                      <li class="flex items-center gap-2">
-                        <Check class="w-5 h-5 text-primary flex-shrink-0" />
-                        <span>AI recommendation engine</span>
-                      </li>
-                      <li class="flex items-center gap-2">
-                        <Check class="w-5 h-5 text-primary flex-shrink-0" />
-                        <span>Comprehensive documentation</span>
-                      </li>
-                      <li class="flex items-center gap-2">
-                        <Check class="w-5 h-5 text-primary flex-shrink-0" />
-                        <span>SDKs for popular languages</span>
-                      </li>
-                      <li class="flex items-center gap-2">
-                        <Check class="w-5 h-5 text-primary flex-shrink-0" />
-                        <span>Developer support</span>
-                      </li>
-                    </ul>
-                  </div>
-                  <div class="flex flex-col items-center md:items-end gap-4">
-                    <div class="text-center md:text-right">
-                      <div class="text-background/60 text-sm mb-1">Starting at</div>
-                      <div class="text-4xl font-bold text-background">
-                        $49<span class="text-lg text-background/60">/mo</span>
-                      </div>
-                      <div class="text-background/60 text-sm">for 10,000 API calls</div>
-                    </div>
-                    <button
-                      class="inline-flex items-center gap-2 px-6 py-3 bg-background/10 text-background/80 rounded-xl font-semibold border border-background/20 cursor-not-allowed"
-                      disabled
-                    >
-                      <Clock class="w-5 h-5" />
-                      Notify Me When Available
-                    </button>
-                  </div>
+            {/* Pro */}
+            <article class="relative bg-card border-2 border-primary scale-[1.02] rounded-2xl shadow-xl p-8">
+              <div class="absolute -top-4 left-1/2 -translate-x-1/2">
+                <div class="bg-primary text-primary-foreground px-4 py-1 rounded-full text-sm font-medium flex items-center">
+                  <Zap class="w-4 h-4 mr-1" />
+                  Most popular
                 </div>
               </div>
+              <div class="flex items-center mb-4 gap-3">
+                <div class="bg-primary/10 p-3 rounded-lg">
+                  <Crown class="w-6 h-6 text-primary" />
+                </div>
+                <h3 class="text-2xl font-bold">Pro</h3>
+              </div>
+              <div class="mb-2">
+                <span class="text-4xl font-bold">{displayPrice()}</span>
+                <span class="text-muted-foreground ml-2">{displayPeriod()}</span>
+              </div>
+              <Show when={interval() === "annual"}>
+                <p class="text-sm text-primary font-medium mb-2">
+                  Billed annually · about ${(annualPrice / 12).toFixed(2)}/mo
+                </p>
+              </Show>
+              <p class="text-muted-foreground mb-6">
+                For travelers who want the plan on their phone and unlimited refining.
+              </p>
+
+              <button
+                type="button"
+                class="w-full py-3 px-6 rounded-lg font-semibold bg-primary text-primary-foreground hover:opacity-90 transition mb-3 disabled:opacity-60"
+                disabled={loading() || alreadyPro()}
+                onClick={() => void startCheckout()}
+              >
+                {alreadyPro()
+                  ? "You're on Pro"
+                  : loading()
+                    ? "Redirecting to checkout…"
+                    : interval() === "annual"
+                      ? "Start Pro annual"
+                      : "Start Pro monthly"}
+              </button>
+
+              <Show when={alreadyPro()}>
+                <A
+                  href="/billing"
+                  class="block text-center text-sm text-primary hover:underline mb-4"
+                >
+                  Manage billing
+                </A>
+              </Show>
+
+              <Show when={checkoutError()}>
+                <p class="text-sm text-destructive mb-4" role="alert">
+                  {checkoutError()}
+                </p>
+              </Show>
+
+              <Show when={!checkoutReady() && !alreadyPro()}>
+                <p class="text-xs text-muted-foreground mb-4">
+                  Dev note: set <code class="text-foreground">VITE_STRIPE_PRICE_ID_MONTHLY</code> /
+                  <code class="text-foreground"> ANNUAL</code> to enable live checkout.
+                </p>
+              </Show>
+
+              <ul class="space-y-2">
+                <For each={proFeatures}>
+                  {(f) => (
+                    <li class="flex items-start gap-2 text-sm text-muted-foreground">
+                      <Check class="w-5 h-5 text-primary shrink-0" />
+                      {f}
+                    </li>
+                  )}
+                </For>
+              </ul>
+            </article>
+          </section>
+
+          {/* MCP callout */}
+          <section class="rounded-3xl border border-border bg-card p-8 md:p-10 shadow-lg">
+            <div class="flex flex-col md:flex-row md:items-center gap-6 justify-between">
+              <div class="flex gap-4">
+                <div class="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                  <Plug class="w-6 h-6 text-primary" />
+                </div>
+                <div>
+                  <h2 class="text-2xl font-bold mb-1">Use Loci inside your AI agent</h2>
+                  <p class="text-muted-foreground max-w-xl">
+                    Free includes MCP search and list tools. Pro unlocks{" "}
+                    <code class="text-sm">plan_itinerary</code> so Claude, Codex, Gemini, and others
+                    can generate and save trips on your account.
+                  </p>
+                </div>
+              </div>
+              <A
+                href="/mcp"
+                class="inline-flex items-center justify-center rounded-lg border border-border px-5 py-2.5 font-medium hover:bg-muted transition shrink-0"
+              >
+                MCP setup guide
+              </A>
             </div>
           </section>
-          <section class="bg-muted/50 rounded-2xl p-8 mb-20" aria-labelledby="feature-comparison">
-            <h2 id="feature-comparison" class="text-3xl font-bold text-foreground text-center mb-8">
-              Feature Comparison
+
+          {/* Comparison */}
+          <section class="bg-muted/40 rounded-2xl p-8" aria-labelledby="feature-comparison">
+            <h2 id="feature-comparison" class="text-3xl font-bold text-center mb-8">
+              Feature comparison
             </h2>
             <div class="overflow-x-auto">
-              <table
-                class="w-full"
-                role="table"
-                aria-label="Feature comparison across pricing plans"
-              >
+              <table class="w-full" aria-label="Feature comparison Free vs Pro">
                 <thead>
                   <tr class="border-b border-border">
-                    <th class="text-left py-4 pr-4 font-semibold text-foreground" scope="col">
-                      Features
+                    <th class="text-left py-4 pr-4 font-semibold" scope="col">
+                      Feature
                     </th>
-                    <th class="text-center py-4 px-4 font-semibold text-foreground" scope="col">
+                    <th class="text-center py-4 px-4 font-semibold" scope="col">
                       Free
                     </th>
-                    <th
-                      class="text-center py-4 px-4 font-semibold text-primary"
-                      scope="col"
-                    >
-                      Explorer
-                    </th>
-                    <th
-                      class="text-center py-4 pl-4 font-semibold text-accent"
-                      scope="col"
-                    >
+                    <th class="text-center py-4 pl-4 font-semibold text-primary" scope="col">
                       Pro
                     </th>
                   </tr>
                 </thead>
                 <tbody>
-                  <For each={features}>
-                    {(category) => (
+                  <For each={comparison}>
+                    {(cat) => (
                       <>
                         <tr>
-                          <td colspan="4" class="py-4">
-                            <h3 class="font-semibold text-foreground">{category.category}</h3>
+                          <td colspan="3" class="pt-6 pb-2">
+                            <span class="font-semibold">{cat.category}</span>
                           </td>
                         </tr>
-                        <For each={category.items}>
+                        <For each={cat.items}>
                           {(item) => (
                             <tr class="border-b border-border/50">
                               <td class="py-3 pr-4 text-muted-foreground">{item.feature}</td>
-                              <td class="text-center py-3 px-4">
-                                {typeof item.free === "boolean" ? (
-                                  item.free ? (
-                                    <Check
-                                      class="w-5 h-5 text-accent mx-auto"
-                                      aria-label="Included"
-                                    />
-                                  ) : (
-                                    <div
-                                      class="w-5 h-5 mx-auto flex items-center justify-center"
-                                      aria-label="Not included"
-                                    >
-                                      <div class="w-4 h-0.5 bg-muted-foreground/50" />
-                                    </div>
-                                  )
-                                ) : (
-                                  <span class="text-sm text-muted-foreground">{item.free}</span>
-                                )}
-                              </td>
-                              <td class="text-center py-3 px-4">
-                                {typeof item.explorer === "boolean" ? (
-                                  item.explorer ? (
-                                    <Check
-                                      class="w-5 h-5 text-accent mx-auto"
-                                      aria-label="Included"
-                                    />
-                                  ) : (
-                                    <div
-                                      class="w-5 h-5 mx-auto flex items-center justify-center"
-                                      aria-label="Not included"
-                                    >
-                                      <div class="w-4 h-0.5 bg-muted-foreground/50" />
-                                    </div>
-                                  )
-                                ) : (
-                                  <span class="text-sm text-primary font-medium">
-                                    {item.explorer}
-                                  </span>
-                                )}
-                              </td>
-                              <td class="text-center py-3 pl-4">
-                                {typeof item.pro === "boolean" ? (
-                                  item.pro ? (
-                                    <Check
-                                      class="w-5 h-5 text-accent mx-auto"
-                                      aria-label="Included"
-                                    />
-                                  ) : (
-                                    <div
-                                      class="w-5 h-5 mx-auto flex items-center justify-center"
-                                      aria-label="Not included"
-                                    >
-                                      <div class="w-4 h-0.5 bg-muted-foreground/50" />
-                                    </div>
-                                  )
-                                ) : (
-                                  <span class="text-sm text-accent font-medium">
-                                    {item.pro}
-                                  </span>
-                                )}
-                              </td>
+                              <td class="text-center py-3 px-4">{cell(item.free)}</td>
+                              <td class="text-center py-3 pl-4">{cell(item.pro)}</td>
                             </tr>
                           )}
                         </For>
@@ -719,82 +454,67 @@ export default function Pricing() {
                 </tbody>
               </table>
             </div>
-          </section>
-
-          {/* FAQ Section */}
-          <section class="mb-20" aria-labelledby="faq">
-            <h2 id="faq" class="text-3xl font-bold text-foreground text-center mb-12">
-              Frequently Asked Questions
-            </h2>
-            <div class="max-w-3xl mx-auto space-y-6" role="list">
-              <article class="bg-card rounded-lg p-6 border border-border" role="listitem">
-                <h3 class="font-semibold text-card-foreground mb-2">
-                  Can I upgrade or downgrade my plan anytime?
-                </h3>
-                <p class="text-muted-foreground">
-                  Yes, you can change your plan at any time. Changes take effect immediately, and
-                  we'll prorate the charges accordingly.
-                </p>
-              </article>
-              <article class="bg-card rounded-lg p-6 border border-border" role="listitem">
-                <h3 class="font-semibold text-card-foreground mb-2">
-                  Is there a free trial for paid plans?
-                </h3>
-                <p class="text-muted-foreground">
-                  We don't offer a traditional free trial, but our Free plan gives you access to
-                  core features. Plus, all paid plans come with a 30-day money-back guarantee.
-                </p>
-              </article>
-              <article class="bg-card rounded-lg p-6 border border-border" role="listitem">
-                <h3 class="font-semibold text-card-foreground mb-2">
-                  How does the AI learn my preferences?
-                </h3>
-                <p class="text-muted-foreground">
-                  Our AI analyzes your explicit preferences, saved locations, and interaction
-                  patterns to provide increasingly personalized recommendations over time.
-                </p>
-              </article>
-              <article class="bg-card rounded-lg p-6 border border-border" role="listitem">
-                <h3 class="font-semibold text-card-foreground mb-2">
-                  Do you offer discounts for annual subscriptions?
-                </h3>
-                <p class="text-muted-foreground">
-                  Yes! Annual subscriptions receive a 20% discount. Contact our support team to set
-                  up annual billing.
-                </p>
-              </article>
-            </div>
-          </section>
-
-          {/* Call to Action */}
-          <section
-            class="text-center glass-panel gradient-border rounded-2xl p-12"
-            aria-labelledby="final-cta"
-          >
-            <h2 id="final-cta" class="text-3xl font-bold mb-4 text-foreground">
-              Ready to Start Exploring?
-            </h2>
-            <p class="text-lg mb-8 text-muted-foreground max-w-2xl mx-auto">
-              Join thousands of users who've already discovered their perfect spots with Loci. Start
-              free and upgrade when you're ready for more.
+            <p class="text-xs text-muted-foreground mt-4 text-center">
+              * Pro is sold as unlimited with a high fair-use cap to protect service quality.
             </p>
-            <div class="flex flex-col sm:flex-row gap-4 justify-center">
-              <A href="/auth/signup" class="inline-block">
-                <button
-                  class="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold px-8 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-background transition-colors shadow-lg"
-                  aria-label="Sign up for Loci to start exploring for free"
-                >
-                  Start Free Today
-                </button>
+          </section>
+
+          {/* FAQ */}
+          <section class="max-w-3xl mx-auto space-y-4" aria-labelledby="faq">
+            <h2 id="faq" class="text-3xl font-bold text-center mb-8">
+              FAQ
+            </h2>
+            <article class="bg-card rounded-lg p-6 border border-border">
+              <h3 class="font-semibold mb-2">Can I cancel anytime?</h3>
+              <p class="text-muted-foreground text-sm">
+                Yes. Manage or cancel from Billing via the Stripe customer portal. Access continues
+                through the paid period.
+              </p>
+            </article>
+            <article class="bg-card rounded-lg p-6 border border-border">
+              <h3 class="font-semibold mb-2">What is the Trip Kit?</h3>
+              <p class="text-muted-foreground text-sm">
+                After the AI builds your itinerary, Trip Kit puts it on your phone: multi-stop
+                Google Maps route, calendar events (.ics), and a PDF pack. Free unlocks Day 1; Pro
+                unlocks the full multi-day trip.
+              </p>
+            </article>
+            <article class="bg-card rounded-lg p-6 border border-border">
+              <h3 class="font-semibold mb-2">Is there a free trial?</h3>
+              <p class="text-muted-foreground text-sm">
+                The Free plan is the trial — 10 AI requests per day plus Day 1 Trip Kit. Pro
+                includes a 30-day money-back guarantee.
+              </p>
+            </article>
+            <article class="bg-card rounded-lg p-6 border border-border">
+              <h3 class="font-semibold mb-2">Annual discount?</h3>
+              <p class="text-muted-foreground text-sm">
+                Annual Pro is $99.90/year (~17% less than monthly). Toggle Annual above to checkout
+                yearly.
+              </p>
+            </article>
+          </section>
+
+          <section class="text-center glass-panel gradient-border rounded-2xl p-12">
+            <h2 class="text-3xl font-bold mb-4">Ready when your trip is</h2>
+            <p class="text-muted-foreground mb-8 max-w-xl mx-auto">
+              Generate a plan free. Upgrade when you need every day on Maps and calendar.
+            </p>
+            <div class="flex flex-wrap justify-center gap-3">
+              <A
+                href={isAuthenticated() ? "/chat" : "/auth/signup"}
+                class="inline-flex rounded-lg border border-border px-6 py-3 font-semibold hover:bg-muted transition"
+              >
+                Start free
               </A>
-              <A href="/features" class="inline-block">
-                <button
-                  class="border border-border text-foreground hover:bg-muted font-semibold px-8 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-background transition-colors"
-                  aria-label="Learn more about Loci features"
-                >
-                  Learn More
-                </button>
-              </A>
+              <button
+                type="button"
+                class="inline-flex rounded-lg bg-primary text-primary-foreground px-6 py-3 font-semibold hover:opacity-90 transition disabled:opacity-60"
+                disabled={loading() || alreadyPro()}
+                onClick={() => void startCheckout()}
+              >
+                {alreadyPro() ? "You're on Pro" : "Get Pro"}
+              </button>
             </div>
           </section>
         </div>

@@ -16,6 +16,7 @@ import {
   Compass,
   Bookmark,
   CreditCard,
+  Map,
 } from "lucide-solid";
 import { createSignal, For, Show, onMount, onCleanup } from "solid-js";
 import { Portal } from "solid-js/web";
@@ -39,6 +40,7 @@ const authNavigationItems = [
   { name: "Discover", href: "/discover", icon: Compass },
   { name: "Near Me", href: "/nearme", icon: MapPin },
   { name: "Recents", href: "/recents", icon: Clock },
+  { name: "Trips", href: "/trips", icon: Map },
   { name: "Chat", href: "/chat", icon: MessageCircle },
 ];
 
@@ -436,9 +438,7 @@ export default function Nav() {
                     {/* Guest Actions */}
                     <div class="space-y-4">
                       <div class="flex justify-between items-center mb-4">
-                        <span class="text-sm font-medium text-muted-foreground">
-                          Appearance
-                        </span>
+                        <span class="text-sm font-medium text-muted-foreground">Appearance</span>
                         <ThemeSelector />
                       </div>
                       <A href="/auth/signin" class="block" onClick={() => setIsMenuOpen(false)}>

@@ -4,12 +4,7 @@ import { ArrowRight, Loader2 } from "lucide-solid";
 import { useUserLocation } from "~/contexts/LocationContext";
 import { prefersReducedMotion } from "~/lib/hooks/useInView";
 import { detectDomain } from "~/lib/api/llm";
-import {
-  createStreamingSession,
-  getDomainRoute,
-  sendUnifiedChatMessageStream,
-  streamingService,
-} from "~/lib/chat-stream";
+import { createStreamingSession, getDomainRoute, streamingService } from "~/lib/chat-stream";
 import HeroPlot from "./landing/HeroPlot";
 import HowItWorks from "./landing/HowItWorks";
 import WhatItFinds from "./landing/WhatItFinds";
@@ -77,38 +72,39 @@ export default function PublicLandingPage() {
       session.query = query;
       sessionStorage.setItem("currentStreamingSession", JSON.stringify(session));
 
-      const response = await sendUnifiedChatMessageStream({
-        profileId: "free",
-        message: query,
-        userLocation: userLocation()
-          ? { userLat: userLocation()!.latitude, userLon: userLocation()!.longitude }
-          : undefined,
-      });
-
-      streamingService.startStream(response, {
-        session,
-        onProgress: (updated) =>
-          sessionStorage.setItem("currentStreamingSession", JSON.stringify(updated)),
-        onComplete: (completed) => {
-          setIsLoading(false);
-          sessionStorage.setItem("completedStreamingSession", JSON.stringify(completed));
-          const route = getDomainRoute(completed.domain, completed.sessionId, completed.city);
-          if (route) {
-            navigate(route, {
-              state: {
-                streamingData: completed.data,
-                sessionId: completed.sessionId,
-                originalMessage: query,
-              },
-            });
-          }
+      streamingService.startStream(
+        {
+          profileId: "free",
+          message: query,
+          userLocation: userLocation()
+            ? { userLat: userLocation()!.latitude, userLon: userLocation()!.longitude }
+            : undefined,
         },
-        onError: (error) => {
-          console.error("Free streaming error:", error);
-          setIsLoading(false);
-          setSearchError("That didn't go through. Try again in a moment.");
+        {
+          session,
+          onProgress: (updated) =>
+            sessionStorage.setItem("currentStreamingSession", JSON.stringify(updated)),
+          onComplete: (completed) => {
+            setIsLoading(false);
+            sessionStorage.setItem("completedStreamingSession", JSON.stringify(completed));
+            const route = getDomainRoute(completed.domain, completed.sessionId, completed.city);
+            if (route) {
+              navigate(route, {
+                state: {
+                  streamingData: completed.data,
+                  sessionId: completed.sessionId,
+                  originalMessage: query,
+                },
+              });
+            }
+          },
+          onError: (error) => {
+            console.error("Free streaming error:", error);
+            setIsLoading(false);
+            setSearchError("That didn't go through. Try again in a moment.");
+          },
         },
-      });
+      );
     } catch (error) {
       console.error("Error starting free chat:", error);
       setIsLoading(false);

@@ -3,6 +3,8 @@ import { useSearchParams } from "@solidjs/router";
 import { useStreamedRpc } from "@/lib/hooks/useStreamedRpc";
 import ItineraryStreamView from "@/components/itinerary/ItineraryStreamView";
 import StopCard from "@/components/itinerary/StopCard";
+import TripKit from "@/components/itinerary/TripKit";
+import EditTripCTA from "@/components/trip/EditTripCTA";
 import SectionHeader from "@/components/ui/SectionHeader";
 import {
   stopsFromCityResponse,
@@ -23,17 +25,24 @@ import { CityInfoHeader } from "@/components/ui/CityInfoHeader";
 import { ActionToolbar } from "@/components/ui/ActionToolbar";
 import FloatingChat from "@/components/features/Chat/FloatingChat";
 import { useSaveItineraryMutation } from "@/lib/api/itineraries";
+import { useUserSubscription } from "@/lib/api/billing";
+import { isProPlan } from "@/lib/subscription";
+import type { TripStop } from "@/lib/trip-kit";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function ItineraryPage() {
   const [searchParams] = useSearchParams();
   const [message] = createSignal((searchParams.message as string) || "Show me an itinerary");
   const [cityName] = createSignal((searchParams.cityName as string) || "London");
   const [profileId] = createSignal((searchParams.profileId as string) || "");
+  const { isAuthenticated } = useAuth();
 
   const { store, connect, setStore } = useStreamedRpc(message, cityName, profileId);
 
   // Mutation hook for bookmarking
   const saveItineraryMutation = useSaveItineraryMutation();
+  const subscriptionQuery = useUserSubscription(() => isAuthenticated());
+  const isPro = createMemo(() => isProPlan(subscriptionQuery.data?.plan));
 
   // Helper to normalize stored data - flattens nested itinerary_response structure
   const normalizeStoredData = (data: any): any => {
@@ -236,6 +245,24 @@ export default function ItineraryPage() {
     return out;
   });
 
+  // Trip Kit stops: itinerary order + geo/address from full POI map.
+  const tripKitStops = createMemo<TripStop[]>(() => {
+    const byName = allByName();
+    return itineraryModel().stops.map((s, i) => {
+      const geo = byName.get(s.name);
+      return {
+        name: s.name,
+        latitude: geo ? toNum(geo.latitude) : undefined,
+        longitude: geo ? toNum(geo.longitude) : undefined,
+        address: geo?.address,
+        category: s.category || geo?.category,
+        blurb: s.blurb,
+        timeToSpend: s.timeToSpend,
+        day: Math.floor(i / STOPS_PER_DAY),
+      };
+    });
+  });
+
   // Shared selection between list and map (keyed by POI name).
   const [selectedId, setSelectedId] = createSignal<string | undefined>(undefined);
 
@@ -367,6 +394,27 @@ export default function ItineraryPage() {
           selectedKey={selectedId()}
           onStopClick={(stop) => setSelectedId(stop.name)}
         />
+
+        <TripKit
+          title={itineraryModel().title}
+          cityName={cityName()}
+          summary={itineraryModel().summary}
+          stops={tripKitStops()}
+          isPro={isPro()}
+          visible={
+            streamPhase() === "done" || (itineraryModel().stops.length > 0 && !store.isLoading)
+          }
+          stopsPerDay={STOPS_PER_DAY}
+        />
+
+        <Show when={store.tripId || (searchParams.tripId as string | undefined)}>
+          <div class="mt-4">
+            <EditTripCTA
+              tripId={(store.tripId || (searchParams.tripId as string)) ?? null}
+              cityName={cityName()}
+            />
+          </div>
+        </Show>
 
         <Show when={extraStops().length > 0}>
           <div class="mt-10">

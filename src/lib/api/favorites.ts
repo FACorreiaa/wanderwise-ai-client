@@ -13,6 +13,7 @@ import {
 import { create } from "@bufbuild/protobuf";
 import { transport } from "../connect-transport";
 import { getAuthToken } from "../api";
+import { handleEntitlementError } from "../entitlement-error";
 
 // Create authenticated favorites client
 const favoritesClient = createClient(FavoritesService, transport);
@@ -162,6 +163,7 @@ async function addToFavorites(item: FavoriteItem): Promise<boolean> {
     console.log("favorites: Added to favorites:", item.name);
     return true;
   } catch (error) {
+    handleEntitlementError(error);
     console.error("Failed to add to favorites:", error);
     return false;
   }

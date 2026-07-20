@@ -1,16 +1,7 @@
 import { createSignal, createMemo, onMount } from "solid-js";
 import { useQuery, useQueryClient } from "@tanstack/solid-query";
-import {
-  ContinueChatStream,
-  detectDomain,
-  useGetChatSessionsQuery,
-  domainToContextType,
-} from "~/lib/api/llm";
-import {
-  createStreamingSession,
-  sendUnifiedChatMessageStream,
-  streamingService,
-} from "~/lib/chat-stream";
+import { detectDomain, useGetChatSessionsQuery } from "~/lib/api/llm";
+import { createStreamingSession, streamingService } from "~/lib/chat-stream";
 import type { DomainType } from "~/lib/api/types";
 import type { TravelProfile } from "~/components/chat";
 import { useUserLocation } from "~/contexts/LocationContext";
@@ -234,29 +225,28 @@ export function useChat() {
     const profile = activeProfileId();
     if (!profile) throw new Error("No search profile found");
 
-    const response = await sendUnifiedChatMessageStream({
-      profileId: profile,
-      message: messageContent,
-      contextType: domainToContextType(domain),
-      userLocation: { userLat: userLatitude, userLon: userLongitude },
-    });
-    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-
-    streamingService.startStream(response, {
-      session,
-      onProgress: (updated) => {
-        setStreamingSession({ ...updated });
-        setStreamProgress(progressLabel(updated));
-        // Live: surface partial results in the streaming message as they arrive.
-        patchMessage(streamId, { streamingData: updated.data });
-        sessionStorage.setItem("currentStreamingSession", JSON.stringify(updated));
+    streamingService.startStream(
+      {
+        message: messageContent,
+        profileId: profile,
+        userLocation: { userLat: userLatitude, userLon: userLongitude },
       },
-      onComplete: (completed) => finalizeStream(completed, streamId),
-      onError: (error) => {
-        logger.error("Streaming error:", error);
-        finishWithError(streamId, `Sorry, there was an error processing your request: ${error}`);
+      {
+        session,
+        onProgress: (updated) => {
+          setStreamingSession({ ...updated });
+          setStreamProgress(progressLabel(updated));
+          // Live: surface partial results in the streaming message as they arrive.
+          patchMessage(streamId, { streamingData: updated.data });
+          sessionStorage.setItem("currentStreamingSession", JSON.stringify(updated));
+        },
+        onComplete: (completed) => finalizeStream(completed, streamId),
+        onError: (error) => {
+          logger.error("Streaming error:", error);
+          finishWithError(streamId, `Sorry, there was an error processing your request: ${error}`);
+        },
       },
-    });
+    );
   };
 
   const continueExistingSession = async (
@@ -272,28 +262,25 @@ export function useChat() {
     const currentCity =
       streamingSession()?.city || streamingSession()?.data?.general_city_data?.city || "";
 
-    try {
-      const response = await ContinueChatStream({
-        sessionId: existingSessionId,
+    const session = createStreamingSession(domain);
+    session.query = messageContent;
+    session.sessionId = existingSessionId;
+    session.city = currentCity;
+    setStreamingSession(session);
+
+    // Real continuation: reuse the same stream keyed by sessionId. The server
+    // resumes the existing session instead of minting a new one. An expired
+    // session surfaces as an error event (onError), which clears sessionId so the
+    // next send starts fresh.
+    streamingService.startStream(
+      {
         message: messageContent,
+        profileId: profile,
+        sessionId: existingSessionId,
         cityName: currentCity,
-        contextType: domainToContextType(domain),
-      });
-
-      if (!response.ok) {
-        logger.warn("ContinueChat failed, session may be expired. Starting new session.");
-        setSessionId(null);
-        await startNewSession(messageContent, streamId);
-        return;
-      }
-
-      const session = createStreamingSession(domain);
-      session.query = messageContent;
-      session.sessionId = existingSessionId;
-      session.city = currentCity;
-      setStreamingSession(session);
-
-      streamingService.startStream(response, {
+        userLocation: { userLat: userLatitude, userLon: userLongitude },
+      },
+      {
         session,
         onProgress: (updated) => {
           setStreamingSession({ ...updated });
@@ -314,12 +301,8 @@ export function useChat() {
             `Sorry, there was an error: ${error}. Try sending your message again.`,
           );
         },
-      });
-    } catch (error) {
-      logger.error("ContinueChat exception, falling back to new session:", error);
-      setSessionId(null);
-      await startNewSession(messageContent, streamId);
-    }
+      },
+    );
   };
 
   /** Finalize the streaming placeholder into a completed assistant message. */

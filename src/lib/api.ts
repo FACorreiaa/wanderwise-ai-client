@@ -44,16 +44,6 @@ const parseJwt = (token: string) => {
 // Authentication API
 export const authAPI = {
   async login(email: string, password: string) {
-    // Demo mode: Allow hardcoded test user to login without backend
-    if (import.meta.env.DEV && email === "test@email.com" && password === "test12345") {
-      console.log("🎭 Demo mode: Logging in test user without backend authentication");
-      return {
-        access_token: "demo-token-" + Date.now(),
-        refresh_token: "demo-refresh-" + Date.now(),
-        message: "Demo login successful",
-      };
-    }
-
     // Use Connect RPC
     const request = create(LoginRequestSchema, { email, password });
     const response = await authClient.login(request);
@@ -111,17 +101,6 @@ export const authAPI = {
     if (!token) {
       console.log("validateSession: No token, returning invalid");
       return { valid: false };
-    }
-
-    // Demo mode: Validate demo token without backend call
-    if (import.meta.env.DEV && token.startsWith("demo-token-")) {
-      console.log("🎭 Demo mode: Validating demo token without backend call");
-      return {
-        valid: true,
-        user_id: "demo-user",
-        username: "Test User",
-        email: "test@email.com",
-      };
     }
 
     console.log("validateSession: Making Connect RPC call to validate JWT...");
@@ -184,23 +163,6 @@ export const authAPI = {
     const token = getAuthToken();
     if (!token) {
       throw new Error("No authentication token available");
-    }
-
-    // Demo mode: Return hardcoded user profile for demo token
-    if (import.meta.env.DEV && token.startsWith("demo-token-")) {
-      console.log("🎭 Demo mode: Returning hardcoded user profile for demo token");
-      return {
-        id: "demo-user",
-        email: "test@email.com",
-        username: "testuser",
-        firstname: "Test",
-        lastname: "User",
-        display_name: "Test User",
-        is_active: true,
-        role: "user",
-        created_at: "2024-01-01T00:00:00Z",
-        updated_at: "2024-01-01T00:00:00Z",
-      };
     }
 
     const session = await authAPI.validateSession();

@@ -1,17 +1,8 @@
 import { createStore } from "solid-js/store";
-import { createClient } from "@connectrpc/connect";
-import { create } from "@bufbuild/protobuf";
-import {
-  ChatService,
-  ChatRequestSchema,
-} from "@buf/loci_loci-proto.bufbuild_es/loci/chat/chat_pb.js";
-import { transport } from "../connect-transport";
 import { DomainType } from "../api/types";
 import { getProgressForEventType } from "../utils/chatUtils";
 import { parseStreamError } from "../errors";
-
-// Initialize client outside hook to avoid recreation
-const chatClient = createClient(ChatService, transport);
+import { streamChatEvents, type LociStreamEvent } from "../streaming/chatStream";
 
 export interface ChatRPCState {
   isConnected: boolean;
@@ -64,83 +55,80 @@ export function useChatRPC(options: UseChatRPCOptions = {}) {
     });
 
     try {
-      const request = create(ChatRequestSchema, {
-        message: message,
-        cityName: cityName || "",
-        userLocation: userLocation
-          ? {
-              latitude: userLocation.latitude,
-              longitude: userLocation.longitude,
-            }
-          : undefined,
-      });
-
-      const stream = chatClient.streamChat(request);
-
       setState({ currentStep: "Processing request...", progress: 10 });
 
-      for await (const response of stream) {
-        // The backend sends StreamEvent objects directly
-        // We map them to our internal types
+      // Single canonical reader — no bespoke proto/byte parsing here anymore.
+      for await (const event of streamChatEvents({
+        message,
+        cityName,
+        userLocation: userLocation
+          ? { userLat: userLocation.latitude, userLon: userLocation.longitude }
+          : undefined,
+      })) {
+        switch (event.kind) {
+          case "error":
+            throw new Error(event.userMessage);
 
-        // Handle explicit error field in the proto
-        // Handle explicit error field in the proto
-        if (response.error) {
-          const parsed = parseStreamError(response.error);
-          throw new Error(parsed.userMessage);
-        }
+          case "start":
+            handleProgress("start");
+            break;
 
-        const eventType = response.type;
-        const _msgData = response.message; // usually chunk text
+          case "progress":
+            handleProgress(event.stage);
+            break;
 
-        // Decode the data from Uint8Array to JSON object
-        let data: any = null;
-        if (response.data && response.data.length > 0) {
-          try {
-            const decoder = new TextDecoder();
-            const jsonString = decoder.decode(response.data);
-            data = JSON.parse(jsonString);
-          } catch (e) {
-            console.error("Failed to parse event data:", e);
+          case "token":
+          case "partial":
+            // Incremental text; callers that want it can read state as needed.
+            break;
+
+          case "city_data":
+            setState({ streamedData: { general_city_data: event.city } });
+            handleProgress("city_data", { general_city_data: event.city });
+            break;
+
+          case "general_pois":
+          case "hotels":
+          case "restaurants":
+          case "activities": {
+            const data = toStreamData(event);
+            setState({ streamedData: data });
+            handleProgress(event.kind === "general_pois" ? "nearby" : event.kind, data);
+            break;
           }
-        }
 
-        // Update progress based on event type
-        handleProgress(eventType, data);
+          case "itinerary":
+            setState({ streamedData: event.cityResponse });
+            handleProgress("itinerary", event.cityResponse);
+            break;
 
-        // Handle text chunks
-        if (eventType === "chunk" && data?.chunk) {
-          const _chunk = data.chunk;
-          // Append to partial message logic if needed, usually handled by caller or state
-          // Here we might just expose the last chunk or accumulated text?
-          // The Store is good for granular updates.
-        }
+          case "complete": {
+            const hasExistingData =
+              state.streamedData?.points_of_interest?.length > 0 ||
+              state.streamedData?.hotels?.length > 0 ||
+              state.streamedData?.restaurants?.length > 0 ||
+              state.streamedData?.activities?.length > 0;
 
-        // Handle completion
-        if (eventType === "complete") {
-          // Only update streamedData if it contains actual POI data
-          // (don't overwrite POIs from nearby/hotels/etc events with empty session_id data)
-          const hasExistingData =
-            state.streamedData?.points_of_interest?.length > 0 ||
-            state.streamedData?.hotels?.length > 0 ||
-            state.streamedData?.restaurants?.length > 0 ||
-            state.streamedData?.activities?.length > 0;
+            const data = event.result ?? null;
+            setState({
+              isStreaming: false,
+              isConnected: false,
+              progress: 100,
+              currentStep: "Complete!",
+              streamedData: hasExistingData ? state.streamedData : (data ?? state.streamedData),
+            });
+            options.onComplete?.(state.streamedData || data);
 
-          setState({
-            isStreaming: false,
-            isConnected: false,
-            progress: 100,
-            currentStep: "Complete!",
-            // Preserve existing data if complete event only has session_id
-            streamedData: hasExistingData ? state.streamedData : data,
-          });
-          options.onComplete?.(state.streamedData || data);
-
-          // Check for redirect info
-          if (response.navigation) {
-            const _nav = response.navigation;
-            // Assuming navigation struct matches what we need or we parse relevant fields
-            // options.onRedirect?.(...)
+            if (event.navigation && options.onRedirect) {
+              const nav = event.navigation;
+              const q = nav.queryParams || {};
+              options.onRedirect(
+                (q.domain as DomainType) || "general",
+                q.sessionId || event.sessionId || "",
+                q.cityName || "",
+              );
+            }
+            break;
           }
         }
       }
@@ -158,7 +146,27 @@ export function useChatRPC(options: UseChatRPCOptions = {}) {
     }
   };
 
-  const handleProgress = (type: string, data: any) => {
+  // Shape a domain list event into the streamedData object the UI reads.
+  const toStreamData = (
+    event: Extract<
+      LociStreamEvent,
+      { kind: "general_pois" | "hotels" | "restaurants" | "activities" }
+    >,
+  ): any => {
+    const base = { general_city_data: event.city, session_id: event.sessionId };
+    switch (event.kind) {
+      case "general_pois":
+        return { ...base, points_of_interest: event.pois };
+      case "hotels":
+        return { ...base, hotels: event.pois };
+      case "restaurants":
+        return { ...base, restaurants: event.pois };
+      case "activities":
+        return { ...base, activities: event.pois };
+    }
+  };
+
+  const handleProgress = (type: string, data?: any) => {
     // Use shared progress messages from chatUtils
     const progressInfo = getProgressForEventType(type);
 

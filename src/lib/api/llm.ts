@@ -1,11 +1,10 @@
 // LLM and chat queries and mutations
 import { useMutation } from "@tanstack/solid-query";
 import { create } from "@bufbuild/protobuf";
-import { createClient, ConnectError, Code } from "@connectrpc/connect";
+import { createClient } from "@connectrpc/connect";
 import { defaultLLMRateLimiter, RateLimitError, showRateLimitNotification } from "../rate-limiter";
 import {
   ChatService,
-  ChatRequestSchema,
   ChatResponse as ProtoChatResponse,
   ChatSession as ProtoChatSession,
   ContinueChatRequestSchema,
@@ -22,7 +21,7 @@ import {
   POIDetailedInfo as ProtoPOIDetailedInfo,
   RestaurantDetailedInfo as ProtoRestaurantDetailedInfo,
 } from "@buf/loci_loci-proto.bufbuild_es/loci/poi/poi_pb.js";
-import { transport, refreshSession } from "../connect-transport";
+import { transport } from "../connect-transport";
 import type { Timestamp } from "@bufbuild/protobuf/wkt";
 //import { createGraphQLClient, gql } from '@solid-primitives/graphql';
 import type {
@@ -33,7 +32,6 @@ import type {
   AiCityResponse,
   POIDetailedInfo,
   RestaurantDetailedInfo,
-  StreamEvent,
   SessionPerformanceMetrics,
   SessionContentMetrics,
   SessionEngagementMetrics,
@@ -46,34 +44,6 @@ import type {
 export type ChatContextType = "hotels" | "restaurants" | "itineraries" | "general";
 
 const chatClient = createClient(ChatService, transport);
-
-/**
- * Consume a server-streaming RPC with a one-shot auth recovery. The unary
- * token-refresh interceptor can't help streams (their 401 surfaces during
- * iteration, and a retried stream is a new object the caller never reads). If
- * the stream fails with Unauthenticated BEFORE emitting anything, refresh the
- * token once and reopen — the auth interceptor attaches the fresh token to the
- * new call. We only reopen when nothing was emitted yet, to avoid re-running
- * the LLM and duplicating output on a mid-stream expiry.
- */
-async function* streamWithAuthRetry<T>(makeStream: () => AsyncIterable<T>): AsyncIterable<T> {
-  let emitted = false;
-  try {
-    for await (const ev of makeStream()) {
-      emitted = true;
-      yield ev;
-    }
-  } catch (err) {
-    const isAuth = err instanceof ConnectError && err.code === Code.Unauthenticated;
-    if (!emitted && isAuth && (await refreshSession())) {
-      for await (const ev of makeStream()) {
-        yield ev;
-      }
-      return;
-    }
-    throw err;
-  }
-}
 
 const timestampToDate = (timestamp?: Timestamp): Date => {
   if (!timestamp) return new Date(0);
@@ -132,7 +102,7 @@ export const domainToContextType = (domain: ClientDomainType | string): ChatCont
   }
 };
 
-const mapGeneralCityData = (data?: ProtoGeneralCityData): GeneralCityData | undefined => {
+export const mapGeneralCityData = (data?: ProtoGeneralCityData): GeneralCityData | undefined => {
   if (!data) return undefined;
 
   return {
@@ -152,7 +122,7 @@ const mapGeneralCityData = (data?: ProtoGeneralCityData): GeneralCityData | unde
   };
 };
 
-const mapPoi = (poi: ProtoPOIDetailedInfo): POIDetailedInfo => {
+export const mapPoi = (poi: ProtoPOIDetailedInfo): POIDetailedInfo => {
   const placeholderId = poi.id === "00000000-0000-0000-0000-000000000000";
   const safeId =
     !placeholderId && poi.id
@@ -236,7 +206,7 @@ const mapRestaurant = (
     "",
 });
 
-const mapItineraryResponse = (
+export const mapItineraryResponse = (
   response?: ProtoAIItineraryResponse,
 ): AIItineraryResponse | undefined => {
   if (!response) return undefined;
@@ -250,7 +220,7 @@ const mapItineraryResponse = (
   };
 };
 
-const mapAiCityResponse = (response?: ProtoAiCityResponse): AiCityResponse | undefined => {
+export const mapAiCityResponse = (response?: ProtoAiCityResponse): AiCityResponse | undefined => {
   if (!response) return undefined;
 
   const mappedItinerary =
@@ -340,116 +310,6 @@ const normalizeChatResponse = (
   };
 };
 
-const createSseResponse = (events: StreamEvent[]): Response => {
-  const encoder = new TextEncoder();
-  const stream = new ReadableStream({
-    start(controller) {
-      for (const event of events) {
-        controller.enqueue(encoder.encode(`data: ${JSON.stringify(event)}\n\n`));
-      }
-      controller.close();
-    },
-  });
-
-  return new Response(stream, {
-    status: 200,
-    headers: { "Content-Type": "text/event-stream" },
-  });
-};
-
-const buildChatStreamResponse = (response: NormalizedChatResponse): Response => {
-  const events: StreamEvent[] = [];
-  const sessionCity = response.updatedItinerary?.general_city_data?.city;
-
-  events.push({
-    type: "start",
-    data: {
-      session_id: response.sessionId,
-      domain: response.domain,
-      city: sessionCity,
-    },
-  });
-
-  if (response.domain === "accommodation") {
-    // Check consolidated path first: itineraryResponse.pointsOfInterest
-    const _total_pois = response.updatedItinerary?.points_of_interest?.length || 0;
-    const _total_hotels = response.updatedItinerary?.hotels?.length || 0;
-    const _total_restaurants = response.updatedItinerary?.restaurants?.length || 0;
-    const hotels = response.updatedItinerary?.hotels?.length
-      ? response.updatedItinerary.hotels
-      : response.updatedItinerary?.itinerary_response?.points_of_interest?.length
-        ? response.updatedItinerary.itinerary_response.points_of_interest
-        : response.updatedItinerary?.points_of_interest;
-    if (hotels?.length) {
-      console.log("🏨 Building hotels event with", hotels.length, "hotels");
-      events.push({
-        type: "hotels",
-        data: hotels,
-      });
-    } else {
-      console.warn("⚠️ No hotels found in response.updatedItinerary:", response.updatedItinerary);
-    }
-  } else if (response.domain === "dining") {
-    // Check consolidated path first: itineraryResponse.pointsOfInterest
-    const restaurants = response.updatedItinerary?.restaurants?.length
-      ? response.updatedItinerary.restaurants
-      : response.updatedItinerary?.itinerary_response?.points_of_interest?.length
-        ? response.updatedItinerary.itinerary_response.points_of_interest
-        : response.updatedItinerary?.itinerary_response?.restaurants?.length
-          ? response.updatedItinerary.itinerary_response.restaurants
-          : response.updatedItinerary?.points_of_interest;
-
-    if (restaurants?.length) {
-      console.log("🍽️ Building restaurants event with", restaurants.length, "restaurants");
-      events.push({
-        type: "restaurants",
-        data: restaurants,
-      });
-    } else {
-      console.warn(
-        "⚠️ No restaurants found in response.updatedItinerary:",
-        response.updatedItinerary,
-      );
-    }
-  } else if (response.domain === "activities") {
-    // Check consolidated path first: itineraryResponse.pointsOfInterest
-    const activities = response.updatedItinerary?.itinerary_response?.points_of_interest?.length
-      ? response.updatedItinerary.itinerary_response.points_of_interest
-      : response.updatedItinerary?.points_of_interest;
-    if (activities?.length) {
-      events.push({
-        type: "activities",
-        data: activities,
-      });
-    }
-  } else {
-    if (response.updatedItinerary?.general_city_data) {
-      events.push({
-        type: "city_data",
-        data: response.updatedItinerary.general_city_data,
-      });
-    }
-
-    if (response.updatedItinerary?.points_of_interest?.length) {
-      events.push({
-        type: "general_pois",
-        data: response.updatedItinerary.points_of_interest,
-      });
-    }
-
-    if (response.updatedItinerary?.itinerary_response) {
-      events.push({
-        type: "itinerary",
-        data: response.updatedItinerary.itinerary_response,
-      });
-    }
-  }
-
-  events.push({ type: "complete" });
-
-  return createSseResponse(events);
-};
-
 const enforceRateLimit = async (endpoint: string) => {
   const rateLimitCheck = await defaultLLMRateLimiter.checkRateLimit(endpoint);
   if (!rateLimitCheck.allowed) {
@@ -500,49 +360,6 @@ export const StartChat = async (request: StartChatRequest): Promise<NormalizedCh
   return normalizeChatResponse(response, request.contextType);
 };
 
-/**
- * REAL streaming using Server Streaming RPC
- * This returns a ReadableStream that receives events as they happen on the server
- */
-export const StartChatStreamReal = async (
-  request: StartChatRequest,
-): Promise<ReadableStream<StreamEvent>> => {
-  const endpoint = "loci.chat.ChatService/StreamChat";
-  await enforceRateLimit(endpoint);
-
-  // Use the real streamChat RPC method. Wrapped so a token expiry at stream
-  // open refreshes + reopens once instead of dropping the chat.
-  const makeStream = () =>
-    chatClient.streamChat(
-      create(ChatRequestSchema, {
-        message: request.initialMessage || "",
-        cityName: request.cityName || "",
-      }),
-    );
-
-  // Convert AsyncIterable to ReadableStream for easier consumption
-  const readableStream = new ReadableStream({
-    async start(controller) {
-      try {
-        for await (const event of streamWithAuthRetry(makeStream)) {
-          controller.enqueue(event);
-        }
-        controller.close();
-      } catch (error) {
-        controller.error(error);
-      }
-    },
-  });
-
-  return readableStream;
-};
-
-// Keep the old fake streaming for backward compatibility
-export const StartChatStream = async (request: StartChatRequest): Promise<Response> => {
-  const normalized = await StartChat(request);
-  return buildChatStreamResponse(normalized);
-};
-
 export const ContinueChat = async (
   request: ContinueChatRequest,
 ): Promise<NormalizedChatResponse> => {
@@ -561,21 +378,6 @@ export const ContinueChat = async (
   return normalizeChatResponse(response, request.contextType);
 };
 
-/**
- * REAL streaming for ContinueChat using Server Streaming RPC
- */
-export const ContinueChatStreamReal = async (request: ContinueChatRequest): Promise<Response> => {
-  // Use unary ContinueChat and adapt to SSE so existing consumers keep working
-  const normalized = await ContinueChat(request);
-  return buildChatStreamResponse(normalized);
-};
-
-// Updated ContinueChatStream to use REAL ContinueChat RPC (no fake streaming)
-export const ContinueChatStream = async (request: ContinueChatRequest): Promise<Response> => {
-  console.log("🚀 Using ContinueChat (unary) wrapped as SSE");
-  return ContinueChatStreamReal(request);
-};
-
 // ==================
 // MUTATION HOOKS FOR ENHANCED SERVICES
 // ==================
@@ -590,148 +392,6 @@ export const useContinueChatMutation = () => {
   return useMutation(() => ({
     mutationFn: ContinueChat,
   }));
-};
-
-// ==================
-// UNIFIED STREAMING CHAT
-// ==================
-
-export interface UnifiedChatRequest {
-  profileId: string;
-  message: string;
-  cityName?: string;
-  contextType?: ChatContextType;
-  userLocation?: {
-    userLat: number;
-    userLon: number;
-  };
-}
-
-export interface UnifiedChatStreamRequest extends UnifiedChatRequest {}
-
-// Unified chat service - sends message and gets streaming response
-
-/**
- * Convert Proto StreamEvent to SSE format
- * This bridges the gap between real RPC streaming and SSE expected by useChatSession
- */
-const sseTextDecoder = new TextDecoder();
-
-// Normalize payloads that might arrive as Uint8Array or numeric-key objects
-const normalizeStreamPayload = (payload: any): any => {
-  if (payload === null || payload === undefined) return payload;
-
-  // Respect proto helper if present
-  if (typeof payload === "object" && typeof (payload as any).toJson === "function") {
-    return (payload as any).toJson();
-  }
-
-  const tryParseString = (input: string) => {
-    const trimmed = input.trim();
-    try {
-      return JSON.parse(trimmed);
-    } catch {
-      return trimmed;
-    }
-  };
-
-  // Detect numeric-key object that represents bytes (e.g., {"0":123,...})
-  const maybeNumericByteObject = (input: any) => {
-    if (typeof input !== "object" || Array.isArray(input)) return null;
-    const keys = Object.keys(input);
-    if (keys.length === 0) return null;
-    if (!keys.every((k) => /^\d+$/.test(k))) return null;
-    const bytes = new Uint8Array(keys.sort((a, b) => Number(a) - Number(b)).map((k) => input[k]));
-    return bytes;
-  };
-
-  if (payload instanceof Uint8Array) {
-    const decoded = sseTextDecoder.decode(payload);
-    return tryParseString(decoded);
-  }
-
-  const byteObj = maybeNumericByteObject(payload);
-  if (byteObj) {
-    const decoded = sseTextDecoder.decode(byteObj);
-    return tryParseString(decoded);
-  }
-
-  if (typeof payload === "string") {
-    return tryParseString(payload);
-  }
-
-  return payload;
-};
-
-const convertProtoStreamToSSE = async (protoStream: ReadableStream<any>): Promise<Response> => {
-  const stream = new ReadableStream({
-    async start(controller) {
-      const reader = protoStream.getReader();
-      const encoder = new TextEncoder();
-
-      try {
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-
-          // Convert proto event to SSE format
-          const normalizedData = normalizeStreamPayload(value.data);
-          const normalizedMessage = normalizeStreamPayload(value.message);
-          const sseData = {
-            Type: value.type,
-            type: value.type,
-            Data: normalizedData,
-            data: normalizedData,
-            Message: normalizedMessage,
-            message: normalizedMessage,
-            Error: value.error,
-            error: value.error,
-            Navigation: value.navigation?.toJson ? value.navigation.toJson() : value.navigation,
-            navigation: value.navigation?.toJson ? value.navigation.toJson() : value.navigation,
-          };
-
-          // Send as SSE
-          const sseMessage = `data: ${JSON.stringify(sseData)}\n\n`;
-          controller.enqueue(encoder.encode(sseMessage));
-        }
-
-        controller.close();
-      } catch (error) {
-        console.error("Error in Proto to SSE conversion:", error);
-        controller.error(error);
-      } finally {
-        reader.releaseLock();
-      }
-    },
-  });
-
-  return new Response(stream, {
-    headers: {
-      "Content-Type": "text/event-stream",
-      "Cache-Control": "no-cache",
-      Connection: "keep-alive",
-    },
-  });
-};
-
-// Unified chat streaming service - NOW WITH REAL STREAMING!
-export const sendUnifiedChatMessageStream = async (
-  request: UnifiedChatStreamRequest,
-): Promise<Response> => {
-  const contextType = request.contextType || "general";
-
-  console.log("🚀 Using REAL server streaming (not fake!)");
-
-  // Use real streaming RPC
-  const protoStream = await StartChatStreamReal({
-    profileId: request.profileId,
-    cityName: request.cityName,
-    contextType,
-    initialMessage: request.message,
-  });
-
-  // Convert proto stream to SSE format
-  return convertProtoStreamToSSE(protoStream);
 };
 
 // GraphQL alternative to streaming service

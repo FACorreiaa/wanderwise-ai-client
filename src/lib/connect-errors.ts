@@ -2,6 +2,7 @@
 // consistent, branchable error states instead of raw failures.
 // (errors.ts handles streaming/string errors; this handles typed RPC errors.)
 import { ConnectError, Code } from "@connectrpc/connect";
+import { classifyEntitlementError } from "./entitlement-error";
 
 export interface FriendlyError {
   code: Code | "unknown";
@@ -12,6 +13,16 @@ export interface FriendlyError {
 }
 
 export function friendlyError(err: unknown): FriendlyError {
+  const entitlement = classifyEntitlementError(err);
+  if (entitlement) {
+    return {
+      code: Code.PermissionDenied,
+      title: "Upgrade to continue",
+      message: entitlement.userMessage,
+      needsAuth: false,
+    };
+  }
+
   const ce = ConnectError.from(err);
   switch (ce.code) {
     case Code.Unauthenticated:

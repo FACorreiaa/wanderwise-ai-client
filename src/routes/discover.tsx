@@ -17,17 +17,26 @@ import { useDiscoverPageData, fetchRecentDiscoveries } from "~/lib/api/discover"
 import type { TrendingDiscovery, POI, DomainType, ChatSession } from "~/lib/api/types";
 import { useAuth } from "~/contexts/AuthContext";
 import RegisterBanner from "~/components/ui/RegisterBanner";
-import { sendUnifiedChatMessageStream } from "~/lib/chat-stream";
+import { streamChatEvents } from "~/lib/streaming/chatStream";
 import FavoriteButton from "~/components/shared/FavoriteButton";
 import { Button } from "~/ui/button";
 import { useSelection, type SelectionItem } from "~/lib/hooks/useSelection";
 import { SelectionToolbar } from "~/components/ui/SelectionToolbar";
 import { exportPOIsToPDF } from "~/lib/utils/pdf-export";
+import EditTripCTA from "~/components/trip/EditTripCTA";
+import AdvancedFiltersBar, {
+  advancedFilterPromptSuffix,
+  type AdvancedFilterId,
+} from "~/components/filters/AdvancedFiltersBar";
+import { useUserSubscription } from "~/lib/api/billing";
+import { isProPlan } from "~/lib/subscription";
 
 export default function DiscoverPage() {
   const { isAuthenticated } = useAuth();
   const [searchParams] = useSearchParams();
   const { userLocation, requestLocation } = useUserLocation();
+  const subscriptionQuery = useUserSubscription(() => !!isAuthenticated());
+  const isPro = () => isProPlan(subscriptionQuery.data?.plan);
   const localResultCache = new Map<string, POI[]>();
   const [searchQuery, setSearchQuery] = createSignal("");
   const [searchLocation, setSearchLocation] = createSignal("");
@@ -42,6 +51,9 @@ export default function DiscoverPage() {
   const [recentPage, setRecentPage] = createSignal(1);
   const [recentHasMore, setRecentHasMore] = createSignal(true);
   const [recentLoadingMore, setRecentLoadingMore] = createSignal(false);
+  const [persistedTripId, setPersistedTripId] = createSignal<string | null>(null);
+  const [persistedTripCity, setPersistedTripCity] = createSignal<string>("");
+  const [advancedFilters, setAdvancedFilters] = createSignal<AdvancedFilterId[]>([]);
 
   // Selection state for search results
   const selection = useSelection<SelectionItem>();
@@ -90,101 +102,12 @@ export default function DiscoverPage() {
     created_at: poi.created_at,
   });
 
-  const byteDecoder = new TextDecoder();
-
-  const parseStreamData = (data: any) => {
-    if (!data) return null;
-
-    const tryJson = (input: string) => {
-      try {
-        return JSON.parse(input);
-      } catch {
-        return input;
-      }
-    };
-
-    // Numeric-key object that actually encodes bytes (e.g., {"0":123,...})
-    if (typeof data === "object" && !Array.isArray(data)) {
-      const keys = Object.keys(data);
-      const numericKeys = keys.length > 0 && keys.every((k) => /^\d+$/.test(k));
-      if (numericKeys) {
-        const bytes = new Uint8Array(
-          keys.sort((a, b) => Number(a) - Number(b)).map((k) => (data as any)[k]),
-        );
-        const decoded = byteDecoder.decode(bytes);
-        const parsed = tryJson(decoded);
-        return parsed;
-      }
-    }
-
-    if (typeof data === "string") {
-      const trimmed = data.trim();
-      // Detect base64-ish payloads (length multiple of 4 and only base64 chars)
-      const base64Regex = /^[A-Za-z0-9+/=]+$/;
-      if (base64Regex.test(trimmed)) {
-        try {
-          const decoded = atob(trimmed);
-          return tryJson(decoded);
-        } catch {
-          return tryJson(trimmed);
-        }
-      }
-
-      // Try to pull JSON object embedded inside a string (e.g., ```json ... ``` or raw)
-      const jsonMatch = trimmed.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
-        return tryJson(jsonMatch[0]);
-      }
-      return tryJson(trimmed);
-    }
-    if (typeof data === "object" && typeof (data as any).toJson === "function") {
-      return (data as any).toJson();
-    }
-    return data;
-  };
-
-  const extractPois = (payload: any): POI[] => {
-    if (!payload) return [];
-
-    // If payload is a JSON string, try parsing again
-    if (typeof payload === "string") {
-      const parsed = parseStreamData(payload);
-      return extractPois(parsed);
-    }
-
-    if (Array.isArray(payload)) {
-      return payload.map(normalizePoi);
-    }
-
-    if (typeof payload === "object") {
-      const candidateArrays = [
-        payload.hotels,
-        payload.restaurants,
-        payload.activities,
-        (payload as any).general_pois || (payload as any).generalPois,
-        payload.points_of_interest || payload.pointsOfInterest,
-        payload.poi_detailed_info || payload.poiDetailedInfo,
-        payload.items,
-        payload.results,
-        payload.accommodation_response?.hotels,
-        payload.itinerary_response?.points_of_interest,
-        payload.points_of_interest?.points_of_interest,
-      ];
-
-      for (const arr of candidateArrays) {
-        if (Array.isArray(arr)) {
-          return arr.map(normalizePoi);
-        }
-      }
-    }
-
-    return [];
-  };
-
   const handleSearch = async (e?: Event) => {
     e?.preventDefault();
     if (!searchQuery().trim()) return;
-    const cacheKey = `${streamDomain()}:${searchQuery().trim().toLowerCase()}:${searchLocation().trim().toLowerCase()}`;
+    const filterSuffix = isPro() ? advancedFilterPromptSuffix(advancedFilters()) : "";
+    const message = `${searchQuery().trim()}${filterSuffix}`;
+    const cacheKey = `${streamDomain()}:${message.toLowerCase()}:${searchLocation().trim().toLowerCase()}`;
 
     if (localResultCache.has(cacheKey)) {
       setSearchResults(localResultCache.get(cacheKey) || []);
@@ -204,178 +127,126 @@ export default function DiscoverPage() {
     setIsSearching(true);
     setProgressMessage("Starting discover stream...");
     setSearchResults([]);
+    setPersistedTripId(null);
+    setPersistedTripCity("");
 
     try {
       const loc = userLocation();
-      const response = await sendUnifiedChatMessageStream({
-        profileId: "",
-        cityName: searchLocation().trim() || undefined,
-        message: searchQuery().trim(),
-        contextType: "general",
-        // Pass location when available so the server can serve the "nearby"
-        // domain (it requires user coordinates).
-        userLocation: loc ? { userLat: loc.latitude, userLon: loc.longitude } : undefined,
-      });
-
-      const reader = response.body?.getReader();
-      if (!reader) {
-        throw new Error("No response body from stream");
-      }
-
-      const decoder = new TextDecoder();
-      let buffer = "";
-
-      const processBuffer = () => {
-        // Log raw buffer to debug streaming format issues
-        console.info("[discover stream][buffer]", buffer);
-
-        const lines = buffer.split(/\r?\n/);
-        buffer = lines.pop() || "";
-
-        for (const rawLine of lines) {
-          // eslint-disable-next-line no-control-regex
-          const cleanedLine = rawLine.replace(/\u0000/g, "").trim();
-          console.info("[discover stream][line]", cleanedLine);
-          if (!cleanedLine.startsWith("data:")) continue;
-          const payload = cleanedLine.slice(cleanedLine.indexOf(":") + 1).trimStart();
-          if (!payload) continue;
-          try {
-            // Surface every raw SSE line for debugging visibility
-            console.log("[discover stream raw line]", cleanedLine);
-            const event = JSON.parse(payload);
-            // Debug log for raw streaming content
-            console.log("[discover stream]", { raw: payload, event });
-            const parsedData = parseStreamData(event.data);
-            // Debug: surface raw stream content while we validate parsing
-            console.log("[discover stream]", { event, parsedData });
-
-            switch (event.type) {
-              case "start":
-                setProgressMessage("Detecting what you need...");
-                if (parsedData?.domain) setStreamDomain(parsedData.domain as DomainType);
-                break;
-              case "chunk":
-                setProgressMessage(typeof parsedData === "string" ? parsedData : "Thinking...");
-                {
-                  // Some streams send partial strings inside `chunk`; ignore until we have objects/arrays.
-                  const pois = extractPois(parsedData);
-                  if (pois.length > 0) {
-                    setSearchResults(pois);
-                    localResultCache.set(cacheKey, pois);
-                    setProgressMessage("Found places you might like");
-                  }
-                }
-                break;
-              case "city_data":
-                setProgressMessage("Mapping the city context...");
-                break;
-              case "general_pois":
-              case "restaurants":
-              case "hotels":
-              case "activities":
-              case "nearby": {
-                const list = extractPois(parsedData);
-                setSearchResults(list);
-                setProgressMessage(
-                  event.type === "nearby" ? "Found places near you" : "Found places you might like",
-                );
-                break;
-              }
-              case "itinerary":
-                setProgressMessage("Drafting an itinerary...");
-                {
-                  const pois = extractPois(parsedData);
-                  if (pois.length > 0) {
-                    setSearchResults(pois);
-                  }
-                }
-                break;
-              case "complete":
-                if (event.navigation?.routeType) {
-                  setStreamDomain(event.navigation.routeType as DomainType);
-                }
-                {
-                  const sessionId = event.navigation?.queryParams?.sessionId || crypto.randomUUID();
-                  const cityName =
-                    event.navigation?.queryParams?.cityName ||
-                    searchLocation().trim() ||
-                    searchQuery().trim() ||
-                    "Unknown City";
-                  const newSession: ChatSession = {
-                    id: sessionId,
-                    profile_id: "",
-                    created_at: new Date().toISOString(),
-                    updated_at: new Date().toISOString(),
-                    city_name: cityName,
-                    conversation_history: [],
-                  } as any;
-                  setRecentSessions((prev) => {
-                    const map = new Map(prev.map((s) => [s.id, s]));
-                    map.set(newSession.id, newSession);
-                    return Array.from(map.values()).sort((a, b) =>
-                      (b.created_at || "").localeCompare(a.created_at || ""),
-                    );
-                  });
-                  setRecentHasMore(true);
-                  setLocalTrending((prev) => {
-                    const base =
-                      prev.length > 0 ? [...prev] : [...(discoverData.data?.trending || [])];
-                    const idx = base.findIndex(
-                      (t) => t.city_name.toLowerCase() === cityName.toLowerCase(),
-                    );
-                    if (idx >= 0) {
-                      base[idx] = { ...base[idx], search_count: (base[idx].search_count || 0) + 1 };
-                    } else {
-                      base.unshift({
-                        city_name: cityName,
-                        search_count: 1,
-                        emoji: "🗺️",
-                        category: "",
-                        first_message: "",
-                      } as TrendingDiscovery);
-                    }
-                    return base;
-                  });
-                }
-                setIsSearching(false);
-                setProgressMessage(null);
-                break;
-              case "error": {
-                const rawError = event.error || "Something went wrong";
-                let friendlyError = rawError;
-
-                // Check for common backend errors (Quota, Rate Limit, etc.)
-                if (
-                  rawError.includes("Quota exceeded") ||
-                  rawError.includes("RESOURCE_EXHAUSTED") ||
-                  rawError.includes("429")
-                ) {
-                  friendlyError =
-                    "Our AI travel guide is currently experiencing high verification traffic. Please try again in a few moments.";
-                }
-
-                setSearchError(friendlyError);
-                setIsSearching(false);
-                setProgressMessage(null);
-                break;
-              }
-              default:
-                break;
+      // Single canonical reader — typed events, no SSE/byte parsing.
+      for await (const event of streamChatEvents(
+        {
+          profileId: "",
+          cityName: searchLocation().trim() || undefined,
+          message,
+          // Pass location when available so the server can serve the "nearby"
+          // domain (it requires user coordinates).
+          userLocation: loc ? { userLat: loc.latitude, userLon: loc.longitude } : undefined,
+        },
+        controller.signal,
+      )) {
+        switch (event.kind) {
+          case "start":
+            setProgressMessage("Detecting what you need...");
+            if (event.domain) setStreamDomain(event.domain as DomainType);
+            break;
+          case "progress":
+          case "token":
+          case "partial":
+            setProgressMessage("Thinking...");
+            break;
+          case "city_data":
+            setProgressMessage("Mapping the city context...");
+            break;
+          case "general_pois":
+          case "restaurants":
+          case "hotels":
+          case "activities": {
+            const list = event.pois.map(normalizePoi);
+            setSearchResults(list);
+            localResultCache.set(cacheKey, list);
+            setProgressMessage("Found places you might like");
+            break;
+          }
+          case "itinerary": {
+            const pois = (event.cityResponse.points_of_interest || []).map(normalizePoi);
+            if (pois.length > 0) setSearchResults(pois);
+            setProgressMessage("Drafting an itinerary...");
+            break;
+          }
+          case "complete": {
+            if (event.navigation?.routeType) {
+              setStreamDomain(event.navigation.routeType as DomainType);
             }
-          } catch (err) {
-            console.error("Failed to parse discover stream event", err, payload);
+            if (event.tripId) {
+              setPersistedTripId(event.tripId);
+              setPersistedTripCity(
+                event.navigation?.queryParams?.cityName ||
+                  searchLocation().trim() ||
+                  searchQuery().trim() ||
+                  "",
+              );
+            }
+            const sessionId =
+              event.navigation?.queryParams?.sessionId || event.sessionId || crypto.randomUUID();
+            const cityName =
+              event.navigation?.queryParams?.cityName ||
+              searchLocation().trim() ||
+              searchQuery().trim() ||
+              "Unknown City";
+            const newSession: ChatSession = {
+              id: sessionId,
+              profile_id: "",
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+              city_name: cityName,
+              conversation_history: [],
+            } as any;
+            setRecentSessions((prev) => {
+              const map = new Map(prev.map((s) => [s.id, s]));
+              map.set(newSession.id, newSession);
+              return Array.from(map.values()).sort((a, b) =>
+                (b.created_at || "").localeCompare(a.created_at || ""),
+              );
+            });
+            setRecentHasMore(true);
+            setLocalTrending((prev) => {
+              const base = prev.length > 0 ? [...prev] : [...(discoverData.data?.trending || [])];
+              const idx = base.findIndex(
+                (t) => t.city_name.toLowerCase() === cityName.toLowerCase(),
+              );
+              if (idx >= 0) {
+                base[idx] = { ...base[idx], search_count: (base[idx].search_count || 0) + 1 };
+              } else {
+                base.unshift({
+                  city_name: cityName,
+                  search_count: 1,
+                  emoji: "🗺️",
+                  category: "",
+                  first_message: "",
+                } as TrendingDiscovery);
+              }
+              return base;
+            });
+            setIsSearching(false);
+            setProgressMessage(null);
+            break;
+          }
+          case "error": {
+            const rawError = event.userMessage || "Something went wrong";
+            const friendlyError =
+              event.retryAfterMs || /quota|high traffic|resource_exhausted|429/i.test(rawError)
+                ? "Our AI travel guide is currently experiencing high traffic. Please try again in a few moments."
+                : rawError;
+            setSearchError(friendlyError);
+            setIsSearching(false);
+            setProgressMessage(null);
+            break;
           }
         }
-      };
-
-      while (!controller.signal.aborted) {
-        const { value, done } = await reader.read();
-        buffer += decoder.decode(value || new Uint8Array(), { stream: !done });
-        processBuffer();
-        if (done) break;
       }
-      // Flush any remaining buffered data
-      processBuffer();
+      /*\u0000/g, "").trim();
+      legacy SSE parser removed — see git history
+      */
     } catch (err: any) {
       console.error("Discover search failed", err);
       if (err?.name !== "AbortError") {
@@ -592,6 +463,13 @@ export default function DiscoverPage() {
                     </div>
                   </div>
                 </form>
+                <div class="mt-4">
+                  <AdvancedFiltersBar
+                    isPro={isPro()}
+                    active={advancedFilters()}
+                    onChange={setAdvancedFilters}
+                  />
+                </div>
                 <Show when={progressMessage()}>
                   <p class="mt-3 text-sm text-primary font-medium">{progressMessage()}</p>
                 </Show>
@@ -620,6 +498,7 @@ export default function DiscoverPage() {
               <Show when={searchResults().length > 0}>
                 <div class="text-xs text-primary mb-3">Mode: {streamDomain()}</div>
               </Show>
+              <EditTripCTA tripId={persistedTripId()} cityName={persistedTripCity()} />
               <Show when={searchError()}>
                 <p class="text-sm text-destructive mb-3">{searchError()}</p>
               </Show>

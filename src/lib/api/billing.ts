@@ -10,8 +10,10 @@ import type { Timestamp } from "@bufbuild/protobuf/wkt";
 import { transport } from "../connect-transport";
 
 // Types
+// plan is the raw backend value: free | premium_monthly | premium_annual
+// (see isProPlan in ~/lib/subscription).
 export interface SubscriptionData {
-  plan: "free" | "paid" | "premium";
+  plan: string;
   status: string;
   currentPeriodEnd?: string;
   cancelAtPeriodEnd?: boolean;
@@ -53,13 +55,13 @@ function mapSubscription(
   usage?: SubscriptionData["usage"],
 ): SubscriptionData {
   return {
-    plan: (subscription?.planId || "free") as SubscriptionData["plan"],
+    plan: subscription?.planId || "free",
     status: subscription?.status || "active",
     currentPeriodEnd: timestampToISOString(subscription?.currentPeriodEnd),
     cancelAtPeriodEnd: subscription?.cancelAtPeriodEnd,
     usage: usage || {
       requestsToday: 0,
-      requestsLimit: 5,
+      requestsLimit: 10,
     },
   };
 }
@@ -88,17 +90,24 @@ function mapInvoice(invoice: PaymentInvoice): Invoice {
 }
 
 // Queries
-export function useUserSubscription() {
+/** Pass `getEnabled` so Solid Query re-evaluates when auth changes. */
+export function useUserSubscription(getEnabled?: () => boolean) {
   return useQuery(() => ({
     queryKey: ["user-subscription"],
+    enabled: getEnabled ? getEnabled() : true,
     queryFn: async (): Promise<SubscriptionData> => {
       const response = await paymentClient.getSubscription({});
+      // Server sends -1 for Pro "unlimited" fair-use (hidden cap). Surface a large number for UI.
+      const rawLimit = response.usage?.requestsLimit;
+      const requestsLimit =
+        rawLimit === undefined || rawLimit === null ? 10 : rawLimit < 0 ? 9999 : rawLimit;
       return mapSubscription(response.subscription, {
         requestsToday: response.usage?.requestsToday || 0,
-        requestsLimit: response.usage?.requestsLimit || 5,
+        requestsLimit,
       });
     },
     staleTime: 60000, // 1 minute
+    retry: false,
   }));
 }
 
