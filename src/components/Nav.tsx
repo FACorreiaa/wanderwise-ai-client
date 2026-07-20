@@ -24,6 +24,7 @@ import { ImageRoot, ImageFallback, Image } from "@/ui/image";
 import { useAuth } from "~/contexts/AuthContext";
 import PWAInstall from "~/components/PWAInstall";
 import ThemeSelector from "~/components/ThemeSelector";
+import EntitlementsBadge from "~/components/EntitlementsBadge";
 import { handleLinkPreload } from "~/lib/preload";
 
 // Public navigation items (for non-authenticated users)
@@ -172,6 +173,7 @@ export default function Nav() {
                     );
                   }}
                 </For>
+                <EntitlementsBadge />
               </div>
             </Show>
           </Show>
