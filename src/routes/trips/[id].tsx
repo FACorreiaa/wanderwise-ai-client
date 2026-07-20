@@ -1,4 +1,4 @@
-import { createSignal, For, Show } from "solid-js";
+import { createSignal, For, Show, createEffect } from "solid-js";
 import { useParams } from "@solidjs/router";
 import {
   useTrip,
@@ -17,6 +17,7 @@ import { useUserSubscription } from "~/lib/api/billing";
 import { isProPlan } from "~/lib/subscription";
 import TripExportMenu from "~/components/trip/TripExportMenu";
 import WhyThisStop from "~/components/poi/WhyThisStop";
+import { cacheTripOffline } from "~/lib/trip-offline-cache";
 
 const minutesToHHMM = (m?: number) => {
   if (m == null) return "";
@@ -55,6 +56,11 @@ export default function TripEditor() {
 
   const trip = () => tripQuery.data as Trip | undefined;
   const version = () => trip()?.version ?? 0n;
+
+  createEffect(() => {
+    const t = trip();
+    if (t?.id) cacheTripOffline(t);
+  });
 
   const onMutationError = (err: unknown) => {
     const msg = err instanceof Error ? err.message : String(err);
@@ -132,7 +138,12 @@ export default function TripEditor() {
                 </p>
               </div>
               <div class="flex flex-wrap items-center gap-2">
-                <TripExportMenu tripId={params.id!} dayCount={t.days.length} isPro={isPro()} />
+                <TripExportMenu
+                  tripId={params.id!}
+                  dayCount={t.days.length}
+                  isPro={isPro()}
+                  trip={t}
+                />
                 <button
                   class="rounded-md bg-primary px-3 py-1.5 text-sm text-primary-foreground hover:opacity-90"
                   onClick={doShare}

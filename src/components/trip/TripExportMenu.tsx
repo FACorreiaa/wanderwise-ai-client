@@ -1,21 +1,24 @@
 import { createSignal, Show } from "solid-js";
 import { A } from "@solidjs/router";
-import { CalendarPlus, Crown, Download, Lock } from "lucide-solid";
-import { exportTripICS, exportTripPDF } from "~/lib/api/trips";
+import { CalendarPlus, Crown, Download, FileText, Lock } from "lucide-solid";
+import { exportTripICS, exportTripPDF, type Trip } from "~/lib/api/trips";
+import { downloadTripMarkdown } from "~/lib/trip-markdown";
 import { showUpgradePrompt } from "~/lib/upgrade-prompt";
 
 export interface TripExportMenuProps {
   tripId: string;
   dayCount: number;
   isPro: boolean;
+  /** Full trip — required for client-side Markdown export. */
+  trip?: Trip;
 }
 
 /**
  * ICS always available. Full multi-day PDF is Pro; free users get Day-1 tease
- * via upgrade prompt when dayCount > 1.
+ * via upgrade prompt when dayCount > 1. Markdown is Pro-only (PRICING.md).
  */
 export default function TripExportMenu(props: TripExportMenuProps) {
-  const [busy, setBusy] = createSignal<"ics" | "pdf" | null>(null);
+  const [busy, setBusy] = createSignal<"ics" | "pdf" | "md" | null>(null);
   const [toast, setToast] = createSignal<string | null>(null);
 
   const flash = (msg: string) => {
@@ -60,6 +63,26 @@ export default function TripExportMenu(props: TripExportMenuProps) {
     }
   };
 
+  const handleMarkdown = () => {
+    if (!props.isPro) {
+      showUpgradePrompt("entitlement", "Markdown itinerary export is included with Pro.");
+      return;
+    }
+    if (!props.trip) {
+      flash("Trip still loading — try again in a moment.");
+      return;
+    }
+    setBusy("md");
+    try {
+      downloadTripMarkdown(props.trip);
+      flash("Markdown downloaded.");
+    } catch (e) {
+      flash(e instanceof Error ? e.message : "Markdown export failed");
+    } finally {
+      setBusy(null);
+    }
+  };
+
   return (
     <div class="relative flex flex-wrap items-center gap-2">
       <button
@@ -82,6 +105,21 @@ export default function TripExportMenu(props: TripExportMenuProps) {
         </Show>
         {busy() === "pdf" ? "…" : "PDF"}
         <Show when={!props.isPro && props.dayCount > 1}>
+          <Crown class="h-3.5 w-3.5 text-amber-500" />
+        </Show>
+      </button>
+      <button
+        type="button"
+        class="inline-flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-sm hover:bg-accent disabled:opacity-50"
+        disabled={busy() !== null}
+        onClick={handleMarkdown}
+        title={props.isPro ? "Download Markdown" : "Pro: Markdown export"}
+      >
+        <Show when={props.isPro} fallback={<Lock class="h-4 w-4" />}>
+          <FileText class="h-4 w-4" />
+        </Show>
+        {busy() === "md" ? "…" : ".md"}
+        <Show when={!props.isPro}>
           <Crown class="h-3.5 w-3.5 text-amber-500" />
         </Show>
       </button>
