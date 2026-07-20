@@ -262,15 +262,31 @@ export const exportTripICS = async (tripId: string) => exportTrip(tripId, Export
 /** Export trip as PDF (Pro-gated on server for multi-day; client soft-gates UX). */
 export const exportTripPDF = async (tripId: string) => exportTrip(tripId, ExportFormat.PDF);
 
+/** Export trip as Markdown (Pro-only on server). */
+export const exportTripMarkdown = async (tripId: string) =>
+  exportTrip(tripId, ExportFormat.MARKDOWN);
+
 async function exportTrip(tripId: string, format: ExportFormat) {
   const res = await tripClient.exportTrip(create(ExportTripRequestSchema, { tripId, format }));
   const blob = new Blob([res.data as unknown as BlobPart], {
-    type: res.contentType || (format === ExportFormat.PDF ? "application/pdf" : "text/calendar"),
+    type:
+      res.contentType ||
+      (format === ExportFormat.PDF
+        ? "application/pdf"
+        : format === ExportFormat.MARKDOWN
+          ? "text/markdown;charset=utf-8"
+          : "text/calendar"),
   });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = res.filename || (format === ExportFormat.PDF ? "trip.pdf" : "trip.ics");
+  a.download =
+    res.filename ||
+    (format === ExportFormat.PDF
+      ? "trip.pdf"
+      : format === ExportFormat.MARKDOWN
+        ? "trip.md"
+        : "trip.ics");
   document.body.appendChild(a);
   a.click();
   a.remove();

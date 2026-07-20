@@ -1,9 +1,10 @@
 import { createSignal, Show } from "solid-js";
 import { A } from "@solidjs/router";
 import { CalendarPlus, Crown, Download, FileText, Lock } from "lucide-solid";
-import { exportTripICS, exportTripPDF, type Trip } from "~/lib/api/trips";
+import { exportTripICS, exportTripPDF, exportTripMarkdown, type Trip } from "~/lib/api/trips";
 import { downloadTripMarkdown } from "~/lib/trip-markdown";
 import { showUpgradePrompt } from "~/lib/upgrade-prompt";
+import { handleEntitlementError } from "~/lib/entitlement-error";
 
 export interface TripExportMenuProps {
   tripId: string;
@@ -63,21 +64,29 @@ export default function TripExportMenu(props: TripExportMenuProps) {
     }
   };
 
-  const handleMarkdown = () => {
+  const handleMarkdown = async () => {
     if (!props.isPro) {
       showUpgradePrompt("entitlement", "Markdown itinerary export is included with Pro.");
       return;
     }
-    if (!props.trip) {
-      flash("Trip still loading — try again in a moment.");
-      return;
-    }
     setBusy("md");
     try {
-      downloadTripMarkdown(props.trip);
+      await exportTripMarkdown(props.tripId);
       flash("Markdown downloaded.");
     } catch (e) {
-      flash(e instanceof Error ? e.message : "Markdown export failed");
+      if (handleEntitlementError(e)) {
+        flash("Upgrade to Pro for Markdown export.");
+      } else if (props.trip) {
+        // Fallback if server/proto lag — still deliver .md from local trip.
+        try {
+          downloadTripMarkdown(props.trip);
+          flash("Markdown downloaded (local).");
+        } catch (inner) {
+          flash(inner instanceof Error ? inner.message : "Markdown export failed");
+        }
+      } else {
+        flash(e instanceof Error ? e.message : "Markdown export failed");
+      }
     } finally {
       setBusy(null);
     }
@@ -112,7 +121,7 @@ export default function TripExportMenu(props: TripExportMenuProps) {
         type="button"
         class="inline-flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-sm hover:bg-accent disabled:opacity-50"
         disabled={busy() !== null}
-        onClick={handleMarkdown}
+        onClick={() => void handleMarkdown()}
         title={props.isPro ? "Download Markdown" : "Pro: Markdown export"}
       >
         <Show when={props.isPro} fallback={<Lock class="h-4 w-4" />}>
