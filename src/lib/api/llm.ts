@@ -157,6 +157,8 @@ export const mapPoi = (poi: ProtoPOIDetailedInfo): POIDetailedInfo => {
       typeof poi.starRating === "string" ? parseFloat(poi.starRating) : poi.starRating || 0,
     distance: poi.distance || 0,
     description_poi: poi.descriptionPoi || "",
+    recommendation_rationale: poi.recommendationRationale || "",
+    uncertainty_score: poi.uncertaintyScore,
     created_at:
       poi.createdAt && typeof (poi.createdAt as any).toDate === "function"
         ? (poi.createdAt as any).toDate().toISOString()
