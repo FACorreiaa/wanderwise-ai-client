@@ -40,13 +40,13 @@ Recommendation cards should communicate:
 
 ## Motion vocabulary
 
-| Token | Use | Default |
-|---|---|---|
-| `resultArrive` | Card/list stagger | 400ms, ease-enter |
-| `selectionSettle` | Map/list selection | 250ms, ease-settle |
-| `routeDraw` | Route line appear | 800ms opacity |
-| `sheetPresent` | Overlays, split toggles | 300ms |
-| `press` | Buttons, tappable cards | scale 0.98 |
+| Token             | Use                     | Default            |
+| ----------------- | ----------------------- | ------------------ |
+| `resultArrive`    | Card/list stagger       | 400ms, ease-enter  |
+| `selectionSettle` | Map/list selection      | 250ms, ease-settle |
+| `routeDraw`       | Route line appear       | 800ms opacity      |
+| `sheetPresent`    | Overlays, split toggles | 300ms              |
+| `press`           | Buttons, tappable cards | scale 0.98         |
 
 Respect `prefers-reduced-motion`: disable stagger, route draw, and scale press.
 
@@ -54,12 +54,12 @@ CSS: `--motion-*`, `--ease-*` in `motion-tokens.css`; stagger in `animations.css
 
 ## Surface materials
 
-| Class | When |
-|---|---|
-| `.loci-card` | Default content container (flat + border) |
-| `.loci-card-interactive` | Tappable POI/trip/list rows |
-| `.island-panel` | **One** floating overlay (nav sheet, map toggle, chat widget)—not stacked blur |
-| `.trust-chip` | Why-this-stop / rationale |
+| Class                    | When                                                                           |
+| ------------------------ | ------------------------------------------------------------------------------ |
+| `.loci-card`             | Default content container (flat + border)                                      |
+| `.loci-card-interactive` | Tappable POI/trip/list rows                                                    |
+| `.island-panel`          | **One** floating overlay (nav sheet, map toggle, chat widget)—not stacked blur |
+| `.trust-chip`            | Why-this-stop / rationale                                                      |
 
 Avoid `.glass-panel` + `backdrop-blur-xl` nesting. Legacy `.glass-panel` maps to flat card styling in base.css.
 
