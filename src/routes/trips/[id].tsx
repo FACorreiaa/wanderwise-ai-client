@@ -7,6 +7,9 @@ import {
   useEditStopDuration,
   useSetConstraint,
   useShareTrip,
+  useAddStop,
+  useRemoveStop,
+  useReplaceStop,
   type Trip,
   type TripDay,
   type TripStop,
@@ -18,6 +21,10 @@ import { isProPlan } from "~/lib/subscription";
 import TripExportMenu from "~/components/trip/TripExportMenu";
 import WhyThisStop from "~/components/poi/WhyThisStop";
 import { cacheTripOffline } from "~/lib/trip-offline-cache";
+import {
+  recordRecommendationEvents,
+  type RecommendationEventName,
+} from "~/lib/api/recommendations";
 
 const minutesToHHMM = (m?: number) => {
   if (m == null) return "";
@@ -50,9 +57,15 @@ export default function TripEditor() {
   const editDur = useEditStopDuration();
   const setConstraint = useSetConstraint();
   const share = useShareTrip();
+  const add = useAddStop();
+  const remove = useRemoveStop();
+  const replace = useReplaceStop();
 
   const [shareUrl, setShareUrl] = createSignal<string | null>(null);
   const [conflict, setConflict] = createSignal(false);
+  const [newStopDrafts, setNewStopDrafts] = createSignal<
+    Record<string, { name: string; poiId: string }>
+  >({});
 
   const trip = () => tripQuery.data as Trip | undefined;
   const version = () => trip()?.version ?? 0n;
@@ -116,6 +129,82 @@ export default function TripEditor() {
       { tripId: params.id!, isPublic: true },
       { onSuccess: (r) => setShareUrl(r.shareUrl) },
     );
+
+  const updateNewStop = (dayID: string, patch: Partial<{ name: string; poiId: string }>) =>
+    setNewStopDrafts((current) => {
+      const existing = current[dayID] ?? { name: "", poiId: "" };
+      return { ...current, [dayID]: { ...existing, ...patch } };
+    });
+
+  const addStop = (day: TripDay) => {
+    const draft = newStopDrafts()[day.id];
+    if (!draft?.name.trim() || !draft.poiId.trim()) return;
+    add.mutate(
+      {
+        tripId: params.id!,
+        dayId: day.id,
+        baseVersion: version(),
+        stop: {
+          id: crypto.randomUUID(),
+          poiId: draft.poiId.trim(),
+          orderIndex: day.stops.length,
+          name: draft.name.trim(),
+          notes: "Added manually",
+        },
+      },
+      {
+        onSuccess: () => updateNewStop(day.id, { name: "", poiId: "" }),
+        onError: onMutationError,
+      },
+    );
+  };
+
+  const removeStop = (stop: TripStop) => {
+    if (!window.confirm(`Remove ${stop.name} from this trip?`)) return;
+    remove.mutate(
+      { tripId: params.id!, stop, baseVersion: version() },
+      { onError: onMutationError },
+    );
+  };
+
+  const replaceStop = (stop: TripStop) => {
+    const name = window.prompt("Replacement place name");
+    if (!name?.trim()) return;
+    const poiId = window.prompt("Canonical place ID");
+    if (!poiId?.trim()) return;
+    replace.mutate(
+      {
+        tripId: params.id!,
+        currentStop: stop,
+        baseVersion: version(),
+        replacement: {
+          ...stop,
+          id: crypto.randomUUID(),
+          poiId: poiId.trim(),
+          name: name.trim(),
+          recommendationTrace: undefined,
+        },
+      },
+      { onError: onMutationError },
+    );
+  };
+
+  const recordStopOutcome = (
+    stop: TripStop,
+    eventType: RecommendationEventName,
+    rating?: number,
+  ) => {
+    if (!stop.recommendationTrace) return;
+    void recordRecommendationEvents([
+      {
+        eventType,
+        trace: stop.recommendationTrace,
+        poiId: stop.poiId,
+        tripId: params.id!,
+        rating,
+      },
+    ]);
+  };
 
   return (
     <main class="mx-auto max-w-3xl px-4 py-8">
@@ -305,14 +394,118 @@ export default function TripEditor() {
                               }
                             />
                             <span class="text-xs text-muted-foreground">min</span>
+                            <button
+                              type="button"
+                              class="rounded-md border px-2 py-1 text-xs hover:bg-muted"
+                              onClick={() => replaceStop(stop)}
+                            >
+                              Replace
+                            </button>
+                            <button
+                              type="button"
+                              class="rounded-md border border-destructive/40 px-2 py-1 text-xs text-destructive hover:bg-destructive/10"
+                              onClick={() => removeStop(stop)}
+                            >
+                              Remove
+                            </button>
                           </div>
-                          <div class="mt-1 pl-8">
+                          <div class="mt-2 flex flex-wrap items-center gap-2 pl-8">
                             <WhyThisStop reason={stop.notes} />
+                            <Show when={stop.recommendationTrace}>
+                              <button
+                                type="button"
+                                class="rounded-md border px-2 py-1 text-xs hover:bg-muted"
+                                onClick={() =>
+                                  recordStopOutcome(stop, "RECOMMENDATION_EVENT_TYPE_KEPT_IN_TRIP")
+                                }
+                              >
+                                Keep this stop
+                              </button>
+                              <button
+                                type="button"
+                                class="rounded-md border px-2 py-1 text-xs hover:bg-muted"
+                                onClick={() =>
+                                  recordStopOutcome(
+                                    stop,
+                                    "RECOMMENDATION_EVENT_TYPE_VISIT_CONFIRMED",
+                                  )
+                                }
+                              >
+                                Mark visited
+                              </button>
+                              <select
+                                class="rounded-md border px-2 py-1 text-xs"
+                                aria-label={`Rate ${stop.name}`}
+                                value=""
+                                onChange={(event) => {
+                                  const rating = Number(event.currentTarget.value);
+                                  if (rating > 0) {
+                                    recordStopOutcome(
+                                      stop,
+                                      "RECOMMENDATION_EVENT_TYPE_RATED",
+                                      rating,
+                                    );
+                                    event.currentTarget.value = "";
+                                  }
+                                }}
+                              >
+                                <option value="">Rate…</option>
+                                <For each={[1, 2, 3, 4, 5]}>
+                                  {(rating) => <option value={rating}>{rating} / 5</option>}
+                                </For>
+                              </select>
+                            </Show>
+                            <Show when={stop.bookingUrl}>
+                              <a
+                                href={stop.bookingUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                                class="rounded-md border px-2 py-1 text-xs text-primary hover:bg-muted"
+                                onClick={() =>
+                                  recordStopOutcome(
+                                    stop,
+                                    "RECOMMENDATION_EVENT_TYPE_BOOKING_OPENED",
+                                  )
+                                }
+                              >
+                                Open booking
+                              </a>
+                            </Show>
                           </div>
                         </li>
                       )}
                     </For>
                   </ol>
+                  <div class="mt-3 grid gap-2 rounded-md border border-dashed p-3 sm:grid-cols-[1fr_1fr_auto]">
+                    <input
+                      class="rounded-md border px-2 py-1.5 text-sm"
+                      placeholder="Place name"
+                      value={newStopDrafts()[day.id]?.name || ""}
+                      onInput={(event) =>
+                        updateNewStop(day.id, { name: event.currentTarget.value })
+                      }
+                    />
+                    <input
+                      class="rounded-md border px-2 py-1.5 text-sm"
+                      placeholder="Canonical place ID"
+                      value={newStopDrafts()[day.id]?.poiId || ""}
+                      onInput={(event) =>
+                        updateNewStop(day.id, { poiId: event.currentTarget.value })
+                      }
+                    />
+                    <button
+                      type="button"
+                      class="rounded-md bg-primary px-3 py-1.5 text-sm text-primary-foreground disabled:opacity-50"
+                      disabled={
+                        !newStopDrafts()[day.id]?.name.trim() ||
+                        !newStopDrafts()[day.id]?.poiId.trim() ||
+                        add.isPending
+                      }
+                      onClick={() => addStop(day)}
+                    >
+                      Add stop
+                    </button>
+                  </div>
                 </section>
               )}
             </For>

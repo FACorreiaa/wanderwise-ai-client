@@ -14,44 +14,38 @@ const DetailedItemModal = lazy(() => import("~/components/DetailedItemModal"));
 const QUICK_PROMPTS: QuickPrompt[] = [
   {
     id: "1",
-    icon: "🌟",
     text: "Hidden gems in Paris",
     description: "Discover off-the-beaten-path spots",
     domain: "general",
   },
   {
     id: "2",
-    icon: "🍕",
     text: "Best food markets in Italy",
     description: "Authentic local markets and food",
     domain: "dining",
   },
   {
     id: "3",
-    icon: "🏛️",
     text: "3-day cultural tour of Rome",
     description: "Museums, history, and architecture",
     domain: "itinerary",
   },
   {
     id: "4",
-    icon: "👨‍👩‍👧‍👦",
     text: "Family weekend in Amsterdam",
     description: "Kid-friendly activities and places",
     domain: "activities",
   },
   {
     id: "5",
-    icon: "📸",
-    text: "Instagram spots in Santorini",
-    description: "Most photogenic locations",
+    text: "Photogenic spots in Santorini",
+    description: "Calm viewpoints and walking routes",
     domain: "general",
   },
   {
     id: "6",
-    icon: "🎭",
     text: "Nightlife in Berlin",
-    description: "Bars, clubs, and entertainment",
+    description: "Bars, clubs, and evening culture",
     domain: "activities",
   },
 ];

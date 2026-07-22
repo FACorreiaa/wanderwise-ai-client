@@ -217,17 +217,11 @@ export default function ListsPage() {
 
               {/* Quick Links */}
               <div class="flex items-center gap-3 flex-wrap">
-                <A
-                  href="/favorites"
-                  class="loci-hero__action px-4 py-2"
-                >
+                <A href="/favorites" class="loci-hero__action px-4 py-2">
                   <Heart class="w-4 h-4" />
                   View Favorites
                 </A>
-                <A
-                  href="/bookmarks"
-                  class="loci-hero__action px-4 py-2"
-                >
+                <A href="/bookmarks" class="loci-hero__action px-4 py-2">
                   <Bookmark class="w-4 h-4" />
                   View Bookmarks
                 </A>
@@ -310,7 +304,7 @@ export default function ListsPage() {
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               <For each={filteredLists()}>
                 {(list: any) => (
-                  <div class="glass-panel rounded-2xl p-5 hover:shadow-xl transition-all duration-200 group relative">
+                  <div class="loci-card-interactive stagger-animation rounded-2xl p-5 group relative">
                     {/* Delete Confirmation Overlay */}
                     <Show when={deleteConfirmId() === list.id}>
                       <div class="absolute inset-0 bg-card/95 backdrop-blur rounded-2xl flex flex-col items-center justify-center z-10 p-4">

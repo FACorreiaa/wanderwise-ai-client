@@ -217,7 +217,7 @@ export default function ActivitiesPage() {
 
   return (
     <>
-      <SplitView listContent={ListContent} mapContent={MapContent} initialMode="split" />
+      <SplitView listContent={ListContent} mapContent={MapContent} initialMode="map" />
       <FloatingChat
         getStreamingData={() => effectiveData()}
         setStreamingData={(fn) => {

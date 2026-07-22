@@ -2,6 +2,7 @@ import { createSignal, Show, For } from "solid-js";
 import { Plus, FolderPlus, X } from "lucide-solid";
 import { useLists, useCreateListMutation } from "~/lib/api/lists";
 import { useAddToListMutation } from "~/lib/api/lists";
+import type { RecommendationTrace } from "~/lib/api/recommendations";
 
 interface AddToListButtonProps {
   itemId: string;
@@ -12,6 +13,7 @@ interface AddToListButtonProps {
   variant?: "icon" | "button" | "minimal";
   sourceInteractionId?: string;
   aiDescription?: string;
+  recommendationTrace?: RecommendationTrace;
 }
 
 export default function AddToListButton(props: AddToListButtonProps) {
@@ -58,6 +60,7 @@ export default function AddToListButton(props: AddToListButtonProps) {
           contentType: props.contentType,
           position: 0, // Will be set by backend
           notes: "",
+          recommendationTrace: props.recommendationTrace,
         },
       });
       setShowListModal(false);

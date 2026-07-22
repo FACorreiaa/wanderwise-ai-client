@@ -255,6 +255,8 @@ export default function ItineraryResults(props: ItineraryResultsProps) {
                           llmInteractionId: poi.llm_interaction_id,
                         }}
                         size="sm"
+                        recommendationTrace={poi.recommendation_trace}
+                        poiId={poi.id}
                       />
 
                       {/* Share Button */}

@@ -89,9 +89,7 @@ export default function HotelResults(props: HotelResultsProps) {
         <div class="w-6 h-6 rounded-full bg-primary flex items-center justify-center text-primary-foreground text-xs">
           🏨
         </div>
-        <h3 class="font-semibold text-foreground">
-          Hotels ({displayHotels().length})
-        </h3>
+        <h3 class="font-semibold text-foreground">Hotels ({displayHotels().length})</h3>
       </div>
 
       <div class={props.compact ? "space-y-2" : "space-y-4"}>
@@ -138,9 +136,7 @@ export default function HotelResults(props: HotelResultsProps) {
               </div>
 
               <Show when={hotel.description && !props.compact}>
-                <p class="text-sm text-muted-foreground mb-3 line-clamp-2">
-                  {hotel.description}
-                </p>
+                <p class="text-sm text-muted-foreground mb-3 line-clamp-2">{hotel.description}</p>
               </Show>
 
               <div class="flex items-center gap-4 text-xs text-muted-foreground">
@@ -185,6 +181,8 @@ export default function HotelResults(props: HotelResultsProps) {
                       description: hotel.description || "",
                     }}
                     size="sm"
+                    recommendationTrace={hotel.recommendation_trace}
+                    poiId={hotel.id}
                   />
                   <Show when={props.onShareClick}>
                     <button

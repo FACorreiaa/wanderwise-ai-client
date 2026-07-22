@@ -1,4 +1,5 @@
 // Type definitions for API responses
+import type { RecommendationTrace } from "./recommendations";
 
 export interface UserProfile {
   id: string;
@@ -111,6 +112,8 @@ export interface POI {
   city_id?: string;
   llm_interaction_id?: string;
   created_at?: string;
+  recommendation_trace?: RecommendationTrace;
+  recommendation_rationale?: string;
 }
 
 export interface ChatMessage {
@@ -511,6 +514,7 @@ export interface HotelDetailedInfo {
   images: string[];
   rating: number;
   llm_interaction_id: string;
+  recommendation_trace?: RecommendationTrace;
   // Extended fields for detail page
   checkIn?: string;
   checkOut?: string;
@@ -561,6 +565,7 @@ export interface RestaurantDetailedInfo {
   images: string[];
   rating: number;
   llm_interaction_id: string;
+  recommendation_trace?: RecommendationTrace;
   // Extended fields for detail page
   reviewCount?: number;
   isOpen?: boolean;
@@ -616,6 +621,7 @@ export interface POIDetailedInfo {
   star_rating?: number;
   recommendation_rationale?: string;
   uncertainty_score?: number;
+  recommendation_trace?: RecommendationTrace;
 }
 
 // Domain-specific response types

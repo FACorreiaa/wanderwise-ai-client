@@ -1,7 +1,7 @@
 import { onMount, onCleanup, createEffect, mergeProps } from "solid-js";
 import mapboxgl from "mapbox-gl";
 import { useTheme } from "~/contexts/ThemeContext";
-import { mapStyleForColorMode } from "~/lib/theme-colors";
+import { colorForMapDay, LOCI_MAP_CLUSTER_COLOR, mapStyleForColorMode } from "~/lib/theme-colors";
 
 export interface POI {
   id: string;
@@ -36,21 +36,9 @@ interface MapComponentProps {
   onActivate?: (poi: POI, index: number) => void;
   /** Swap Mapbox light/dark basemap when color mode changes. Default true. */
   followColorMode?: boolean;
+  /** When true, map fills container edge-to-edge (no inset radius). */
+  fullBleed?: boolean;
 }
-
-// One stable colour per itinerary day. Index past the end wraps.
-const DAY_COLORS = [
-  "#ef4444", // red
-  "#3b82f6", // blue
-  "#10b981", // green
-  "#f59e0b", // amber
-  "#8b5cf6", // violet
-  "#ec4899", // pink
-  "#14b8a6", // teal
-  "#f97316", // orange
-];
-const colorForDay = (day?: number) =>
-  typeof day === "number" ? DAY_COLORS[day % DAY_COLORS.length] : "#64748b"; // slate for ungrouped
 
 const SOURCE_POIS = "loci-pois";
 const SOURCE_ROUTES = "loci-routes";
@@ -111,7 +99,8 @@ const MapComponent = (_props: MapComponentProps) => {
     meta.className = `map-popup__meta flex items-center justify-between ${isMobile ? "text-xs" : "text-sm"}`;
     if (poi.rating != null) {
       const rating = document.createElement("span");
-      rating.textContent = `⭐ ${poi.rating}`;
+      rating.className = "font-coord";
+      rating.textContent = `${poi.rating.toFixed(1)} rating`;
       meta.appendChild(rating);
     }
     if (poi.timeToSpend) {
@@ -129,8 +118,8 @@ const MapComponent = (_props: MapComponentProps) => {
 
     if (poi.dogFriendly) {
       const badge = document.createElement("div");
-      badge.className = `map-popup__badge mt-2 ${isMobile ? "text-xs" : "text-sm"} px-2 py-1 rounded-full inline-block`;
-      badge.textContent = "🐕 Dog Friendly";
+      badge.className = `map-popup__badge ui-label mt-2 ${isMobile ? "text-xs" : "text-sm"} px-2 py-1 rounded-md inline-block`;
+      badge.textContent = "Dog friendly";
       container.appendChild(badge);
     }
 
@@ -165,7 +154,7 @@ const MapComponent = (_props: MapComponentProps) => {
         id: fid,
         properties: {
           name: poi.name,
-          color: colorForDay(poi.day),
+          color: colorForMapDay(poi.day),
           label: String(poi.seq ?? i + 1),
         },
         geometry: { type: "Point", coordinates: [toNum(poi.longitude), toNum(poi.latitude)] },
@@ -185,7 +174,7 @@ const MapComponent = (_props: MapComponentProps) => {
       if (coords.length > 1) {
         routeFeatures.push({
           type: "Feature",
-          properties: { color: colorForDay(day) },
+          properties: { color: colorForMapDay(day) },
           geometry: { type: "LineString", coordinates: coords },
         });
       }
@@ -213,6 +202,23 @@ const MapComponent = (_props: MapComponentProps) => {
     }
   };
 
+  let routeAnimFrame: number | undefined;
+
+  const animateRoutes = () => {
+    if (!map || !map.getLayer(LAYER_ROUTES)) return;
+    const start = performance.now();
+    const duration = 800;
+    const step = (now: number) => {
+      if (!map?.getLayer(LAYER_ROUTES)) return;
+      const t = Math.min(1, (now - start) / duration);
+      map.setPaintProperty(LAYER_ROUTES, "line-opacity", 0.15 + t * 0.6);
+      if (t < 1) routeAnimFrame = requestAnimationFrame(step);
+    };
+    if (routeAnimFrame) cancelAnimationFrame(routeAnimFrame);
+    map.setPaintProperty(LAYER_ROUTES, "line-opacity", 0.15);
+    routeAnimFrame = requestAnimationFrame(step);
+  };
+
   /** Update source data in place — no marker teardown/rebuild churn. */
   const updateData = (pois: POI[], fit = true) => {
     if (!map) return;
@@ -225,6 +231,7 @@ const MapComponent = (_props: MapComponentProps) => {
     const { points, routes, valid } = buildData(pois);
     source.setData(points);
     (map.getSource(SOURCE_ROUTES) as mapboxgl.GeoJSONSource | undefined)?.setData(routes);
+    if (routes.features.length > 0) animateRoutes();
     if (fit) fitToData(valid);
     // Re-apply selection if the selected POI is still present.
     applySelection(props.selectedId);
@@ -316,7 +323,7 @@ const MapComponent = (_props: MapComponentProps) => {
         slot: SLOT,
         filter: ["has", "point_count"],
         paint: {
-          "circle-color": "#3b82f6",
+          "circle-color": LOCI_MAP_CLUSTER_COLOR,
           "circle-opacity": 0.85,
           "circle-stroke-width": 2,
           "circle-stroke-color": "#ffffff",
@@ -512,6 +519,7 @@ const MapComponent = (_props: MapComponentProps) => {
 
   onCleanup(() => {
     if (updateTimer) clearTimeout(updateTimer);
+    if (routeAnimFrame) cancelAnimationFrame(routeAnimFrame);
     popup?.remove();
     if (map) map.remove();
   });
@@ -521,7 +529,7 @@ const MapComponent = (_props: MapComponentProps) => {
       ref={mapContainer}
       role="application"
       aria-label="Itinerary map"
-      class="w-full h-full min-h-[300px] rounded-lg overflow-hidden"
+      class={`w-full h-full min-h-[300px] overflow-hidden ${props.fullBleed ? "" : "rounded-lg"}`}
     />
   );
 };

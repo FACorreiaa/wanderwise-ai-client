@@ -1,34 +1,11 @@
-/**
- * PageBackground is the app's ambient chrome: a faint cartographic contour
- * grid with a single soft accent wash, matching the landing redesign. It is
- * token-driven, so it adapts across the loci/classic/modern theme families
- * and light/dark without per-route color. Static — nothing to reduce for
- * prefers-reduced-motion.
- */
 export default function PageBackground() {
   return (
-    <div class="absolute inset-0 -z-10 overflow-hidden" aria-hidden="true">
-      {/* contour grid */}
-      <div
-        class="absolute inset-0"
-        style={{
-          "background-image":
-            "linear-gradient(hsl(var(--border)) 1px, transparent 1px), linear-gradient(90deg, hsl(var(--border)) 1px, transparent 1px)",
-          "background-size": "48px 48px",
-          "background-position": "-1px -1px",
-          "-webkit-mask-image": "radial-gradient(115% 85% at 50% 0%, black 28%, transparent 72%)",
-          "mask-image": "radial-gradient(115% 85% at 50% 0%, black 28%, transparent 72%)",
-          opacity: "0.6",
-        }}
-      />
-      {/* soft accent wash, top */}
-      <div
-        class="absolute inset-0"
-        style={{
-          background:
-            "radial-gradient(55% 38% at 50% -4%, hsl(var(--accent) / 0.10), transparent 62%)",
-        }}
-      />
+    <div class="pointer-events-none absolute inset-0 -z-10 overflow-hidden" aria-hidden="true">
+      <div class="absolute -right-40 top-24 h-[34rem] w-[34rem] rounded-full border border-[hsl(var(--map-line)/0.24)]" />
+      <div class="absolute -right-24 top-40 h-[25rem] w-[25rem] rounded-full border border-[hsl(var(--map-line)/0.2)]" />
+      <div class="absolute -right-8 top-56 h-[16rem] w-[16rem] rounded-full border border-[hsl(var(--map-line)/0.18)]" />
+      <div class="absolute -left-52 top-[42rem] h-[30rem] w-[30rem] rounded-[46%] border border-[hsl(var(--map-line)/0.18)] rotate-12" />
+      <div class="absolute -left-36 top-[47rem] h-[20rem] w-[20rem] rounded-[44%] border border-[hsl(var(--map-line)/0.16)] rotate-12" />
     </div>
   );
 }

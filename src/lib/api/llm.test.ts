@@ -1,5 +1,12 @@
 import { describe, it, expect, vi } from "vitest";
-import { detectDomain, toProtoDomainType, domainToContextType } from "./llm";
+import { create } from "@bufbuild/protobuf";
+import { POIDetailedInfoSchema } from "@buf/loci_loci-proto.bufbuild_es/loci/poi/poi_pb.js";
+import {
+  RecommendationChannel,
+  RecommendationSurface,
+  RecommendationTraceSchema,
+} from "@buf/loci_loci-proto.bufbuild_es/loci/recommendation/recommendation_pb.js";
+import { detectDomain, toProtoDomainType, domainToContextType, mapPoi } from "./llm";
 
 // Mock the proto module since it may not be available in test environment
 vi.mock("@buf/loci_loci-proto.bufbuild_es/proto/locichat_pb.js", () => ({
@@ -242,6 +249,34 @@ describe("Edge Cases", () => {
       expect(domainToContextType("accommodation")).toBe("hotels");
       expect(domainToContextType("dining")).toBe("restaurants");
       expect(domainToContextType("itinerary")).toBe("itineraries");
+    });
+  });
+});
+
+describe("mapPoi", () => {
+  it("preserves server recommendation attribution", () => {
+    const proto = create(POIDetailedInfoSchema, {
+      id: "f6d8ed0a-eade-4a77-a82d-a72d8fa5833e",
+      name: "Miradouro",
+      recommendationTrace: create(RecommendationTraceSchema, {
+        runId: "run-123",
+        itemId: "f6d8ed0a-eade-4a77-a82d-a72d8fa5833e",
+        rank: 2,
+        algorithmVersion: "discover-gemini-v1",
+        experimentVariant: "personalized",
+        surface: RecommendationSurface.DISCOVER,
+        channel: RecommendationChannel.WEB,
+      }),
+    });
+
+    expect(mapPoi(proto).recommendation_trace).toEqual({
+      runId: "run-123",
+      itemId: "f6d8ed0a-eade-4a77-a82d-a72d8fa5833e",
+      rank: 2,
+      algorithmVersion: "discover-gemini-v1",
+      experimentVariant: "personalized",
+      surface: "RECOMMENDATION_SURFACE_DISCOVER",
+      channel: "RECOMMENDATION_CHANNEL_WEB",
     });
   });
 });

@@ -1,6 +1,7 @@
 import { Component, createMemo, Show } from "solid-js";
 import { Heart, Loader2 } from "lucide-solid";
 import { useFavoritesList, useToggleFavorite, type FavoriteItem } from "~/lib/api/favorites";
+import { recordRecommendationEvents, type RecommendationTrace } from "~/lib/api/recommendations";
 
 interface FavoriteButtonProps {
   item: FavoriteItem;
@@ -8,6 +9,8 @@ interface FavoriteButtonProps {
   className?: string;
   showLabel?: boolean;
   onClick?: (e: Event) => void;
+  recommendationTrace?: RecommendationTrace;
+  poiId?: string;
 }
 
 const FavoriteButton: Component<FavoriteButtonProps> = (props) => {
@@ -50,7 +53,17 @@ const FavoriteButton: Component<FavoriteButtonProps> = (props) => {
       props.onClick(e);
       return;
     }
+    const wasFavorited = isFavorited();
     await toggleFavorite(props.item);
+    if (!wasFavorited && props.recommendationTrace) {
+      void recordRecommendationEvents([
+        {
+          eventType: "RECOMMENDATION_EVENT_TYPE_FAVORITED",
+          trace: props.recommendationTrace,
+          poiId: props.poiId || props.item.id,
+        },
+      ]);
+    }
   };
 
   return (

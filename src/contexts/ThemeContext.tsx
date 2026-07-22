@@ -34,7 +34,7 @@ interface ThemeProviderProps {
   children: JSX.Element;
 }
 
-const applyToDocument = (isDark: boolean, design: DesignTheme) => {
+const applyToDocument = (isDark: boolean, _design: DesignTheme) => {
   const html = document.documentElement;
   const body = document.body;
 
@@ -50,12 +50,12 @@ const applyToDocument = (isDark: boolean, design: DesignTheme) => {
     html.setAttribute("data-kb-theme", "light");
   }
 
-  html.setAttribute("data-theme", design);
+  html.setAttribute("data-theme", "loci");
 };
 
 const persistLocalThemePreference = (pref: ThemePreference) => {
   localStorage.setItem("theme", pref.color);
-  localStorage.setItem("designTheme", pref.design);
+  localStorage.setItem("designTheme", "loci");
 };
 
 export const ThemeProvider = (props: ThemeProviderProps) => {
@@ -73,7 +73,7 @@ export const ThemeProvider = (props: ThemeProviderProps) => {
     options: { persistLocal?: boolean } = {},
   ) => {
     setColorMode(pref.color);
-    setDesignThemeSignal(pref.design);
+    setDesignThemeSignal("loci");
     syncResolvedDark(pref.color);
 
     if (options.persistLocal !== false) {
@@ -92,12 +92,11 @@ export const ThemeProvider = (props: ThemeProviderProps) => {
       applyThemePreference(savedPreference, { persistLocal: false });
     } else {
       const saved = localStorage.getItem("theme");
-      const savedDesignTheme = (localStorage.getItem("designTheme") as DesignTheme) || "loci";
       const mode: ColorTheme =
         saved === "dark" || saved === "light" || saved === "system" ? saved : "system";
 
       setColorMode(mode);
-      setDesignThemeSignal(savedDesignTheme);
+      setDesignThemeSignal("loci");
       syncResolvedDark(mode);
     }
 
@@ -130,7 +129,8 @@ export const ThemeProvider = (props: ThemeProviderProps) => {
   };
 
   const setDesignTheme = (theme: DesignTheme) => {
-    applyThemePreference({ design: theme, color: colorMode() });
+    void theme;
+    applyThemePreference({ design: "loci", color: colorMode() });
   };
 
   const themeValue: ThemeContextType = {

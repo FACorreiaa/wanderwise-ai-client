@@ -43,6 +43,7 @@ import InterestsComponent from "~/components/features/Settings/Interests";
 import TravelProfiles from "~/components/features/Settings/TravelProfiles";
 import AppearanceSettings from "~/components/AppearanceSettings";
 import ApiKeys from "~/components/features/Settings/ApiKeys";
+import TasteAndPrivacy from "~/components/features/Settings/TasteAndPrivacy";
 import { Button } from "~/ui/button";
 
 export default function SettingsPage() {
@@ -329,10 +330,14 @@ export default function SettingsPage() {
           </div>
         </div>
 
+        <div class="mb-6">
+          <TasteAndPrivacy />
+        </div>
+
         <div class="grid lg:grid-cols-3 gap-6">
           <div class="lg:col-span-2 space-y-6">
             {/* Personal Information */}
-            <div class="rounded-3xl bg-card/80 backdrop-blur border border-border shadow-sm p-6 sm:p-8">
+            <div class="loci-card rounded-3xl p-6 sm:p-8">
               <div class="flex items-start justify-between mb-4">
                 <div>
                   <h3 class="text-lg sm:text-xl font-semibold text-foreground">
@@ -466,7 +471,7 @@ export default function SettingsPage() {
           </div>
 
           <div class="space-y-6">
-            <div class="rounded-3xl bg-card/80 backdrop-blur border border-border shadow-sm p-6 sm:p-8">
+            <div class="loci-card rounded-3xl p-6 sm:p-8">
               <div class="flex items-center justify-between mb-3">
                 <div>
                   <p class="text-xs uppercase tracking-wide text-muted-foreground">
@@ -489,7 +494,7 @@ export default function SettingsPage() {
               </p>
             </div>
 
-            <div class="rounded-3xl bg-card/80 backdrop-blur border border-border shadow-sm p-6 sm:p-8">
+            <div class="loci-card rounded-3xl p-6 sm:p-8">
               <h4 class="text-lg font-semibold text-foreground mb-1">Appearance</h4>
               <p class="text-sm text-muted-foreground mb-4">
                 Theme and language sync across your devices when signed in.
@@ -497,7 +502,7 @@ export default function SettingsPage() {
               <AppearanceSettings />
             </div>
 
-            <div class="rounded-3xl bg-card/80 backdrop-blur border border-border shadow-sm p-6 sm:p-8 space-y-3">
+            <div class="loci-card rounded-3xl p-6 sm:p-8 space-y-3">
               <div class="flex items-center gap-2">
                 <Bell class="w-5 h-5 text-primary" />
                 <h4 class="text-sm font-semibold text-foreground">Quick actions</h4>
@@ -687,11 +692,7 @@ export default function SettingsPage() {
       case "profiles":
         return renderProfiles();
       case "apikeys":
-        return (
-          <ApiKeys
-            onNotification={(message, type) => setNotification({ message, type })}
-          />
-        );
+        return <ApiKeys onNotification={(message, type) => setNotification({ message, type })} />;
       default:
         return renderSettings();
     }
@@ -722,7 +723,7 @@ export default function SettingsPage() {
         <div class="flex flex-col lg:flex-row gap-4 lg:gap-8">
           {/* Mobile Tab Navigation */}
           <div class="lg:hidden">
-            <div class="bg-card/80 backdrop-blur rounded-2xl border border-border p-2 shadow-sm">
+            <div class="loci-card rounded-2xl p-2">
               <div class="flex overflow-x-auto space-x-2">
                 <For each={tabs}>
                   {(tab) => {
@@ -748,7 +749,7 @@ export default function SettingsPage() {
 
           {/* Desktop Tab Navigation */}
           <div class="hidden lg:block w-64 flex-shrink-0">
-            <div class="bg-card/80 backdrop-blur rounded-2xl border border-border p-3 sticky top-8 shadow-sm">
+            <div class="loci-card rounded-2xl p-3 sticky top-8">
               <nav class="space-y-1.5">
                 <For each={tabs}>
                   {(tab) => {

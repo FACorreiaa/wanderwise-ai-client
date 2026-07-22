@@ -22,6 +22,7 @@ import {
   RestaurantDetailedInfo as ProtoRestaurantDetailedInfo,
 } from "@buf/loci_loci-proto.bufbuild_es/loci/poi/poi_pb.js";
 import { transport } from "../connect-transport";
+import { fromProtoRecommendationTrace } from "./recommendations";
 import type { Timestamp } from "@bufbuild/protobuf/wkt";
 //import { createGraphQLClient, gql } from '@solid-primitives/graphql';
 import type {
@@ -159,6 +160,7 @@ export const mapPoi = (poi: ProtoPOIDetailedInfo): POIDetailedInfo => {
     description_poi: poi.descriptionPoi || "",
     recommendation_rationale: poi.recommendationRationale || "",
     uncertainty_score: poi.uncertaintyScore,
+    recommendation_trace: fromProtoRecommendationTrace(poi.recommendationTrace),
     created_at:
       poi.createdAt && typeof (poi.createdAt as any).toDate === "function"
         ? (poi.createdAt as any).toDate().toISOString()
@@ -206,6 +208,7 @@ const mapRestaurant = (
     (restaurant as ProtoRestaurantDetailedInfo).llmInteractionId ||
     (restaurant as ProtoPOIDetailedInfo).llmInteractionId ||
     "",
+  recommendation_trace: fromProtoRecommendationTrace(restaurant.recommendationTrace),
 });
 
 export const mapItineraryResponse = (

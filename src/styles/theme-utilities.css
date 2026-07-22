@@ -8,12 +8,13 @@
   }
 
   .glass-panel {
-    @apply bg-card/95 border border-border backdrop-blur-xl;
-    box-shadow: 0 4px 24px hsl(var(--foreground) / 0.06);
+    @apply bg-card border border-border;
+    box-shadow: 0 8px 24px -18px hsl(var(--foreground) / 0.35);
+    backdrop-filter: none;
   }
 
   .dark .glass-panel {
-    box-shadow: 0 4px 32px hsl(var(--foreground) / 0.15);
+    box-shadow: 0 12px 32px -12px hsl(0 0% 0% / 0.35);
   }
 
   .gradient-border {

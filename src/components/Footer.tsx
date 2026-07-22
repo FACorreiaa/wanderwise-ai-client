@@ -1,159 +1,59 @@
-import { Building2 } from "lucide-solid";
+import { A } from "@solidjs/router";
+import { Compass, MapPin } from "lucide-solid";
 
-const linkClass =
-  "transition-colors duration-200 hover:text-primary hover:underline focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-background rounded";
+const links = [
+  { label: "Discover", href: "/discover" },
+  { label: "Nearby", href: "/nearme" },
+  { label: "Trips", href: "/trips" },
+  { label: "Ask Loci", href: "/chat" },
+  { label: "Contribute", href: "/contribute" },
+  { label: "Privacy", href: "/settings" },
+];
 
 export default function Footer() {
   return (
-    <footer class="relative isolate overflow-hidden bg-card text-foreground border-t border-border">
-      <div
-        class="absolute inset-0 opacity-50"
-        style={{
-          "background-image":
-            "radial-gradient(circle at 12% 18%, hsl(var(--primary) / 0.18), transparent 28%), radial-gradient(circle at 85% 12%, hsl(var(--accent) / 0.14), transparent 26%), radial-gradient(circle at 50% 120%, hsl(var(--primary) / 0.1), transparent 34%)",
-        }}
-        aria-hidden="true"
-      />
-      <div
-        class="absolute inset-0 bg-[linear-gradient(to_right,hsl(var(--border)/0.4)_1px,transparent_1px),linear-gradient(to_bottom,hsl(var(--border)/0.4)_1px,transparent_1px)] bg-[size:120px_120px] opacity-30 [mask-image:radial-gradient(circle_at_center,rgba(0,0,0,0.75),transparent_65%)]"
-        aria-hidden="true"
-      />
-      <div
-        class="absolute inset-x-0 top-1/3 h-px bg-gradient-to-r from-transparent via-primary/40 to-transparent opacity-70"
-        aria-hidden="true"
-      />
-
-      <div class="relative z-10 mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-12 sm:py-16 space-y-10">
-        <div class="flex flex-col gap-8 lg:flex-row lg:items-start lg:justify-between">
-          <div class="max-w-sm space-y-4">
-            <div class="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary ring-1 ring-primary/20">
-              <span class="h-2 w-2 rounded-full bg-primary shadow-[0_0_0_6px_hsl(var(--primary)/0.18)]" />
-              <span>Intelligent locations, simplified</span>
-            </div>
-            <div class="flex items-center gap-3">
-              <div class="grid h-10 w-10 place-items-center rounded-2xl bg-muted ring-1 ring-border">
-                <Building2 class="h-5 w-5 text-primary" />
-              </div>
-              <div>
-                <p class="text-lg font-semibold tracking-tight text-foreground">Loci</p>
-                <p class="text-sm text-muted-foreground">
-                  Find, assess, and act on business opportunities with clarity.
-                </p>
-              </div>
-            </div>
-            <div class="flex flex-wrap gap-2 text-xs text-muted-foreground">
-              <span class="rounded-full bg-muted px-3 py-1 ring-1 ring-border">
-                Data-backed scouting
-              </span>
-              <span class="rounded-full bg-muted px-3 py-1 ring-1 ring-border">
-                AI recommendations
-              </span>
-              <span class="rounded-full bg-muted px-3 py-1 ring-1 ring-border">Team-ready</span>
+    <footer class="mt-20 border-t border-border bg-primary text-primary-foreground">
+      <div class="mx-auto grid max-w-7xl gap-10 px-4 py-12 sm:px-6 md:grid-cols-[1.2fr_1fr] lg:px-8">
+        <div class="max-w-lg">
+          <div class="mb-5 flex items-center gap-3">
+            <span class="grid h-10 w-10 place-items-center rounded-full border border-primary-foreground/30">
+              <MapPin class="h-5 w-5" />
+            </span>
+            <div>
+              <p class="font-serif text-2xl font-semibold">Loci</p>
+              <p class="font-coord text-[10px] uppercase tracking-[0.2em] text-primary-foreground/65">
+                Go somewhere worth remembering
+              </p>
             </div>
           </div>
-
-          <div class="grid grid-cols-2 gap-8 sm:grid-cols-3 lg:grid-cols-4">
-            <div class="space-y-3">
-              <h3 class="text-sm font-semibold text-foreground">Products</h3>
-              <ul class="space-y-2 text-sm text-muted-foreground">
-                <li>
-                  <a class={linkClass} href="#">
-                    Platform
-                  </a>
-                </li>
-                <li>
-                  <a class={linkClass} href="#">
-                    Enterprise
-                  </a>
-                </li>
-                <li>
-                  <a class={linkClass} href="#">
-                    API
-                  </a>
-                </li>
-              </ul>
-            </div>
-            <div class="space-y-3">
-              <h3 class="text-sm font-semibold text-foreground">Resources</h3>
-              <ul class="space-y-2 text-sm text-muted-foreground">
-                <li>
-                  <a class={linkClass} href="#">
-                    Blog
-                  </a>
-                </li>
-                <li>
-                  <a class={linkClass} href="#">
-                    Reports
-                  </a>
-                </li>
-                <li>
-                  <a class={linkClass} href="#">
-                    Help Center
-                  </a>
-                </li>
-              </ul>
-            </div>
-            <div class="space-y-3">
-              <h3 class="text-sm font-semibold text-foreground">Company</h3>
-              <ul class="space-y-2 text-sm text-muted-foreground">
-                <li>
-                  <a class={linkClass} href="/about">
-                    About
-                  </a>
-                </li>
-                <li>
-                  <a class={linkClass} href="#">
-                    Careers
-                  </a>
-                </li>
-                <li>
-                  <a class={linkClass} href="#">
-                    Contact
-                  </a>
-                </li>
-              </ul>
-            </div>
-            <div class="space-y-3">
-              <h3 class="text-sm font-semibold text-foreground">Stay in touch</h3>
-              <ul class="space-y-2 text-sm text-muted-foreground">
-                <li>
-                  <a class={linkClass} href="#">
-                    Status
-                  </a>
-                </li>
-                <li>
-                  <a class={linkClass} href="#">
-                    Security
-                  </a>
-                </li>
-                <li>
-                  <a class={linkClass} href="#">
-                    Press
-                  </a>
-                </li>
-              </ul>
-            </div>
-          </div>
+          <p class="max-w-md text-sm leading-6 text-primary-foreground/72">
+            A personal field guide for finding places that fit your taste, shaping them into
+            workable adventures, and learning from what you actually keep.
+          </p>
         </div>
 
-        <div class="flex flex-col gap-3 border-t border-border pt-6 text-sm sm:flex-row sm:items-center sm:justify-between">
-          <div class="flex items-center gap-2 text-foreground">
-            <Building2 class="h-4 w-4 text-primary" />
-            <span class="font-medium">Loci</span>
+        <div>
+          <p class="mb-4 font-coord text-[10px] uppercase tracking-[0.18em] text-primary-foreground/60">
+            Pack your route
+          </p>
+          <div class="grid grid-cols-2 gap-x-8 gap-y-3 text-sm">
+            {links.map((link) => (
+              <A
+                href={link.href}
+                class="text-primary-foreground/78 transition-colors hover:text-primary-foreground"
+              >
+                {link.label}
+              </A>
+            ))}
           </div>
-          <div class="flex flex-wrap gap-4 text-muted-foreground">
-            <a class={`${linkClass} hover:text-primary`} href="#">
-              Privacy
-            </a>
-            <a class={`${linkClass} hover:text-primary`} href="#">
-              Terms
-            </a>
-            <a class={`${linkClass} hover:text-primary`} href="#">
-              Support
-            </a>
+          <div class="mt-8 flex items-center gap-2 border-t border-primary-foreground/15 pt-5 text-xs text-primary-foreground/55">
+            <Compass class="h-4 w-4" />
+            <span>Built for curious travelers and useful detours.</span>
           </div>
-          <p class="text-muted-foreground">© 2026 Loci Inc. All rights reserved.</p>
         </div>
+      </div>
+      <div class="border-t border-primary-foreground/15 px-4 py-4 text-center font-coord text-[9px] uppercase tracking-[0.16em] text-primary-foreground/45">
+        © {new Date().getFullYear()} Loci · Recommendations explain themselves
       </div>
     </footer>
   );

@@ -25,7 +25,7 @@ const ChatInput: Component<ChatInputProps> = (props) => {
   };
 
   return (
-    <div class="bg-popover/80 backdrop-blur-xl border-t border-border p-3 sm:p-4 shadow-[0_-4px_20px_rgba(0,0,0,0.05)]">
+    <div class="bg-popover border-t border-border p-3 sm:p-4">
       <div class="max-w-3xl mx-auto">
         <div class="flex items-end gap-2 sm:gap-3">
           <TextFieldRoot class="flex-1">

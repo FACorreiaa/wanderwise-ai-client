@@ -229,6 +229,7 @@ export default function NearmePage() {
           center={[userLocation()?.longitude || 0, userLocation()?.latitude || 0]}
           pointsOfInterest={allPois()}
           zoom={13}
+          fullBleed
         />
       </Show>
 
@@ -245,7 +246,7 @@ export default function NearmePage() {
 
   // List Content
   const ListContent = (
-    <div class="h-full overflow-y-auto p-4 md:p-6 bg-background/50 backdrop-blur-sm">
+    <div class="h-full overflow-y-auto p-4 md:p-6 bg-background">
       <div class="max-w-3xl mx-auto pb-20">
         {/* Location Header */}
         <div class="mb-6">
@@ -254,7 +255,7 @@ export default function NearmePage() {
               <Navigation class="w-6 h-6" />
             </div>
             <div>
-              <h1 class="text-2xl font-bold text-foreground">Near Me</h1>
+              <h1 class="font-serif text-2xl font-bold text-foreground">Near Me</h1>
               <Show when={userLocation()}>
                 <p class="text-sm text-muted-foreground">
                   {userLocation()?.latitude.toFixed(4)}, {userLocation()?.longitude.toFixed(4)}
@@ -323,9 +324,7 @@ export default function NearmePage() {
             <Loader2 class="w-6 h-6 animate-spin text-primary" />
             <div>
               <p class="font-medium text-primary">Getting your location...</p>
-              <p class="text-sm text-muted-foreground opacity-80">
-                This may take a few seconds
-              </p>
+              <p class="text-sm text-muted-foreground opacity-80">This may take a few seconds</p>
             </div>
           </div>
         </Show>
@@ -346,12 +345,13 @@ export default function NearmePage() {
         {/* Results */}
         <Show when={allPois().length > 0}>
           <div class="mb-8">
-            <h3 class="text-xl font-bold mb-4 text-foreground flex items-center gap-2">
-              <span class="text-2xl">📍</span> Nearby Places ({allPois().length})
+            <h3 class="font-serif text-xl font-bold mb-4 text-foreground flex items-center gap-2">
+              <MapPin class="h-5 w-5 text-accent" />
+              Nearby places ({allPois().length})
             </h3>
             <div class="space-y-4">
               <For each={allPois()}>
-                {(item) => {
+                {(item, index) => {
                   const itemForSelection: SelectionItem = {
                     id: item.name,
                     name: item.name,
@@ -364,7 +364,8 @@ export default function NearmePage() {
                   };
                   return (
                     <Card
-                      class={`hover:shadow-md transition-all cursor-pointer bg-card/80 backdrop-blur border-border ${selection.isSelected(item.name) ? "ring-2 ring-primary" : ""}`}
+                      class={`loci-card-interactive stagger-animation rounded-xl ${selection.isSelected(item.name) ? "ring-2 ring-accent border-accent/40" : ""}`}
+                      style={{ "animation-delay": `${Math.min(index(), 19) * 0.05}s` }}
                     >
                       <CardHeader>
                         <div class="flex justify-between items-start">
@@ -435,7 +436,7 @@ export default function NearmePage() {
 
   return (
     <>
-      <SplitView mapContent={MapContent} listContent={ListContent} />
+      <SplitView mapContent={MapContent} listContent={ListContent} initialMode="map" />
       <FloatingChat />
 
       {/* Selection Toolbar */}
