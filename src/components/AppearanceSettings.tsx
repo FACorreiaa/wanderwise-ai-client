@@ -1,6 +1,5 @@
 import { For } from "solid-js";
-import { Sun, Moon, Monitor, Palette, Languages } from "lucide-solid";
-import ThemeSelector from "~/components/ThemeSelector";
+import { Sun, Moon, Monitor, Languages } from "lucide-solid";
 import { useTheme } from "~/contexts/ThemeContext";
 import { useLanguage } from "~/contexts/LanguageContext";
 import { SUPPORTED_LANGUAGES } from "~/lib/language-preference";
@@ -24,14 +23,6 @@ export default function AppearanceSettings(props: AppearanceSettingsProps) {
 
   return (
     <div class={props.compact ? "space-y-4" : "space-y-6"}>
-      <div class="space-y-3">
-        <div class="flex items-center gap-2">
-          <Palette class="w-4 h-4 text-muted-foreground" />
-          <Label>Design style</Label>
-        </div>
-        <ThemeSelector />
-      </div>
-
       <div class="space-y-3">
         <div class="flex items-center gap-2">
           <Sun class="w-4 h-4 text-muted-foreground" />

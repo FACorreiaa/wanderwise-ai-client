@@ -73,6 +73,9 @@ describe("Auth API", () => {
         access_token: "fake-access-token",
         refresh_token: "fake-refresh-token",
         message: "Login successful",
+        user_id: "",
+        username: "",
+        email: "test@example.com",
       });
     });
 

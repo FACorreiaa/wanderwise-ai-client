@@ -363,6 +363,7 @@ export default function ItineraryPage() {
           selectedId={selectedId()}
           onSelect={(poi) => setSelectedId(poi.name)}
           onActivate={(poi) => openDetail(poi)}
+          fullBleed
         />
       </Show>
 
@@ -443,7 +444,7 @@ export default function ItineraryPage() {
 
   return (
     <>
-      <SplitView listContent={ListContent} mapContent={MapContent} initialMode="split" />
+      <SplitView listContent={ListContent} mapContent={MapContent} initialMode="map" />
       <Show when={detailOpen()}>
         <DetailedItemModal
           item={detailItem()}

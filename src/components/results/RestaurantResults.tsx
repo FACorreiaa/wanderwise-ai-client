@@ -91,9 +91,7 @@ export default function RestaurantResults(props: RestaurantResultsProps) {
         <div class="w-6 h-6 rounded-full bg-accent flex items-center justify-center text-accent-foreground text-xs">
           🍽️
         </div>
-        <h3 class="font-semibold text-foreground">
-          Restaurants ({displayRestaurants().length})
-        </h3>
+        <h3 class="font-semibold text-foreground">Restaurants ({displayRestaurants().length})</h3>
       </div>
 
       <div class={props.compact ? "space-y-2" : "space-y-4"}>
@@ -189,6 +187,8 @@ export default function RestaurantResults(props: RestaurantResultsProps) {
                       llmInteractionId: restaurant.llm_interaction_id,
                     }}
                     size="sm"
+                    recommendationTrace={restaurant.recommendation_trace}
+                    poiId={restaurant.id}
                   />
 
                   {/* Add to List Button */}
@@ -200,6 +200,7 @@ export default function RestaurantResults(props: RestaurantResultsProps) {
                     size="md"
                     sourceInteractionId={restaurant.llm_interaction_id}
                     aiDescription={restaurant.description}
+                    recommendationTrace={restaurant.recommendation_trace}
                   />
                   <Show when={props.onShareClick}>
                     <button

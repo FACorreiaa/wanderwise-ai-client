@@ -16,6 +16,11 @@ import { create } from "@bufbuild/protobuf";
 import { transport } from "../connect-transport";
 import { getAuthToken, authAPI } from "../api";
 import { handleEntitlementError } from "../entitlement-error";
+import {
+  recordRecommendationEvents,
+  toProtoRecommendationTrace,
+  type RecommendationTrace,
+} from "./recommendations";
 
 const listClient = createClient(ListService, transport);
 
@@ -236,6 +241,7 @@ export interface AddListItemData {
   dayNumber?: number;
   durationMinutes?: number;
   itemAiDescription?: string;
+  recommendationTrace?: RecommendationTrace;
 }
 
 export const useAddToListMutation = () => {
@@ -257,13 +263,24 @@ export const useAddToListMutation = () => {
             notes: itemData.notes || "",
             dayNumber: itemData.dayNumber || 0,
             durationMinutes: itemData.durationMinutes || 0,
+            recommendationTrace: toProtoRecommendationTrace(itemData.recommendationTrace),
           }),
         );
         return response;
       }),
-    onSuccess: (_, { listId }) => {
+    onSuccess: (_, { listId, itemData }) => {
       queryClient.invalidateQueries({ queryKey: ["list", listId] });
       queryClient.invalidateQueries({ queryKey: ["lists"] });
+      if (itemData.recommendationTrace) {
+        void recordRecommendationEvents([
+          {
+            eventType: "RECOMMENDATION_EVENT_TYPE_ADDED_TO_LIST",
+            trace: itemData.recommendationTrace,
+            poiId: itemData.itemId,
+            metadata: { list_id: listId },
+          },
+        ]);
+      }
     },
   }));
 };

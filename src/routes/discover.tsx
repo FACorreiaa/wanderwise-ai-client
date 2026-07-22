@@ -12,7 +12,21 @@ import {
   Clock,
   MapPin,
   Smartphone,
+  Utensils,
+  Bed,
+  Target,
+  Landmark,
+  Moon,
+  ShoppingBag,
+  Palette,
+  Trees,
+  Waves,
+  Mountain,
+  Drama,
+  Store,
 } from "lucide-solid";
+import WhyThisStop from "~/components/poi/WhyThisStop";
+import { deriveWhyThis } from "~/lib/why-this";
 import { useDiscoverPageData, fetchRecentDiscoveries } from "~/lib/api/discover";
 import type { TrendingDiscovery, POI, DomainType, ChatSession } from "~/lib/api/types";
 import { useAuth } from "~/contexts/AuthContext";
@@ -24,12 +38,17 @@ import { useSelection, type SelectionItem } from "~/lib/hooks/useSelection";
 import { SelectionToolbar } from "~/components/ui/SelectionToolbar";
 import { exportPOIsToPDF } from "~/lib/utils/pdf-export";
 import EditTripCTA from "~/components/trip/EditTripCTA";
+import AddToTripButton from "~/components/trip/AddToTripButton";
 import AdvancedFiltersBar, {
   advancedFilterPromptSuffix,
   type AdvancedFilterId,
 } from "~/components/filters/AdvancedFiltersBar";
 import { useUserSubscription } from "~/lib/api/billing";
 import { isProPlan } from "~/lib/subscription";
+import {
+  normalizeRecommendationTrace,
+  recordRecommendationEvents,
+} from "~/lib/api/recommendations";
 
 export default function DiscoverPage() {
   const { isAuthenticated } = useAuth();
@@ -65,19 +84,21 @@ export default function DiscoverPage() {
 
   // Category data matching go-templui
   const categories = [
-    { name: "Restaurants", emoji: "🍽️", category: "restaurant" },
-    { name: "Hotels", emoji: "🏨", category: "hotel" },
-    { name: "Activities", emoji: "🎯", category: "activity" },
-    { name: "Attractions", emoji: "🏛️", category: "attraction" },
-    { name: "Nightlife", emoji: "🌃", category: "nightlife" },
-    { name: "Shopping", emoji: "🛍️", category: "shopping" },
-    { name: "Museums", emoji: "🎨", category: "museum" },
-    { name: "Parks", emoji: "🌳", category: "park" },
-    { name: "Beaches", emoji: "🏖️", category: "beach" },
-    { name: "Adventure", emoji: "⛰️", category: "adventure" },
-    { name: "Cultural", emoji: "🎭", category: "cultural" },
-    { name: "Markets", emoji: "🏪", category: "market" },
+    { name: "Restaurants", icon: Utensils, category: "restaurant" },
+    { name: "Hotels", icon: Bed, category: "hotel" },
+    { name: "Activities", icon: Target, category: "activity" },
+    { name: "Attractions", icon: Landmark, category: "attraction" },
+    { name: "Nightlife", icon: Moon, category: "nightlife" },
+    { name: "Shopping", icon: ShoppingBag, category: "shopping" },
+    { name: "Museums", icon: Palette, category: "museum" },
+    { name: "Parks", icon: Trees, category: "park" },
+    { name: "Beaches", icon: Waves, category: "beach" },
+    { name: "Adventure", icon: Mountain, category: "adventure" },
+    { name: "Cultural", icon: Drama, category: "cultural" },
+    { name: "Markets", icon: Store, category: "market" },
   ];
+
+  const deliveredTraceKeys = new Set<string>();
 
   const normalizePoi = (poi: any): POI => ({
     id: poi.id || poi.llm_interaction_id || poi.name,
@@ -98,9 +119,55 @@ export default function DiscoverPage() {
     distance: poi.distance,
     city: poi.city || poi.city_name,
     city_id: poi.city_id || poi.cityId,
+    recommendation_rationale: poi.recommendation_rationale || poi.recommendationRationale,
     llm_interaction_id: poi.llm_interaction_id,
     created_at: poi.created_at,
+    recommendation_trace: normalizeRecommendationTrace(
+      poi.recommendation_trace || poi.recommendationTrace,
+    ),
   });
+
+  const attributeResults = (rawPOIs: any[]) => {
+    const list = rawPOIs.map(normalizePoi);
+    const newlyDelivered = list.filter((poi) => {
+      const trace = poi.recommendation_trace;
+      if (!trace) return false;
+      const key = `${trace.runId}:${trace.itemId}`;
+      if (deliveredTraceKeys.has(key)) return false;
+      deliveredTraceKeys.add(key);
+      return true;
+    });
+    void recordRecommendationEvents(
+      newlyDelivered.flatMap((poi) => [
+        {
+          eventType: "RECOMMENDATION_EVENT_TYPE_DELIVERED" as const,
+          trace: poi.recommendation_trace!,
+          poiId: poi.id,
+        },
+        {
+          eventType: "RECOMMENDATION_EVENT_TYPE_PRESENTED" as const,
+          trace: poi.recommendation_trace!,
+          poiId: poi.id,
+        },
+      ]),
+    );
+    return list;
+  };
+
+  const recordPoiOutcome = (
+    poi: POI,
+    eventType: "RECOMMENDATION_EVENT_TYPE_OPENED" | "RECOMMENDATION_EVENT_TYPE_DISMISSED",
+  ) => {
+    if (!poi.recommendation_trace) return;
+    void recordRecommendationEvents([
+      { eventType, trace: poi.recommendation_trace, poiId: poi.id },
+    ]);
+  };
+
+  const dismissPoi = (poi: POI) => {
+    recordPoiOutcome(poi, "RECOMMENDATION_EVENT_TYPE_DISMISSED");
+    setSearchResults((current) => current.filter((item) => item.id !== poi.id));
+  };
 
   const handleSearch = async (e?: Event) => {
     e?.preventDefault();
@@ -161,14 +228,14 @@ export default function DiscoverPage() {
           case "restaurants":
           case "hotels":
           case "activities": {
-            const list = event.pois.map(normalizePoi);
+            const list = attributeResults(event.pois);
             setSearchResults(list);
             localResultCache.set(cacheKey, list);
             setProgressMessage("Found places you might like");
             break;
           }
           case "itinerary": {
-            const pois = (event.cityResponse.points_of_interest || []).map(normalizePoi);
+            const pois = attributeResults(event.cityResponse.points_of_interest || []);
             if (pois.length > 0) setSearchResults(pois);
             setProgressMessage("Drafting an itinerary...");
             break;
@@ -434,7 +501,7 @@ export default function DiscoverPage() {
               </div>
 
               {/* Search Bar */}
-              <div class="glass-panel rounded-2xl p-6 shadow-lg border">
+              <div class="loci-card rounded-2xl p-6">
                 <form onSubmit={handleSearch} class="relative">
                   <div class="flex flex-col md:flex-row gap-4">
                     <div class="flex-1 relative">
@@ -524,7 +591,7 @@ export default function DiscoverPage() {
                     }
                   >
                     <For each={searchResults()}>
-                      {(poi) => {
+                      {(poi, index) => {
                         const itemForSelection: SelectionItem = {
                           id: poi.id || poi.name,
                           name: poi.name,
@@ -537,7 +604,8 @@ export default function DiscoverPage() {
                         };
                         return (
                           <div
-                            class={`glass-panel rounded-2xl p-4 hover:shadow-xl hover:scale-[1.02] transition-all duration-200 cursor-pointer ${selection.isSelected(poi.id || poi.name) ? "ring-2 ring-accent bg-accent/10" : ""}`}
+                            class={`loci-card-interactive stagger-animation rounded-xl p-4 ${selection.isSelected(poi.id || poi.name) ? "ring-2 ring-accent border-accent/40" : ""}`}
+                            style={{ "animation-delay": `${Math.min(index(), 19) * 0.05}s` }}
                           >
                             <div class="flex items-start justify-between gap-3 mb-2">
                               <div class="flex items-center gap-3 flex-1">
@@ -565,16 +633,34 @@ export default function DiscoverPage() {
                                     description: poi.description_poi || poi.description || "",
                                   }}
                                   size="sm"
+                                  recommendationTrace={poi.recommendation_trace}
+                                  poiId={poi.id}
                                 />
                                 <span class="loci-chip loci-chip--muted">
                                   {poi.city || "Unknown"}
                                 </span>
+                                <button
+                                  type="button"
+                                  class="rounded-md px-2 py-1 text-xs text-muted-foreground hover:bg-muted hover:text-foreground"
+                                  onClick={() => dismissPoi(poi)}
+                                  aria-label={`Dismiss ${poi.name}`}
+                                >
+                                  Dismiss
+                                </button>
                               </div>
                             </div>
-                            <p class="text-sm text-muted-foreground line-clamp-2 mb-3 leading-relaxed">
+                            <p class="text-sm text-muted-foreground line-clamp-2 mb-2 leading-relaxed">
                               {poi.description_poi || poi.description || "No description provided."}
                             </p>
-                            <div class="flex items-center gap-3 text-xs text-muted-foreground">
+                            <WhyThisStop
+                              reason={deriveWhyThis({
+                                category: poi.category,
+                                rating: poi.rating,
+                                recommendation_rationale: poi.recommendation_rationale,
+                                tags: poi.tags,
+                              })}
+                            />
+                            <div class="flex items-center gap-3 text-xs text-muted-foreground mt-3">
                               <div class="flex items-center gap-1">
                                 <Star class="w-4 h-4 text-accent fill-current" />
                                 <span class="font-medium">{poi.rating ?? "4.0"}</span>
@@ -583,6 +669,20 @@ export default function DiscoverPage() {
                                 <MapPin class="w-4 h-4 text-primary" />
                                 <span class="font-medium">{poi.city || "N/A"}</span>
                               </div>
+                              <Show when={poi.website}>
+                                <a
+                                  href={poi.website}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  class="ml-auto font-medium text-primary hover:underline"
+                                  onClick={() =>
+                                    recordPoiOutcome(poi, "RECOMMENDATION_EVENT_TYPE_OPENED")
+                                  }
+                                >
+                                  Open place
+                                </a>
+                              </Show>
+                              <AddToTripButton poi={poi} />
                             </div>
                           </div>
                         );
@@ -605,10 +705,10 @@ export default function DiscoverPage() {
                 {(cat) => (
                   <button
                     onClick={() => handleCategoryClick(cat.category, cat.name)}
-                    class="glass-panel p-3 rounded-xl hover:shadow-lg hover:scale-105 hover:border-primary/30 transition-all duration-200 group text-center"
+                    class="loci-card-interactive p-3 rounded-xl group text-center min-h-[44px]"
                   >
-                    <span class="block text-2xl mb-1 group-hover:scale-110 transition-transform">
-                      {cat.emoji}
+                    <span class="mx-auto mb-1 flex h-8 w-8 items-center justify-center rounded-lg border border-border bg-secondary text-primary">
+                      <cat.icon class="h-4 w-4" aria-hidden="true" />
                     </span>
                     <span class="block text-xs font-semibold text-foreground">{cat.name}</span>
                   </button>
@@ -701,7 +801,7 @@ export default function DiscoverPage() {
                           {(item, index) => (
                             <button
                               onClick={() => handleTrendingClick(item)}
-                              class="w-full flex items-center gap-3 p-4 glass-panel rounded-xl hover:border-primary/30 hover:shadow-lg cursor-pointer transition-all duration-200 group"
+                              class="w-full flex items-center gap-3 p-4 loci-card-interactive rounded-xl group"
                             >
                               <div class="flex items-center justify-center w-8 h-8 bg-primary/10 text-primary rounded-full text-sm font-bold shadow-sm">
                                 {index() + 1}
@@ -753,7 +853,7 @@ export default function DiscoverPage() {
                           {(item) => (
                             <button
                               onClick={() => handleCategoryClick(item.category, item.title)}
-                              class="flex items-center gap-3 p-4 glass-panel rounded-xl hover:border-accent/30 hover:shadow-lg cursor-pointer transition-all duration-200 group"
+                              class="flex items-center gap-3 p-4 loci-card-interactive rounded-xl group"
                             >
                               <span class="text-3xl">{item.emoji}</span>
                               <div class="flex-1 text-left">
@@ -805,7 +905,7 @@ export default function DiscoverPage() {
                       <div class="space-y-3">
                         <For each={recentSessions()}>
                           {(session) => (
-                            <div class="glass-panel rounded-xl p-4 hover:shadow-lg hover:scale-[1.02] transition-all duration-200 cursor-pointer">
+                            <div class="loci-card-interactive rounded-xl p-4 cursor-pointer">
                               <div class="flex items-start gap-3 mb-3">
                                 <span class="text-2xl">🗺️</span>
                                 <div class="flex-1 min-w-0">

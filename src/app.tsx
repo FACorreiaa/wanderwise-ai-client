@@ -39,7 +39,7 @@ export default function App() {
 
                         <div class="relative z-10 flex flex-col min-h-screen">
                           <Nav />
-                          <main class="relative flex-grow">
+                          <main class="relative flex-grow pb-20 md:pb-0">
                             <div class="relative min-h-screen">
                               <Suspense fallback={<PageLoading />}>{props.children}</Suspense>
                             </div>

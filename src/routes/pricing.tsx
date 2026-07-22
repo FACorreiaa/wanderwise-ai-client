@@ -217,7 +217,7 @@ export default function Pricing() {
           <PromoCodeSection onSuccess={handlePromoSuccess} />
 
           <Show when={appliedPromo()}>
-            <div class="max-w-3xl mx-auto glass-panel gradient-border rounded-2xl p-5 border-0">
+            <div class="max-w-3xl mx-auto loci-card rounded-2xl p-5">
               <p class="font-semibold text-foreground">Promo applied</p>
               <p class="text-muted-foreground text-sm">{appliedPromo()?.description}</p>
             </div>
@@ -495,7 +495,7 @@ export default function Pricing() {
             </article>
           </section>
 
-          <section class="text-center glass-panel gradient-border rounded-2xl p-12">
+          <section class="text-center loci-card rounded-2xl p-12">
             <h2 class="text-3xl font-bold mb-4">Ready when your trip is</h2>
             <p class="text-muted-foreground mb-8 max-w-xl mx-auto">
               Generate a plan free. Upgrade when you need every day on Maps and calendar.

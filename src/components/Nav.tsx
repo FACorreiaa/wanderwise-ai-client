@@ -1,469 +1,231 @@
-import { Badge } from "@/ui/badge";
-import { Button } from "@/ui/button";
-import { useLocation } from "@solidjs/router";
-import { A } from "@solidjs/router";
+import { A, useLocation } from "@solidjs/router";
 import {
-  Menu,
-  X,
-  User,
-  Settings,
-  LogOut,
-  MessageCircle,
-  Heart,
-  List,
-  MapPin,
-  Clock,
-  Compass,
   Bookmark,
-  CreditCard,
+  ChevronDown,
+  Clock3,
+  Compass,
+  Heart,
+  LogOut,
   Map,
+  MapPin,
+  Menu,
+  MessageCircle,
+  Settings,
+  Sparkles,
+  User,
+  Users,
+  X,
 } from "lucide-solid";
-import { createSignal, For, Show, onMount, onCleanup } from "solid-js";
-import { Portal } from "solid-js/web";
-import { ImageRoot, ImageFallback, Image } from "@/ui/image";
+import { createSignal, For, Show } from "solid-js";
+import { Dynamic } from "solid-js/web";
 import { useAuth } from "~/contexts/AuthContext";
-import PWAInstall from "~/components/PWAInstall";
 import ThemeSelector from "~/components/ThemeSelector";
-import EntitlementsBadge from "~/components/EntitlementsBadge";
+import { Button } from "~/ui/button";
 import { handleLinkPreload } from "~/lib/preload";
 
-// Public navigation items (for non-authenticated users)
-const publicNavigationItems = [
+const publicItems = [
+  { name: "How it works", href: "/features" },
   { name: "About", href: "/about" },
-  { name: "Features", href: "/features" },
   { name: "MCP", href: "/mcp" },
-  { name: "Roadmap", href: "/roadmap" },
   { name: "Pricing", href: "/pricing" },
 ];
 
-// Authenticated navigation items (main nav bar)
-const authNavigationItems = [
+const journeyItems = [
   { name: "Discover", href: "/discover", icon: Compass },
-  { name: "Near Me", href: "/nearme", icon: MapPin },
-  { name: "Recents", href: "/recents", icon: Clock },
+  { name: "Nearby", href: "/nearme", icon: MapPin },
   { name: "Trips", href: "/trips", icon: Map },
-  { name: "Chat", href: "/chat", icon: MessageCircle },
+  { name: "Ask Loci", href: "/chat", icon: MessageCircle },
 ];
 
-// User menu dropdown items
-const userMenuItems = [
+const accountItems = [
+  { name: "Contribute", href: "/contribute", icon: Users },
   { name: "Favorites", href: "/favorites", icon: Heart },
   { name: "Bookmarks", href: "/bookmarks", icon: Bookmark },
-  { name: "My Lists", href: "/lists", icon: List },
-  { name: "Profile", href: "/profiles", icon: User },
-  { name: "Billing", href: "/billing", icon: CreditCard, badge: "Pro" },
+  { name: "Recents", href: "/recents", icon: Clock3 },
+  { name: "Travel profiles", href: "/profiles", icon: User },
   { name: "Settings", href: "/settings", icon: Settings },
 ];
 
 export default function Nav() {
   const { isAuthenticated, user, logout, isLoading } = useAuth();
   const location = useLocation();
-  const [isMenuOpen, setIsMenuOpen] = createSignal(false);
-  const [showUserMenu, setShowUserMenu] = createSignal(false);
+  const [mobileOpen, setMobileOpen] = createSignal(false);
+  const [accountOpen, setAccountOpen] = createSignal(false);
 
-  const handleLogout = async () => {
-    try {
-      await logout();
-    } catch (error) {
-      console.error("Logout failed:", error);
-    }
-  };
-
-  // Close menus when clicking outside
-  onMount(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      const target = event.target as HTMLElement;
-      if (!target.closest(".user-menu-container") && showUserMenu()) {
-        setShowUserMenu(false);
-      }
-    };
-
-    document.addEventListener("click", handleClickOutside);
-    onCleanup(() => document.removeEventListener("click", handleClickOutside));
-  });
+  const initials = () =>
+    (user()?.display_name || user()?.username || user()?.email || "Traveler")
+      .slice(0, 1)
+      .toUpperCase();
 
   return (
-    <nav class="sticky top-0 z-50 transition-all">
-      <div class="island-nav px-4 sm:px-6 lg:px-8">
-        <div class="flex justify-between items-center h-14 sm:h-16">
-          {/* Logo - Mobile First */}
-          <div class="flex items-center">
-            <A href="/" class="flex items-center">
-              <div class="w-6 h-6 sm:w-8 sm:h-8 flex items-center justify-center">
-                <ImageRoot>
-                  <Image
-                    src="/images/loci-abstract-symbol.svg"
-                    alt="Loci logo"
-                    class="w-full h-full object-contain"
-                  />
-                  <ImageFallback class="w-full h-full bg-primary text-primary-foreground rounded flex items-center justify-center text-sm font-bold">
-                    L
-                  </ImageFallback>
-                </ImageRoot>
-              </div>
-              <span class="ml-2 text-lg sm:text-xl font-bold text-foreground tracking-tight transition-colors">
+    <>
+      <nav class="sticky top-0 z-50 island-nav">
+        <div class="mx-auto flex h-16 max-w-7xl items-center gap-6 px-4 sm:px-6 lg:px-8">
+          <A href="/" class="group flex shrink-0 items-center gap-3" aria-label="Loci home">
+            <span class="relative grid h-9 w-9 place-items-center rounded-full border border-primary bg-primary text-primary-foreground">
+              <MapPin class="h-4 w-4" />
+              <span class="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full border-2 border-background bg-accent" />
+            </span>
+            <span>
+              <span class="block font-serif text-xl font-semibold leading-none tracking-tight">
                 Loci
               </span>
-              <Show when={isAuthenticated()}>
-                <Badge
-                  variant="secondary"
-                  class="ml-1 sm:ml-2 bg-primary/10 text-primary border border-primary/30 text-xs px-1.5 py-0.5 sm:px-2 sm:py-1"
-                >
-                  AI
-                </Badge>
-              </Show>
-            </A>
-          </div>
+              <span class="font-coord hidden text-[9px] uppercase tracking-[0.2em] text-muted-foreground sm:block">
+                Field guide
+              </span>
+            </span>
+          </A>
 
-          {/* Mobile Menu Button */}
-          <Button
-            variant="ghost"
-            size="sm"
-            class="md:hidden p-2 text-foreground hover:text-primary"
-            onClick={() => setIsMenuOpen(!isMenuOpen())}
-            aria-label={isMenuOpen() ? "Close menu" : "Open menu"}
-          >
-            <Show when={!isMenuOpen()} fallback={<X class="w-5 h-5" />}>
-              <Menu class="w-5 h-5" />
-            </Show>
-          </Button>
-
-          {/* Desktop Navigation */}
           <Show when={!isLoading()}>
-            <Show
-              when={isAuthenticated()}
-              fallback={
-                <div class="hidden md:flex items-center space-x-6 lg:space-x-8">
-                  <For each={publicNavigationItems}>
-                    {(item) => (
-                      <A
-                        href={item.href}
-                        class="text-muted-foreground hover:text-primary font-medium transition-colors text-sm lg:text-base jb-tab"
-                        activeClass="jb-tab-active"
-                      >
-                        {item.name}
-                      </A>
-                    )}
-                  </For>
-                </div>
-              }
-            >
-              <div class="hidden md:flex items-center space-x-1">
-                <For each={authNavigationItems}>
-                  {(item) => {
-                    const IconComponent = item.icon;
-                    return (
-                      <A
-                        href={item.href}
-                        onMouseEnter={() => handleLinkPreload(item.href)}
-                        class="flex items-center gap-2 px-3 py-2 rounded-xl font-medium transition-all text-sm border border-transparent jb-tab hover:bg-muted"
-                        activeClass="jb-tab-active shadow-sm"
-                      >
-                        <IconComponent class="w-4 h-4" />
-                        {item.name}
-                        <Show when={(item as any).experimental}>
-                          <Badge
-                            variant="secondary"
-                            class="ml-1 bg-orange-100 dark:bg-orange-900 text-orange-800 dark:text-orange-300 border border-orange-300 dark:border-orange-700 text-xs px-1.5 py-0.5"
-                          >
-                            Experimental
-                          </Badge>
-                        </Show>
-                      </A>
-                    );
-                  }}
-                </For>
-                <EntitlementsBadge />
-              </div>
-            </Show>
-          </Show>
-
-          {/* Desktop User Menu or Auth Buttons */}
-          <Show when={!isLoading()}>
-            <Show
-              when={isAuthenticated()}
-              fallback={
-                <div class="hidden md:flex items-center space-x-3 lg:space-x-4">
-                  {/* PWA Install Button */}
-                  <PWAInstall />
-
-                  {/* Theme Selector for non-authenticated users */}
-                  <ThemeSelector />
-
-                  <A href="/auth/signin">
-                    <Button
-                      variant="ghost"
-                      class="text-muted-foreground hover:text-primary text-sm lg:text-base px-3 lg:px-4 font-semibold"
+            <div class="hidden flex-1 items-center justify-center gap-1 md:flex">
+              <For each={isAuthenticated() ? journeyItems : publicItems}>
+                {(item) => {
+                  const Icon = "icon" in item ? (item.icon as typeof Compass) : undefined;
+                  return (
+                    <A
+                      href={item.href}
+                      onMouseEnter={() => handleLinkPreload(item.href)}
+                      class="jb-tab flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary/70 hover:text-foreground"
+                      activeClass="jb-tab-active"
                     >
-                      Log In
-                    </Button>
-                  </A>
-                  <A href="/auth/signup">
-                    <Button class="text-sm lg:text-base px-3 lg:px-4 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold shadow-lg">
-                      Get Started
-                    </Button>
-                  </A>
-                </div>
-              }
-            >
-              <div class="hidden md:flex items-center space-x-3 relative user-menu-container">
-                {/* PWA Install Button */}
-                <PWAInstall />
+                      <Show when={Icon}>
+                        <Dynamic component={Icon} class="h-4 w-4" />
+                      </Show>
+                      {item.name}
+                    </A>
+                  );
+                }}
+              </For>
+            </div>
 
-                {/* Theme Selector */}
-                <ThemeSelector />
-
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setShowUserMenu(!showUserMenu())}
-                  class="flex items-center gap-2 p-2 text-foreground hover:text-primary"
-                >
-                  <div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground text-sm font-bold shadow-lg ring-2 ring-primary/30">
-                    {(user()?.display_name || user()?.username || user()?.email || "U")
-                      .charAt(0)
-                      .toUpperCase()}
-                  </div>
-                  <span class="text-sm font-semibold text-foreground">
-                    {user()?.display_name || user()?.username || user()?.email || "Guest"}
-                  </span>
-                </Button>
-
-                {/* User Dropdown Menu */}
-                <Show when={showUserMenu()}>
-                  <div class="absolute top-full right-0 mt-2 w-56 bg-popover/95 backdrop-blur-xl rounded-2xl shadow-lg border border-border py-2 z-50 transition-colors">
-                    {/* User Menu Items */}
-                    <For each={userMenuItems}>
-                      {(item) => {
-                        const IconComponent = item.icon;
-                        return (
-                          <A
-                            href={item.href}
-                            class={`flex items-center gap-3 px-4 py-2.5 text-sm font-medium transition-colors mx-1 rounded-lg ${
-                              location.pathname === item.href
-                                ? "bg-primary/10 text-primary"
-                                : "text-muted-foreground hover:bg-muted"
-                            }`}
-                            onClick={() => setShowUserMenu(false)}
-                          >
-                            <IconComponent class="w-4 h-4" />
-                            {item.name}
-                            <Show when={(item as any).badge}>
-                              <Badge
-                                variant="secondary"
-                                class="ml-auto bg-gradient-to-r from-purple-100 to-blue-100 dark:from-purple-900/40 dark:to-blue-900/40 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-700/50 text-xs px-1.5 py-0.5"
-                              >
-                                {(item as any).badge}
-                              </Badge>
-                            </Show>
-                          </A>
-                        );
-                      }}
-                    </For>
-
-                    {/* Divider */}
-                    <div class="my-2 mx-3 border-t border-border" />
-
-                    {/* Sign Out */}
-                    <button
-                      onClick={() => {
-                        setShowUserMenu(false);
-                        handleLogout();
-                      }}
-                      class="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-destructive hover:bg-destructive/10 transition-colors rounded-lg mx-1"
-                    >
-                      <LogOut class="w-4 h-4" />
-                      Sign Out
-                    </button>
-                  </div>
-                </Show>
-              </div>
-            </Show>
-          </Show>
-        </div>
-      </div>
-
-      <Show when={isMenuOpen()}>
-        <Portal>
-          <div class="md:hidden fixed inset-0 z-[100] transition-all duration-300">
-            {/* Glassy Background Layer */}
-            <div class="absolute inset-0 bg-background/80 backdrop-blur-3xl" />
-
-            <div class="relative flex flex-col h-full overflow-y-auto">
-              {/* Mobile Header */}
-              {/* Mobile Header */}
-              <div class="flex justify-between items-center px-4 sm:px-6 py-4 border-b border-border/50 bg-card/50 backdrop-blur-sm sticky top-0 z-10 h-14 sm:h-16">
-                <div class="flex items-center">
-                  <div class="w-6 h-6 sm:w-8 sm:h-8 flex items-center justify-center">
-                    <ImageRoot>
-                      <Image
-                        src="/images/loci-abstract-symbol.svg"
-                        alt="Loci logo"
-                        class="w-full h-full object-contain"
-                      />
-                      <ImageFallback class="w-full h-full bg-primary text-primary-foreground rounded flex items-center justify-center text-sm font-bold">
-                        L
-                      </ImageFallback>
-                    </ImageRoot>
-                  </div>
-                  <span class="ml-2 text-lg sm:text-xl font-bold text-foreground tracking-tight">
-                    Loci
-                  </span>
-                  <Show when={isAuthenticated()}>
-                    <Badge
-                      variant="secondary"
-                      class="ml-1 sm:ml-2 bg-primary/10 text-primary border border-primary/30 text-xs px-1.5 py-0.5 sm:px-2 sm:py-1"
-                    >
-                      AI
-                    </Badge>
-                  </Show>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  class="md:hidden p-2 text-foreground hover:bg-muted rounded-full"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  <X class="w-6 h-6" />
-                </Button>
-              </div>
-
-              {/* Mobile Navigation Links - Clean List Style */}
-              <div class="flex-1 px-6 py-2">
-                <Show when={!isLoading()}>
-                  <div class="flex flex-col">
-                    {/* Public Items */}
-                    <Show when={!isAuthenticated()}>
-                      <For each={publicNavigationItems}>
+            <div class="ml-auto hidden items-center gap-2 md:flex">
+              <ThemeSelector />
+              <Show
+                when={isAuthenticated()}
+                fallback={
+                  <>
+                    <A href="/auth/signin" class="px-3 py-2 text-sm font-semibold text-foreground">
+                      Sign in
+                    </A>
+                    <A href="/auth/signup">
+                      <Button class="gap-2 rounded-lg">
+                        <Sparkles class="h-4 w-4" />
+                        Start exploring
+                      </Button>
+                    </A>
+                  </>
+                }
+              >
+                <div class="relative">
+                  <button
+                    type="button"
+                    onClick={() => setAccountOpen(!accountOpen())}
+                    class="flex items-center gap-2 rounded-lg border border-border bg-card px-2 py-1.5 text-sm font-semibold hover:border-accent"
+                    aria-expanded={accountOpen()}
+                  >
+                    <span class="grid h-8 w-8 place-items-center rounded-full bg-secondary text-xs text-secondary-foreground">
+                      {initials()}
+                    </span>
+                    <span class="max-w-28 truncate">
+                      {user()?.display_name || user()?.username || "Traveler"}
+                    </span>
+                    <ChevronDown class="h-4 w-4 text-muted-foreground" />
+                  </button>
+                  <Show when={accountOpen()}>
+                    <div class="absolute right-0 top-full mt-2 w-60 rounded-xl border border-border bg-popover p-2 shadow-xl">
+                      <p class="px-3 pb-2 pt-1 font-coord text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
+                        Your field kit
+                      </p>
+                      <For each={accountItems}>
                         {(item) => (
                           <A
                             href={item.href}
-                            class="group flex items-center justify-between py-5 text-lg font-medium text-foreground border-b border-border/50 active:bg-muted transition-colors"
-                            onClick={() => setIsMenuOpen(false)}
+                            onClick={() => setAccountOpen(false)}
+                            class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-muted-foreground hover:bg-secondary hover:text-foreground"
                           >
+                            <Dynamic component={item.icon} class="h-4 w-4" />
                             {item.name}
-                            <span class="text-muted-foreground/60 group-hover:translate-x-1 transition-transform">
-                              →
-                            </span>
                           </A>
                         )}
                       </For>
-                    </Show>
-
-                    {/* Authenticated Items */}
-                    <Show when={isAuthenticated()}>
-                      <For each={authNavigationItems}>
-                        {(item) => {
-                          const IconComponent = item.icon;
-                          return (
-                            <A
-                              href={item.href}
-                              onTouchStart={() => handleLinkPreload(item.href)}
-                              class="group flex items-center justify-between py-5 text-lg font-medium text-foreground border-b border-border/50 active:bg-muted transition-colors"
-                              onClick={() => setIsMenuOpen(false)}
-                            >
-                              <div class="flex items-center gap-4">
-                                <span class="p-2 rounded-lg bg-muted text-muted-foreground">
-                                  <IconComponent class="w-5 h-5" />
-                                </span>
-                                <div class="flex items-center gap-2">
-                                  {item.name}
-                                  <Show when={(item as any).experimental}>
-                                    <Badge
-                                      variant="secondary"
-                                      class="bg-orange-100 dark:bg-orange-900/40 text-orange-800 dark:text-orange-200 border border-orange-200 dark:border-orange-700/50 text-[10px] px-1.5 py-0.5 uppercase tracking-wider"
-                                    >
-                                      Beta
-                                    </Badge>
-                                  </Show>
-                                </div>
-                              </div>
-                              <span class="text-muted-foreground/60 group-hover:translate-x-1 transition-transform">
-                                →
-                              </span>
-                            </A>
-                          );
-                        }}
-                      </For>
-                    </Show>
-                  </div>
-                </Show>
-              </div>
-
-              {/* Mobile Footer / User Action Area */}
-              <Show when={!isLoading()}>
-                <div class="p-6 mt-auto bg-card/50 backdrop-blur-md border-t border-border/50">
-                  <Show
-                    when={!isAuthenticated()}
-                    fallback={
-                      <div class="space-y-6">
-                        {/* User Info */}
-                        <div class="flex items-center gap-4">
-                          <div class="w-12 h-12 rounded-full bg-primary flex items-center justify-center text-primary-foreground text-xl font-bold shadow-lg ring-2 ring-primary/30">
-                            {user()?.username?.charAt(0).toUpperCase() || "U"}
-                          </div>
-                          <div class="flex-1 min-w-0">
-                            <div class="font-bold text-lg text-foreground truncate">
-                              {user()?.username || "User"}
-                            </div>
-                            <div class="text-sm text-muted-foreground truncate">
-                              {user()?.email}
-                            </div>
-                          </div>
-                          <ThemeSelector />
-                        </div>
-
-                        {/* Actions Grid */}
-                        <div class="grid grid-cols-2 gap-3">
-                          <A href="/settings" class="w-full" onClick={() => setIsMenuOpen(false)}>
-                            <Button
-                              variant="outline"
-                              class="w-full justify-center h-12 text-base border-border bg-card/50 text-foreground hover:bg-muted"
-                            >
-                              Settings
-                            </Button>
-                          </A>
-                          <Button
-                            onClick={() => {
-                              setIsMenuOpen(false);
-                              handleLogout();
-                            }}
-                            variant="outline"
-                            class="w-full justify-center h-12 text-base text-destructive border-destructive/30 bg-destructive/10 hover:bg-destructive/20"
-                          >
-                            Sign Out
-                          </Button>
-                        </div>
-                      </div>
-                    }
-                  >
-                    {/* Guest Actions */}
-                    <div class="space-y-4">
-                      <div class="flex justify-between items-center mb-4">
-                        <span class="text-sm font-medium text-muted-foreground">Appearance</span>
-                        <ThemeSelector />
-                      </div>
-                      <A href="/auth/signin" class="block" onClick={() => setIsMenuOpen(false)}>
-                        <Button
-                          variant="outline"
-                          class="w-full justify-center h-12 text-base font-semibold border-border bg-card/50 text-foreground"
-                        >
-                          Log In
-                        </Button>
-                      </A>
-                      <A href="/auth/signup" class="block" onClick={() => setIsMenuOpen(false)}>
-                        <Button class="w-full justify-center h-12 text-base font-bold bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg">
-                          Get Started
-                        </Button>
-                      </A>
+                      <div class="my-2 border-t border-border" />
+                      <button
+                        type="button"
+                        onClick={() => void logout()}
+                        class="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-destructive hover:bg-destructive/10"
+                      >
+                        <LogOut class="h-4 w-4" />
+                        Sign out
+                      </button>
                     </div>
                   </Show>
                 </div>
               </Show>
             </div>
+          </Show>
+
+          <button
+            type="button"
+            class="ml-auto grid h-10 w-10 place-items-center rounded-lg border border-border md:hidden"
+            onClick={() => setMobileOpen(!mobileOpen())}
+            aria-label={mobileOpen() ? "Close navigation" : "Open navigation"}
+          >
+            {mobileOpen() ? <X class="h-5 w-5" /> : <Menu class="h-5 w-5" />}
+          </button>
+        </div>
+
+        <Show when={mobileOpen()}>
+          <div class="border-t border-border bg-background px-4 py-4 md:hidden">
+            <div class="grid gap-1">
+              <For each={isAuthenticated() ? accountItems : publicItems}>
+                {(item) => {
+                  const Icon = "icon" in item ? (item.icon as typeof Compass) : undefined;
+                  return (
+                    <A
+                      href={item.href}
+                      onClick={() => setMobileOpen(false)}
+                      class="flex items-center gap-3 rounded-lg px-3 py-3 text-sm font-medium text-foreground hover:bg-secondary"
+                    >
+                      <Show when={Icon}>
+                        <Dynamic component={Icon} class="h-4 w-4" />
+                      </Show>
+                      {item.name}
+                    </A>
+                  );
+                }}
+              </For>
+              <div class="mt-3 flex items-center justify-between border-t border-border pt-3">
+                <ThemeSelector />
+                <Show when={!isAuthenticated()}>
+                  <A href="/auth/signup" onClick={() => setMobileOpen(false)}>
+                    <Button>Start exploring</Button>
+                  </A>
+                </Show>
+              </div>
+            </div>
           </div>
-        </Portal>
+        </Show>
+      </nav>
+
+      <Show when={isAuthenticated() && !isLoading()}>
+        <nav class="fixed inset-x-3 bottom-3 z-50 grid grid-cols-4 rounded-2xl border border-border bg-background/95 p-1.5 shadow-xl backdrop-blur md:hidden">
+          <For each={journeyItems}>
+            {(item) => {
+              const Icon = item.icon;
+              const active = () => location.pathname.startsWith(item.href);
+              return (
+                <A
+                  href={item.href}
+                  class={`flex min-h-12 flex-col items-center justify-center gap-1 rounded-xl text-[10px] font-semibold transition-colors ${active() ? "bg-secondary text-foreground" : "text-muted-foreground"}`}
+                >
+                  <Icon class="h-4 w-4" />
+                  {item.name === "Ask Loci" ? "Ask" : item.name}
+                </A>
+              );
+            }}
+          </For>
+        </nav>
       </Show>
-    </nav>
+    </>
   );
 }

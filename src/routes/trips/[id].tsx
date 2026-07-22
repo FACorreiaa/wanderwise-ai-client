@@ -7,6 +7,9 @@ import {
   useEditStopDuration,
   useSetConstraint,
   useShareTrip,
+  useAddStop,
+  useRemoveStop,
+  useReplaceStop,
   type Trip,
   type TripDay,
   type TripStop,
@@ -18,6 +21,12 @@ import { isProPlan } from "~/lib/subscription";
 import TripExportMenu from "~/components/trip/TripExportMenu";
 import WhyThisStop from "~/components/poi/WhyThisStop";
 import { cacheTripOffline } from "~/lib/trip-offline-cache";
+import {
+  recordRecommendationEvents,
+  type RecommendationEventName,
+} from "~/lib/api/recommendations";
+import PlacePicker from "~/components/trip/PlacePicker";
+import type { POI } from "~/lib/api/types";
 
 const minutesToHHMM = (m?: number) => {
   if (m == null) return "";
@@ -50,9 +59,14 @@ export default function TripEditor() {
   const editDur = useEditStopDuration();
   const setConstraint = useSetConstraint();
   const share = useShareTrip();
+  const add = useAddStop();
+  const remove = useRemoveStop();
+  const replace = useReplaceStop();
 
   const [shareUrl, setShareUrl] = createSignal<string | null>(null);
   const [conflict, setConflict] = createSignal(false);
+  const [replacingStopID, setReplacingStopID] = createSignal<string | null>(null);
+  const [removeConfirmID, setRemoveConfirmID] = createSignal<string | null>(null);
 
   const trip = () => tripQuery.data as Trip | undefined;
   const version = () => trip()?.version ?? 0n;
@@ -116,6 +130,79 @@ export default function TripEditor() {
       { tripId: params.id!, isPublic: true },
       { onSuccess: (r) => setShareUrl(r.shareUrl) },
     );
+
+  const addStop = (day: TripDay, poi: POI) => {
+    add.mutate(
+      {
+        tripId: params.id!,
+        dayId: day.id,
+        baseVersion: version(),
+        stop: {
+          id: crypto.randomUUID(),
+          poiId: poi.id,
+          orderIndex: day.stops.length,
+          name: poi.name,
+          notes: poi.description_poi || poi.description || "Added from place search",
+        },
+      },
+      {
+        onError: onMutationError,
+      },
+    );
+  };
+
+  const removeStop = (stop: TripStop) => {
+    if (removeConfirmID() !== stop.id) {
+      setRemoveConfirmID(stop.id);
+      return;
+    }
+    remove.mutate(
+      { tripId: params.id!, stop, baseVersion: version() },
+      {
+        onSuccess: () => setRemoveConfirmID(null),
+        onError: onMutationError,
+      },
+    );
+  };
+
+  const replaceStop = (stop: TripStop, poi: POI) => {
+    replace.mutate(
+      {
+        tripId: params.id!,
+        currentStop: stop,
+        baseVersion: version(),
+        replacement: {
+          ...stop,
+          id: crypto.randomUUID(),
+          poiId: poi.id,
+          name: poi.name,
+          notes: poi.description_poi || poi.description || "Replaced from place search",
+          recommendationTrace: undefined,
+        },
+      },
+      {
+        onSuccess: () => setReplacingStopID(null),
+        onError: onMutationError,
+      },
+    );
+  };
+
+  const recordStopOutcome = (
+    stop: TripStop,
+    eventType: RecommendationEventName,
+    rating?: number,
+  ) => {
+    if (!stop.recommendationTrace) return;
+    void recordRecommendationEvents([
+      {
+        eventType,
+        trace: stop.recommendationTrace,
+        poiId: stop.poiId,
+        tripId: params.id!,
+        rating,
+      },
+    ]);
+  };
 
   return (
     <main class="mx-auto max-w-3xl px-4 py-8">
@@ -305,14 +392,116 @@ export default function TripEditor() {
                               }
                             />
                             <span class="text-xs text-muted-foreground">min</span>
+                            <button
+                              type="button"
+                              class="rounded-md border px-2 py-1 text-xs hover:bg-muted"
+                              onClick={() =>
+                                setReplacingStopID((current) =>
+                                  current === stop.id ? null : stop.id,
+                                )
+                              }
+                              aria-expanded={replacingStopID() === stop.id}
+                            >
+                              {replacingStopID() === stop.id ? "Close search" : "Replace"}
+                            </button>
+                            <button
+                              type="button"
+                              class={`rounded-md border px-2 py-1 text-xs transition-colors ${
+                                removeConfirmID() === stop.id
+                                  ? "border-destructive bg-destructive text-destructive-foreground"
+                                  : "border-destructive/40 text-destructive hover:bg-destructive/10"
+                              }`}
+                              onClick={() => removeStop(stop)}
+                            >
+                              {removeConfirmID() === stop.id ? "Confirm remove" : "Remove"}
+                            </button>
                           </div>
-                          <div class="mt-1 pl-8">
+                          <Show when={replacingStopID() === stop.id}>
+                            <div class="mt-3 pl-8">
+                              <PlacePicker
+                                cityName={t.cityName}
+                                label={`Replace ${stop.name}`}
+                                busy={replace.isPending}
+                                onSelect={(poi) => replaceStop(stop, poi)}
+                                onCancel={() => setReplacingStopID(null)}
+                              />
+                            </div>
+                          </Show>
+                          <div class="mt-2 flex flex-wrap items-center gap-2 pl-8">
                             <WhyThisStop reason={stop.notes} />
+                            <Show when={stop.recommendationTrace}>
+                              <button
+                                type="button"
+                                class="rounded-md border px-2 py-1 text-xs hover:bg-muted"
+                                onClick={() =>
+                                  recordStopOutcome(stop, "RECOMMENDATION_EVENT_TYPE_KEPT_IN_TRIP")
+                                }
+                              >
+                                Keep this stop
+                              </button>
+                              <button
+                                type="button"
+                                class="rounded-md border px-2 py-1 text-xs hover:bg-muted"
+                                onClick={() =>
+                                  recordStopOutcome(
+                                    stop,
+                                    "RECOMMENDATION_EVENT_TYPE_VISIT_CONFIRMED",
+                                  )
+                                }
+                              >
+                                Mark visited
+                              </button>
+                              <select
+                                class="rounded-md border px-2 py-1 text-xs"
+                                aria-label={`Rate ${stop.name}`}
+                                value=""
+                                onChange={(event) => {
+                                  const rating = Number(event.currentTarget.value);
+                                  if (rating > 0) {
+                                    recordStopOutcome(
+                                      stop,
+                                      "RECOMMENDATION_EVENT_TYPE_RATED",
+                                      rating,
+                                    );
+                                    event.currentTarget.value = "";
+                                  }
+                                }}
+                              >
+                                <option value="">Rate…</option>
+                                <For each={[1, 2, 3, 4, 5]}>
+                                  {(rating) => <option value={rating}>{rating} / 5</option>}
+                                </For>
+                              </select>
+                            </Show>
+                            <Show when={stop.bookingUrl}>
+                              <a
+                                href={stop.bookingUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                                class="rounded-md border px-2 py-1 text-xs text-primary hover:bg-muted"
+                                onClick={() =>
+                                  recordStopOutcome(
+                                    stop,
+                                    "RECOMMENDATION_EVENT_TYPE_BOOKING_OPENED",
+                                  )
+                                }
+                              >
+                                Open booking
+                              </a>
+                            </Show>
                           </div>
                         </li>
                       )}
                     </For>
                   </ol>
+                  <div class="mt-3">
+                    <PlacePicker
+                      cityName={t.cityName}
+                      label={`Add another place to Day ${day.dayNumber}`}
+                      busy={add.isPending}
+                      onSelect={(poi) => addStop(day, poi)}
+                    />
+                  </div>
                 </section>
               )}
             </For>

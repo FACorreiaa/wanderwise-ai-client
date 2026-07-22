@@ -34,7 +34,7 @@ export default function TripExportMenu(props: TripExportMenuProps) {
     }
     setBusy("ics");
     try {
-      await exportTripICS(props.tripId);
+      await exportTripICS(props.tripId, props.trip);
       flash(
         props.isPro || props.dayCount <= 1
           ? "Calendar downloaded."
@@ -55,7 +55,7 @@ export default function TripExportMenu(props: TripExportMenuProps) {
     }
     setBusy("pdf");
     try {
-      await exportTripPDF(props.tripId);
+      await exportTripPDF(props.tripId, props.trip);
       flash("PDF downloaded.");
     } catch (e) {
       flash(e instanceof Error ? e.message : "PDF export failed");
@@ -71,7 +71,7 @@ export default function TripExportMenu(props: TripExportMenuProps) {
     }
     setBusy("md");
     try {
-      await exportTripMarkdown(props.tripId);
+      await exportTripMarkdown(props.tripId, props.trip);
       flash("Markdown downloaded.");
     } catch (e) {
       if (handleEntitlementError(e)) {

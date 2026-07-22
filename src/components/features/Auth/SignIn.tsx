@@ -17,7 +17,7 @@ interface FormData {
 }
 
 const inputBase =
-  "w-full px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg transition-all text-sm sm:text-base border bg-background text-foreground placeholder:text-muted-foreground backdrop-blur";
+  "w-full px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg transition-all text-sm sm:text-base border border-input bg-background text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
 
 const SignIn: Component = () => {
   const { login } = useAuth();
@@ -213,7 +213,10 @@ const SignIn: Component = () => {
             <CheckboxControl />
             <span class="text-muted-foreground">Remember me</span>
           </Checkbox>
-          <A href="/auth/forgot-password" class="text-primary hover:text-primary/80 underline-offset-4">
+          <A
+            href="/auth/forgot-password"
+            class="text-primary hover:text-primary/80 underline-offset-4"
+          >
             Forgot password?
           </A>
         </div>

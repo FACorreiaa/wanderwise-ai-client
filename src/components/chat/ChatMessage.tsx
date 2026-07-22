@@ -182,8 +182,8 @@ const ChatMessage: Component<ChatMessageProps> = (props) => {
               isUser()
                 ? "bg-primary text-primary-foreground shadow-primary/20"
                 : isError()
-                  ? "bg-destructive/10 text-destructive border border-destructive/30 backdrop-blur-sm"
-                  : "bg-card/80 text-foreground backdrop-blur-sm border border-border"
+                  ? "bg-destructive/10 text-destructive border border-destructive/30"
+                  : "loci-card text-foreground"
             }`}
           >
             <Show
@@ -196,7 +196,7 @@ const ChatMessage: Component<ChatMessageProps> = (props) => {
         </Show>
 
         <Show when={props.message.streamingData}>
-          <div class="mt-2 sm:mt-3 bg-card/90 backdrop-blur-xl border border-border rounded-xl p-3 sm:p-4 shadow-lg">
+          <div class="mt-2 sm:mt-3 loci-card rounded-xl p-3 sm:p-4 motion-enter">
             <Show when={cityData()}>
               <div class="flex items-center justify-between mb-2 sm:mb-3">
                 <div class="min-w-0 flex-1 pr-2">

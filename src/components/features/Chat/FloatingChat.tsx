@@ -42,8 +42,8 @@ export const FloatingChat: Component<FloatingChatProps> = (props) => {
       isLoading={isLoading()}
       sendChatMessage={sendChatMessage}
       handleKeyPress={handleKeyPress}
-      title="Loci Assistant"
-      placeholder="Ask about your trip..."
+      title="Ask Loci"
+      placeholder="Ask about places, routes, or your trip…"
     />
   );
 };

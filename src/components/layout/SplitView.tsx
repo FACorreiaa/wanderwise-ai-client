@@ -7,19 +7,20 @@ interface SplitViewProps {
   initialMode?: "split" | "list" | "map";
 }
 
+const toggleActive = "bg-primary text-primary-foreground shadow-sm";
+const toggleIdle = "text-muted-foreground hover:bg-muted hover:text-foreground";
+
 export default function SplitView(props: SplitViewProps) {
   const [mode, setMode] = createSignal<"split" | "list" | "map">(props.initialMode || "split");
 
   return (
-    <div class="flex flex-col h-[calc(100vh-4rem)] overflow-hidden bg-transparent">
+    <div class="flex flex-col h-[calc(100vh-4rem)] overflow-hidden bg-background">
       {/* Mobile Toggle Controls */}
-      <div class="flex items-center justify-center p-2 gap-2 md:hidden bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-800 z-10 sticky top-0">
+      <div class="flex items-center justify-center p-2 gap-2 md:hidden island-panel border-b border-border z-10 sticky top-0">
         <button
           onClick={() => setMode("list")}
-          class={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-colors ${
-            mode() === "list"
-              ? "bg-blue-600 text-white shadow-md shadow-blue-500/20"
-              : "text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+          class={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium motion-settle min-h-[44px] ${
+            mode() === "list" ? toggleActive : toggleIdle
           }`}
         >
           <List class="w-4 h-4" />
@@ -27,10 +28,8 @@ export default function SplitView(props: SplitViewProps) {
         </button>
         <button
           onClick={() => setMode("map")}
-          class={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-colors ${
-            mode() === "map"
-              ? "bg-blue-600 text-white shadow-md shadow-blue-500/20"
-              : "text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+          class={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium motion-settle min-h-[44px] ${
+            mode() === "map" ? toggleActive : toggleIdle
           }`}
         >
           <Map class="w-4 h-4" />
@@ -39,13 +38,11 @@ export default function SplitView(props: SplitViewProps) {
       </div>
 
       {/* Desktop Toggle Controls (Top Right Overlay) */}
-      <div class="hidden md:flex absolute top-20 right-4 z-20 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border border-gray-200 dark:border-gray-700 rounded-lg p-1 shadow-lg">
+      <div class="hidden md:flex absolute top-20 right-4 z-20 island-panel rounded-lg p-1">
         <button
           onClick={() => setMode("list")}
-          class={`p-2 rounded-md transition-colors ${
-            mode() === "list"
-              ? "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300"
-              : "text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800"
+          class={`p-2 rounded-md motion-settle min-h-[44px] min-w-[44px] flex items-center justify-center ${
+            mode() === "list" ? "bg-secondary text-foreground" : toggleIdle
           }`}
           title="List Only"
         >
@@ -53,10 +50,8 @@ export default function SplitView(props: SplitViewProps) {
         </button>
         <button
           onClick={() => setMode("split")}
-          class={`p-2 rounded-md transition-colors ${
-            mode() === "split"
-              ? "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300"
-              : "text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800"
+          class={`p-2 rounded-md motion-settle min-h-[44px] min-w-[44px] flex items-center justify-center ${
+            mode() === "split" ? "bg-secondary text-foreground" : toggleIdle
           }`}
           title="Split View"
         >
@@ -64,10 +59,8 @@ export default function SplitView(props: SplitViewProps) {
         </button>
         <button
           onClick={() => setMode("map")}
-          class={`p-2 rounded-md transition-colors ${
-            mode() === "map"
-              ? "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300"
-              : "text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800"
+          class={`p-2 rounded-md motion-settle min-h-[44px] min-w-[44px] flex items-center justify-center ${
+            mode() === "map" ? "bg-secondary text-foreground" : toggleIdle
           }`}
           title="Map Only"
         >
@@ -78,20 +71,20 @@ export default function SplitView(props: SplitViewProps) {
       <div class="flex-1 flex overflow-hidden relative">
         {/* List Panel */}
         <div
-          class={`flex-1 h-full overflow-y-auto transition-all duration-300 ease-in-out ${
+          class={`flex-1 h-full overflow-y-auto motion-settle ${
             mode() === "map"
               ? "hidden w-0"
               : mode() === "split"
-                ? "w-1/2 md:max-w-[600px] border-r border-gray-200/50 dark:border-gray-800/50"
+                ? "w-1/2 md:max-w-[600px] border-r border-border"
                 : "w-full"
-          } bg-transparent`}
+          } bg-background`}
         >
           <div class="h-full relative z-0">{props.listContent}</div>
         </div>
 
         {/* Map Panel */}
         <div
-          class={`flex-1 h-full transition-all duration-300 ease-in-out relative z-0 ${
+          class={`flex-1 h-full motion-settle relative z-0 ${
             mode() === "list" ? "hidden w-0" : mode() === "split" ? "w-1/2" : "w-full"
           }`}
         >

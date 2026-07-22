@@ -16,10 +16,10 @@ export default createHandler(() => (
           <link
             rel="preload"
             as="style"
-            href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Lato:ital,wght@0,100;0,300;0,400;0,700;0,900;1,100;1,300;1,400;1,700;1,900&family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,200..800&family=Space+Grotesk:wght@300..700&family=Space+Mono:ital,wght@0,400;0,700;1,400;1,700&display=swap"
+            href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400..700&family=Fraunces:opsz,wght@9..144,500..700&family=Space+Mono:wght@400;700&display=swap"
           />
           <link
-            href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Lato:ital,wght@0,100;0,300;0,400;0,700;0,900;1,100;1,300;1,400;1,700;1,900&family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,200..800&family=Space+Grotesk:wght@300..700&family=Space+Mono:ital,wght@0,400;0,700;1,400;1,700&display=swap"
+            href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400..700&family=Fraunces:opsz,wght@9..144,500..700&family=Space+Mono:wght@400;700&display=swap"
             rel="stylesheet"
             media="print"
             onLoad={(e) => {
@@ -28,7 +28,7 @@ export default createHandler(() => (
           />
           <noscript>
             <link
-              href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Lato:ital,wght@0,100;0,300;0,400;0,700;0,900;1,100;1,300;1,400;1,700;1,900&family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,200..800&family=Space+Grotesk:wght@300..700&family=Space+Mono:ital,wght@0,400;0,700;1,400;1,700&display=swap"
+              href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400..700&family=Fraunces:opsz,wght@9..144,500..700&family=Space+Mono:wght@400;700&display=swap"
               rel="stylesheet"
             />
           </noscript>
@@ -111,16 +111,9 @@ export default createHandler(() => (
                     document.documentElement.lang = localLanguage;
                   }
                   
-                  var designTheme = localStorage.getItem('designTheme') || 'loci';
-                  document.documentElement.setAttribute('data-theme', designTheme);
-
-                  var palette = {
-                    loci: { light: '#1a1a1a', dark: '#0a0a0a' },
-                    classic: { light: '#8a6e2f', dark: '#5c4033' },
-                    modern: { light: '#0c7df2', dark: '#1e3a8a' }
-                  };
-                  var colors = palette[designTheme] || palette.loci;
-                  var themeColor = useDark ? colors.dark : colors.light;
+                  document.documentElement.setAttribute('data-theme', 'loci');
+                  localStorage.setItem('designTheme', 'loci');
+                  var themeColor = useDark ? '#14251e' : '#294d3c';
                   var themeMeta = document.querySelector('meta[name="theme-color"]');
                   if (themeMeta) themeMeta.setAttribute('content', themeColor);
                 } catch (e) {

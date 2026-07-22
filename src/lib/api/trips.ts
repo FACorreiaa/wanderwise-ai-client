@@ -12,18 +12,28 @@ import {
   ListTripsRequestSchema,
   ShareTripRequestSchema,
   ReorderStopsRequestSchema,
+  AddStopRequestSchema,
+  RemoveStopRequestSchema,
+  ReplaceStopRequestSchema,
   RenameStopRequestSchema,
   EditStopDurationRequestSchema,
   SetConstraintRequestSchema,
   ExportTripRequestSchema,
   ExportFormat,
   TripPace,
+  TripStopSchema,
   type TripDraft as ProtoTripDraft,
   type TripConstraint as ProtoTripConstraint,
 } from "@buf/loci_loci-proto.bufbuild_es/loci/trip/trip_pb.js";
 import { PaginationRequestSchema } from "@buf/loci_loci-proto.bufbuild_es/loci/common/common_pb.js";
 import { transport } from "../connect-transport";
 import { cacheTripOffline, getCachedTrip } from "../trip-offline-cache";
+import {
+  fromProtoRecommendationTrace,
+  recordRecommendationEvents,
+  toProtoRecommendationTrace,
+  type RecommendationTrace,
+} from "./recommendations";
 
 const tripClient = createClient(TripService, transport);
 
@@ -40,6 +50,7 @@ export interface TripStop {
   durationMinutes?: number;
   notes: string;
   bookingUrl?: string;
+  recommendationTrace?: RecommendationTrace;
 }
 
 export interface TripDay {
@@ -107,6 +118,7 @@ const mapTrip = (p: ProtoTripDraft): Trip => ({
       durationMinutes: s.durationMinutes,
       notes: s.notes,
       bookingUrl: s.bookingUrl,
+      recommendationTrace: fromProtoRecommendationTrace(s.recommendationTrace),
     })),
   })),
 });
@@ -114,6 +126,19 @@ const mapTrip = (p: ProtoTripDraft): Trip => ({
 // Build the proto TripDraft for a save. Server-owned fields (ids, timestamps,
 // user_id) are filled with placeholders to satisfy validation; the server
 // assigns the real values (new day/stop ids are generated on insert).
+const toProtoStop = (s: TripStop) =>
+  create(TripStopSchema, {
+    id: s.id || crypto.randomUUID(),
+    poiId: s.poiId,
+    orderIndex: s.orderIndex,
+    name: s.name || "Stop",
+    startMinute: s.startMinute,
+    durationMinutes: s.durationMinutes,
+    notes: s.notes,
+    bookingUrl: s.bookingUrl,
+    recommendationTrace: toProtoRecommendationTrace(s.recommendationTrace),
+  });
+
 const toProtoTrip = (t: Trip) =>
   create(TripDraftSchema, {
     id: t.id || "",
@@ -137,16 +162,7 @@ const toProtoTrip = (t: Trip) =>
       id: d.id || crypto.randomUUID(),
       dayNumber: d.dayNumber,
       date: d.date ? timestampFromDate(new Date(d.date)) : undefined,
-      stops: d.stops.map((s) => ({
-        id: s.id || crypto.randomUUID(),
-        poiId: s.poiId,
-        orderIndex: s.orderIndex,
-        name: s.name || "Stop",
-        startMinute: s.startMinute,
-        durationMinutes: s.durationMinutes,
-        notes: s.notes,
-        bookingUrl: s.bookingUrl,
-      })),
+      stops: d.stops.map(toProtoStop),
     })),
   });
 
@@ -209,11 +225,17 @@ export const useSaveTrip = () => {
 };
 
 // Each fine-grained mutation returns the updated trip (bumped version).
-const detailMutation = <TInput>(fn: (input: TInput) => Promise<ProtoTripDraft>) => {
+const detailMutation = <TInput>(
+  fn: (input: TInput) => Promise<ProtoTripDraft>,
+  afterSuccess?: (trip: Trip, input: TInput) => void,
+) => {
   const qc = useQueryClient();
   return useMutation(() => ({
     mutationFn: async (input: TInput) => mapTrip(await fn(input)),
-    onSuccess: (t: Trip) => qc.setQueryData(tripKeys.detail(t.id), t),
+    onSuccess: (t: Trip, input: TInput) => {
+      qc.setQueryData(tripKeys.detail(t.id), t);
+      afterSuccess?.(t, input);
+    },
   }));
 };
 
@@ -250,6 +272,88 @@ export const useSetConstraint = () =>
     ),
   );
 
+export const useAddStop = () =>
+  detailMutation(
+    (i: { tripId: string; dayId: string; stop: TripStop; baseVersion: bigint }) =>
+      tripClient.addStop(
+        create(AddStopRequestSchema, {
+          tripId: i.tripId,
+          dayId: i.dayId,
+          stop: toProtoStop(i.stop),
+          baseVersion: i.baseVersion,
+        }),
+      ),
+    (trip, input) => {
+      if (!input.stop.recommendationTrace) return;
+      void recordRecommendationEvents([
+        {
+          eventType: "RECOMMENDATION_EVENT_TYPE_ADDED_TO_TRIP",
+          trace: input.stop.recommendationTrace,
+          poiId: input.stop.poiId,
+          tripId: trip.id,
+        },
+      ]);
+    },
+  );
+
+export const useRemoveStop = () =>
+  detailMutation(
+    (i: { tripId: string; stop: TripStop; baseVersion: bigint }) =>
+      tripClient.removeStop(
+        create(RemoveStopRequestSchema, {
+          tripId: i.tripId,
+          stopId: i.stop.id,
+          baseVersion: i.baseVersion,
+        }),
+      ),
+    (trip, input) => {
+      if (!input.stop.recommendationTrace) return;
+      void recordRecommendationEvents([
+        {
+          eventType: "RECOMMENDATION_EVENT_TYPE_REMOVED_FROM_TRIP",
+          trace: input.stop.recommendationTrace,
+          poiId: input.stop.poiId,
+          tripId: trip.id,
+        },
+      ]);
+    },
+  );
+
+export const useReplaceStop = () =>
+  detailMutation(
+    (i: { tripId: string; currentStop: TripStop; replacement: TripStop; baseVersion: bigint }) =>
+      tripClient.replaceStop(
+        create(ReplaceStopRequestSchema, {
+          tripId: i.tripId,
+          stopId: i.currentStop.id,
+          replacement: toProtoStop(i.replacement),
+          baseVersion: i.baseVersion,
+        }),
+      ),
+    (trip, input) => {
+      const events = [];
+      if (input.currentStop.recommendationTrace) {
+        events.push({
+          eventType: "RECOMMENDATION_EVENT_TYPE_REMOVED_FROM_TRIP" as const,
+          trace: input.currentStop.recommendationTrace,
+          poiId: input.currentStop.poiId,
+          tripId: trip.id,
+          metadata: { action: "replaced" },
+        });
+      }
+      if (input.replacement.recommendationTrace) {
+        events.push({
+          eventType: "RECOMMENDATION_EVENT_TYPE_ADDED_TO_TRIP" as const,
+          trace: input.replacement.recommendationTrace,
+          poiId: input.replacement.poiId,
+          tripId: trip.id,
+          metadata: { action: "replacement" },
+        });
+      }
+      void recordRecommendationEvents(events);
+    },
+  );
+
 export const useShareTrip = () =>
   useMutation(() => ({
     mutationFn: async (i: { tripId: string; isPublic: boolean }) =>
@@ -257,16 +361,18 @@ export const useShareTrip = () =>
   }));
 
 // Export a trip to ICS and trigger a browser download.
-export const exportTripICS = async (tripId: string) => exportTrip(tripId, ExportFormat.ICS);
+export const exportTripICS = async (tripId: string, trip?: Trip) =>
+  exportTrip(tripId, ExportFormat.ICS, trip);
 
 /** Export trip as PDF (Pro-gated on server for multi-day; client soft-gates UX). */
-export const exportTripPDF = async (tripId: string) => exportTrip(tripId, ExportFormat.PDF);
+export const exportTripPDF = async (tripId: string, trip?: Trip) =>
+  exportTrip(tripId, ExportFormat.PDF, trip);
 
 /** Export trip as Markdown (Pro-only on server). */
-export const exportTripMarkdown = async (tripId: string) =>
-  exportTrip(tripId, ExportFormat.MARKDOWN);
+export const exportTripMarkdown = async (tripId: string, trip?: Trip) =>
+  exportTrip(tripId, ExportFormat.MARKDOWN, trip);
 
-async function exportTrip(tripId: string, format: ExportFormat) {
+async function exportTrip(tripId: string, format: ExportFormat, trip?: Trip) {
   const res = await tripClient.exportTrip(create(ExportTripRequestSchema, { tripId, format }));
   const blob = new Blob([res.data as unknown as BlobPart], {
     type:
@@ -291,4 +397,19 @@ async function exportTrip(tripId: string, format: ExportFormat) {
   a.click();
   a.remove();
   URL.revokeObjectURL(url);
+  if (trip) {
+    void recordRecommendationEvents(
+      trip.days.flatMap((day) =>
+        day.stops
+          .filter((stop) => stop.recommendationTrace)
+          .map((stop) => ({
+            eventType: "RECOMMENDATION_EVENT_TYPE_EXPORTED" as const,
+            trace: stop.recommendationTrace!,
+            poiId: stop.poiId,
+            tripId,
+            metadata: { format: ExportFormat[format]?.toLowerCase() || String(format) },
+          })),
+      ),
+    );
+  }
 }

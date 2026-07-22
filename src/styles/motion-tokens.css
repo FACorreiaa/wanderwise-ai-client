@@ -1,0 +1,77 @@
+@layer base {
+  :root {
+    --motion-fast: 150ms;
+    --motion-base: 250ms;
+    --motion-slow: 400ms;
+    --motion-route: 800ms;
+    --ease-settle: cubic-bezier(0.22, 1, 0.36, 1);
+    --ease-enter: cubic-bezier(0.16, 1, 0.3, 1);
+    --ease-press: cubic-bezier(0.4, 0, 0.2, 1);
+  }
+}
+
+@layer utilities {
+  .motion-enter {
+    animation: fadeIn var(--motion-base) var(--ease-enter) forwards;
+  }
+
+  .motion-settle {
+    transition:
+      transform var(--motion-base) var(--ease-settle),
+      opacity var(--motion-base) var(--ease-settle),
+      border-color var(--motion-fast) var(--ease-press),
+      background-color var(--motion-fast) var(--ease-press);
+  }
+
+  .motion-press:active {
+    transform: scale(0.98);
+  }
+
+  .loci-card-interactive {
+    @apply cursor-pointer border border-border bg-card text-card-foreground;
+    transition:
+      transform var(--motion-base) var(--ease-settle),
+      opacity var(--motion-base) var(--ease-settle),
+      border-color var(--motion-fast) var(--ease-press),
+      background-color var(--motion-fast) var(--ease-press);
+  }
+
+  .loci-card-interactive:active {
+    transform: scale(0.98);
+  }
+
+  .loci-card-interactive:hover {
+    border-color: hsl(var(--primary) / 0.35);
+    box-shadow: 0 10px 28px -20px hsl(var(--foreground) / 0.4);
+  }
+
+  .island-panel {
+    @apply bg-card/95 border border-border;
+    box-shadow: 0 8px 32px -16px hsl(var(--foreground) / 0.18);
+  }
+
+  .dark .island-panel {
+    box-shadow: 0 12px 40px -12px hsl(0 0% 0% / 0.45);
+  }
+
+  .trust-chip {
+    @apply inline-flex max-w-full items-start gap-1.5 rounded-md border border-primary/20 bg-primary/5 px-2 py-1 text-xs text-foreground/80;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stagger-animation,
+  .progressive-fade-in,
+  .scale-in,
+  .motion-enter {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+
+  .motion-settle,
+  .motion-press:active {
+    transition: none !important;
+    transform: none !important;
+  }
+}
