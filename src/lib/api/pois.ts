@@ -187,18 +187,20 @@ export const useNearbyPOIs = (params?: {
 export const useSearchPOIs = (query: string, filters?: any) => {
   return useQuery(() => ({
     queryKey: queryKeys.searchPois(query, filters),
-    queryFn: async (): Promise<POI[]> => {
-      const response = await poiClient.searchPOI({
-        query,
-        cityName: filters?.cityName || filters?.city || "",
-        latitude: filters?.latitude || 0,
-        longitude: filters?.longitude || 0,
-        radiusKm: filters?.radiusKm,
-        searchType: filters?.searchType || "semantic",
-      });
-      return response.pois.map(mapProtoPOI);
-    },
+    queryFn: async (): Promise<POI[]> => searchPOIs(query, filters),
     enabled: !!query,
     staleTime: 5 * 60 * 1000,
   }));
+};
+
+export const searchPOIs = async (query: string, filters?: any): Promise<POI[]> => {
+  const response = await poiClient.searchPOI({
+    query,
+    cityName: filters?.cityName || filters?.city || "",
+    latitude: filters?.latitude || 0,
+    longitude: filters?.longitude || 0,
+    radiusKm: filters?.radiusKm,
+    searchType: filters?.searchType || "semantic",
+  });
+  return response.pois.map(mapProtoPOI);
 };

@@ -25,6 +25,8 @@ import {
   recordRecommendationEvents,
   type RecommendationEventName,
 } from "~/lib/api/recommendations";
+import PlacePicker from "~/components/trip/PlacePicker";
+import type { POI } from "~/lib/api/types";
 
 const minutesToHHMM = (m?: number) => {
   if (m == null) return "";
@@ -63,9 +65,8 @@ export default function TripEditor() {
 
   const [shareUrl, setShareUrl] = createSignal<string | null>(null);
   const [conflict, setConflict] = createSignal(false);
-  const [newStopDrafts, setNewStopDrafts] = createSignal<
-    Record<string, { name: string; poiId: string }>
-  >({});
+  const [replacingStopID, setReplacingStopID] = createSignal<string | null>(null);
+  const [removeConfirmID, setRemoveConfirmID] = createSignal<string | null>(null);
 
   const trip = () => tripQuery.data as Trip | undefined;
   const version = () => trip()?.version ?? 0n;
@@ -130,15 +131,7 @@ export default function TripEditor() {
       { onSuccess: (r) => setShareUrl(r.shareUrl) },
     );
 
-  const updateNewStop = (dayID: string, patch: Partial<{ name: string; poiId: string }>) =>
-    setNewStopDrafts((current) => {
-      const existing = current[dayID] ?? { name: "", poiId: "" };
-      return { ...current, [dayID]: { ...existing, ...patch } };
-    });
-
-  const addStop = (day: TripDay) => {
-    const draft = newStopDrafts()[day.id];
-    if (!draft?.name.trim() || !draft.poiId.trim()) return;
+  const addStop = (day: TripDay, poi: POI) => {
     add.mutate(
       {
         tripId: params.id!,
@@ -146,32 +139,33 @@ export default function TripEditor() {
         baseVersion: version(),
         stop: {
           id: crypto.randomUUID(),
-          poiId: draft.poiId.trim(),
+          poiId: poi.id,
           orderIndex: day.stops.length,
-          name: draft.name.trim(),
-          notes: "Added manually",
+          name: poi.name,
+          notes: poi.description_poi || poi.description || "Added from place search",
         },
       },
       {
-        onSuccess: () => updateNewStop(day.id, { name: "", poiId: "" }),
         onError: onMutationError,
       },
     );
   };
 
   const removeStop = (stop: TripStop) => {
-    if (!window.confirm(`Remove ${stop.name} from this trip?`)) return;
+    if (removeConfirmID() !== stop.id) {
+      setRemoveConfirmID(stop.id);
+      return;
+    }
     remove.mutate(
       { tripId: params.id!, stop, baseVersion: version() },
-      { onError: onMutationError },
+      {
+        onSuccess: () => setRemoveConfirmID(null),
+        onError: onMutationError,
+      },
     );
   };
 
-  const replaceStop = (stop: TripStop) => {
-    const name = window.prompt("Replacement place name");
-    if (!name?.trim()) return;
-    const poiId = window.prompt("Canonical place ID");
-    if (!poiId?.trim()) return;
+  const replaceStop = (stop: TripStop, poi: POI) => {
     replace.mutate(
       {
         tripId: params.id!,
@@ -180,12 +174,16 @@ export default function TripEditor() {
         replacement: {
           ...stop,
           id: crypto.randomUUID(),
-          poiId: poiId.trim(),
-          name: name.trim(),
+          poiId: poi.id,
+          name: poi.name,
+          notes: poi.description_poi || poi.description || "Replaced from place search",
           recommendationTrace: undefined,
         },
       },
-      { onError: onMutationError },
+      {
+        onSuccess: () => setReplacingStopID(null),
+        onError: onMutationError,
+      },
     );
   };
 
@@ -397,18 +395,38 @@ export default function TripEditor() {
                             <button
                               type="button"
                               class="rounded-md border px-2 py-1 text-xs hover:bg-muted"
-                              onClick={() => replaceStop(stop)}
+                              onClick={() =>
+                                setReplacingStopID((current) =>
+                                  current === stop.id ? null : stop.id,
+                                )
+                              }
+                              aria-expanded={replacingStopID() === stop.id}
                             >
-                              Replace
+                              {replacingStopID() === stop.id ? "Close search" : "Replace"}
                             </button>
                             <button
                               type="button"
-                              class="rounded-md border border-destructive/40 px-2 py-1 text-xs text-destructive hover:bg-destructive/10"
+                              class={`rounded-md border px-2 py-1 text-xs transition-colors ${
+                                removeConfirmID() === stop.id
+                                  ? "border-destructive bg-destructive text-destructive-foreground"
+                                  : "border-destructive/40 text-destructive hover:bg-destructive/10"
+                              }`}
                               onClick={() => removeStop(stop)}
                             >
-                              Remove
+                              {removeConfirmID() === stop.id ? "Confirm remove" : "Remove"}
                             </button>
                           </div>
+                          <Show when={replacingStopID() === stop.id}>
+                            <div class="mt-3 pl-8">
+                              <PlacePicker
+                                cityName={t.cityName}
+                                label={`Replace ${stop.name}`}
+                                busy={replace.isPending}
+                                onSelect={(poi) => replaceStop(stop, poi)}
+                                onCancel={() => setReplacingStopID(null)}
+                              />
+                            </div>
+                          </Show>
                           <div class="mt-2 flex flex-wrap items-center gap-2 pl-8">
                             <WhyThisStop reason={stop.notes} />
                             <Show when={stop.recommendationTrace}>
@@ -476,35 +494,13 @@ export default function TripEditor() {
                       )}
                     </For>
                   </ol>
-                  <div class="mt-3 grid gap-2 rounded-md border border-dashed p-3 sm:grid-cols-[1fr_1fr_auto]">
-                    <input
-                      class="rounded-md border px-2 py-1.5 text-sm"
-                      placeholder="Place name"
-                      value={newStopDrafts()[day.id]?.name || ""}
-                      onInput={(event) =>
-                        updateNewStop(day.id, { name: event.currentTarget.value })
-                      }
+                  <div class="mt-3">
+                    <PlacePicker
+                      cityName={t.cityName}
+                      label={`Add another place to Day ${day.dayNumber}`}
+                      busy={add.isPending}
+                      onSelect={(poi) => addStop(day, poi)}
                     />
-                    <input
-                      class="rounded-md border px-2 py-1.5 text-sm"
-                      placeholder="Canonical place ID"
-                      value={newStopDrafts()[day.id]?.poiId || ""}
-                      onInput={(event) =>
-                        updateNewStop(day.id, { poiId: event.currentTarget.value })
-                      }
-                    />
-                    <button
-                      type="button"
-                      class="rounded-md bg-primary px-3 py-1.5 text-sm text-primary-foreground disabled:opacity-50"
-                      disabled={
-                        !newStopDrafts()[day.id]?.name.trim() ||
-                        !newStopDrafts()[day.id]?.poiId.trim() ||
-                        add.isPending
-                      }
-                      onClick={() => addStop(day)}
-                    >
-                      Add stop
-                    </button>
                   </div>
                 </section>
               )}

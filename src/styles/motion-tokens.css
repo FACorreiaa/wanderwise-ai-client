@@ -27,12 +27,17 @@
     transform: scale(0.98);
   }
 
-  .loci-card {
-    @apply bg-card border border-border text-card-foreground;
+  .loci-card-interactive {
+    @apply cursor-pointer border border-border bg-card text-card-foreground;
+    transition:
+      transform var(--motion-base) var(--ease-settle),
+      opacity var(--motion-base) var(--ease-settle),
+      border-color var(--motion-fast) var(--ease-press),
+      background-color var(--motion-fast) var(--ease-press);
   }
 
-  .loci-card-interactive {
-    @apply loci-card motion-settle motion-press cursor-pointer;
+  .loci-card-interactive:active {
+    transform: scale(0.98);
   }
 
   .loci-card-interactive:hover {
